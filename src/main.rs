@@ -1,3 +1,4 @@
+mod ast;
 mod error;
 mod lexer;
 mod parser;
@@ -9,6 +10,13 @@ fn main() {
     };
 
     let source = std::fs::read_to_string(&filename).unwrap();
-    let tokens = lexer::tokenize(&source);
-    println!("{:#?}", tokens);
+    let ast = match parser::Parser::new(&source).parse() {
+        Ok(ast) => ast,
+        Err(err) => {
+            eprintln!("{:?}", err);
+            std::process::exit(1);
+        }
+    };
+
+    eprintln!("{:#?}", ast);
 }
