@@ -55,13 +55,15 @@ pub enum TokenKind {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Keyword {
-    Pub,
-    Fn,
-    Let,
     Const,
-    If,
     Else,
-    While,
+    False,
+    Fn,
     For,
+    If,
+    Let,
+    Pub,
     Return,
+    True,
+    While,
 }

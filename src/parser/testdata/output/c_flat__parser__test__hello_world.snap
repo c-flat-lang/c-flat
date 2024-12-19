@@ -60,11 +60,13 @@ expression: snapshot_parsing(contents)
                                 },
                             },
                         ),
-                        delem: Token {
-                            kind: Semicolon,
-                            lexeme: ";",
-                            span: 53..54,
-                        },
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 53..54,
+                            },
+                        ),
                     },
                 ],
                 close_brace: Token {

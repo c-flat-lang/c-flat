@@ -62,15 +62,17 @@ impl<'a> Tokenizer<'a> {
         }
 
         let kind = match lexeme.as_str() {
-            "let" => TokenKind::Keyword(Keyword::Let),
             "const" => TokenKind::Keyword(Keyword::Const),
-            "fn" => TokenKind::Keyword(Keyword::Fn),
-            "pub" => TokenKind::Keyword(Keyword::Pub),
-            "if" => TokenKind::Keyword(Keyword::If),
             "else" => TokenKind::Keyword(Keyword::Else),
-            "while" => TokenKind::Keyword(Keyword::While),
+            "false" => TokenKind::Keyword(Keyword::False),
+            "fn" => TokenKind::Keyword(Keyword::Fn),
             "for" => TokenKind::Keyword(Keyword::For),
+            "if" => TokenKind::Keyword(Keyword::If),
+            "let" => TokenKind::Keyword(Keyword::Let),
+            "pub" => TokenKind::Keyword(Keyword::Pub),
             "return" => TokenKind::Keyword(Keyword::Return),
+            "true" => TokenKind::Keyword(Keyword::True),
+            "while" => TokenKind::Keyword(Keyword::While),
             _ => TokenKind::Identifier,
         };
         self.spanned(kind, lexeme)

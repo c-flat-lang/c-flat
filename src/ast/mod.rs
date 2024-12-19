@@ -40,13 +40,13 @@ impl Block {
 #[derive(Debug, Clone)]
 pub struct Statement {
     pub expr: Box<Expr>,
-    pub delem: Token,
+    pub delem: Option<Token>,
 }
 
 impl Statement {
     pub fn span(&self) -> Span {
         let start = self.expr.span();
-        let end = self.delem.span.end;
+        let end = self.delem.as_ref().map(|d| d.span.end).unwrap_or(start.end);
         start.start..end
     }
 }
@@ -163,6 +163,8 @@ pub enum Litral {
     Integer(Token),
     Float(Token),
     Char(Token),
+    BoolTrue(Token),
+    BoolFalse(Token),
 }
 
 impl Litral {
@@ -172,6 +174,8 @@ impl Litral {
             Litral::Integer(token) => token.span.clone(),
             Litral::Float(token) => token.span.clone(),
             Litral::Char(token) => token.span.clone(),
+            Litral::BoolTrue(token) => token.span.clone(),
+            Litral::BoolFalse(token) => token.span.clone(),
         }
     }
 }

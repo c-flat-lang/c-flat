@@ -44,12 +44,16 @@ expression: snapshot_parsing(contents)
                                 },
                                 expr: IfElse(
                                     ExprIfElse {
-                                        condition: Identifier(
-                                            Token {
-                                                kind: Identifier,
-                                                lexeme: "true",
-                                                span: 42..46,
-                                            },
+                                        condition: Litral(
+                                            BoolTrue(
+                                                Token {
+                                                    kind: Keyword(
+                                                        True,
+                                                    ),
+                                                    lexeme: "true",
+                                                    span: 42..46,
+                                                },
+                                            ),
                                         ),
                                         then_branch: Block {
                                             open_brace: Token {
@@ -68,17 +72,13 @@ expression: snapshot_parsing(contents)
                                                             },
                                                         ),
                                                     ),
-                                                    delem: Token {
-                                                        kind: Semicolon,
-                                                        lexeme: ";",
-                                                        span: 49..50,
-                                                    },
+                                                    delem: None,
                                                 },
                                             ],
                                             close_brace: Token {
                                                 kind: RightBrace,
                                                 lexeme: "}",
-                                                span: 50..51,
+                                                span: 49..50,
                                             },
                                         },
                                         else_branch: Some(
@@ -86,7 +86,7 @@ expression: snapshot_parsing(contents)
                                                 open_brace: Token {
                                                     kind: LeftBrace,
                                                     lexeme: "{",
-                                                    span: 57..58,
+                                                    span: 56..57,
                                                 },
                                                 statements: [
                                                     Statement {
@@ -95,21 +95,17 @@ expression: snapshot_parsing(contents)
                                                                 Token {
                                                                     kind: Number,
                                                                     lexeme: "2",
-                                                                    span: 58..59,
+                                                                    span: 57..58,
                                                                 },
                                                             ),
                                                         ),
-                                                        delem: Token {
-                                                            kind: Semicolon,
-                                                            lexeme: ";",
-                                                            span: 59..60,
-                                                        },
+                                                        delem: None,
                                                     },
                                                 ],
                                                 close_brace: Token {
                                                     kind: RightBrace,
                                                     lexeme: "}",
-                                                    span: 60..61,
+                                                    span: 58..59,
                                                 },
                                             },
                                         ),
@@ -117,11 +113,13 @@ expression: snapshot_parsing(contents)
                                 ),
                             },
                         ),
-                        delem: Token {
-                            kind: Semicolon,
-                            lexeme: ";",
-                            span: 61..62,
-                        },
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 59..60,
+                            },
+                        ),
                     },
                     Statement {
                         expr: Call(
@@ -130,13 +128,13 @@ expression: snapshot_parsing(contents)
                                     Token {
                                         kind: Identifier,
                                         lexeme: "println",
-                                        span: 67..74,
+                                        span: 65..72,
                                     },
                                 ),
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 74..75,
+                                    span: 72..73,
                                 },
                                 args: [
                                     Litral(
@@ -144,7 +142,7 @@ expression: snapshot_parsing(contents)
                                             Token {
                                                 kind: String,
                                                 lexeme: "{}",
-                                                span: 75..81,
+                                                span: 73..79,
                                             },
                                         ),
                                     ),
@@ -152,28 +150,30 @@ expression: snapshot_parsing(contents)
                                         Token {
                                             kind: Identifier,
                                             lexeme: "value",
-                                            span: 83..88,
+                                            span: 81..86,
                                         },
                                     ),
                                 ],
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 88..89,
+                                    span: 86..87,
                                 },
                             },
                         ),
-                        delem: Token {
-                            kind: Semicolon,
-                            lexeme: ";",
-                            span: 89..90,
-                        },
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 87..88,
+                            },
+                        ),
                     },
                 ],
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 91..92,
+                    span: 89..90,
                 },
             },
         },

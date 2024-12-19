@@ -141,7 +141,11 @@ impl<'a> Parser<'a> {
 
     fn parse_statement(&mut self) -> Result<ast::Statement, CompilerError> {
         let expr = self.parse_expr()?;
-        let delem = self.consume(TokenKind::Semicolon)?;
+        let delem = if self.peek(TokenKind::Semicolon) {
+            Some(self.consume(TokenKind::Semicolon)?)
+        } else {
+            None
+        };
         Ok(ast::Statement {
             expr: Box::new(expr),
             delem,
@@ -290,6 +294,12 @@ impl<'a> Parser<'a> {
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
             TokenKind::Identifier => Ok(ast::Expr::Identifier(token)),
+            TokenKind::Keyword(Keyword::True) => {
+                Ok(ast::Expr::Litral(ast::Litral::BoolTrue(token)))
+            }
+            TokenKind::Keyword(Keyword::False) => {
+                Ok(ast::Expr::Litral(ast::Litral::BoolFalse(token)))
+            }
             _ => Err(CompilerError::ExpectedToken {
                 actual: token,
                 expected: TokenKind::Number,

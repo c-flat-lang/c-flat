@@ -10,29 +10,27 @@ pub fn main() void {
             ^ Token { kind: RightParen, lexeme: ")", span: 12..13 }
               ^^^^ Token { kind: Identifier, lexeme: "void", span: 14..18 }
                    ^ Token { kind: LeftBrace, lexeme: "{", span: 19..20 }
-    const value = if true {1;} else {2;};
+    const value = if true {1} else {2};
     ^^^^^ Token { kind: Keyword(Const), lexeme: "const", span: 25..30 }
           ^^^^^ Token { kind: Identifier, lexeme: "value", span: 31..36 }
                 ^ Token { kind: Equal, lexeme: "=", span: 37..38 }
                   ^^ Token { kind: Keyword(If), lexeme: "if", span: 39..41 }
-                     ^^^^ Token { kind: Identifier, lexeme: "true", span: 42..46 }
+                     ^^^^ Token { kind: Keyword(True), lexeme: "true", span: 42..46 }
                           ^ Token { kind: LeftBrace, lexeme: "{", span: 47..48 }
                            ^ Token { kind: Number, lexeme: "1", span: 48..49 }
-                            ^ Token { kind: Semicolon, lexeme: ";", span: 49..50 }
-                             ^ Token { kind: RightBrace, lexeme: "}", span: 50..51 }
-                               ^^^^ Token { kind: Keyword(Else), lexeme: "else", span: 52..56 }
-                                    ^ Token { kind: LeftBrace, lexeme: "{", span: 57..58 }
-                                     ^ Token { kind: Number, lexeme: "2", span: 58..59 }
+                            ^ Token { kind: RightBrace, lexeme: "}", span: 49..50 }
+                              ^^^^ Token { kind: Keyword(Else), lexeme: "else", span: 51..55 }
+                                   ^ Token { kind: LeftBrace, lexeme: "{", span: 56..57 }
+                                    ^ Token { kind: Number, lexeme: "2", span: 57..58 }
+                                     ^ Token { kind: RightBrace, lexeme: "}", span: 58..59 }
                                       ^ Token { kind: Semicolon, lexeme: ";", span: 59..60 }
-                                       ^ Token { kind: RightBrace, lexeme: "}", span: 60..61 }
-                                        ^ Token { kind: Semicolon, lexeme: ";", span: 61..62 }
     println(#"{}"#, value);
-    ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 67..74 }
-           ^ Token { kind: LeftParen, lexeme: "(", span: 74..75 }
-            ^^^^^^ Token { kind: String, lexeme: "{}", span: 75..81 }
-                  ^ Token { kind: Comma, lexeme: ",", span: 81..82 }
-                    ^^^^^ Token { kind: Identifier, lexeme: "value", span: 83..88 }
-                         ^ Token { kind: RightParen, lexeme: ")", span: 88..89 }
-                          ^ Token { kind: Semicolon, lexeme: ";", span: 89..90 }
+    ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 65..72 }
+           ^ Token { kind: LeftParen, lexeme: "(", span: 72..73 }
+            ^^^^^^ Token { kind: String, lexeme: "{}", span: 73..79 }
+                  ^ Token { kind: Comma, lexeme: ",", span: 79..80 }
+                    ^^^^^ Token { kind: Identifier, lexeme: "value", span: 81..86 }
+                         ^ Token { kind: RightParen, lexeme: ")", span: 86..87 }
+                          ^ Token { kind: Semicolon, lexeme: ";", span: 87..88 }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 91..92 }
+^ Token { kind: RightBrace, lexeme: "}", span: 89..90 }
