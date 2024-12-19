@@ -88,6 +88,23 @@ impl<'a> Tokenizer<'a> {
         self.spanned(TokenKind::String, lexeme)
     }
 
+    fn parse_char(&mut self) -> Token {
+        let mut lexeme = String::from('#');
+        while let Some(value) = self.next_char() {
+            lexeme.push(value);
+            if lexeme.ends_with("\'#") {
+                break;
+            }
+        }
+        let lexeme = lexeme[2..lexeme.len() - 2].replace("\\n", "\n");
+        self.spanned(TokenKind::Char, lexeme)
+    }
+
+    fn double_char(&mut self, kind: TokenKind, lexeme: impl Into<String>) -> Option<Token> {
+        self.next_char();
+        Some(self.spanned(kind, lexeme.into()))
+    }
+
     fn skip_char(&mut self) -> Option<Token> {
         self.spanned(TokenKind::InvalidToken, ' ');
         self.next()
@@ -98,34 +115,38 @@ impl<'a> Iterator for Tokenizer<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.next_char() {
-            Some(value @ '0'..='9') => Some(self.parse_number(value)),
-            Some(value) if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
-            Some(value) if value.is_ascii_whitespace() => self.skip_char(),
-            Some('#') if self.chars.peek() == Some(&'"') => Some(self.parse_string()),
-            Some(c @ '=') if self.peek_char('=') => Some(self.spanned(TokenKind::EqualEqual, c)),
-            Some(c @ '>') if self.peek_char('=') => Some(self.spanned(TokenKind::GreaterEqual, c)),
-            Some(c @ '<') if self.peek_char('=') => Some(self.spanned(TokenKind::LessEqual, c)),
+        let Some(c) = self.next_char() else {
+            return None;
+        };
+        match c {
+            '0'..='9' => Some(self.parse_number(c)),
+            value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
+            value if value.is_ascii_whitespace() => self.skip_char(),
+            '#' if self.peek_char('\'') => Some(self.parse_char()),
+            '#' if self.peek_char('"') => Some(self.parse_string()),
+            '=' if self.peek_char('=') => Some(self.spanned(TokenKind::EqualEqual, c)),
+            '>' if self.peek_char('=') => Some(self.spanned(TokenKind::GreaterEqual, c)),
+            '<' if self.peek_char('=') => Some(self.spanned(TokenKind::LessEqual, c)),
+            '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),
             // Char
-            Some(c @ '(') => Some(self.spanned(TokenKind::LeftParen, c)),
-            Some(c @ ')') => Some(self.spanned(TokenKind::RightParen, c)),
-            Some(c @ '[') => Some(self.spanned(TokenKind::LeftBracket, c)),
-            Some(c @ ']') => Some(self.spanned(TokenKind::RightBracket, c)),
-            Some(c @ '{') => Some(self.spanned(TokenKind::LeftBrace, c)),
-            Some(c @ '}') => Some(self.spanned(TokenKind::RightBrace, c)),
-            Some(c @ ',') => Some(self.spanned(TokenKind::Comma, c)),
-            Some(c @ '.') => Some(self.spanned(TokenKind::Dot, c)),
-            Some(c @ '-') => Some(self.spanned(TokenKind::Minus, c)),
-            Some(c @ '+') => Some(self.spanned(TokenKind::Plus, c)),
-            Some(c @ ';') => Some(self.spanned(TokenKind::Semicolon, c)),
-            Some(c @ '/') => Some(self.spanned(TokenKind::Slash, c)),
-            Some(c @ '*') => Some(self.spanned(TokenKind::Star, c)),
-            Some(c @ '!') => Some(self.spanned(TokenKind::Bang, c)),
-            Some(c @ '=') => Some(self.spanned(TokenKind::Equal, c)),
-            Some(c @ '>') => Some(self.spanned(TokenKind::Greater, c)),
-            Some(c @ '<') => Some(self.spanned(TokenKind::Less, c)),
-            Some(c) => Some(self.spanned(TokenKind::InvalidToken, c)),
-            None => None,
+            '(' => Some(self.spanned(TokenKind::LeftParen, c)),
+            ')' => Some(self.spanned(TokenKind::RightParen, c)),
+            '[' => Some(self.spanned(TokenKind::LeftBracket, c)),
+            ']' => Some(self.spanned(TokenKind::RightBracket, c)),
+            '{' => Some(self.spanned(TokenKind::LeftBrace, c)),
+            '}' => Some(self.spanned(TokenKind::RightBrace, c)),
+            ',' => Some(self.spanned(TokenKind::Comma, c)),
+            '.' => Some(self.spanned(TokenKind::Dot, c)),
+            '-' => Some(self.spanned(TokenKind::Minus, c)),
+            '+' => Some(self.spanned(TokenKind::Plus, c)),
+            ';' => Some(self.spanned(TokenKind::Semicolon, c)),
+            '/' => Some(self.spanned(TokenKind::Slash, c)),
+            '*' => Some(self.spanned(TokenKind::Star, c)),
+            '!' => Some(self.spanned(TokenKind::Bang, c)),
+            '=' => Some(self.spanned(TokenKind::Equal, c)),
+            '>' => Some(self.spanned(TokenKind::Greater, c)),
+            '<' => Some(self.spanned(TokenKind::Less, c)),
+            c => Some(self.spanned(TokenKind::InvalidToken, c)),
         }
     }
 }

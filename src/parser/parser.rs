@@ -141,45 +141,117 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expr(&mut self) -> Result<ast::Expr, CompilerError> {
-        self.parse_call()
+        self.parse_comparison()
+    }
+
+    fn parse_comparison(&mut self) -> Result<ast::Expr, CompilerError> {
+        use TokenKind::*;
+        let mut left = self.parse_term()?;
+        while let Some(op) = self.lexer.next_if(one_of(&[
+            Greater,
+            Less,
+            GreaterEqual,
+            LessEqual,
+            EqualEqual,
+            BangEqual,
+        ])) {
+            let right = self.parse_term()?;
+            let binary_expr = ast::ExprBinary {
+                left: Box::new(left),
+                op,
+                right: Box::new(right),
+            };
+            left = ast::Expr::Binary(binary_expr);
+        }
+        Ok(left)
+    }
+
+    fn parse_term(&mut self) -> Result<ast::Expr, CompilerError> {
+        let mut left = self.parse_factor()?;
+        while let Some(op) = self
+            .lexer
+            .next_if(one_of(&[TokenKind::Plus, TokenKind::Minus]))
+        {
+            let right = Box::new(self.parse_factor()?);
+            let binary_expr = ast::ExprBinary {
+                left: Box::new(left),
+                right,
+                op,
+            };
+            left = ast::Expr::Binary(binary_expr)
+        }
+        Ok(left)
+    }
+
+    fn parse_factor(&mut self) -> Result<ast::Expr, CompilerError> {
+        let mut left = self.parse_call()?;
+        while let Some(op) = self
+            .lexer
+            .next_if(one_of(&[TokenKind::Star, TokenKind::Slash]))
+        {
+            let right = Box::new(self.parse_call()?);
+            let expr_binary = ast::ExprBinary {
+                left: Box::new(left),
+                right,
+                op,
+            };
+            left = ast::Expr::Binary(expr_binary);
+        }
+        Ok(left)
     }
 
     fn parse_call(&mut self) -> Result<ast::Expr, CompilerError> {
-        let Some(Token {
-            kind: TokenKind::Identifier,
-            ..
-        }) = self.lexer.peek()
-        else {
-            return self.literal();
-        };
-        let name = self.consume(TokenKind::Identifier)?;
-        let mut args = vec![];
-        self.consume(TokenKind::LeftParen)?;
-        while self.lexer.peek().is_some() && !self.peek(TokenKind::RightParen) {
-            args.push(self.parse_expr()?);
-            if self.peek(TokenKind::Comma) {
-                self.consume(TokenKind::Comma)?;
-            }
+        let mut expr = self.parse_primary()?;
+
+        if let Some(left_paran) = self.lexer.next_if(one_of(&[TokenKind::LeftParen])) {
+            expr = self.finish_call(expr, left_paran)?;
         }
-        self.consume(TokenKind::RightParen)?;
-        Ok(ast::Expr::Call(name, args))
+
+        Ok(expr)
     }
 
-    fn literal(&mut self) -> Result<ast::Expr, CompilerError> {
+    fn finish_call(
+        &mut self,
+        caller: ast::Expr,
+        left_paran: Token,
+    ) -> Result<ast::Expr, CompilerError> {
+        let mut args = vec![];
+        while matches!(self.lexer.peek(), Some(token) if token.kind != TokenKind::RightParen) {
+            args.push(self.parse_expr()?);
+            self.lexer.next_if(|tok| tok.kind == TokenKind::Comma);
+        }
+        let Some(right_paran) = self.lexer.next_if(|tok| tok.kind == TokenKind::RightParen) else {
+            // TODO: make this report an error
+            panic!("expected a right paran");
+        };
+        Ok(ast::Expr::Call(ast::ExprCall {
+            caller: Box::new(caller),
+            left_paran,
+            args,
+            right_paran,
+        }))
+    }
+
+    fn parse_primary(&mut self) -> Result<ast::Expr, CompilerError> {
         let Some(token) = self.lexer.next() else {
             return Err(CompilerError::UnexpectedEndOfInput);
         };
         match token.kind {
-            // TokenKind::Number => Ok(ast::Expr::Litral(ast::Litral::Number(token.lexeme))),
-            // TokenKind::Float => Ok(ast::Expr::Litral(ast::Litral::Float(token.lexeme))),
+            TokenKind::Number => Ok(ast::Expr::Litral(ast::Litral::Integer(token))),
+            TokenKind::Float => Ok(ast::Expr::Litral(ast::Litral::Float(token))),
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
-            // TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token.lexeme))),
+            TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
+            TokenKind::Identifier => Ok(ast::Expr::Identifier(token)),
             _ => Err(CompilerError::ExpectedToken {
                 actual: token,
                 expected: TokenKind::Number,
             }),
         }
     }
+}
+
+fn one_of(tokens: &[TokenKind]) -> impl Fn(&Token) -> bool + use<'_> {
+    move |token| tokens.contains(&token.kind)
 }
 
 fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type, Token> {

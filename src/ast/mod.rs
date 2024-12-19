@@ -54,10 +54,30 @@ pub enum Type {
 #[derive(Debug)]
 pub enum Expr {
     Litral(Litral),
-    Call(Token, Vec<Expr>),
+    Call(ExprCall),
+    Binary(ExprBinary),
+    Identifier(Token),
+}
+
+#[derive(Debug)]
+pub struct ExprCall {
+    pub caller: Box<Expr>,
+    pub left_paran: Token,
+    pub args: Vec<Expr>,
+    pub right_paran: Token,
+}
+
+#[derive(Debug)]
+pub struct ExprBinary {
+    pub left: Box<Expr>,
+    pub op: Token,
+    pub right: Box<Expr>,
 }
 
 #[derive(Debug)]
 pub enum Litral {
     String(Token),
+    Integer(Token),
+    Float(Token),
+    Char(Token),
 }

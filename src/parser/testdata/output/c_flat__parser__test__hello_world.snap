@@ -1,0 +1,68 @@
+---
+source: src/parser/test.rs
+expression: snapshot_parsing(contents)
+---
+[
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 4..6,
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: 7..11,
+            },
+            params: [],
+            return_type: Void,
+            body: Block {
+                statements: [
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "println",
+                                        span: 25..32,
+                                    },
+                                ),
+                                left_paran: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: 32..33,
+                                },
+                                args: [
+                                    Litral(
+                                        String(
+                                            Token {
+                                                kind: String,
+                                                lexeme: "Hello, World!\n",
+                                                span: 33..52,
+                                            },
+                                        ),
+                                    ),
+                                ],
+                                right_paran: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: 52..53,
+                                },
+                            },
+                        ),
+                        delem: Token {
+                            kind: Semicolon,
+                            lexeme: ";",
+                            span: 53..54,
+                        },
+                    },
+                ],
+            },
+        },
+    ),
+]
