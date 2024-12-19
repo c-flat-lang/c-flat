@@ -4,9 +4,23 @@ use crate::lexer::token::{Span, Token};
 #[derive(Debug)]
 pub enum Item {
     Function(Function),
+    Type(TypeDef),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub enum TypeDef {
+    Struct(Struct),
+}
+
+#[derive(Debug, Clone)]
+pub struct Struct {
+    pub visibility: Visibility,
+    pub type_token: Token,
+    pub name: Token,
+    pub expr: Box<Expr>,
+}
+
+#[derive(Debug, Clone)]
 pub enum Visibility {
     Public,
     Private,
@@ -71,6 +85,7 @@ pub enum Type {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Struct(ExprStruct),
     Assignment(ExprAssignment),
     Litral(Litral),
     Call(ExprCall),
@@ -82,6 +97,7 @@ pub enum Expr {
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
+            Expr::Struct(expr_struct) => expr_struct.span(),
             Expr::Assignment(expr_assignment) => expr_assignment.span(),
             Expr::Litral(litral) => litral.span(),
             Expr::Call(expr_call) => expr_call.span(),
@@ -89,6 +105,45 @@ impl Expr {
             Expr::Identifier(token) => token.span.clone(),
             Expr::IfElse(expr_if_else) => expr_if_else.span(),
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprStruct {
+    pub struct_token: Token,
+    pub fields: Vec<Field>,
+}
+
+impl ExprStruct {
+    pub fn span(&self) -> Span {
+        let start = self.struct_token.span.clone();
+        let end = self
+            .fields
+            .last()
+            .map(|f| f.span().end)
+            .unwrap_or(start.end);
+        start.start..end
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Field {
+    pub visibility: Visibility,
+    pub name: Token,
+    pub colon: Token,
+    pub ty: Type,
+    pub default_expr: Option<Box<Expr>>,
+}
+
+impl Field {
+    pub fn span(&self) -> Span {
+        let start = self.name.span.clone();
+        let end = self
+            .default_expr
+            .as_ref()
+            .map(|d| d.span().end)
+            .unwrap_or(start.end);
+        start.start..end
     }
 }
 

@@ -29,8 +29,12 @@ impl<'a> Parser<'a> {
                     let function = self.parse_function(visibility)?;
                     items.push(ast::Item::Function(function));
                 }
+                TokenKind::Keyword(Keyword::Type) => {
+                    let type_def = self.parse_type_def(visibility)?;
+                    items.push(ast::Item::Type(type_def));
+                }
                 _ => {
-                    return Err(CompilerError::UnexpectedEndOfInput);
+                    return Err(CompilerError::UnexpectedTopLevelItem(token.clone()));
                 }
             }
         }
@@ -52,6 +56,13 @@ impl<'a> Parser<'a> {
         }
     }
 
+    fn consume_if_eq(&mut self, kind: TokenKind) -> Option<Token> {
+        if !self.peek(kind) {
+            return None;
+        }
+        Some(self.consume(kind).unwrap())
+    }
+
     fn parse_visibility(&mut self) -> Result<ast::Visibility, CompilerError> {
         match self.lexer.peek() {
             Some(token) if token.is_keyword(Keyword::Pub) => {
@@ -61,6 +72,68 @@ impl<'a> Parser<'a> {
             Some(_) => Ok(ast::Visibility::Private),
             None => Err(CompilerError::UnexpectedEndOfInput),
         }
+    }
+
+    fn parse_type_def(
+        &mut self,
+        visibility: ast::Visibility,
+    ) -> Result<ast::TypeDef, CompilerError> {
+        let type_token = self.consume(TokenKind::Keyword(Keyword::Type))?;
+        let name = self.consume(TokenKind::Identifier)?;
+        if self.peek(TokenKind::Keyword(Keyword::Struct)) {
+            let expr_struct = self.parse_struct()?;
+            return Ok(ast::TypeDef::Struct(ast::Struct {
+                visibility,
+                type_token,
+                name,
+                expr: Box::new(expr_struct),
+            }));
+        }
+        let Some(token) = self.lexer.next() else {
+            return Err(CompilerError::UnexpectedEndOfInput);
+        };
+        Err(CompilerError::InvalidToken(token))
+    }
+
+    fn parse_struct(&mut self) -> Result<ast::Expr, CompilerError> {
+        let struct_token = self.consume(TokenKind::Keyword(Keyword::Struct))?;
+        self.consume(TokenKind::LeftBrace)?;
+        let fields = self.parse_fields()?;
+        self.consume(TokenKind::RightBrace)?;
+        let expr_struct = ast::ExprStruct {
+            struct_token,
+            fields,
+        };
+        Ok(ast::Expr::Struct(expr_struct))
+    }
+
+    fn parse_fields(&mut self) -> Result<Vec<ast::Field>, CompilerError> {
+        let mut fields = vec![];
+        while self.lexer.peek().is_some() && !self.peek(TokenKind::RightBrace) {
+            let visibility = self.parse_visibility()?;
+            let name = self.consume(TokenKind::Identifier)?;
+            let colon = self.consume(TokenKind::Colon)?;
+            let ty = self.parse_type()?;
+            let default_expr = if self.consume_if_eq(TokenKind::Equal).is_some() {
+                let expr = self.parse_expr()?;
+                self.consume(TokenKind::Comma)?;
+                Some(Box::new(expr))
+            } else {
+                self.consume(TokenKind::Comma)?;
+                None
+            };
+            fields.push(ast::Field {
+                visibility,
+                name,
+                colon,
+                ty,
+                default_expr,
+            });
+            if self.peek(TokenKind::Comma) {
+                self.consume(TokenKind::Comma)?;
+            }
+        }
+        Ok(fields)
     }
 
     fn parse_function(
@@ -99,7 +172,6 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_type(&mut self) -> Result<ast::Type, CompilerError> {
-        eprintln!("TYPE");
         let Some(tok) = self.lexer.next() else {
             return Err(CompilerError::UnexpectedEndOfInput);
         };

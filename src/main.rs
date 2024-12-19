@@ -13,7 +13,8 @@ fn main() {
     let ast = match parser::Parser::new(&source).parse() {
         Ok(ast) => ast,
         Err(err) => {
-            eprintln!("{:?}", err);
+            let report = err.report(&filename, &source);
+            eprintln!("{}", report);
             std::process::exit(1);
         }
     };

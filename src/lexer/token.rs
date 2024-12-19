@@ -21,7 +21,7 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
     Bang,
     BangEqual,
@@ -54,8 +54,9 @@ pub enum TokenKind {
     String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
+    Type,
     Const,
     Else,
     False,
@@ -65,6 +66,7 @@ pub enum Keyword {
     Let,
     Pub,
     Return,
+    Struct,
     True,
     While,
 }

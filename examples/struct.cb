@@ -1,0 +1,4 @@
+type Point struct {
+    x: s32,
+    y: s32,
+}

@@ -71,7 +71,9 @@ impl<'a> Tokenizer<'a> {
             "let" => TokenKind::Keyword(Keyword::Let),
             "pub" => TokenKind::Keyword(Keyword::Pub),
             "return" => TokenKind::Keyword(Keyword::Return),
+            "struct" => TokenKind::Keyword(Keyword::Struct),
             "true" => TokenKind::Keyword(Keyword::True),
+            "type" => TokenKind::Keyword(Keyword::Type),
             "while" => TokenKind::Keyword(Keyword::While),
             _ => TokenKind::Identifier,
         };
