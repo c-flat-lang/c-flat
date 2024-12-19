@@ -1,4 +1,4 @@
 pub fn main() void {
-    const value = if true {1} else {2};
+    const value: s32 = if true {1} else {2};
     println(#"{}"#, value);
 }

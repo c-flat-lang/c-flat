@@ -271,12 +271,19 @@ impl<'a> Parser<'a> {
         if self.peek(TokenKind::Keyword(Keyword::Const)) {
             let const_token = self.consume(TokenKind::Keyword(Keyword::Const))?;
             let ident = self.consume(TokenKind::Identifier)?;
+            let ty = if self.peek(TokenKind::Colon) {
+                self.consume(TokenKind::Colon)?;
+                Some(self.parse_type()?)
+            } else {
+                None
+            };
             self.consume(TokenKind::Equal)?;
             let expr = self.parse_expr()?;
 
             let assignment = ast::ExprAssignment {
                 const_token,
                 ident,
+                ty,
                 expr: Box::new(expr),
             };
             return Ok(ast::Expr::Assignment(assignment));

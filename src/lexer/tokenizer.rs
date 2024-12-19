@@ -142,6 +142,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             '-' => Some(self.spanned(TokenKind::Minus, c)),
             '+' => Some(self.spanned(TokenKind::Plus, c)),
             ';' => Some(self.spanned(TokenKind::Semicolon, c)),
+            ':' => Some(self.spanned(TokenKind::Colon, c)),
             '/' => Some(self.spanned(TokenKind::Slash, c)),
             '*' => Some(self.spanned(TokenKind::Star, c)),
             '!' => Some(self.spanned(TokenKind::Bang, c)),

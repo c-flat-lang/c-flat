@@ -57,7 +57,7 @@ pub struct Param {
     pub ty: Type,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Type {
     UnsignedNumber(u8),
     SignedNumber(u8),
@@ -95,6 +95,7 @@ impl Expr {
 #[derive(Debug, Clone)]
 pub struct ExprAssignment {
     pub const_token: Token,
+    pub ty: Option<Type>,
     pub ident: Token,
     pub expr: Box<Expr>,
 }
