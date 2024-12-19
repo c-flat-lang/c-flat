@@ -43,3 +43,4 @@ macro_rules! snapshot {
 
 snapshot!(hello_world, "../../examples/hello_world.cb");
 snapshot!(char, "../../examples/char.cb");
+snapshot!(if_else, "../../examples/if-else.cb");

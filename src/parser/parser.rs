@@ -99,6 +99,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_type(&mut self) -> Result<ast::Type, CompilerError> {
+        eprintln!("TYPE");
         let Some(tok) = self.lexer.next() else {
             return Err(CompilerError::UnexpectedEndOfInput);
         };
@@ -126,21 +127,51 @@ impl<'a> Parser<'a> {
 
     fn parse_block(&mut self) -> Result<ast::Block, CompilerError> {
         let mut statements = vec![];
-        self.consume(TokenKind::LeftBrace)?;
+        let open_brace = self.consume(TokenKind::LeftBrace)?;
         while self.lexer.peek().is_some() && !self.peek(TokenKind::RightBrace) {
             statements.push(self.parse_statement()?);
         }
-        self.consume(TokenKind::RightBrace)?;
-        Ok(ast::Block { statements })
+        let close_brace = self.consume(TokenKind::RightBrace)?;
+        Ok(ast::Block {
+            open_brace,
+            statements,
+            close_brace,
+        })
     }
 
     fn parse_statement(&mut self) -> Result<ast::Statement, CompilerError> {
         let expr = self.parse_expr()?;
         let delem = self.consume(TokenKind::Semicolon)?;
-        Ok(ast::Statement { expr, delem })
+        Ok(ast::Statement {
+            expr: Box::new(expr),
+            delem,
+        })
     }
 
     fn parse_expr(&mut self) -> Result<ast::Expr, CompilerError> {
+        self.parse_if_else()
+    }
+
+    fn parse_if_else(&mut self) -> Result<ast::Expr, CompilerError> {
+        if self.peek(TokenKind::Keyword(Keyword::If)) {
+            self.consume(TokenKind::Keyword(Keyword::If))?;
+
+            let condition = self.parse_expr()?;
+            let then_branch = self.parse_block()?;
+            let else_branch = if self.peek(TokenKind::Keyword(Keyword::Else)) {
+                self.consume(TokenKind::Keyword(Keyword::Else))?;
+                Some(self.parse_block()?)
+            } else {
+                None
+            };
+
+            let if_else_expr = ast::ExprIfElse {
+                condition: Box::new(condition),
+                then_branch,
+                else_branch,
+            };
+            return Ok(ast::Expr::IfElse(if_else_expr));
+        }
         self.parse_comparison()
     }
 
@@ -201,10 +232,10 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_call(&mut self) -> Result<ast::Expr, CompilerError> {
-        let mut expr = self.parse_primary()?;
+        let mut expr = self.parse_assignment()?;
 
-        if let Some(left_paran) = self.lexer.next_if(one_of(&[TokenKind::LeftParen])) {
-            expr = self.finish_call(expr, left_paran)?;
+        if let Some(left_paren) = self.lexer.next_if(one_of(&[TokenKind::LeftParen])) {
+            expr = self.finish_call(expr, left_paren)?;
         }
 
         Ok(expr)
@@ -213,23 +244,40 @@ impl<'a> Parser<'a> {
     fn finish_call(
         &mut self,
         caller: ast::Expr,
-        left_paran: Token,
+        left_paren: Token,
     ) -> Result<ast::Expr, CompilerError> {
         let mut args = vec![];
         while matches!(self.lexer.peek(), Some(token) if token.kind != TokenKind::RightParen) {
             args.push(self.parse_expr()?);
             self.lexer.next_if(|tok| tok.kind == TokenKind::Comma);
         }
-        let Some(right_paran) = self.lexer.next_if(|tok| tok.kind == TokenKind::RightParen) else {
-            // TODO: make this report an error
-            panic!("expected a right paran");
+        let Some(right_paren) = self.lexer.next_if(|tok| tok.kind == TokenKind::RightParen) else {
+            let span = args.last().map(|e| e.span()).unwrap_or(left_paren.span);
+            return Err(CompilerError::MissingClosingParen(span));
         };
         Ok(ast::Expr::Call(ast::ExprCall {
             caller: Box::new(caller),
-            left_paran,
+            left_paren,
             args,
-            right_paran,
+            right_paren,
         }))
+    }
+
+    fn parse_assignment(&mut self) -> Result<ast::Expr, CompilerError> {
+        if self.peek(TokenKind::Keyword(Keyword::Const)) {
+            let const_token = self.consume(TokenKind::Keyword(Keyword::Const))?;
+            let ident = self.consume(TokenKind::Identifier)?;
+            self.consume(TokenKind::Equal)?;
+            let expr = self.parse_expr()?;
+
+            let assignment = ast::ExprAssignment {
+                const_token,
+                ident,
+                expr: Box::new(expr),
+            };
+            return Ok(ast::Expr::Assignment(assignment));
+        }
+        self.parse_primary()
     }
 
     fn parse_primary(&mut self) -> Result<ast::Expr, CompilerError> {

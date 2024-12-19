@@ -1,0 +1,4 @@
+pub fn main() void {
+    const value = if true {1} else {2};
+    println(#"{}"#, value);
+}

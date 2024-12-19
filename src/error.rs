@@ -1,4 +1,4 @@
-use crate::lexer::token::{Token, TokenKind};
+use crate::lexer::token::{Span, Token, TokenKind};
 
 #[derive(Debug)]
 pub enum CompilerError {
@@ -6,4 +6,5 @@ pub enum CompilerError {
     ExpectedToken { actual: Token, expected: TokenKind },
     UnexpectedEndOfInput,
     ExpectedAType(Token),
+    MissingClosingParen(Span),
 }

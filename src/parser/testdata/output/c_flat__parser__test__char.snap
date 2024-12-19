@@ -21,6 +21,11 @@ expression: snapshot_parsing(contents)
             params: [],
             return_type: Void,
             body: Block {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: 19..20,
+                },
                 statements: [
                     Statement {
                         expr: Call(
@@ -32,7 +37,7 @@ expression: snapshot_parsing(contents)
                                         span: 25..30,
                                     },
                                 ),
-                                left_paran: Token {
+                                left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
                                     span: 30..31,
@@ -48,7 +53,7 @@ expression: snapshot_parsing(contents)
                                         ),
                                     ),
                                 ],
-                                right_paran: Token {
+                                right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
                                     span: 36..37,
@@ -62,6 +67,11 @@ expression: snapshot_parsing(contents)
                         },
                     },
                 ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: 39..40,
+                },
             },
         },
     ),
