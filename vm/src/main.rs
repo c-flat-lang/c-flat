@@ -8,7 +8,7 @@ fn main() {
         "main",
         vec![
        /* 0*/instruction!(Opcode::Load, Operand::Immediate(Value::Integer(30))),
-       /* 1*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier("fib:fib".to_string()))),
+       /* 1*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier(Box::new("fib:fib".to_string())))),
         ],
         0,
     );
@@ -32,12 +32,12 @@ fn main() {
        /* 8*/instruction!(Opcode::LoadLocal, Operand::Address(0)),
        /* 9*/instruction!(Opcode::Load, Operand::Immediate(Value::Integer(1))),
        /*10*/instruction!(Opcode::Sub),
-       /*11*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier("fib:fib".to_string()))),
+       /*11*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier(Box::new("fib:fib".to_string())))),
 
        /*12*/instruction!(Opcode::LoadLocal, Operand::Address(0)),
        /*13*/instruction!(Opcode::Load, Operand::Immediate(Value::Integer(2))),
        /*14*/instruction!(Opcode::Sub),
-       /*15*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier("fib:fib".to_string()))),
+       /*15*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier(Box::new("fib:fib".to_string())))),
 
        /*16*/instruction!(Opcode::Add),
 
@@ -54,6 +54,12 @@ fn main() {
     vm.load_module(fib_module);
 
     vm.start_process("main", "main");
-    vm.run();
+    match vm.run() {
+        Ok(_) => {}
+        Err(e) => {
+            eprintln!("{:?}", e);
+            std::process::exit(1);
+        }
+    }
     // eprintln!("{:#?}", vm.processes.last());
 }
