@@ -1,6 +1,57 @@
 #![allow(unused, dead_code)]
 use std::collections::HashMap;
 
+pub type Result<T> = std::result::Result<T, Box<Error>>;
+macro_rules! bail {
+    ($e:expr) => {
+        return Err(Box::new($e));
+    };
+}
+
+#[derive(Debug, Clone)]
+pub enum Error {
+    NoSuchFunction {
+        function: String,
+        module: String,
+    },
+    NoSuchModule {
+        module: String,
+    },
+    MalformedFunctionName {
+        name: String,
+    },
+    ExpectedOperand {
+        expected: Operand,
+        found: Operand,
+    },
+    StackUnderflow {
+        module: String,
+        function: String,
+        pc: usize,
+    },
+    TypeMismatch {
+        expected: String,
+        found: Value,
+    },
+    InvalidProgramAddress {
+        address: usize,
+        module: String,
+        function: String,
+    },
+    InvalidOperationArgument {
+        module: String,
+        function: String,
+        pc: usize,
+    },
+    InvalidOperationResult {
+        module: String,
+        function: String,
+        pc: usize,
+        args: Vec<Value>,
+        expected: String,
+    },
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct Process {
     module: String,
@@ -54,7 +105,7 @@ impl Function {
         &self,
         process: &mut Process,
         modules: &HashMap<String, Vec<Module>>,
-    ) -> Option<Value> {
+    ) -> Result<Option<Value>> {
         while process.pc < self.instructions.len() {
             let instruction = &self.instructions[process.pc];
             // eprintln!(
@@ -79,7 +130,11 @@ impl Function {
                 Opcode::LoadLocal => match &instruction.operand {
                     Operand::Address(address) => {
                         let Some(value) = process.args.get(*address) else {
-                            panic!("no value at address {}", address);
+                            bail!(Error::InvalidProgramAddress {
+                                address: *address,
+                                module: process.module.clone(),
+                                function: process.function.clone(),
+                            });
                         };
                         process.stack.push(value.clone());
                     }
@@ -95,10 +150,18 @@ impl Function {
                 },
                 Opcode::Add => {
                     let Some(rhs) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     let Some(lhs) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     match (&lhs, &rhs) {
                         (Value::Integer(lhs), Value::Integer(rhs)) => {
@@ -107,15 +170,31 @@ impl Function {
                         (Value::Float(lhs), Value::Float(rhs)) => {
                             process.stack.push(Value::Float(lhs + rhs));
                         }
-                        _ => panic!("cannot add values '{:?}' and '{:?}'", lhs, rhs),
+                        (l, r) => {
+                            bail!(Error::InvalidOperationResult {
+                                module: process.module.clone(),
+                                function: process.function.clone(),
+                                pc: process.pc,
+                                args: vec![l.clone(), r.clone()],
+                                expected: "Integer or Float".to_string(),
+                            });
+                        }
                     }
                 }
                 Opcode::Sub => {
                     let Some(rhs) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     let Some(lhs) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     match (&lhs, &rhs) {
                         (Value::Integer(lhs), Value::Integer(rhs)) => {
@@ -124,30 +203,49 @@ impl Function {
                         (Value::Float(lhs), Value::Float(rhs)) => {
                             process.stack.push(Value::Float(lhs - rhs));
                         }
-                        _ => panic!("cannot sub values '{:?}' and '{:?}'", lhs, rhs),
+                        (l, r) => {
+                            bail!(Error::InvalidOperationResult {
+                                module: process.module.clone(),
+                                function: process.function.clone(),
+                                pc: process.pc,
+                                args: vec![l.clone(), r.clone()],
+                                expected: "Integer or Float".to_string(),
+                            });
+                        }
                     }
                 }
                 Opcode::Call => {
-                    let Operand::Immediate(Value::Identifier(function_name)) = &instruction.operand
-                    else {
-                        panic!("not an identifier");
+                    let function_name = match &instruction.operand {
+                        Operand::Immediate(Value::Identifier(function_name)) => function_name,
+                        operand => {
+                            bail!(Error::ExpectedOperand {
+                                expected: Operand::Immediate(Value::Identifier(
+                                    "identifier".to_string()
+                                )),
+                                found: operand.clone(),
+                            });
+                        }
                     };
 
                     let Some((module, func_name)) = function_name.split_once(':') else {
-                        panic!("malformed function name {}", function_name);
+                        bail!(Error::MalformedFunctionName {
+                            name: function_name.to_string(),
+                        });
                     };
 
                     let Some(current_module) = modules.get(module) else {
-                        panic!("Module {} not found", process.module);
+                        bail!(Error::NoSuchModule {
+                            module: module.to_string(),
+                        });
                     };
                     let Some(func) = current_module
                         .iter()
                         .find_map(|module| module.functions.get(func_name))
                     else {
-                        panic!(
-                            "Function {} not found in module {}",
-                            function_name, process.module
-                        );
+                        bail!(Error::NoSuchFunction {
+                            module: module.to_string(),
+                            function: func_name.to_string(),
+                        });
                     };
 
                     let arg_count = func.locals;
@@ -160,63 +258,104 @@ impl Function {
                         ..Default::default()
                     };
 
-                    let v = func.execute(&mut p, modules)?;
+                    let Some(v) = func.execute(&mut p, modules)? else {
+                        continue;
+                    };
                     process.stack.push(v);
                 }
                 Opcode::Return => {
                     let Some(value) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
-                    return Some(value);
+                    return Ok(Some(value));
                 }
                 Opcode::BranchIf => {
                     let Some(value) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     let Value::Boolean(value) = value else {
-                        panic!("not a boolean value found '{:?}'", value);
+                        bail!(Error::TypeMismatch {
+                            expected: "Boolean".to_string(),
+                            found: value,
+                        });
                     };
                     if value {
                         let Operand::Address(address) = &instruction.operand else {
-                            panic!("not an address");
+                            bail!(Error::ExpectedOperand {
+                                expected: Operand::Address(0),
+                                found: instruction.operand.clone(),
+                            });
                         };
                         process.pc = *address;
                     }
                 }
                 Opcode::Branch => {
                     let Operand::Address(address) = &instruction.operand else {
-                        panic!("not an address");
+                        bail!(Error::ExpectedOperand {
+                            expected: Operand::Address(0),
+                            found: instruction.operand.clone(),
+                        });
                     };
                     process.pc = *address;
                 }
                 Opcode::Eq => {
                     let Some(right) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     let Some(left) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     process.stack.push(Value::Boolean(left == right));
                 }
                 Opcode::Or => {
                     let Some(right) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     let Value::Boolean(right) = right else {
-                        panic!("not a boolean value found '{:?}'", right);
+                        bail!(Error::TypeMismatch {
+                            expected: "Boolean".to_string(),
+                            found: right,
+                        });
                     };
                     let Some(left) = process.stack.pop() else {
-                        panic!("no value on stack");
+                        bail!(Error::StackUnderflow {
+                            module: process.module.clone(),
+                            function: process.function.clone(),
+                            pc: process.pc,
+                        });
                     };
                     let Value::Boolean(left) = left else {
-                        panic!("not a boolean value found '{:?}'", left);
+                        bail!(Error::TypeMismatch {
+                            expected: "Boolean".to_string(),
+                            found: left,
+                        });
                     };
                     process.stack.push(Value::Boolean(left || right));
                 }
             }
         }
 
-        None
+        Ok(None)
     }
 }
 
@@ -244,30 +383,12 @@ pub enum Value {
     Identifier(String),
 }
 
-impl Value {
-    fn as_integer(&self) -> Option<i32> {
-        match self {
-            Value::Integer(i) => Some(*i),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operand {
     Immediate(Value),
     Address(usize),
     Range(usize, usize),
     None,
-}
-
-impl Operand {
-    fn as_immediate(&self) -> Option<Value> {
-        match self {
-            Operand::Immediate(value) => Some(value.clone()),
-            _ => None,
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -298,7 +419,7 @@ impl VM {
         });
     }
 
-    pub fn run(&mut self) {
+    pub fn run(&mut self) -> Result<()> {
         let current_modules: HashMap<_, _> = self
             .modules
             .iter()
@@ -307,7 +428,9 @@ impl VM {
 
         for process in &mut self.processes {
             let Some(current_module) = current_modules.get(&process.module) else {
-                panic!("Module {} not found", process.module);
+                bail!(Error::NoSuchModule {
+                    module: process.module.clone(),
+                });
             };
             if process.version != current_module.version {
                 println!(
@@ -319,15 +442,16 @@ impl VM {
             }
 
             let Some(function) = current_module.functions.get(&process.function) else {
-                panic!(
-                    "Function {} not found in module {}",
-                    process.function, process.module
-                );
+                bail!(Error::NoSuchFunction {
+                    module: process.module.clone(),
+                    function: process.function.clone(),
+                });
             };
 
-            let v = function.execute(process, &self.modules);
+            let v = function.execute(process, &self.modules)?;
             println!("Result: {:?}", v);
         }
+        Ok(())
     }
 }
 

@@ -55,5 +55,5 @@ fn main() {
 
     vm.start_process("main", "main");
     vm.run();
-    eprintln!("{:#?}", vm.processes.last());
+    // eprintln!("{:#?}", vm.processes.last());
 }
