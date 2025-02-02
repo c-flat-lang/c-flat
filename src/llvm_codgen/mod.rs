@@ -12,10 +12,19 @@ impl Codegen for Function {
         builder: &Builder<'ctx>,
     ) {
         // TODO:
-        // 1. gen return type
         // 2. gen arguments
-        // 3. gen body
-        let i32_type = context.i32_type();
+        let i32_type = match self.return_type {
+            crate::ast::Type::UnsignedNumber(_) => todo!(),
+            crate::ast::Type::SignedNumber(32) => context.i32_type(),
+            crate::ast::Type::SignedNumber(_) => todo!(),
+            crate::ast::Type::Float(_) => todo!(),
+            crate::ast::Type::Array(_, _) => todo!(),
+            crate::ast::Type::Pointer(_) => todo!(),
+            crate::ast::Type::Struct(_) => todo!(),
+            crate::ast::Type::Enum(_) => todo!(),
+            crate::ast::Type::Void => todo!(),
+        };
+        // context.i32_type();
         let function_type = i32_type.fn_type(&[], false);
         let func = module.add_function(&self.name.lexeme, function_type, None);
         let entry = context.append_basic_block(func, "entry");
