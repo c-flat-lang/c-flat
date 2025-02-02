@@ -33,6 +33,21 @@ impl<'a> Parser<'a> {
                     let type_def = self.parse_type_def(visibility)?;
                     items.push(ast::Item::Type(type_def));
                 }
+                TokenKind::Keyword(Keyword::Use) => {
+                    let use_token = self.consume(TokenKind::Keyword(Keyword::Use))?;
+                    let mut path = Vec::new();
+                    while !self.peek(TokenKind::Semicolon) {
+                        let token = self.consume(TokenKind::Identifier)?;
+                        path.push(token);
+                        if self.peek(TokenKind::Colon) {
+                            self.consume(TokenKind::Colon)?;
+                            self.consume(TokenKind::Colon)?;
+                        }
+                    }
+                    self.consume(TokenKind::Semicolon)?;
+
+                    items.push(ast::Item::Use(ast::Use { use_token, path }));
+                }
                 _ => {
                     return Err(CompilerError::UnexpectedTopLevelItem(token.clone()));
                 }
@@ -212,7 +227,7 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<ast::Statement, CompilerError> {
-        let expr = self.parse_expr()?;
+        let expr = self.return_expression()?;
         let delem = if self.peek(TokenKind::Semicolon) {
             Some(self.consume(TokenKind::Semicolon)?)
         } else {
@@ -222,6 +237,19 @@ impl<'a> Parser<'a> {
             expr: Box::new(expr),
             delem,
         })
+    }
+
+    fn return_expression(&mut self) -> Result<ast::Expr, CompilerError> {
+        if self.peek(TokenKind::Keyword(Keyword::Return)) {
+            let return_token = self.consume(TokenKind::Keyword(Keyword::Return))?;
+            let expr = self.parse_expr()?;
+            let return_expr = ast::ExprReturn {
+                return_token,
+                expr: Some(Box::new(expr)),
+            };
+            return Ok(ast::Expr::Return(return_expr));
+        }
+        self.parse_expr()
     }
 
     fn parse_expr(&mut self) -> Result<ast::Expr, CompilerError> {

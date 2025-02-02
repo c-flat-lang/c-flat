@@ -56,7 +56,6 @@ pub enum TokenKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
-    Type,
     Const,
     Else,
     False,
@@ -68,5 +67,7 @@ pub enum Keyword {
     Return,
     Struct,
     True,
+    Type,
+    Use,
     While,
 }

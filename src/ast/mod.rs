@@ -5,6 +5,13 @@ use crate::lexer::token::{Span, Token};
 pub enum Item {
     Function(Function),
     Type(TypeDef),
+    Use(Use),
+}
+
+#[derive(Debug, Clone)]
+pub struct Use {
+    pub use_token: Token,
+    pub path: Vec<Token>,
 }
 
 #[derive(Debug, Clone)]
@@ -85,6 +92,7 @@ pub enum Type {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Return(ExprReturn),
     Struct(ExprStruct),
     Assignment(ExprAssignment),
     Litral(Litral),
@@ -97,6 +105,7 @@ pub enum Expr {
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
+            Expr::Return(expr_return) => expr_return.span(),
             Expr::Struct(expr_struct) => expr_struct.span(),
             Expr::Assignment(expr_assignment) => expr_assignment.span(),
             Expr::Litral(litral) => litral.span(),
@@ -105,6 +114,20 @@ impl Expr {
             Expr::Identifier(token) => token.span.clone(),
             Expr::IfElse(expr_if_else) => expr_if_else.span(),
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprReturn {
+    pub return_token: Token,
+    pub expr: Option<Box<Expr>>,
+}
+
+impl ExprReturn {
+    pub fn span(&self) -> Span {
+        let start = self.return_token.span.start;
+        let end = self.expr.as_ref().map(|e| e.span().end).unwrap_or(start);
+        start..end
     }
 }
 

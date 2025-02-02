@@ -74,6 +74,7 @@ impl<'a> Tokenizer<'a> {
             "struct" => TokenKind::Keyword(Keyword::Struct),
             "true" => TokenKind::Keyword(Keyword::True),
             "type" => TokenKind::Keyword(Keyword::Type),
+            "use" => TokenKind::Keyword(Keyword::Use),
             "while" => TokenKind::Keyword(Keyword::While),
             _ => TokenKind::Identifier,
         };
@@ -113,6 +114,11 @@ impl<'a> Tokenizer<'a> {
         self.spanned(TokenKind::InvalidToken, ' ');
         self.next()
     }
+
+    fn skip_line(&mut self) -> Option<Token> {
+        while self.next_char_if(|value| value != '\n').is_some() {}
+        self.next()
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -126,6 +132,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             '0'..='9' => Some(self.parse_number(c)),
             value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
             value if value.is_ascii_whitespace() => self.skip_char(),
+            '/' if self.peek_char('/') => self.skip_line(),
             '#' if self.peek_char('\'') => Some(self.parse_char()),
             '#' if self.peek_char('"') => Some(self.parse_string()),
             '=' if self.peek_char('=') => Some(self.spanned(TokenKind::EqualEqual, c)),
