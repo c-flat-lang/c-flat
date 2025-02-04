@@ -26,7 +26,7 @@ fn main() {
         return;
     }
 
-    let ast = match parser::Parser::new(&source).parse() {
+    let mut ast = match parser::Parser::new(&source).parse() {
         Ok(ast) => ast,
         Err(err) => {
             let report = err.report(&filename, &source);
@@ -34,6 +34,20 @@ fn main() {
             std::process::exit(1);
         }
     };
+
+    ast.sort_by(|a, b| match (a, b) {
+        (ast::Item::Function(a), ast::Item::Function(b)) => {
+            if a.name.lexeme == "main" {
+                std::cmp::Ordering::Greater
+            } else if b.name.lexeme == "main" {
+                std::cmp::Ordering::Less
+            } else {
+                a.name.lexeme.cmp(&b.name.lexeme)
+            }
+        }
+        _ => std::cmp::Ordering::Equal,
+    });
+
     // eprintln!("{ast:#?}");
 
     // LLVM
@@ -48,9 +62,11 @@ fn main() {
 
     for item in ast {
         match item {
-            ast::Item::Function(function) => function.codegen(&context, &module, &builder),
-            ast::Item::Type(type_def) => todo!(),
-            ast::Item::Use(_) => todo!(),
+            ast::Item::Function(function) => {
+                function.codegen(&context, &module, &builder).unwrap();
+            }
+            ast::Item::Type(type_def) => todo!("{type_def:#?}"),
+            ast::Item::Use(use_item) => todo!("{use_item:#?}"),
         }
     }
 

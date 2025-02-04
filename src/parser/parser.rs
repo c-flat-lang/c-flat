@@ -176,9 +176,10 @@ impl<'a> Parser<'a> {
         self.consume(TokenKind::LeftParen)?;
         while self.lexer.peek().is_some() && !self.peek(TokenKind::RightParen) {
             let name = self.consume(TokenKind::Identifier)?;
+            self.consume(TokenKind::Colon)?;
             let ty = self.parse_type()?;
             params.push(ast::Param { name, ty });
-            if self.lexer.peek().is_some() {
+            if self.peek(TokenKind::Comma) {
                 self.consume(TokenKind::Comma)?;
             }
         }

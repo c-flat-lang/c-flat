@@ -23,6 +23,7 @@ impl Token {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TokenKind {
+    Percent,
     Bang,
     BangEqual,
     Char,

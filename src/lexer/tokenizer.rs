@@ -157,6 +157,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             '=' => Some(self.spanned(TokenKind::Equal, c)),
             '>' => Some(self.spanned(TokenKind::Greater, c)),
             '<' => Some(self.spanned(TokenKind::Less, c)),
+            '%' => Some(self.spanned(TokenKind::Percent, c)),
             c => Some(self.spanned(TokenKind::InvalidToken, c)),
         }
     }
