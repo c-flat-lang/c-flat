@@ -13,12 +13,12 @@ use std::process::Command;
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
-    let Some(filename) = args.last() else {
+    let Some(file_path) = args.last() else {
         eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
         std::process::exit(1);
     };
 
-    let source = std::fs::read_to_string(&filename).unwrap();
+    let source = std::fs::read_to_string(&file_path).unwrap();
 
     if args.iter().find(|arg| arg == &"-t").is_some() {
         let tokens = lexer::tokenize(&source);
@@ -29,7 +29,7 @@ fn main() {
     let mut ast = match parser::Parser::new(&source).parse() {
         Ok(ast) => ast,
         Err(err) => {
-            let report = err.report(&filename, &source);
+            let report = err.report(&file_path, &source);
             eprintln!("{}", report);
             std::process::exit(1);
         }
@@ -84,12 +84,14 @@ fn main() {
         )
         .expect("Failed to create target machine");
 
+    let filename = file_path.split_once('.').unwrap_or_default().0;
+
     // Write object file
     target_machine
         .write_to_file(
             &module,
             inkwell::targets::FileType::Object,
-            Path::new("output.o"),
+            Path::new(&format!("{}.o", filename)),
         )
         .expect("Failed to write object file");
 
@@ -97,7 +99,7 @@ fn main() {
 
     // Link the object file into an executable using GCC
     Command::new("gcc")
-        .args(["output.o", "-o", "output", "-static"])
+        .args([&format!("{filename}.o"), "-o", filename, "-static"])
         .status()
         .expect("Failed to link executable");
 
