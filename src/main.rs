@@ -13,6 +13,20 @@ use std::process::Command;
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
+
+    if args
+        .iter()
+        .find(|arg| arg == &"-h" || arg == &"--help")
+        .is_some()
+    {
+        eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
+        eprintln!("  Options:");
+        eprintln!("    -t            Print tokens");
+        eprintln!("    -a            Print AST");
+        eprintln!("    -h, --help    Print this help message");
+        std::process::exit(0);
+    }
+
     let Some(file_path) = args.last() else {
         eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
         std::process::exit(1);
@@ -48,7 +62,10 @@ fn main() {
         _ => std::cmp::Ordering::Equal,
     });
 
-    // eprintln!("{ast:#?}");
+    if args.iter().find(|arg| arg == &"-a").is_some() {
+        eprintln!("{ast:#?}");
+        return;
+    }
 
     // LLVM
 
