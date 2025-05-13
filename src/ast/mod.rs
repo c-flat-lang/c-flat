@@ -27,9 +27,10 @@ pub struct Struct {
     pub expr: Box<Expr>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum Visibility {
     Public,
+    #[default]
     Private,
 }
 
@@ -78,8 +79,9 @@ pub struct Param {
     pub ty: Type,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum Type {
+    Bool,
     UnsignedNumber(u8),
     SignedNumber(u8),
     Float(u8),
@@ -87,7 +89,40 @@ pub enum Type {
     Pointer(Box<Self>),
     Struct(String),
     Enum(String),
+    #[default]
     Void,
+}
+
+impl Type {
+    pub fn into_bitbox_type(&self) -> bitbox::Type {
+        match self {
+            Self::Bool => bitbox::Type::Unsigned(32),
+            Self::UnsignedNumber(bytes) => bitbox::Type::Unsigned(*bytes),
+            Self::SignedNumber(bytes) => bitbox::Type::Signed(*bytes),
+            Self::Float(bytes) => bitbox::Type::Float(*bytes),
+            Self::Array(_, _) => todo!(),
+            Self::Pointer(_) => todo!(),
+            Self::Struct(_) => todo!(),
+            Self::Enum(_) => todo!(),
+            Self::Void => bitbox::Type::Void,
+        }
+    }
+}
+
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Type::Bool => write!(f, "bool"),
+            Type::UnsignedNumber(n) => write!(f, "u{}", n),
+            Type::SignedNumber(n) => write!(f, "s{}", n),
+            Type::Float(n) => write!(f, "f{}", n),
+            Type::Array(size, ty) => write!(f, "[{}; {}]", ty, size),
+            Type::Pointer(ty) => write!(f, "*{}", ty),
+            Type::Struct(name) => write!(f, "{}", name),
+            Type::Enum(name) => write!(f, "{}", name),
+            Type::Void => write!(f, "void"),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

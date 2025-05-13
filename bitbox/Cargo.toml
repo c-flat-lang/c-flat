@@ -1,0 +1,16 @@
+[package]
+name = "bitbox"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.98"
+leb128 = "0.2.5"
+
+[dev-dependencies]
+insta = { version = "1.42.2", features = ["yaml"] }
+pretty_assertions = "1.4.1"
+
+[lib]
+name = "bitbox"
+path = "src/lib.rs"

@@ -1,7 +1,9 @@
-fn main() s32 {
-  return add(11, 22);
-}
-fn add(a: s32, b: s32) s32 {
-  return a + b;
+fn get_condition() bool {
+  return true;
 }
 
+fn main() s32 {
+  const condition: bool = get_condition();
+  const value: s32 = if condition {101} else {20};
+  return value;
+}

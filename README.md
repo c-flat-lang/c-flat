@@ -4,11 +4,12 @@ C-flat is a strongly typed programming language inspired by modern languages lik
 
 ## Why C-flat?
 
-The name *C-flat* comes from music, where C♭ is a note one step lower than C. Similarly, this language takes inspiration from C but aims to provide more modern features and flexibility, particularly in memory management.
+The name _C-flat_ comes from music, where C♭ is a note one step lower than C. Similarly, this language takes inspiration from C but aims to provide more modern features and flexibility, particularly in memory management.
 
 One of the core ideas behind C-flat is giving developers full control over memory allocation, much like Zig allows for custom allocators. While this isn't implemented yet, it’s a major goal for the future—after all, everything starts as an idea!
 
 ## Features (Work in Progress)
+
 - **Strong static typing** to catch errors early.
 - **Modern syntax** inspired by Rust, Zig, and Go.
 - **Custom allocators** (planned) to provide fine-grained memory control.
@@ -16,6 +17,7 @@ One of the core ideas behind C-flat is giving developers full control over memor
 - **For-loops with iterators**, making iteration expressive and powerful.
 
 ## Example Code
+
 Here's a small taste of C-flat’s syntax:
 
 ```cflat
@@ -37,6 +39,12 @@ type ArrayList struct {
     type Iterator struct {
         current: s32,
         end: s32,
+
+        fn next(self) Option<s32> {
+            if self.current < self.end {
+
+            }
+        }
     }
 
     fn iterator(&self) Iterator {
@@ -48,17 +56,17 @@ type ArrayList struct {
 }
 
 // Entry point
-fn main() void {
+pub fn main() void {
     const a: ArrayList = ArrayList{};
     const b: ArrayList.Iterator = a.iterator();
-    for (i in b) {
+    for i in b {
         println(i);
     }
 }
 ```
 
 ## What’s Next?
+
 C-flat is still in its extreme early stages, and I'm figuring things out as I go. Right now, I’m experimenting with syntax, semantics, and figuring out how best to structure the language. If you're interested, feel free to follow the project!
 
 This is a project driven by curiosity and passion. No deadlines, no expectations—just the joy of building something new. 🚀
-

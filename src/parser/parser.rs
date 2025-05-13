@@ -429,8 +429,10 @@ fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type, Token> {
             None
         }
     };
-    if token.lexeme == "void" {
-        return Ok(ast::Type::Void);
+    match token.lexeme.as_str() {
+        "void" => return Ok(ast::Type::Void),
+        "bool" => return Ok(ast::Type::Bool),
+        _ => (),
     }
     let Some((prefix, number)) = parse_type(&token.lexeme) else {
         return Err(token.clone());

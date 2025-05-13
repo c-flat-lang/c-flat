@@ -59,6 +59,26 @@ pub fn opcode_store(
     Ok(None)
 }
 
+pub fn opcode_store_local(
+    operand: &Operand,
+    process: &mut Process,
+    _: &HashMap<String, Vec<Module>>,
+) -> Result<Option<Value>> {
+    match operand {
+        Operand::Address(address) => {
+            if let Some(value) = process.stack.pop() {
+                if *address >= process.args.len() {
+                    process.args.push(value);
+                } else {
+                    process.args[*address] = value;
+                }
+            }
+        }
+        _ => {}
+    }
+    Ok(None)
+}
+
 pub fn opcode_add(
     operand: &Operand,
     process: &mut Process,

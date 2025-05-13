@@ -59,10 +59,11 @@ pub enum Error {
 type InstructionFn =
     fn(&Operand, &mut Process, &HashMap<String, Vec<Module>>) -> Result<Option<Value>>;
 
-const EXE_INSTRUCTIONS: [InstructionFn; 11] = [
+const EXE_INSTRUCTIONS: [InstructionFn; 12] = [
     instruction::opcode_load,
     instruction::opcode_load_local,
     instruction::opcode_store,
+    instruction::opcode_store_local,
     instruction::opcode_add,
     instruction::opcode_sub,
     instruction::opcode_call,
@@ -155,6 +156,7 @@ pub enum Opcode {
     Load,
     LoadLocal,
     Store,
+    StoreLocal,
     Add,
     Sub,
     Call,

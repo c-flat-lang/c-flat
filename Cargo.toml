@@ -1,11 +1,17 @@
 [package]
 name = "c-flat"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 inkwell = { version = "0.5.0", features = ["llvm16-0"] }
+bitbeat = { version = "0.1.0", path = "bitbeat" }
+bitbox = { version = "0.1.0", path = "bitbox" }
+
 
 [dev-dependencies]
 insta = { version = "1.41.1", features = ["yaml"] }
 pretty_assertions = "1.3.0"
+
+[workspace]
+members = ["bitbeat", "bitbox"]

@@ -2,3 +2,31 @@ type Point struct {
     x: s32,
     y: s32,
 }
+
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
+
+type ArrayList struct {
+    type Iterator struct {
+        current: s32,
+        end: s32,
+    }
+
+    fn iterator(&self) Iterator {
+        Iterator {
+            current: 0,
+            end: self.len(),
+        }
+    }
+}
+
+fn main() void {
+    const a: ArrayList = ArrayList{};
+    const b: ArrayList.Iterator = a.iterator();
+    for (i in b) {
+        println(i);
+    }
+}

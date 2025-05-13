@@ -1,4 +1,4 @@
-use vm::*;
+use bitbeat::*;
 
 fn main() {
     let mut vm = VM::default();
@@ -18,7 +18,7 @@ fn main() {
     #[rustfmt::skip]
     let fib_function = Function::new(
         "fib",
-        vec![
+       vec![
        /* 0*/instruction!(Opcode::LoadLocal, Operand::Address(0)),
        /* 1*/instruction!(Opcode::Load, Operand::Immediate(Value::Integer(0))),
        /* 2*/instruction!(Opcode::Eq),
@@ -40,12 +40,11 @@ fn main() {
        /*15*/instruction!(Opcode::Call, Operand::Immediate(Value::Identifier(Box::new("fib:fib".to_string())))),
 
        /*16*/instruction!(Opcode::Add),
-
        /*17*/instruction!(Opcode::Branch, Operand::Address(19)),// jump to end
 
        /*18*/instruction!(Opcode::LoadLocal, Operand::Address(0)),
        /*19*/instruction!(Opcode::Return),
-        ],
+       ],
         1,
     );
     fib_module.add_function(fib_function);
