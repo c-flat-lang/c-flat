@@ -116,12 +116,14 @@ impl From<Instruction> for LabeledInstruction {
     }
 }
 
+/// All instructions in text form start with @
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
+    /// @noop
     NoOp,
     /// `@add <type> : <des>, <lhs>, <rhs>`
     Add(Variable, Operand, Operand),
-    // TODO: look in old bitbox code and find where Im using this instruction
+    /// @assign <type> : <des>, <rhs>
     Assign(Variable, Operand),
     /// @call <type> : <des> <func>(<args>)
     /// @call s32 : exit_code write(fact_result, 0)
@@ -135,7 +137,7 @@ pub enum Instruction {
     /// @jumpif <reg>, <label>
     /// @jumpif is_one, %return_one
     JumpIf(Operand, String),
-    // TODO: look in old bitbox code and find where Im using this instruction
+    /// @load <type> : <des>, <addr>
     Load(Variable, Operand),
     /// @mul <type> : <des>, <lhs>, <rhs>
     Mul(Variable, Operand, Operand),
@@ -226,9 +228,46 @@ impl std::fmt::Display for Instruction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Operand {
-    ConstantInt(usize),
+    ConstantInt { value: String, ty: Type },
     Variable(Variable),
     None,
+}
+
+impl Operand {
+    pub fn const_bool(value: bool) -> Self {
+        if value {
+            Operand::ConstantInt {
+                value: "1".to_string(),
+                ty: Type::Unsigned(32),
+            }
+        } else {
+            Operand::ConstantInt {
+                value: "0".to_string(),
+                ty: Type::Unsigned(32),
+            }
+        }
+    }
+
+    pub fn const_unsigned(value: impl Into<String>, bits: u8) -> Self {
+        Operand::ConstantInt {
+            value: value.into(),
+            ty: Type::Unsigned(bits),
+        }
+    }
+
+    pub fn const_signed(value: impl Into<String>, bits: u8) -> Self {
+        Operand::ConstantInt {
+            value: value.into(),
+            ty: Type::Signed(bits),
+        }
+    }
+
+    pub fn const_float(value: impl Into<String>, bits: u8) -> Self {
+        Operand::ConstantInt {
+            value: value.into(),
+            ty: Type::Float(bits),
+        }
+    }
 }
 
 impl From<Variable> for Operand {
@@ -240,7 +279,7 @@ impl From<Variable> for Operand {
 impl std::fmt::Display for Operand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Operand::ConstantInt(value) => write!(f, "{}", value),
+            Operand::ConstantInt { value, .. } => write!(f, "{}", value),
             Operand::Variable(variable) => write!(f, "{}", variable.name),
             Operand::None => write!(f, ""),
         }
@@ -282,11 +321,13 @@ pub struct BlockBuilder {
 }
 
 impl BlockBuilder {
-    fn temp_var(&mut self, ty: Type) -> Variable {
+    pub fn temp_var(&mut self, ty: Type) -> Variable {
         if let Some(var) = self.passed_var.take() {
-            let new_var = var.new_version();
-            self.passed_var = Some(new_var.clone());
-            return new_var;
+            if var.ty == ty {
+                let new_var = var.new_version();
+                self.passed_var = Some(new_var.clone());
+                return new_var;
+            }
         }
         let name = format!("_tmp_{}_", self.tmp_counter);
         self.tmp_counter += 1;
@@ -295,17 +336,63 @@ impl BlockBuilder {
         var
     }
 
-    pub fn add(mut self, ty: Type, lhs: impl Into<Operand>, rhs: impl Into<Operand>) -> Self {
+    pub fn get_temp_var(&self) -> Option<Variable> {
+        self.passed_var.clone()
+    }
+
+    pub fn add(&mut self, ty: Type, lhs: impl Into<Operand>, rhs: impl Into<Operand>) {
         let lhs = lhs.into();
         let rhs = rhs.into();
         let des = self.temp_var(ty);
         self.instructions
             .push(Instruction::Add(des, lhs, rhs).into());
-        self
+    }
+
+    pub fn r#return_void(&mut self) {
+        self.instructions
+            .push(Instruction::Return(Type::Void, Operand::None).into());
+    }
+
+    pub fn assign(&mut self, var: Variable, value: Operand) {
+        self.instructions
+            .push(Instruction::Assign(var, value).into());
+    }
+
+    pub fn call(&mut self, dest_var: Variable, name: String, args: Vec<Operand>) {
+        self.instructions
+            .push(Instruction::Call(dest_var, name, args).into());
     }
 
     pub fn build(self) -> Vec<LabeledInstruction> {
         self.instructions
+    }
+
+    pub fn cmp(
+        &mut self,
+        des: Variable,
+        condition_var: impl Into<Operand>,
+        constant_int: impl Into<Operand>,
+    ) {
+        let condition_var = condition_var.into();
+        let constant_int = constant_int.into();
+        self.instructions
+            .push(Instruction::Cmp(des, condition_var, constant_int).into());
+    }
+
+    pub fn jump_if(&mut self, jump_condition: impl Into<Operand>, label: String) {
+        self.instructions
+            .push(Instruction::JumpIf(jump_condition.into(), label).into());
+    }
+
+    pub fn jump(&mut self, label: String) {
+        self.instructions.push(Instruction::Jump(label).into());
+    }
+
+    pub fn label(&mut self, then_label: String) {
+        self.instructions.push(LabeledInstruction {
+            label: Some(then_label),
+            instruction: Instruction::NoOp,
+        });
     }
 }
 
@@ -403,6 +490,7 @@ pub struct FunctionBuilder {
     params: Vec<Variable>,
     return_type: Type,
     block_builder: BlockBuilder,
+    label_counter: usize,
 }
 
 impl FunctionBuilder {
@@ -413,36 +501,39 @@ impl FunctionBuilder {
         }
     }
 
-    pub fn visibility(mut self, visibility: Visibility) -> Self {
+    pub fn with_visibility(mut self, visibility: Visibility) -> Self {
         self.visibility = visibility;
         self
     }
 
-    pub fn param(mut self, param: Variable) -> Self {
+    pub fn with_param(mut self, param: Variable) -> Self {
         self.params.push(param);
         self
     }
 
-    pub fn params(mut self, params: Vec<Variable>) -> Self {
+    pub fn with_params(mut self, params: Vec<Variable>) -> Self {
         self.params.extend(params);
         self
     }
 
-    pub fn return_type(mut self, ty: Type) -> Self {
+    pub fn with_return_type(mut self, ty: Type) -> Self {
         self.return_type = ty;
         self
     }
 
-    pub fn block<F>(mut self, f: F) -> Self
+    pub fn with_block<F>(mut self, f: F) -> Self
     where
-        F: FnOnce(BlockBuilder) -> BlockBuilder,
+        F: FnOnce(&mut BlockBuilder),
     {
-        self.block_builder = f(self.block_builder);
+        f(&mut self.block_builder);
         self
     }
 
-    pub fn create_block() -> BlockBuilder {
-        BlockBuilder::default()
+    pub fn block<F>(&mut self, f: F)
+    where
+        F: FnOnce(&mut BlockBuilder),
+    {
+        f(&mut self.block_builder);
     }
 
     pub fn build(self) -> Function {
@@ -454,30 +545,54 @@ impl FunctionBuilder {
             blocks: self.block_builder.build(),
         }
     }
+
+    pub fn new_label(&mut self, custom: Option<impl Into<String>>) -> String {
+        let id = self.label_counter;
+        self.label_counter += 1;
+        format!(
+            "%label_{}{}_{id}",
+            self.name,
+            custom.map(|s| format!("_{}", s.into())).unwrap_or_default()
+        )
+    }
+
+    pub fn var(&mut self, ty: Type) -> Variable {
+        self.block_builder.temp_var(ty)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn testing_function_builder() {
         let x = Variable::new("x", Type::Unsigned(32));
         let y = Variable::new("y", Type::Unsigned(32));
-        let function = FunctionBuilder::new("main")
-            .visibility(Visibility::Public)
-            .param(x.clone())
-            .param(y.clone())
-            .return_type(Type::Unsigned(32))
-            .block(|b| {
-                b.add(Type::Unsigned(32), x, y.clone()).add(
-                    Type::Unsigned(32),
-                    b.temp_var(Type::Unsigned(32)),
-                    y,
-                )
+        let function = FunctionBuilder::new("add")
+            .with_visibility(Visibility::Public)
+            .with_param(x.clone())
+            .with_param(y.clone())
+            .with_return_type(Type::Unsigned(32))
+            .with_block(|b| {
+                b.add(Type::Unsigned(32), x.clone(), y.clone());
             })
             .build();
-        eprintln!("{:#?}", function);
-        assert!(false);
+        assert_eq!(
+            function,
+            Function {
+                visibility: Visibility::Public,
+                name: "add".to_string(),
+                params: vec![x.clone(), y.clone()],
+                return_type: Type::Unsigned(32),
+                blocks: vec![Instruction::Add(
+                    Variable::new("_tmp_0_", Type::Unsigned(32)),
+                    Operand::Variable(x),
+                    Operand::Variable(y)
+                )
+                .into()],
+            }
+        );
     }
 }

@@ -79,7 +79,7 @@ fn main() {
         return;
     }
 
-    let program = bbir_emitter::emit(&ast);
+    let program = bbir_emitter::emit(&mut ast);
     eprintln!("{:#?}", program);
 
     //if let Err(err) = bitbox::Compiler::default()

@@ -274,6 +274,7 @@ impl<'a> Parser<'a> {
                 condition: Box::new(condition),
                 then_branch,
                 else_branch,
+                ty: ast::Type::Void,
             };
             return Ok(ast::Expr::IfElse(if_else_expr));
         }

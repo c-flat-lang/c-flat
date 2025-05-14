@@ -32,14 +32,14 @@ impl Type {
     }
 }
 
-pub struct TypeChecker {
-    symbol_table: SymbolTable,
+pub struct TypeChecker<'st> {
+    symbol_table: &'st mut SymbolTable,
     current_type: Option<Type>,
     errors: Vec<String>,
 }
 
-impl TypeChecker {
-    pub fn new(symbol_table: SymbolTable) -> Self {
+impl<'st> TypeChecker<'st> {
+    pub fn new(symbol_table: &'st mut SymbolTable) -> Self {
         Self {
             symbol_table,
             current_type: None,
@@ -47,9 +47,9 @@ impl TypeChecker {
         }
     }
 
-    pub fn check(mut self, ast: &[ast::Item]) -> Result<(), Vec<String>> {
-        for item in ast {
-            self.walk_item(&item);
+    pub fn check(mut self, ast: &mut Vec<ast::Item>) -> Result<(), Vec<String>> {
+        for item in ast.iter_mut() {
+            self.walk_item(item);
         }
         if !self.errors.is_empty() {
             return Err(self.errors);
@@ -57,7 +57,7 @@ impl TypeChecker {
         Ok(())
     }
 
-    fn walk_item(&mut self, item: &ast::Item) -> ast::Type {
+    fn walk_item(&mut self, item: &mut ast::Item) -> ast::Type {
         match item {
             ast::Item::Function(function) => self.walk_function(function),
             ast::Item::Type(type_def) => self.walk_type_def(type_def),
@@ -69,49 +69,44 @@ impl TypeChecker {
         todo!()
     }
 
-    fn walk_function(&mut self, function: &ast::Function) -> ast::Type {
-        let ast::Function {
-            visibility,
-            fn_token,
-            name,
-            params,
-            return_type,
-            body,
-        } = function;
-
-        self.symbol_table.enter_scope(name.lexeme.as_str());
-        let calulated_return_type = self.walk_block(&body);
+    fn walk_function(&mut self, function: &mut ast::Function) -> ast::Type {
+        self.symbol_table.enter_scope(function.name.lexeme.as_str());
+        let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
-        if &calulated_return_type != return_type {
+        if &calulated_return_type != &function.return_type {
             // TODO: log error and return the return_type
             // Do not block
+            todo!(
+                "{} expected {} but got {}",
+                function.name.lexeme,
+                calulated_return_type,
+                function.return_type
+            );
         }
-        return_type.clone()
+        function.return_type.clone()
     }
 
-    fn walk_type_def(&mut self, type_def: &ast::TypeDef) -> ast::Type {
+    fn walk_type_def(&mut self, type_def: &mut ast::TypeDef) -> ast::Type {
         todo!()
     }
 
-    fn walk_struct(&mut self, struct_def: &ast::Struct) -> ast::Type {
+    fn walk_struct(&mut self, struct_def: &mut ast::Struct) -> ast::Type {
         todo!()
     }
 
-    fn walk_block(&mut self, block: &ast::Block) -> ast::Type {
-        let ast::Block { statements, .. } = block;
+    fn walk_block(&mut self, block: &mut ast::Block) -> ast::Type {
         let mut result = Type::Void;
-        for statement in statements {
-            result = self.walk_stmt(&statement);
+        for statement in block.statements.iter_mut() {
+            result = self.walk_stmt(statement);
         }
         result
     }
 
-    fn walk_stmt(&mut self, stmt: &ast::Statement) -> ast::Type {
-        let ast::Statement { expr, .. } = stmt;
-        self.walk_expr(&expr)
+    fn walk_stmt(&mut self, stmt: &mut ast::Statement) -> ast::Type {
+        self.walk_expr(&mut stmt.expr)
     }
 
-    fn walk_expr(&mut self, expr: &ast::Expr) -> ast::Type {
+    fn walk_expr(&mut self, expr: &mut ast::Expr) -> ast::Type {
         match expr {
             ast::Expr::Return(expr) => self.walk_expr_return(expr),
             ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
@@ -124,12 +119,11 @@ impl TypeChecker {
         }
     }
 
-    fn walk_expr_return(&mut self, expr: &ast::ExprReturn) -> ast::Type {
-        let ast::ExprReturn { expr, .. } = expr;
-        let Some(expr) = expr else {
+    fn walk_expr_return(&mut self, expr: &mut ast::ExprReturn) -> ast::Type {
+        let Some(expr) = expr.expr.as_mut() else {
             return Type::Void;
         };
-        let current_type = self.walk_expr(&expr);
+        let current_type = self.walk_expr(expr);
         current_type
     }
 
@@ -137,8 +131,8 @@ impl TypeChecker {
         todo!()
     }
 
-    fn walk_expr_assignment(&mut self, expr: &ast::ExprAssignment) -> ast::Type {
-        let value_type = self.walk_expr(&expr.expr);
+    fn walk_expr_assignment(&mut self, expr: &mut ast::ExprAssignment) -> ast::Type {
+        let value_type = self.walk_expr(&mut expr.expr);
         if let Some(ty) = &expr.ty {
             if ty != &value_type {
                 // TODO: log error and return the value_type
@@ -160,8 +154,8 @@ impl TypeChecker {
             ast::Litral::String(s) => {
                 Type::Array(s.lexeme.len(), Box::new(Type::UnsignedNumber(8)))
             }
-            ast::Litral::BoolTrue(_) => Type::SignedNumber(32),
-            ast::Litral::BoolFalse(_) => Type::SignedNumber(32),
+            ast::Litral::BoolTrue(_) => Type::Bool,
+            ast::Litral::BoolFalse(_) => Type::Bool,
         }
     }
 
@@ -178,9 +172,9 @@ impl TypeChecker {
         symbol.ty.clone()
     }
 
-    fn walk_expr_binary(&mut self, expr: &ast::ExprBinary) -> ast::Type {
-        let left_ty = self.walk_expr(&expr.left);
-        let right_ty = self.walk_expr(&expr.right);
+    fn walk_expr_binary(&mut self, expr: &mut ast::ExprBinary) -> ast::Type {
+        let left_ty = self.walk_expr(&mut expr.left);
+        let right_ty = self.walk_expr(&mut expr.right);
 
         match left_ty.supports_binary_op(&expr.op.kind, &right_ty) {
             Some(result_ty) => result_ty,
@@ -204,16 +198,10 @@ impl TypeChecker {
         symbol.ty.clone()
     }
 
-    fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) -> ast::Type {
-        let ast::ExprIfElse {
-            condition,
-            then_branch,
-            else_branch,
-            ..
-        } = expr;
-        if self.walk_expr(&condition) == ast::Type::Bool {}
-        let then_branch_type = self.walk_block(then_branch);
-        if let Some(else_branch) = else_branch.as_ref() {
+    fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
+        if self.walk_expr(&mut expr.condition) == ast::Type::Bool {}
+        let then_branch_type = self.walk_block(&mut expr.then_branch);
+        if let Some(else_branch) = expr.else_branch.as_mut() {
             let else_branch_type = self.walk_block(else_branch);
             if then_branch_type != else_branch_type {
                 self.errors.push(format!(
@@ -221,6 +209,7 @@ impl TypeChecker {
                     then_branch_type, else_branch_type
                 ));
             }
+            expr.ty = then_branch_type.clone();
         }
         then_branch_type
     }
@@ -240,11 +229,11 @@ mod tests {
         }
         "#;
 
-        let ast = crate::parser::Parser::new(&src).parse().unwrap();
-        let symbol_table = SymbolTableBuilder::new().build(&ast);
+        let mut ast = crate::parser::Parser::new(&src).parse().unwrap();
+        let mut symbol_table = SymbolTableBuilder::new().build(&ast);
         eprintln!("{:#?}", symbol_table);
-        let type_checker = TypeChecker::new(symbol_table);
-        if let Err(errors) = type_checker.check(&ast) {
+        let type_checker = TypeChecker::new(&mut symbol_table);
+        if let Err(errors) = type_checker.check(&mut ast) {
             for error in errors {
                 eprintln!("{}", error);
             }

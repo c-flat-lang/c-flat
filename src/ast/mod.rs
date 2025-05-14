@@ -257,6 +257,7 @@ pub struct ExprIfElse {
     pub condition: Box<Expr>,
     pub then_branch: Block,
     pub else_branch: Option<Block>,
+    pub ty: Type,
 }
 
 impl ExprIfElse {
