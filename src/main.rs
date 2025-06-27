@@ -80,16 +80,7 @@ fn main() {
     }
 
     let program = bbir_emitter::emit(&mut ast);
-    eprintln!("{:#?}", program);
 
-    //if let Err(err) = bitbox::Compiler::default()
-    //    .target(target)
-    //    .program(program)
-    //    .filename(file_path)
-    //    .src(&source)
-    //    .compile()
-    //{
-    //    eprintln!("{}", err);
-    //    std::process::exit(1);
-    //}
+    let mut compiler = bitbox::Compiler::new(target);
+    compiler.build(&program);
 }

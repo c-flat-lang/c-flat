@@ -5,10 +5,17 @@ edition = "2021"
 
 [dependencies]
 
+[dev-dependencies]
+criterion = "0.6.0"
+
 [lib]
 name = "bitbeat"
 path = "src/lib.rs"
 
 [[bin]]
-name = "bitbeat-vm"
+name = "bitbeat"
 path = "src/main.rs"
+
+[[bench]]
+name = "fibonacci"
+harness = false

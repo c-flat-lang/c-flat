@@ -2,12 +2,12 @@ use crate::lexer::token::TokenKind;
 use crate::semantic_analysis::SymbolTable;
 use crate::semantic_analysis::symbol_table::SymbolTableBuilder;
 use crate::{ast, semantic_analysis::type_check::TypeChecker};
-use bitbox::{
-    BlockBuilder, FunctionBuilder, Instruction, LabeledInstruction, ModuleBuilder, Operand, Type,
-    Variable,
+use bitbox::ir::{
+    FunctionBuilder, Instruction, InstructionBuilder, LabeledInstruction, Module, ModuleBuilder,
+    Operand, Type, Variable, Visibility,
 };
 
-pub fn emit(ast: &mut Vec<ast::Item>) -> bitbox::Module {
+pub fn emit(ast: &mut Vec<ast::Item>) -> Module {
     let mut symbol_table = SymbolTableBuilder::new().build(ast);
     // TODO: make this a mutable reference
     if let Err(errors) = TypeChecker::new(&mut symbol_table).check(ast) {
@@ -24,6 +24,7 @@ pub struct Emitter {
     symbol_table: SymbolTable,
     variable_counter: usize,
     label_counter: usize,
+    variable_stack: Vec<Variable>,
 }
 
 impl Emitter {
@@ -34,8 +35,16 @@ impl Emitter {
         }
     }
 
-    pub fn build(mut self, ast: &[ast::Item]) -> bitbox::Module {
-        let mut module = bitbox::ModuleBuilder::default();
+    fn push(&mut self, var: Variable) {
+        self.variable_stack.push(var);
+    }
+
+    fn pop(&mut self) -> Option<Variable> {
+        self.variable_stack.pop()
+    }
+
+    pub fn build(mut self, ast: &[ast::Item]) -> Module {
+        let mut module = ModuleBuilder::default();
         for item in ast {
             self.walk_item(&mut module, &item);
         }
@@ -66,15 +75,15 @@ impl Emitter {
 
         self.symbol_table.enter_scope(&name.lexeme);
 
-        let mut function_builder = bitbox::FunctionBuilder::new(name.lexeme.clone())
+        let mut function_builder = FunctionBuilder::new(name.lexeme.clone())
             .with_visibility(match visibility {
-                ast::Visibility::Public => bitbox::Visibility::Public,
-                ast::Visibility::Private => bitbox::Visibility::Private,
+                ast::Visibility::Public => Visibility::Public,
+                ast::Visibility::Private => Visibility::Private,
             })
             .with_params(
                 params
                     .iter()
-                    .map(|param| bitbox::Variable {
+                    .map(|param| Variable {
                         name: param.name.lexeme.clone(),
                         ty: param.ty.into_bitbox_type(),
                         version: 0,
@@ -83,9 +92,9 @@ impl Emitter {
             )
             .with_return_type(return_type.into_bitbox_type());
 
-        for stmt in body.statements.iter() {
-            self.walk_stmt(&mut function_builder, stmt);
-        }
+        let mut assembler = function_builder.instructions();
+
+        self.walk_block(&mut assembler, &function.body);
 
         self.symbol_table.exit_scope();
         mb.push_function(function_builder.build());
@@ -99,152 +108,111 @@ impl Emitter {
         todo!()
     }
 
-    fn walk_block(&mut self, fb: &mut FunctionBuilder, block: &ast::Block) -> Option<Variable> {
-        let mut return_variable: Option<Variable> = None;
+    fn walk_block(&mut self, assembler: &mut InstructionBuilder, block: &ast::Block) {
         for stmt in block.statements.iter() {
-            return_variable = self.walk_stmt(fb, stmt);
+            self.walk_stmt(assembler, stmt);
         }
-        return_variable
     }
 
-    fn walk_stmt(&mut self, fb: &mut FunctionBuilder, stmt: &ast::Statement) -> Option<Variable> {
-        self.walk_expr(fb, &stmt.expr)
+    fn walk_stmt(&mut self, assembler: &mut InstructionBuilder, stmt: &ast::Statement) {
+        self.walk_expr(assembler, &stmt.expr)
     }
 
-    fn walk_expr(&mut self, fb: &mut FunctionBuilder, expr: &ast::Expr) -> Option<Variable> {
+    fn walk_expr(&mut self, assembler: &mut InstructionBuilder, expr: &ast::Expr) {
         match expr {
-            ast::Expr::Return(expr) => self.walk_expr_return(fb, expr),
-            ast::Expr::Struct(expr) => self.walk_expr_struct(fb, expr),
-            ast::Expr::Assignment(expr) => self.walk_expr_assignment(fb, expr),
-            ast::Expr::Litral(expr) => self.walk_expr_litral(fb, expr),
-            ast::Expr::Call(expr) => self.walk_expr_call(fb, expr),
-            ast::Expr::Binary(expr) => self.walk_expr_binary(fb, expr),
-            ast::Expr::Identifier(expr) => self.walk_expr_identifier(fb, expr),
-            ast::Expr::IfElse(expr) => self.walk_expr_if_else(fb, expr),
+            ast::Expr::Return(expr) => self.walk_expr_return(assembler, expr),
+            ast::Expr::Struct(expr) => self.walk_expr_struct(assembler, expr),
+            ast::Expr::Assignment(expr) => self.walk_expr_assignment(assembler, expr),
+            ast::Expr::Litral(expr) => self.walk_expr_litral(assembler, expr),
+            ast::Expr::Call(expr) => self.walk_expr_call(assembler, expr),
+            ast::Expr::Binary(expr) => self.walk_expr_binary(assembler, expr),
+            ast::Expr::Identifier(expr) => self.walk_expr_identifier(assembler, expr),
+            ast::Expr::IfElse(expr) => self.walk_expr_if_else(assembler, expr),
         }
     }
 
-    fn walk_expr_return(
-        &mut self,
-        fb: &mut FunctionBuilder,
-        expr: &ast::ExprReturn,
-    ) -> Option<Variable> {
+    fn walk_expr_return(&mut self, assember: &mut InstructionBuilder, expr: &ast::ExprReturn) {
         match &expr.expr {
             Some(expr) => {
-                return self.walk_expr(fb, &expr);
+                self.walk_expr(assember, &expr);
+                let Some(return_variable) = self.pop() else {
+                    panic!("Failed to pop variable");
+                };
+                assember.ret(return_variable.clone());
             }
             None => {
-                fb.block(|bb| {
-                    bb.r#return_void();
-                });
-                None
+                assember.void_ret();
             }
         }
     }
 
-    fn walk_expr_struct(
-        &mut self,
-        ctx: &mut FunctionBuilder,
-        expr: &ast::ExprStruct,
-    ) -> Option<Variable> {
+    fn walk_expr_struct(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprStruct) {
         todo!()
     }
 
     fn walk_expr_assignment(
         &mut self,
-        fb: &mut FunctionBuilder,
+        assembler: &mut InstructionBuilder,
         expr: &ast::ExprAssignment,
-    ) -> Option<Variable> {
-        let ty = expr
-            .ty
-            .as_ref()
-            .map_or(Type::Void, |ty| ty.into_bitbox_type());
-        self.walk_expr(fb, &expr.expr);
+    ) {
+        let ty = expr.ty.clone().unwrap_or_default().into_bitbox_type();
+        self.walk_expr(assembler, &expr.expr);
+        let Some(src) = self.pop() else {
+            panic!("Failed to pop variable");
+        };
+        let des = Variable::new(expr.ident.lexeme.clone(), ty);
 
-        let mut return_variable: Option<Variable> = None;
-        fb.block(|bb| {
-            let src_var = bb
-                .get_temp_var()
-                .expect("Failed to get temp var in walk_expr_assignment");
-            let dest_var = bb.temp_var(ty);
-            bb.assign(dest_var.clone(), Operand::Variable(src_var.clone()));
-            return_variable = Some(dest_var);
-        });
+        assembler.assign(des.clone(), src);
 
-        return_variable
+        self.push(des);
     }
 
-    fn walk_expr_litral(
-        &mut self,
-        fb: &mut FunctionBuilder,
-        expr: &ast::Litral,
-    ) -> Option<Variable> {
-        let mut return_variable: Option<Variable> = None;
+    fn walk_expr_litral(&mut self, assembler: &mut InstructionBuilder, expr: &ast::Litral) {
         match expr {
             ast::Litral::String(token) => todo!("STRING"),
             ast::Litral::Integer(token) => {
-                fb.block(|bb| {
-                    let ty = Type::Unsigned(32);
-                    let var = bb.temp_var(ty.clone());
-                    let value = token.lexeme.clone();
-                    bb.assign(var.clone(), Operand::ConstantInt { value, ty });
-                    return_variable = Some(var);
-                });
+                let ty = Type::Unsigned(32);
+                let var = assembler.var(ty);
+                assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, 32));
+                self.push(var);
             }
             ast::Litral::Float(token) => {
-                fb.block(|bb| {
-                    let ty = Type::Float(32);
-                    let var = bb.temp_var(ty.clone());
-                    let value = token.lexeme.clone();
-                    bb.assign(var.clone(), Operand::ConstantInt { value, ty });
-                    return_variable = Some(var);
-                });
+                let ty = Type::Float(32);
+                let var = assembler.var(ty);
+                assembler.assign(var.clone(), Operand::const_float(&token.lexeme, 32));
+                self.push(var);
             }
             ast::Litral::Char(token) => {
-                fb.block(|bb| {
-                    let ty = Type::Unsigned(8);
-                    let var = bb.temp_var(ty.clone());
-                    let value = token.lexeme.clone();
-                    bb.assign(var.clone(), Operand::ConstantInt { value, ty });
-                    return_variable = Some(var);
-                });
+                let ty = Type::Unsigned(8);
+                let var = assembler.var(ty);
+                assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, 8));
+                self.push(var);
             }
             ast::Litral::BoolTrue(_) => {
-                fb.block(|bb| {
-                    let ty = Type::Unsigned(32);
-                    let var = bb.temp_var(ty.clone());
-                    bb.assign(var.clone(), Operand::const_bool(true));
-                    return_variable = Some(var);
-                });
+                let ty = Type::Unsigned(32);
+                let var = assembler.var(ty);
+                assembler.assign(var.clone(), Operand::const_bool(true));
+                self.push(var);
             }
             ast::Litral::BoolFalse(token) => {
-                fb.block(|bb| {
-                    let ty = Type::Unsigned(32);
-                    let var = bb.temp_var(ty.clone());
-                    bb.assign(var.clone(), Operand::const_bool(false));
-                    return_variable = Some(var);
-                });
+                let ty = Type::Unsigned(32);
+                let var = assembler.var(ty);
+                assembler.assign(var.clone(), Operand::const_bool(false));
+                self.push(var);
             }
         }
-
-        return_variable
     }
 
-    fn walk_expr_call(
-        &mut self,
-        fb: &mut FunctionBuilder,
-        expr: &ast::ExprCall,
-    ) -> Option<Variable> {
-        let args = expr
-            .args
-            .iter()
-            .map(|arg| {
-                let Some(arg_var) = self.walk_expr(fb, arg) else {
-                    panic!("Failed to walk expr in walk_expr_call");
-                };
-                Operand::Variable(arg_var)
-            })
-            .collect();
+    fn walk_expr_call(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprCall) {
+        let mut args = vec![];
+        // TODO: We may need to reverse the args
+        for arg in expr.args.iter() {
+            self.walk_expr(assembler, arg);
+            let Some(arg_var) = self.pop() else {
+                panic!("Failed to pop variable");
+            };
+            args.push(Operand::from(arg_var));
+        }
 
         // HACK: This works for now but later you probably would want to be able to call
         // (lambda x: x + 1)(2)
@@ -256,103 +224,50 @@ impl Emitter {
             panic!("Symbol not found {}", ident.lexeme);
         };
         let ty = symbol.ty.into_bitbox_type();
-        let mut return_variable: Option<Variable> = None;
-        fb.block(|bb| {
-            let dest_var = bb.temp_var(ty);
-            bb.call(dest_var, ident.lexeme.clone(), args);
-            return_variable = bb.get_temp_var();
-        });
-
-        return_variable
+        let des = assembler.var(ty);
+        assembler.call(des.clone(), ident.lexeme.clone(), &args);
+        self.push(des);
     }
 
-    fn walk_expr_binary(
-        &mut self,
-        bb: &mut FunctionBuilder,
-        expr: &ast::ExprBinary,
-    ) -> Option<Variable> {
-        todo!()
-        // let ast::ExprBinary { left, op, right } = &expr;
-        //
-        // let Some(left_var) = self.walk_expr(bb, left) else {
-        //     panic!("Failed to walk expr in walk_expr_binary");
-        // };
-        // let Some(right_var) = self.walk_expr(bb, right) else {
-        //     panic!("Failed to walk expr in walk_expr_binary");
-        // };
-        //
-        // let dest_var = self.fresh_variable(None, Type::Unsigned(32));
-        //
-        // match &op.kind {
-        //     TokenKind::Plus => {
-        //         bb.push(
-        //             Instruction::Add(
-        //                 dest_var.clone(),
-        //                 Operand::Variable(left_var),
-        //                 Operand::Variable(right_var),
-        //             )
-        //             .into(),
-        //         );
-        //         Some(dest_var)
-        //     }
-        //     TokenKind::Minus => {
-        //         bb.push(
-        //             Instruction::Sub(
-        //                 dest_var.clone(),
-        //                 Operand::Variable(left_var),
-        //                 Operand::Variable(right_var),
-        //             )
-        //             .into(),
-        //         );
-        //         Some(dest_var)
-        //     }
-        //     TokenKind::Star => {
-        //         bb.push(
-        //             Instruction::Mul(
-        //                 dest_var.clone(),
-        //                 Operand::Variable(left_var),
-        //                 Operand::Variable(right_var),
-        //             )
-        //             .into(),
-        //         );
-        //         Some(dest_var)
-        //     }
-        //     TokenKind::Slash => {
-        //         bb.push(
-        //             Instruction::Div(
-        //                 dest_var.clone(),
-        //                 Operand::Variable(left_var),
-        //                 Operand::Variable(right_var),
-        //             )
-        //             .into(),
-        //         );
-        //         Some(dest_var)
-        //     }
-        //     _ => unreachable!("{:?}", op.kind),
-        // }
+    fn walk_expr_binary(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprBinary) {
+        let ast::ExprBinary { left, op, right } = &expr;
+
+        self.walk_expr(assembler, left);
+        let Some(lhs) = self.pop() else {
+            panic!("Failed to pop variable");
+        };
+        self.walk_expr(assembler, right);
+        let Some(rhs) = self.pop() else {
+            panic!("Failed to pop variable");
+        };
+
+        // TODO: the type is not known at this point which is not good.
+        let des = assembler.var(Type::Unsigned(32));
+        match &op.kind {
+            TokenKind::Plus => assembler.add(des.clone(), lhs, rhs),
+            TokenKind::Minus => assembler.sub(des.clone(), lhs, rhs),
+            TokenKind::Star => assembler.mul(des.clone(), lhs, rhs),
+            TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
+            _ => unreachable!("{:?}", op.kind),
+        };
+
+        self.push(des);
     }
 
     fn walk_expr_identifier(
         &mut self,
-        fb: &mut FunctionBuilder,
+        assembler: &mut InstructionBuilder,
         expr: &crate::lexer::token::Token,
-    ) -> Option<Variable> {
+    ) {
         let Some(symbol) = self.symbol_table.get(&expr.lexeme) else {
             panic!("Symbol not found {}", expr.lexeme);
         };
 
-        Some(Variable {
-            name: expr.lexeme.clone(),
-            ty: symbol.ty.into_bitbox_type(),
-            version: 0,
-        })
+        let var = Variable::new(&expr.lexeme, symbol.ty.into_bitbox_type());
+        self.push(var);
     }
 
-    fn walk_expr_if_else(
-        &mut self,
-        fb: &mut FunctionBuilder,
-        expr: &ast::ExprIfElse,
-    ) -> Option<Variable> {
+    fn walk_expr_if_else(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprIfElse) {
         let ast::ExprIfElse {
             condition,
             then_branch,
@@ -360,51 +275,66 @@ impl Emitter {
             ty,
         } = expr;
 
-        let Some(condition_var) = self.walk_expr(fb, condition) else {
-            panic!("Failed to walk condition in if expression");
+        // Walk the condition expression
+        self.walk_expr(assembler, condition);
+        let Some(condition_var) = self.pop() else {
+            panic!("Failed to pop condition variable");
         };
 
-        let then_label = fb.new_label(Some("then"));
-        let else_label = fb.new_label(Some("esle"));
-        let exit_label = fb.new_label(Some("exit"));
+        let then_label = assembler.new_label(Some("then"));
+        let else_label = assembler.new_label(Some("else"));
+        let exit_label = assembler.new_label(Some("exit"));
 
-        let result_var = fb.var(ty.into_bitbox_type());
+        let jump_condition = assembler.var(Type::Unsigned(32));
+        assembler.cmp(
+            jump_condition.clone(),
+            condition_var,
+            Operand::const_bool(true),
+        );
+        assembler.jump_if(jump_condition, then_label.clone());
 
-        fb.block(|bb| {
-            let jump_condition = bb.temp_var(Type::Unsigned(32));
-            bb.cmp(
-                jump_condition.clone(),
-                condition_var,
-                Operand::const_bool(true),
-            );
-            bb.jump_if(jump_condition, then_label.clone());
-            bb.jump(else_label.clone());
-            bb.label(then_label);
-        });
-
-        if let Some(value) = self.walk_block(fb, then_branch) {
-            fb.block(|bb| {
-                bb.assign(result_var.clone(), Operand::Variable(value));
-                bb.jump(exit_label.clone());
-            });
+        if else_branch.is_some() {
+            assembler.jump(else_label.clone());
+        } else {
+            assembler.jump(exit_label.clone());
         }
 
-        fb.block(|bb| {
-            bb.label(else_label);
-        });
+        // THEN branch
+        assembler.label(then_label.clone());
+        self.walk_block(assembler, then_branch);
+        let Some(then_val) = self.pop() else {
+            panic!("Failed to pop variable from then branch");
+        };
+        assembler.jump(exit_label.clone());
 
-        if let Some(else_branch) = else_branch {
-            if let Some(value) = self.walk_block(fb, else_branch) {
-                fb.block(|bb| {
-                    bb.assign(result_var.clone(), Operand::Variable(value));
-                });
-            }
+        // ELSE branch (optional)
+        let else_val = if let Some(else_branch) = else_branch {
+            assembler.label(else_label.clone());
+            self.walk_block(assembler, else_branch);
+            let Some(value) = self.pop() else {
+                panic!("Failed to pop variable from else branch");
+            };
+            assembler.jump(exit_label.clone());
+            Some((value, else_label))
+        } else {
+            None
+        };
+
+        // Merge block and PHI
+        assembler.label(exit_label.clone());
+        let result_var = assembler.var(ty.into_bitbox_type());
+
+        let mut phi_inputs = vec![(then_val.clone(), then_label)];
+        if let Some((else_val, else_lbl)) = else_val {
+            phi_inputs.push((else_val, else_lbl));
         }
 
-        fb.block(|bb| {
-            bb.label(exit_label);
-        });
+        if phi_inputs.len() == 1 {
+            assembler.assign(result_var.clone(), Operand::Variable(then_val));
+        } else {
+            assembler.phi(result_var.clone(), phi_inputs);
+        }
 
-        Some(result_var)
+        self.push(result_var);
     }
 }
