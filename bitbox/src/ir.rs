@@ -447,11 +447,6 @@ impl<'a> InstructionBuilder<'a> {
         }
     }
 
-    fn add_variable_symbol(&mut self, variable: &Variable) {
-        self.symbol_table
-            .insert(variable.name.clone(), Symbol::Variable(variable.clone()));
-    }
-
     /// returns a new temporary variable
     pub fn var(&mut self, ty: Type) -> Variable {
         let counter = self.counter;

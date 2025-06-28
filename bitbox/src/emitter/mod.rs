@@ -30,11 +30,26 @@ impl std::str::FromStr for Target {
     }
 }
 
+impl std::fmt::Display for Target {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Target::Bitbeat => "bitbeat",
+            Target::Wasm32 => "wasm32",
+            Target::X86_64Linux => "x86_64-linux",
+        })
+    }
+}
+
 pub trait Emitter {
-    fn emit(&mut self, module: &Module) {
+    fn startup(&mut self, _: &Module) {}
+    fn finish(&mut self) -> Vec<u8>;
+
+    fn emit(&mut self, module: &Module) -> Vec<u8> {
+        self.startup(module);
         self.emit_imports(&module.imports);
         self.emit_constants(&module.constants);
         self.emit_functions(&module.functions);
+        self.finish()
     }
 
     fn emit_imports(&mut self, imports: &[Import]) {
@@ -74,7 +89,7 @@ impl Compiler {
         }
     }
 
-    pub fn build(mut self, program: &Module) {
-        self.emitter.emit(program);
+    pub fn build(mut self, program: &Module) -> Vec<u8> {
+        self.emitter.emit(program)
     }
 }

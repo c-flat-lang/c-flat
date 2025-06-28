@@ -81,6 +81,11 @@ fn main() {
 
     let program = bbir_emitter::emit(&mut ast);
 
+    eprintln!("Compiling [{} {}]", target, file_path);
     let mut compiler = bitbox::Compiler::new(target);
-    compiler.build(&program);
+    let bytes = compiler.build(&program);
+    eprintln!("Compiled");
+    eprintln!("{} bytes to {}", bytes.len(), file_path);
+    let file_path = file_path.replace(".cb", ".wasm");
+    std::fs::write(file_path, &bytes).unwrap();
 }

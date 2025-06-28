@@ -15,6 +15,10 @@ impl Default for BitBeat {
 }
 
 impl Emitter for BitBeat {
+    fn startup(&mut self, _: &Module) {}
+    fn finish(&mut self) -> Vec<u8> {
+        todo!()
+    }
     fn emit_import(&mut self, _import: &Import) {
         todo!()
     }

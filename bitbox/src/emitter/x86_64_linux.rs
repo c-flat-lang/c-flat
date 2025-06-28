@@ -11,6 +11,10 @@ impl Default for X86_64Linux {
 }
 
 impl Emitter for X86_64Linux {
+    fn startup(&mut self, _: &crate::ir::Module) {}
+    fn finish(&mut self) -> Vec<u8> {
+        todo!()
+    }
     fn emit_import(&mut self, _import: &Import) {
         todo!("import")
     }
