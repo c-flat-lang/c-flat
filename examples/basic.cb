@@ -1,9 +1,9 @@
-fn get_condition() bool {
-  return true;
-}
+// fn get_condition() bool {
+//   return true;
+// }
 
 pub fn main() s32 {
-  const condition: bool = get_condition();
-  const value: s32 = if condition {101} else {20};
+  // const condition: bool = get_condition();
+  const value: s32 = if true {101} else {20};
   return value;
 }

@@ -74,14 +74,11 @@ impl<'st> TypeChecker<'st> {
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
         if &calulated_return_type != &function.return_type {
-            // TODO: log error and return the return_type
-            // Do not block
-            todo!(
-                "{} expected {} but got {}",
-                function.name.lexeme,
-                calulated_return_type,
-                function.return_type
+            let error_message = format!(
+                "{} expected return type `{}` but found `{}` instead",
+                function.name.lexeme, calulated_return_type, function.return_type
             );
+            self.errors.push(error_message);
         }
         function.return_type.clone()
     }

@@ -28,7 +28,7 @@ type Point struct {
 }
 
 // Define an enum
-enum Color {
+type Color enum {
     Red,
     Green,
     Blue,

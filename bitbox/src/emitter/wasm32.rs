@@ -5,8 +5,8 @@ use crate::ir::{
 };
 use std::collections::HashMap;
 use wasm_encoder::{
-    CodeSection, ExportKind, ExportSection, Function as WasmFunction, FunctionSection, Ieee32,
-    Ieee64, InstructionSink, Module as WasmModule, TypeSection, ValType,
+    BlockType, CodeSection, ExportKind, ExportSection, Function as WasmFunction, FunctionSection,
+    Ieee32, Ieee64, InstructionSink, Module as WasmModule, TypeSection, ValType,
 };
 
 fn ir_type_to_wasm_ty(ty: &Type) -> Option<ValType> {
@@ -32,21 +32,11 @@ struct LocalScope {
 
 impl LocalScope {
     fn get_variable_id(&mut self, var: &Variable) -> u32 {
-        if let Some(id) = self.variables_ids.get(var) {
-            return *id;
-        }
+        let Some(id) = self.variables_ids.get(var) else {
+            panic!("Variable not found: {}", var);
+        };
 
-        self.create_variable_id(var)
-    }
-
-    fn create_variable_id(&mut self, var: &Variable) -> u32 {
-        let id = self.variables_ids.len() as u32;
-        self.variables_ids.insert(var.clone(), id);
-        id
-    }
-
-    fn get_variable(&self, var: &Variable) -> Option<&Operand> {
-        self.variables.get(var)
+        *id
     }
 
     fn set_variable(&mut self, var: Variable, value: Operand) {
@@ -96,6 +86,7 @@ impl Wasm32 {
         sink: &mut InstructionSink,
         scope: &mut LocalScope,
     ) {
+        sink.block(BlockType::Result(ValType::I32));
         for instruction in block {
             let Some(label) = &instruction.label else {
                 continue;
@@ -104,6 +95,9 @@ impl Wasm32 {
         }
 
         for instruction in block {
+            if instruction.label.is_some() {
+                sink.block(BlockType::Result(ValType::I32));
+            }
             self.emit_instruction(&instruction, sink, scope);
         }
     }
@@ -180,8 +174,7 @@ impl Wasm32 {
             },
             Operand::Variable(variable) => {
                 let var_id = scope.get_variable_id(variable);
-                sink.local_get(var_id);
-                sink
+                sink.local_get(var_id)
             }
             Operand::None => todo!("NONE"),
         };
@@ -216,10 +209,13 @@ impl Wasm32 {
         _label: Option<&String>,
         var: &Variable,
         value: &Operand,
-        _sink: &mut InstructionSink,
+        sink: &mut InstructionSink,
         scope: &mut LocalScope,
     ) {
         scope.set_variable(var.clone(), value.clone());
+        let id = scope.get_variable_id(var);
+        self.emit_operand(value, sink, scope);
+        sink.local_set(id);
     }
 
     fn emit_return(
@@ -293,6 +289,7 @@ impl Wasm32 {
         let Some(label_id) = scope.get_label_id(label) else {
             panic!("Label not found: {label}");
         };
+        sink.i32_eqz();
         sink.br_if(label_id);
     }
 
@@ -368,16 +365,37 @@ impl Emitter for Wasm32 {
             );
         }
 
-        let locals: Vec<(u32, ValType)> = function
-            .params
-            .iter()
-            .enumerate()
-            .map(|(i, p)| (i as u32, ir_type_to_wasm_ty(&p.ty).unwrap()))
-            .collect();
+        let mut local_scope = self.local_scope.clone();
+        let mut locals: HashMap<ValType, u32> = HashMap::new();
+        let mut offset_i = 0;
+        for (i, p) in function.params.iter().enumerate() {
+            let ty = ir_type_to_wasm_ty(&p.ty).unwrap();
+            locals
+                .entry(ty)
+                .and_modify(|counter| *counter += 1)
+                .or_insert(1);
+            local_scope.variables_ids.insert(p.clone(), i as u32);
+            offset_i += 1;
+        }
+        for (i, v) in function.locals.iter().enumerate() {
+            let ty = ir_type_to_wasm_ty(&v.ty).unwrap();
+            locals
+                .entry(ty)
+                .and_modify(|counter| *counter += 1)
+                .or_insert(1);
+            local_scope
+                .variables_ids
+                .insert(v.clone(), i as u32 + offset_i);
+        }
+
+        let locals = locals.iter().fold(Vec::new(), |mut acc, (ty, count)| {
+            acc.push((*count, *ty));
+            acc
+        });
         let mut f = WasmFunction::new(locals);
         let mut instructions = f.instructions();
-        let mut local_scope = self.local_scope.clone();
         self.emit_block(&function.blocks, &mut instructions, &mut local_scope);
+        instructions.end();
         instructions.end();
         self.code_section.function(&f);
         self.funciton_count += 1;

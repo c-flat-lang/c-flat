@@ -315,6 +315,7 @@ pub struct Function {
     pub params: Vec<Variable>,
     pub return_type: Type,
     pub blocks: Vec<LabeledInstruction>,
+    pub locals: Vec<Variable>,
     pub symbols: SymbolTable,
 }
 
@@ -431,6 +432,7 @@ pub struct InstructionBuilder<'a> {
     instructions: &'a mut Vec<LabeledInstruction>,
     counter: u32,
     label_counter: u32,
+    variables: &'a mut Vec<Variable>,
     symbol_table: &'a mut SymbolTable,
 }
 
@@ -438,11 +440,13 @@ impl<'a> InstructionBuilder<'a> {
     pub fn new(
         instructions: &'a mut Vec<LabeledInstruction>,
         symbol_table: &'a mut SymbolTable,
+        variables: &'a mut Vec<Variable>,
     ) -> Self {
         Self {
             instructions,
             counter: 0,
             label_counter: 0,
+            variables,
             symbol_table,
         }
     }
@@ -451,7 +455,9 @@ impl<'a> InstructionBuilder<'a> {
     pub fn var(&mut self, ty: Type) -> Variable {
         let counter = self.counter;
         self.counter += 1;
-        Variable::new(format!("tmp{}", counter), ty)
+        let var = Variable::new(format!("tmp{}", counter), ty);
+        self.variables.push(var.clone());
+        var
     }
 
     /// returns a new label
@@ -624,6 +630,7 @@ pub struct FunctionBuilder {
     params: Vec<Variable>,
     return_type: Type,
     instructions: Vec<LabeledInstruction>,
+    variables: Vec<Variable>,
     symbol_table: SymbolTable,
 }
 
@@ -656,7 +663,11 @@ impl FunctionBuilder {
     }
 
     pub fn instructions(&mut self) -> InstructionBuilder {
-        InstructionBuilder::new(&mut self.instructions, &mut self.symbol_table)
+        InstructionBuilder::new(
+            &mut self.instructions,
+            &mut self.symbol_table,
+            &mut self.variables,
+        )
     }
 
     pub fn build(self) -> Function {
@@ -666,6 +677,7 @@ impl FunctionBuilder {
             params: self.params,
             return_type: self.return_type,
             blocks: self.instructions,
+            locals: self.variables,
             symbols: self.symbol_table,
         }
     }
@@ -702,6 +714,7 @@ mod tests {
                     Operand::Variable(y)
                 )
                 .into()],
+                locals: vec![Variable::new("_tmp_0_", Type::Unsigned(32))],
                 symbols: SymbolTable::default(),
             }
         );

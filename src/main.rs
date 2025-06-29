@@ -6,6 +6,7 @@ mod lexer;
 mod llvm_codgen;
 mod parser;
 mod semantic_analysis;
+mod wasm_runtime;
 
 use bitbox::Target;
 use std::str::FromStr;
@@ -85,7 +86,8 @@ fn main() {
     let mut compiler = bitbox::Compiler::new(target);
     let bytes = compiler.build(&program);
     eprintln!("Compiled");
-    eprintln!("{} bytes to {}", bytes.len(), file_path);
     let file_path = file_path.replace(".cb", ".wasm");
-    std::fs::write(file_path, &bytes).unwrap();
+    eprintln!("{} bytes to {}", bytes.len(), file_path);
+    wasm_runtime::run(&bytes).unwrap();
+    // std::fs::write(file_path, bytes).unwrap();
 }

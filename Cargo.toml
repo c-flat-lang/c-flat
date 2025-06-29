@@ -7,6 +7,10 @@ edition = "2024"
 inkwell = { version = "0.5.0", features = ["llvm16-0"] }
 bitbeat = { version = "0.1.0", path = "bitbeat" }
 bitbox = { version = "0.1.0", path = "bitbox" }
+wasmi = "0.36.0"
+wasmtime = { version = "23.0.2", features = ['component-model', 'async', 'default', 'winch', 'debug-builtins'] }
+wasmtime-wasi = "23.0.2"
+anyhow = "1.0.86"
 
 
 [dev-dependencies]

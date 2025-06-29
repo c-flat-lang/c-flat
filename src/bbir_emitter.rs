@@ -9,7 +9,6 @@ use bitbox::ir::{
 
 pub fn emit(ast: &mut Vec<ast::Item>) -> Module {
     let mut symbol_table = SymbolTableBuilder::new().build(ast);
-    // TODO: make this a mutable reference
     if let Err(errors) = TypeChecker::new(&mut symbol_table).check(ast) {
         for error in errors {
             eprintln!("{}", error);

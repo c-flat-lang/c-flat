@@ -1,0 +1,7 @@
+fn add(x: s32, y: s32) s32 {
+  return x + y;
+}
+
+pub fn main() s32 {
+  return add(1, 2);
+}
