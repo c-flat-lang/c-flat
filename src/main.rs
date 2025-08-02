@@ -85,9 +85,25 @@ fn main() {
     eprintln!("Compiling [{} {}]", target, file_path);
     let mut compiler = bitbox::Compiler::new(target);
     let bytes = compiler.build(&program);
-    eprintln!("Compiled");
-    let file_path = file_path.replace(".cb", ".wasm");
-    eprintln!("{} bytes to {}", bytes.len(), file_path);
-    wasm_runtime::run(&bytes).unwrap();
-    // std::fs::write(file_path, bytes).unwrap();
+
+    let output_file_path = file_path.replace(".cb", &format!(".{}", target.file_extension()));
+    eprintln!("{} bytes to {}", bytes.len(), output_file_path);
+    match target {
+        Target::X86_64Linux => {
+            std::fs::write(output_file_path, bytes).unwrap();
+        }
+        Target::Wasm32 => {
+            std::fs::write(output_file_path, &bytes).unwrap();
+            if let Err(err) = wasm_runtime::run(&bytes) {
+                eprintln!("{}", err);
+            }
+        }
+        Target::Bitbeat => {
+            std::fs::write(output_file_path, bytes).unwrap();
+            // let module: bitbeat::Model = bincode::deserialize(&bytes)?;
+            // let mut vm = bitbeat::Machine::default();
+            // vm.register_module(module);
+            // vm.run();
+        }
+    }
 }

@@ -6,15 +6,20 @@ use crate::semantic_analysis::symbol_table::SymbolTable;
 
 impl Type {
     pub fn supports_binary_op(&self, op: &TokenKind, other: &Type) -> Option<Type> {
+        use TokenKind::*;
         match (self, op, other) {
-            (Type::UnsignedNumber(lhs), TokenKind::Plus, Type::UnsignedNumber(rhs))
-                if lhs == rhs =>
-            {
-                Some(Type::UnsignedNumber(*lhs))
-            }
-            (Type::SignedNumber(lhs), TokenKind::Plus, Type::SignedNumber(rhs)) if lhs == rhs => {
-                Some(Type::SignedNumber(*lhs))
-            }
+            (
+                Type::UnsignedNumber(lhs),
+                (Plus | Minus | Star | Slash | EqualEqual | Greater | GreaterEqual | Less
+                | LessEqual),
+                Type::UnsignedNumber(rhs),
+            ) if lhs == rhs => Some(Type::UnsignedNumber(*lhs)),
+            (
+                Type::SignedNumber(lhs),
+                (Plus | Minus | Star | Slash | EqualEqual | Greater | GreaterEqual | Less
+                | LessEqual),
+                Type::SignedNumber(rhs),
+            ) if lhs == rhs => Some(Type::SignedNumber(*lhs)),
             (Type::Float(lhs), TokenKind::Plus, Type::Float(rhs)) => Some(Type::Float(*lhs)),
             // (Type::Bool, TokenKind::, Type::Bool) => Some(Type::Bool),
             //(Type::Custom(name), op, Type::Custom(rhs)) => {
@@ -161,6 +166,10 @@ impl<'st> TypeChecker<'st> {
             panic!("Caller must be an identifier");
         };
 
+        if ident.lexeme == "print" {
+            return Type::Void;
+        }
+
         let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()) else {
             self.errors
                 .push(format!("Undefined function: {}", ident.lexeme));
@@ -177,7 +186,7 @@ impl<'st> TypeChecker<'st> {
             Some(result_ty) => result_ty,
             None => {
                 self.errors.push(format!(
-                    "Unsupported binary operation: {} {} {}",
+                    "Unsupported binary operation: lhs: {} {} rhs: {}",
                     left_ty, expr.op.lexeme, right_ty
                 ));
 
@@ -227,7 +236,7 @@ mod tests {
         "#;
 
         let mut ast = crate::parser::Parser::new(&src).parse().unwrap();
-        let mut symbol_table = SymbolTableBuilder::new().build(&ast);
+        let mut symbol_table = SymbolTableBuilder::new().build(&ast).unwrap();
         eprintln!("{:#?}", symbol_table);
         let type_checker = TypeChecker::new(&mut symbol_table);
         if let Err(errors) = type_checker.check(&mut ast) {

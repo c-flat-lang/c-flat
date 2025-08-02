@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::io::Write;
 use wasmtime::*;
-use wasmtime_wasi::{WasiCtx, WasiCtxBuilder};
+use wasmtime_wasi::p2::{WasiCtx, WasiCtxBuilder};
 
 pub fn run(wasm_bytes: &[u8]) -> Result<()> {
     let engine = Engine::default();

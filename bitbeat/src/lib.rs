@@ -7,7 +7,7 @@ use std::sync::Arc;
 pub type Word = i64;
 pub type Pid = usize;
 
-const REG_COUNT: usize = 32;
+pub const REG_COUNT: usize = 32;
 
 #[derive(Debug, Copy, Clone)]
 pub struct Reg(pub usize);
@@ -34,6 +34,11 @@ pub enum Instruction {
         rhs: Reg,
     },
     Mul {
+        dst: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    },
+    CmpEq {
         dst: Reg,
         lhs: Reg,
         rhs: Reg,
@@ -132,6 +137,11 @@ impl<'a> InstructionBuilder<'a> {
         self
     }
 
+    pub fn cmp_eq(&mut self, dst: Reg, lhs: Reg, rhs: Reg) -> &mut Self {
+        self.instructions.push(Instruction::CmpEq { dst, lhs, rhs });
+        self
+    }
+
     pub fn cmp_le(&mut self, dst: Reg, lhs: Reg, rhs: Reg) -> &mut Self {
         self.instructions.push(Instruction::CmpLE { dst, lhs, rhs });
         self
@@ -212,7 +222,7 @@ enum ProcessState {
     Crashed(&'static str),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Module {
     name: String,
     functions: BTreeMap<String, Arc<Function>>,
@@ -256,6 +266,8 @@ impl Function {
         }
     }
 
+    /// Marks the function as returning
+    /// Return PID is stored in the first register
     pub fn returns(mut self) -> Self {
         self.returns = true;
         self
@@ -336,6 +348,7 @@ impl Process {
             Instruction::Add { dst, lhs, rhs } => self.handle_add(*dst, *lhs, *rhs),
             Instruction::Sub { dst, lhs, rhs } => self.handle_sub(*dst, *lhs, *rhs),
             Instruction::Mul { dst, lhs, rhs } => self.handle_mul(*dst, *lhs, *rhs),
+            Instruction::CmpEq { dst, lhs, rhs } => self.handle_cmp_eq(*dst, *lhs, *rhs),
             Instruction::CmpLE { dst, lhs, rhs } => self.handle_cmp_le(*dst, *lhs, *rhs),
             Instruction::Mov { dst, src } => self.handle_mov(*dst, *src),
             Instruction::JumpIf { cmp, target } => self.handle_jump_if(*cmp, *target),
@@ -398,6 +411,10 @@ impl Process {
 
     fn handle_mul(&mut self, dst: Reg, lhs: Reg, rhs: Reg) {
         self.regs[dst.0] = self.regs[lhs.0] * self.regs[rhs.0];
+    }
+
+    fn handle_cmp_eq(&mut self, dst: Reg, lhs: Reg, rhs: Reg) {
+        self.regs[dst.0] = (self.regs[lhs.0] == self.regs[rhs.0]) as i64;
     }
 
     fn handle_cmp_le(&mut self, dst: Reg, lhs: Reg, rhs: Reg) {

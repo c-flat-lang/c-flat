@@ -35,7 +35,13 @@ type Color enum {
 }
 
 // Nested types within a struct
-type ArrayList struct {
+type ArrayList struct<T> {
+    items: []T
+
+    fn new() ArrayList<T> {
+
+    }
+
     type Iterator struct {
         current: s32,
         end: s32,

@@ -709,12 +709,12 @@ mod tests {
                 params: vec![x.clone(), y.clone()],
                 return_type: Type::Unsigned(32),
                 blocks: vec![Instruction::Add(
-                    Variable::new("_tmp_0_", Type::Unsigned(32)),
+                    Variable::new("tmp0", Type::Unsigned(32)),
                     Operand::Variable(x),
                     Operand::Variable(y)
                 )
                 .into()],
-                locals: vec![Variable::new("_tmp_0_", Type::Unsigned(32))],
+                locals: vec![Variable::new("tmp0", Type::Unsigned(32))],
                 symbols: SymbolTable::default(),
             }
         );
@@ -741,8 +741,9 @@ mod tests {
                 name: "add".to_string(),
                 params: vec![x.clone(), y.clone()],
                 return_type: Type::Unsigned(32),
+                locals: vec![Variable::new("tmp0", Type::Unsigned(32))],
                 blocks: vec![Instruction::Add(
-                    Variable::new("_tmp_0_", Type::Unsigned(32)),
+                    Variable::new("tmp0", Type::Unsigned(32)),
                     Operand::Variable(x),
                     Operand::Variable(y)
                 )
@@ -750,5 +751,39 @@ mod tests {
                 symbols: SymbolTable::default(),
             }
         );
+    }
+
+    #[test]
+    fn testing_if_else() {
+        let x = Variable::new("x", Type::Unsigned(32));
+        let y = Variable::new("y", Type::Unsigned(32));
+        let mut fb = FunctionBuilder::new("main").with_visibility(Visibility::Public);
+        let mut assember = fb.instructions();
+        assember.assign(
+            x.clone(),
+            Operand::ConstantInt {
+                value: "123".into(),
+                ty: Type::Unsigned(32),
+            },
+        );
+        assember.assign(
+            y.clone(),
+            Operand::ConstantInt {
+                value: "321".into(),
+                ty: Type::Unsigned(32),
+            },
+        );
+        let condition = assember.var(Type::Unsigned(32));
+        let condition_label = assember.new_label(Some("condition"));
+        let true_label = assember.new_label(Some("true_branch"));
+        let false_label = assember.new_label(Some("false_branch"));
+
+        assember.label(condition_label);
+        assember.cmp(condition.clone(), x.clone(), y.clone());
+        assember.jump_if(condition.clone(), true_label.clone());
+        assember.label(false_label);
+        assember.ret(y.clone());
+        assember.label(true_label);
+        assember.ret(x.clone());
     }
 }

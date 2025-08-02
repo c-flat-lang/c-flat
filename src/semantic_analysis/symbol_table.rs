@@ -1,25 +1,30 @@
 #![allow(unused)]
 use crate::lexer::token::Token;
 
-use crate::ast;
+use crate::ast::{self, Expr};
 use std::collections::HashMap;
 
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
+    errors: Vec<String>,
 }
 
 impl SymbolTableBuilder {
     pub fn new() -> Self {
         Self {
             table: SymbolTable::default(),
+            errors: Vec::new(),
         }
     }
 
-    pub fn build(mut self, items: &[ast::Item]) -> SymbolTable {
+    pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable, Vec<String>> {
         for item in items {
             self.walk_item(&item);
         }
-        self.table
+        if !self.errors.is_empty() {
+            return Err(self.errors);
+        }
+        Ok(self.table)
     }
 
     fn walk_item(&mut self, item: &ast::Item) {
@@ -107,7 +112,7 @@ impl SymbolTableBuilder {
     }
 
     fn walk_expr_struct(&mut self, expr: &ast::ExprStruct) {
-        todo!()
+        todo!("walk_expr_struct")
     }
 
     fn walk_expr_assignment(&mut self, expr: &ast::ExprAssignment) {
@@ -124,24 +129,56 @@ impl SymbolTableBuilder {
         self.table.push(symbol);
     }
 
-    fn walk_expr_litral(&mut self, expr: &ast::Litral) {
-        todo!()
+    fn walk_expr_litral(&mut self, _: &ast::Litral) {
+        // match expr {
+        //     ast::Litral::Integer(_) => todo!("Integer"),
+        //     ast::Litral::Float(_) => todo!("Float"),
+        //     ast::Litral::Char(_) => todo!("Char"),
+        //     ast::Litral::String(_) => todo!("String"),
+        //     ast::Litral::BoolTrue(_) => todo!("Bool True"),
+        //     ast::Litral::BoolFalse(_) => todo!("Bool Flase"),
+        // }
     }
 
     fn walk_expr_call(&mut self, expr: &ast::ExprCall) {
-        todo!()
+        let Expr::Identifier(token) = expr.caller.as_ref() else {
+            todo!("Not implemented")
+        };
+        eprintln!("TODO: {}: walk_expr_call {}", file!(), token.lexeme);
+
+        // todo!("Caller {:?}", self.table)
     }
 
     fn walk_expr_binary(&mut self, expr: &ast::ExprBinary) {
-        todo!()
+        let ast::ExprBinary { left, right, .. } = expr;
+        self.walk_expr(&left);
+        self.walk_expr(&right);
     }
 
-    fn walk_expr_identifier(&mut self, expr: &Token) {
-        todo!()
+    fn walk_expr_identifier(&mut self, token: &Token) {
+        let Some(symbol) = self.table.get(token.lexeme.as_str()) else {
+            self.errors.push(format!(
+                "{:?}: Undefined variable {}",
+                token.span, token.lexeme
+            ));
+            return;
+        };
     }
 
     fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) {
-        todo!()
+        let ast::ExprIfElse {
+            condition,
+            then_branch,
+            else_branch,
+            ty,
+        } = expr;
+
+        self.walk_expr(&condition);
+        self.walk_block(&then_branch);
+        let Some(else_branch) = else_branch.as_ref() else {
+            return;
+        };
+        self.walk_block(&else_branch);
     }
 }
 
@@ -372,7 +409,15 @@ mod tests {
         "#;
 
         let ast = crate::parser::Parser::new(&src).parse().unwrap();
-        let symbol_table = SymbolTableBuilder::new().build(&ast);
+        let symbol_table = match SymbolTableBuilder::new().build(&ast) {
+            Ok(table) => table,
+            Err(errors) => {
+                for error in errors {
+                    eprintln!("{}", error);
+                }
+                panic!("Failed to build symbol table");
+            }
+        };
         let symbol = symbol_table.get("add");
         println!("{:#?}", symbol_table);
         assert_eq!(

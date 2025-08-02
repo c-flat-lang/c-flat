@@ -8,7 +8,16 @@ use bitbox::ir::{
 };
 
 pub fn emit(ast: &mut Vec<ast::Item>) -> Module {
-    let mut symbol_table = SymbolTableBuilder::new().build(ast);
+    let mut symbol_table = match SymbolTableBuilder::new().build(ast) {
+        Ok(table) => table,
+        Err(errors) => {
+            for error in errors {
+                eprintln!("{}", error);
+            }
+            std::process::exit(1);
+        }
+    };
+
     if let Err(errors) = TypeChecker::new(&mut symbol_table).check(ast) {
         for error in errors {
             eprintln!("{}", error);
@@ -219,10 +228,14 @@ impl Emitter {
         let ast::Expr::Identifier(ident) = expr.caller.as_ref() else {
             panic!("Caller must be an identifier");
         };
-        let Some(symbol) = self.symbol_table.get(&ident.lexeme) else {
+
+        let ty = if let Some(symbol) = self.symbol_table.get(&ident.lexeme) {
+            symbol.ty.into_bitbox_type()
+        } else if ident.lexeme == "print" {
+            Type::Void
+        } else {
             panic!("Symbol not found {}", ident.lexeme);
         };
-        let ty = symbol.ty.into_bitbox_type();
         let des = assembler.var(ty);
         assembler.call(des.clone(), ident.lexeme.clone(), &args);
         self.push(des);
@@ -247,6 +260,7 @@ impl Emitter {
             TokenKind::Minus => assembler.sub(des.clone(), lhs, rhs),
             TokenKind::Star => assembler.mul(des.clone(), lhs, rhs),
             TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
+            TokenKind::EqualEqual => assembler.cmp(des.clone(), lhs, rhs),
             _ => unreachable!("{:?}", op.kind),
         };
 
@@ -267,6 +281,72 @@ impl Emitter {
     }
 
     fn walk_expr_if_else(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprIfElse) {
+        let ast::ExprIfElse {
+            condition,
+            then_branch,
+            else_branch,
+            ty,
+        } = expr;
+        match ty {
+            ast::Type::Void => self.walk_expr_if_else_as_statement(assembler, expr),
+            _ => self.walk_expr_if_else_as_expression(assembler, expr),
+        }
+    }
+
+    fn walk_expr_if_else_as_statement(
+        &mut self,
+        assembler: &mut InstructionBuilder,
+        expr: &ast::ExprIfElse,
+    ) {
+        let ast::ExprIfElse {
+            condition,
+            then_branch,
+            else_branch,
+            ty,
+        } = expr;
+
+        let then_label = assembler.new_label(Some("then"));
+        let else_label = assembler.new_label(Some("else"));
+        let exit_label = assembler.new_label(Some("exit"));
+
+        self.walk_expr(assembler, condition);
+        let Some(condition_var) = self.pop() else {
+            panic!("Failed to pop condition variable");
+        };
+
+        let jump_condition = assembler.var(Type::Unsigned(32));
+        assembler.cmp(
+            jump_condition.clone(),
+            condition_var,
+            Operand::const_bool(true),
+        );
+        assembler.jump_if(jump_condition, then_label.clone());
+
+        if else_branch.is_some() {
+            assembler.jump(else_label.clone());
+        } else {
+            assembler.jump(exit_label.clone());
+        }
+
+        assembler.label(then_label.clone());
+        self.walk_block(assembler, then_branch);
+        assembler.jump(exit_label.clone());
+
+        let Some(else_branch) = else_branch else {
+            assembler.label(exit_label.clone());
+            return;
+        };
+        assembler.label(else_label.clone());
+        self.walk_block(assembler, else_branch);
+        assembler.jump(exit_label.clone());
+        assembler.label(exit_label.clone());
+    }
+
+    fn walk_expr_if_else_as_expression(
+        &mut self,
+        assembler: &mut InstructionBuilder,
+        expr: &ast::ExprIfElse,
+    ) {
         let ast::ExprIfElse {
             condition,
             then_branch,
@@ -302,7 +382,10 @@ impl Emitter {
         assembler.label(then_label.clone());
         self.walk_block(assembler, then_branch);
         let Some(then_val) = self.pop() else {
-            panic!("Failed to pop variable from then branch");
+            panic!(
+                "Failed to pop variable from then branch {:#?}",
+                self.variable_stack
+            );
         };
         assembler.jump(exit_label.clone());
 

@@ -4,9 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# bitbeat = { version = "0.1.0", path = "../bitbeat" }
-bitbeat = { branch = "master", git = "https://github.com/c-flat-lang/bitbeat" }
-wasm-encoder = "0.230.0"
+bitbeat = { version = "0.1.0", path = "../bitbeat" }
+wasm-encoder = "0.235.0"
 
 [dev-dependencies]
 insta = { version = "1.42.2", features = ["yaml"] }

@@ -1,7 +1,7 @@
-mod beatbox;
+mod bitbeat;
 mod wasm32;
 mod x86_64_linux;
-use beatbox::BitBeat;
+use bitbeat::BitBeat;
 use wasm32::Wasm32;
 use x86_64_linux::X86_64Linux;
 
@@ -13,6 +13,16 @@ pub enum Target {
     Bitbeat,
     Wasm32,
     X86_64Linux,
+}
+
+impl Target {
+    pub fn file_extension(&self) -> &'static str {
+        match self {
+            Target::Bitbeat => "bb",
+            Target::Wasm32 => "wasm",
+            Target::X86_64Linux => "a",
+        }
+    }
 }
 
 impl std::str::FromStr for Target {
@@ -42,14 +52,14 @@ impl std::fmt::Display for Target {
 
 pub trait Emitter {
     fn startup(&mut self, _: &Module) {}
-    fn finish(&mut self) -> Vec<u8>;
+    fn to_bytes(&mut self) -> Vec<u8>;
 
     fn emit(&mut self, module: &Module) -> Vec<u8> {
         self.startup(module);
         self.emit_imports(&module.imports);
         self.emit_constants(&module.constants);
         self.emit_functions(&module.functions);
-        self.finish()
+        self.to_bytes()
     }
 
     fn emit_imports(&mut self, imports: &[Import]) {
