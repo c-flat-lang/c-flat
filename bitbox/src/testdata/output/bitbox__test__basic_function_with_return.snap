@@ -1,0 +1,8 @@
+---
+source: bitbox/src/test.rs
+expression: contents
+---
+function add(_x_v0_, _y_v0_, ) u32{
+    @add u32 : _tmp0_v0_, _x_v0_, _y_v0_
+    @ret u32, _tmp0_v0_
+}

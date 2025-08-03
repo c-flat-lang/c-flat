@@ -380,6 +380,23 @@ pub struct Module {
     pub functions: Vec<Function>,
 }
 
+impl std::fmt::Display for Module {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for import in &self.imports {
+            // TODO: pretty print
+            write!(f, "{:?}\n", import)?;
+        }
+        for constant in &self.constants {
+            // TODO: pretty print
+            write!(f, "{:?}\n", constant)?;
+        }
+        for function in &self.functions {
+            write!(f, "{}\n", function)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct ModuleBuilder {
     imports: Vec<Import>,

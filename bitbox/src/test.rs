@@ -6,26 +6,6 @@ pub fn snapshot_module(module: Module) -> String {
     for func in module.functions.iter() {
         write!(&mut output, "{}", func).expect("failed to write()");
     }
-    // let tokens = lex(input);
-    // let mut tokens = std::collections::VecDeque::from(tokens);
-    // let mut total = 0;
-    // for line in input.lines() {
-    //     output += line;
-    //     output += "\n";
-    //     while let Some(tok) = tokens.pop_front() {
-    //         if total + line.len() <= tok.span.start {
-    //             tokens.push_front(tok);
-    //             break;
-    //         }
-    //
-    //         output += &" ".repeat(tok.span.start.saturating_sub(total));
-    //         output += &"^".repeat(tok.span.len());
-    //         write!(&mut output, " {tok:?}").expect("failed to write()");
-    //         output += "\n"
-    //     }
-    //
-    //     total += line.len() + 1;
-    // }
 
     output
 }
@@ -43,6 +23,7 @@ macro_rules! snapshot {
         }
     };
 }
+
 snapshot!(test_basic_function_with_return, {
     let mut module = ModuleBuilder::default();
     let x = Variable::new("x", Type::Unsigned(32));
@@ -58,6 +39,24 @@ snapshot!(test_basic_function_with_return, {
     module.build()
 });
 
-//
-// snapshot!(binary, "../../snapshots/basic.bitbox");
-// snapshot!(import_function, "../../snapshots/import_function.bitbox");
+snapshot!(test_basic_function_with_if_else, {
+    let mut module = ModuleBuilder::default();
+    let lhs = Variable::new("lhs", Type::Unsigned(32));
+    let rhs = Variable::new("rhs", Type::Unsigned(32));
+    let mut function = FunctionBuilder::new("max");
+    let mut assembler = function.instructions();
+    let branch_then_label = assembler.new_label(Some("branch_then_label"));
+    let branch_else_label = assembler.new_label(Some("branch_else_label"));
+
+    let condition = assembler.var(Type::Unsigned(32));
+    assembler.cmp(condition.clone(), lhs.clone(), rhs.clone());
+    assembler.jump_if(condition.clone(), branch_then_label.clone());
+    assembler.jump(branch_else_label.clone());
+    assembler.label(branch_then_label);
+    assembler.ret(lhs.clone());
+    assembler.label(branch_else_label);
+    assembler.ret(rhs.clone());
+
+    module.push_function(function.build());
+    module.build()
+});

@@ -23,6 +23,7 @@ fn main() {
         eprintln!("  Options:");
         eprintln!("    -t            Print tokens");
         eprintln!("    -a            Print AST");
+        eprintln!("    -ir           Print IR");
         eprintln!("    --target      Target triple");
         eprintln!("    -h, --help    Print this help message");
         std::process::exit(0);
@@ -81,6 +82,11 @@ fn main() {
     }
 
     let program = bbir_emitter::emit(&mut ast);
+
+    if args.iter().find(|arg| arg == &"-ir").is_some() {
+        eprintln!("{program}");
+        return;
+    }
 
     eprintln!("Compiling [{} {}]", target, file_path);
     let mut compiler = bitbox::Compiler::new(target);

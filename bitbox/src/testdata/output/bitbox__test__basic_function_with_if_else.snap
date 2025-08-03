@@ -1,0 +1,13 @@
+---
+source: bitbox/src/test.rs
+expression: contents
+---
+function max() void{
+    @cmp u32 : _tmp0_v0_, _lhs_v0_, _rhs_v0_
+    @jumpif _tmp0_v0_, %label_branch_then_label_0
+    @jump %label_branch_else_label_1
+  %label_branch_then_label_0:   @noop
+    @ret u32, _lhs_v0_
+  %label_branch_else_label_1:   @noop
+    @ret u32, _rhs_v0_
+}
