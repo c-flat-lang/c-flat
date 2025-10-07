@@ -2,9 +2,9 @@ use crate::lexer::token::TokenKind;
 use crate::semantic_analysis::SymbolTable;
 use crate::semantic_analysis::symbol_table::SymbolTableBuilder;
 use crate::{ast, semantic_analysis::type_check::TypeChecker};
-use bitbox::ir::{
-    FunctionBuilder, Instruction, InstructionBuilder, LabeledInstruction, Module, ModuleBuilder,
-    Operand, Type, Variable, Visibility,
+use bitbox::{
+    ir::{Instruction, Module, Operand, Type, Variable, Visibility},
+    ir_builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder},
 };
 
 pub fn emit(ast: &mut Vec<ast::Item>) -> Module {
@@ -100,7 +100,8 @@ impl Emitter {
             )
             .with_return_type(return_type.into_bitbox_type());
 
-        let mut assembler = function_builder.instructions();
+        let mut assembler = function_builder.assembler();
+        assembler.create_block("entry");
 
         self.walk_block(&mut assembler, &function.body);
 
@@ -116,17 +117,17 @@ impl Emitter {
         todo!()
     }
 
-    fn walk_block(&mut self, assembler: &mut InstructionBuilder, block: &ast::Block) {
+    fn walk_block(&mut self, assembler: &mut AssemblerBuilder, block: &ast::Block) {
         for stmt in block.statements.iter() {
             self.walk_stmt(assembler, stmt);
         }
     }
 
-    fn walk_stmt(&mut self, assembler: &mut InstructionBuilder, stmt: &ast::Statement) {
+    fn walk_stmt(&mut self, assembler: &mut AssemblerBuilder, stmt: &ast::Statement) {
         self.walk_expr(assembler, &stmt.expr)
     }
 
-    fn walk_expr(&mut self, assembler: &mut InstructionBuilder, expr: &ast::Expr) {
+    fn walk_expr(&mut self, assembler: &mut AssemblerBuilder, expr: &ast::Expr) {
         match expr {
             ast::Expr::Return(expr) => self.walk_expr_return(assembler, expr),
             ast::Expr::Struct(expr) => self.walk_expr_struct(assembler, expr),
@@ -139,7 +140,7 @@ impl Emitter {
         }
     }
 
-    fn walk_expr_return(&mut self, assember: &mut InstructionBuilder, expr: &ast::ExprReturn) {
+    fn walk_expr_return(&mut self, assember: &mut AssemblerBuilder, expr: &ast::ExprReturn) {
         match &expr.expr {
             Some(expr) => {
                 self.walk_expr(assember, &expr);
@@ -154,13 +155,13 @@ impl Emitter {
         }
     }
 
-    fn walk_expr_struct(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprStruct) {
+    fn walk_expr_struct(&mut self, assembler: &mut AssemblerBuilder, expr: &ast::ExprStruct) {
         todo!()
     }
 
     fn walk_expr_assignment(
         &mut self,
-        assembler: &mut InstructionBuilder,
+        assembler: &mut AssemblerBuilder,
         expr: &ast::ExprAssignment,
     ) {
         let ty = expr.ty.clone().unwrap_or_default().into_bitbox_type();
@@ -175,7 +176,7 @@ impl Emitter {
         self.push(des);
     }
 
-    fn walk_expr_litral(&mut self, assembler: &mut InstructionBuilder, expr: &ast::Litral) {
+    fn walk_expr_litral(&mut self, assembler: &mut AssemblerBuilder, expr: &ast::Litral) {
         match expr {
             ast::Litral::String(token) => todo!("STRING"),
             ast::Litral::Integer(token) => {
@@ -211,7 +212,7 @@ impl Emitter {
         }
     }
 
-    fn walk_expr_call(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprCall) {
+    fn walk_expr_call(&mut self, assembler: &mut AssemblerBuilder, expr: &ast::ExprCall) {
         let mut args = vec![];
         // TODO: We may need to reverse the args
         for arg in expr.args.iter() {
@@ -241,7 +242,7 @@ impl Emitter {
         self.push(des);
     }
 
-    fn walk_expr_binary(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprBinary) {
+    fn walk_expr_binary(&mut self, assembler: &mut AssemblerBuilder, expr: &ast::ExprBinary) {
         let ast::ExprBinary { left, op, right } = &expr;
 
         self.walk_expr(assembler, left);
@@ -260,7 +261,8 @@ impl Emitter {
             TokenKind::Minus => assembler.sub(des.clone(), lhs, rhs),
             TokenKind::Star => assembler.mul(des.clone(), lhs, rhs),
             TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
-            TokenKind::EqualEqual => assembler.cmp(des.clone(), lhs, rhs),
+            TokenKind::EqualEqual => assembler.eq(des.clone(), lhs, rhs),
+            TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
             _ => unreachable!("{:?}", op.kind),
         };
 
@@ -269,7 +271,7 @@ impl Emitter {
 
     fn walk_expr_identifier(
         &mut self,
-        assembler: &mut InstructionBuilder,
+        assembler: &mut AssemblerBuilder,
         expr: &crate::lexer::token::Token,
     ) {
         let Some(symbol) = self.symbol_table.get(&expr.lexeme) else {
@@ -280,7 +282,7 @@ impl Emitter {
         self.push(var);
     }
 
-    fn walk_expr_if_else(&mut self, assembler: &mut InstructionBuilder, expr: &ast::ExprIfElse) {
+    fn walk_expr_if_else(&mut self, assembler: &mut AssemblerBuilder, expr: &ast::ExprIfElse) {
         let ast::ExprIfElse {
             condition,
             then_branch,
@@ -295,128 +297,130 @@ impl Emitter {
 
     fn walk_expr_if_else_as_statement(
         &mut self,
-        assembler: &mut InstructionBuilder,
+        assembler: &mut AssemblerBuilder,
         expr: &ast::ExprIfElse,
     ) {
-        let ast::ExprIfElse {
-            condition,
-            then_branch,
-            else_branch,
-            ty,
-        } = expr;
-
-        let then_label = assembler.new_label(Some("then"));
-        let else_label = assembler.new_label(Some("else"));
-        let exit_label = assembler.new_label(Some("exit"));
-
-        self.walk_expr(assembler, condition);
-        let Some(condition_var) = self.pop() else {
-            panic!("Failed to pop condition variable");
-        };
-
-        let jump_condition = assembler.var(Type::Unsigned(32));
-        assembler.cmp(
-            jump_condition.clone(),
-            condition_var,
-            Operand::const_bool(true),
-        );
-        assembler.jump_if(jump_condition, then_label.clone());
-
-        if else_branch.is_some() {
-            assembler.jump(else_label.clone());
-        } else {
-            assembler.jump(exit_label.clone());
-        }
-
-        assembler.label(then_label.clone());
-        self.walk_block(assembler, then_branch);
-        assembler.jump(exit_label.clone());
-
-        let Some(else_branch) = else_branch else {
-            assembler.label(exit_label.clone());
-            return;
-        };
-        assembler.label(else_label.clone());
-        self.walk_block(assembler, else_branch);
-        assembler.jump(exit_label.clone());
-        assembler.label(exit_label.clone());
+        todo!("if else statement {:?}", expr);
+        // let ast::ExprIfElse {
+        //     condition,
+        //     then_branch,
+        //     else_branch,
+        //     ty,
+        // } = expr;
+        //
+        // let then_label = assembler.new_label(Some("then"));
+        // let else_label = assembler.new_label(Some("else"));
+        // let exit_label = assembler.new_label(Some("exit"));
+        //
+        // self.walk_expr(assembler, condition);
+        // let Some(condition_var) = self.pop() else {
+        //     panic!("Failed to pop condition variable");
+        // };
+        //
+        // let jump_condition = assembler.var(Type::Unsigned(32));
+        // assembler.eq(
+        //     jump_condition.clone(),
+        //     condition_var,
+        //     Operand::const_bool(true),
+        // );
+        // assembler.jump_if(jump_condition, then_label.clone());
+        //
+        // if else_branch.is_some() {
+        //     assembler.jump(else_label.clone());
+        // } else {
+        //     assembler.jump(exit_label.clone());
+        // }
+        //
+        // assembler.label(then_label.clone());
+        // self.walk_block(assembler, then_branch);
+        // assembler.jump(exit_label.clone());
+        //
+        // let Some(else_branch) = else_branch else {
+        //     assembler.label(exit_label.clone());
+        //     return;
+        // };
+        // assembler.label(else_label.clone());
+        // self.walk_block(assembler, else_branch);
+        // assembler.jump(exit_label.clone());
+        // assembler.label(exit_label.clone());
     }
 
     fn walk_expr_if_else_as_expression(
         &mut self,
-        assembler: &mut InstructionBuilder,
+        assembler: &mut AssemblerBuilder,
         expr: &ast::ExprIfElse,
     ) {
-        let ast::ExprIfElse {
-            condition,
-            then_branch,
-            else_branch,
-            ty,
-        } = expr;
-
-        // Walk the condition expression
-        self.walk_expr(assembler, condition);
-        let Some(condition_var) = self.pop() else {
-            panic!("Failed to pop condition variable");
-        };
-
-        let then_label = assembler.new_label(Some("then"));
-        let else_label = assembler.new_label(Some("else"));
-        let exit_label = assembler.new_label(Some("exit"));
-
-        let jump_condition = assembler.var(Type::Unsigned(32));
-        assembler.cmp(
-            jump_condition.clone(),
-            condition_var,
-            Operand::const_bool(true),
-        );
-        assembler.jump_if(jump_condition, then_label.clone());
-
-        if else_branch.is_some() {
-            assembler.jump(else_label.clone());
-        } else {
-            assembler.jump(exit_label.clone());
-        }
-
-        // THEN branch
-        assembler.label(then_label.clone());
-        self.walk_block(assembler, then_branch);
-        let Some(then_val) = self.pop() else {
-            panic!(
-                "Failed to pop variable from then branch {:#?}",
-                self.variable_stack
-            );
-        };
-        assembler.jump(exit_label.clone());
-
-        // ELSE branch (optional)
-        let else_val = if let Some(else_branch) = else_branch {
-            assembler.label(else_label.clone());
-            self.walk_block(assembler, else_branch);
-            let Some(value) = self.pop() else {
-                panic!("Failed to pop variable from else branch");
-            };
-            assembler.jump(exit_label.clone());
-            Some((value, else_label))
-        } else {
-            None
-        };
-
-        // Merge block and PHI
-        assembler.label(exit_label.clone());
-        let result_var = assembler.var(ty.into_bitbox_type());
-
-        let mut phi_inputs = vec![(then_val.clone(), then_label)];
-        if let Some((else_val, else_lbl)) = else_val {
-            phi_inputs.push((else_val, else_lbl));
-        }
-
-        if phi_inputs.len() == 1 {
-            assembler.assign(result_var.clone(), Operand::Variable(then_val));
-        } else {
-            assembler.phi(result_var.clone(), phi_inputs);
-        }
-
-        self.push(result_var);
+        todo!("if else expression {:?}", expr);
+        // let ast::ExprIfElse {
+        //     condition,
+        //     then_branch,
+        //     else_branch,
+        //     ty,
+        // } = expr;
+        //
+        // // Walk the condition expression
+        // self.walk_expr(assembler, condition);
+        // let Some(condition_var) = self.pop() else {
+        //     panic!("Failed to pop condition variable");
+        // };
+        //
+        // let then_label = assembler.new_label(Some("then"));
+        // let else_label = assembler.new_label(Some("else"));
+        // let exit_label = assembler.new_label(Some("exit"));
+        //
+        // let jump_condition = assembler.var(Type::Unsigned(32));
+        // assembler.eq(
+        //     jump_condition.clone(),
+        //     condition_var,
+        //     Operand::const_bool(true),
+        // );
+        // assembler.jump_if(jump_condition, then_label.clone());
+        //
+        // if else_branch.is_some() {
+        //     assembler.jump(else_label.clone());
+        // } else {
+        //     assembler.jump(exit_label.clone());
+        // }
+        //
+        // // THEN branch
+        // assembler.label(then_label.clone());
+        // self.walk_block(assembler, then_branch);
+        // let Some(then_val) = self.pop() else {
+        //     panic!(
+        //         "Failed to pop variable from then branch {:#?}",
+        //         self.variable_stack
+        //     );
+        // };
+        // assembler.jump(exit_label.clone());
+        //
+        // // ELSE branch (optional)
+        // let else_val = if let Some(else_branch) = else_branch {
+        //     assembler.label(else_label.clone());
+        //     self.walk_block(assembler, else_branch);
+        //     let Some(value) = self.pop() else {
+        //         panic!("Failed to pop variable from else branch");
+        //     };
+        //     assembler.jump(exit_label.clone());
+        //     Some((value, else_label))
+        // } else {
+        //     None
+        // };
+        //
+        // // Merge block and PHI
+        // assembler.label(exit_label.clone());
+        // let result_var = assembler.var(ty.into_bitbox_type());
+        //
+        // let mut phi_inputs = vec![(then_val.clone(), then_label)];
+        // if let Some((else_val, else_lbl)) = else_val {
+        //     phi_inputs.push((else_val, else_lbl));
+        // }
+        //
+        // if phi_inputs.len() == 1 {
+        //     assembler.assign(result_var.clone(), Operand::Variable(then_val));
+        // } else {
+        //     assembler.phi(result_var.clone(), phi_inputs);
+        // }
+        //
+        // self.push(result_var);
     }
 }

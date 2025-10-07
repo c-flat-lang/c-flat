@@ -1,17 +1,23 @@
-mod bitbeat;
+// mod bitbeat;
 mod wasm32;
-mod x86_64_linux;
-use bitbeat::BitBeat;
+// mod x86_64_linux;
+// use bitbeat::BitBeat;
 use wasm32::Wasm32;
-use x86_64_linux::X86_64Linux;
+// use x86_64_linux::X86_64Linux;
 
 use crate::ir::{Constant, Function, Import, Module};
+
+pub trait Emit {
+    type Assembler;
+    type Context;
+    fn emit(&self, asembler: &mut Self::Assembler, ctx: &mut Self::Context);
+}
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Target {
     #[default]
-    Bitbeat,
     Wasm32,
+    Bitbeat,
     X86_64Linux,
 }
 
@@ -20,7 +26,7 @@ impl Target {
         match self {
             Target::Bitbeat => "bb",
             Target::Wasm32 => "wasm",
-            Target::X86_64Linux => "a",
+            Target::X86_64Linux => "x86_64-linux",
         }
     }
 }
@@ -92,9 +98,10 @@ impl Compiler {
     pub fn new(target: Target) -> Self {
         Self {
             emitter: match target {
-                Target::Bitbeat => Box::new(BitBeat::default()),
+                // Target::Bitbeat => Box::new(BitBeat::default()),
                 Target::Wasm32 => Box::new(Wasm32::default()),
-                Target::X86_64Linux => Box::new(X86_64Linux::default()),
+                // Target::X86_64Linux => Box::new(X86_64Linux::default()),
+                _ => todo!(),
             },
         }
     }

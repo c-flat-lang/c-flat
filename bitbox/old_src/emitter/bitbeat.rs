@@ -75,15 +75,17 @@ impl Default for BitBeat {
 impl BitBeat {
     fn emit_block(
         &mut self,
-        block: &[ir::LabeledInstruction],
+        blocks: &[ir::BasicBlock],
         assmbler: &mut bitbeat::InstructionBuilder,
         local_scope: &mut LocalScope,
     ) {
-        for instruction in block {
-            if let Some(label) = &instruction.label {
-                assmbler.label(label);
+        for block in blocks {
+            for instruction in block.instructions.iter() {
+                if let Some(label) = &instruction.label {
+                    assmbler.label(label);
+                }
+                self.emit_instruction(&instruction, assmbler, local_scope);
             }
-            self.emit_instruction(&instruction, assmbler, local_scope);
         }
     }
 
@@ -109,6 +111,9 @@ impl BitBeat {
             }
             ir::Instruction::Cmp(var, lhs, rhs) => {
                 self.emit_cmp(label, var, lhs, rhs, assmbler, local_scope)
+            }
+            ir::Instruction::Gt(var, lhs, rhs) => {
+                self.emit_gt(label, var, lhs, rhs, assmbler, local_scope)
             }
             ir::Instruction::Jump(jump_label) => {
                 self.emit_jump(label, jump_label, assmbler, local_scope)
@@ -189,6 +194,18 @@ impl BitBeat {
         let lhs = self.emit_operand(lhs, assmbler, local_scope);
         let rhs = self.emit_operand(rhs, assmbler, local_scope);
         assmbler.cmp_eq(reg, lhs, rhs);
+    }
+
+    fn emit_gt(
+        &mut self,
+        label: Option<&String>,
+        var: &Variable,
+        lhs: &ir::Operand,
+        rhs: &ir::Operand,
+        assmbler: &mut bitbeat::InstructionBuilder<'_>,
+        local_scope: &mut LocalScope,
+    ) {
+        todo!("emit_gt")
     }
 
     fn emit_jump_if(

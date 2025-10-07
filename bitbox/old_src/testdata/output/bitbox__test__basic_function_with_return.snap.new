@@ -1,0 +1,15 @@
+---
+source: bitbox/src/test.rs
+assertion_line: 31
+expression: contents
+---
+function add(_x_v0_, _y_v0_, ) u32{
+    @add u32 : _tmp0_v0_, _x_v0_, _y_v0_
+    @ret u32, _tmp0_v0_
+  block 0:
+  @add u32 : _tmp0_v0_, _x_v0_, _y_v0_
+  @ret u32, _tmp0_v0_
+in:
+out:
+
+}

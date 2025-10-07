@@ -1,7 +1,6 @@
 use super::Emitter;
 use crate::ir::{
-    Constant, Function, Import, Instruction, LabeledInstruction, Operand, Type, Variable,
-    Visibility,
+    BasicBlock, Constant, Function, Import, Instruction, Operand, Type, Variable, Visibility,
 };
 use std::collections::HashMap;
 use wasm_encoder::{
@@ -82,59 +81,75 @@ pub struct Wasm32 {
 impl Wasm32 {
     fn emit_block(
         &mut self,
-        block: &[LabeledInstruction],
+        blocks: &[BasicBlock],
         sink: &mut InstructionSink,
         scope: &mut LocalScope,
-        // block_type: BlockType,
     ) {
-        for instruction in block {
-            let Some(label) = &instruction.label else {
-                continue;
-            };
-            scope.set_label_id(label);
-        }
-
-        for instruction in block {
-            if instruction.label.is_some() {
-                sink.block(BlockType::Empty);
+        for block in blocks.iter() {
+            for instruction in block.instructions.iter() {
+                self.emit_instruction(instruction, sink, scope);
             }
-            self.emit_instruction(&instruction, sink, scope);
         }
+        // for instruction in block {
+        //     let Some(label) = &instruction.label else {
+        //         continue;
+        //     };
+        //     scope.set_label_id(label);
+        // }
+        // let mut label_depths = HashMap::new();
+        // let mut block_stack = vec![];
+        //
+        // for instruction in block.iter() {
+        //     if let Some(label) = &instruction.label {
+        //         sink.block(BlockType::Empty);
+        //         scope.set_label_id(label);
+        //         label_depths.insert(label.clone(), block_stack.len());
+        //         block_stack.push(label.clone());
+        //     }
+        //
+        //     self.emit_instruction(instruction, sink, scope);
+        //
+        //     if instruction.label.is_some() {
+        //         sink.end();
+        //         block_stack.pop();
+        //     }
+        // }
     }
 
     fn emit_instruction(
         &mut self,
-        labeled_instruction: &LabeledInstruction,
+        instruction: &Instruction,
         sink: &mut InstructionSink,
         scope: &mut LocalScope,
     ) {
-        let label = labeled_instruction.label.as_ref();
-        match &labeled_instruction.instruction {
-            Instruction::NoOp => {
-                sink.nop();
-            }
-            Instruction::Add(var, lhs, rhs) => self.emit_add(label, var, lhs, rhs, sink, scope),
-            Instruction::Assign(var, value) => self.emit_assign(label, var, value, sink, scope),
-            Instruction::Call(var, caller, args) => {
-                self.emit_call(label, var, caller, args, sink, scope)
-            }
-            Instruction::Cmp(var, lhs, rhs) => self.emit_cmp(label, var, lhs, rhs, sink, scope),
-            Instruction::Jump(jump_label) => self.emit_jump(jump_label, sink, scope),
-            Instruction::JumpIf(condition, jump_label) => {
-                self.emit_jump_if(jump_label, condition, sink, scope)
-            }
-            Instruction::Load(..) => todo!("Load"),
-            Instruction::Mul(var, lhs, rhs) => self.emit_mul(label, var, lhs, rhs, sink, scope),
-            Instruction::Phi(..) => {}
-            Instruction::Return(ty, operand) => self.emit_return(label, ty, operand, sink, scope),
-            Instruction::Sub(var, lhs, rhs) => self.emit_sub(label, var, lhs, rhs, sink, scope),
-            Instruction::Div(..) => todo!("Div"),
+        //         let label = labeled_instruction.label.as_ref();
+        match &instruction {
+            // Instruction::NoOp => {
+            //     // sink.nop();
+            // }
+            Instruction::Add(var, lhs, rhs) => self.emit_add(var, lhs, rhs, sink, scope),
+            Instruction::Assign(var, value) => self.emit_assign(var, value, sink, scope),
+            // Instruction::Call(var, caller, args) => {
+            //     self.emit_call(label, var, caller, args, sink, scope)
+            // }
+            // Instruction::Cmp(var, lhs, rhs) => self.emit_cmp(label, var, lhs, rhs, sink, scope),
+            // Instruction::Gt(var, lhs, rhs) => self.emit_gt(label, var, lhs, rhs, sink, scope),
+            // Instruction::Jump(jump_label) => self.emit_jump(jump_label, sink, scope),
+            // Instruction::JumpIf(condition, jump_label) => {
+            //     self.emit_jump_if(jump_label, condition, sink, scope)
+            // }
+            // Instruction::Load(..) => todo!("Load"),
+            Instruction::Mul(var, lhs, rhs) => self.emit_mul(var, lhs, rhs, sink, scope),
+            // Instruction::Phi(..) => {}
+            Instruction::Return(ty, operand) => self.emit_return(ty, operand, sink, scope),
+            Instruction::Sub(var, lhs, rhs) => self.emit_sub(var, lhs, rhs, sink, scope),
+            // Instruction::Div(..) => todo!("Div"),
+            i => todo!("{i:#?}"),
         };
     }
 
     fn emit_add(
         &mut self,
-        _label: Option<&String>,
         var: &Variable,
         lhs: &Operand,
         rhs: &Operand,
@@ -158,7 +173,6 @@ impl Wasm32 {
 
     fn emit_sub(
         &mut self,
-        _label: Option<&String>,
         var: &Variable,
         lhs: &Operand,
         rhs: &Operand,
@@ -206,7 +220,6 @@ impl Wasm32 {
 
     fn emit_mul(
         &mut self,
-        _label: Option<&String>,
         var: &Variable,
         lhs: &Operand,
         rhs: &Operand,
@@ -230,7 +243,6 @@ impl Wasm32 {
 
     fn emit_assign(
         &mut self,
-        _label: Option<&String>,
         var: &Variable,
         value: &Operand,
         sink: &mut InstructionSink,
@@ -244,92 +256,115 @@ impl Wasm32 {
 
     fn emit_return(
         &mut self,
-        _label: Option<&String>,
         _ty: &Type,
         operand: &Operand,
         sink: &mut InstructionSink,
         scope: &mut LocalScope,
     ) {
-        eprintln!("RETURN: {operand:?}");
         self.emit_operand(operand, sink, scope);
         sink.return_();
     }
 
-    fn emit_call(
-        &mut self,
-        _label: Option<&String>,
-        var: &Variable,
-        caller: &str,
-        args: &[Operand],
-        sink: &mut InstructionSink<'_>,
-        scope: &mut LocalScope,
-    ) {
-        for arg in args.iter() {
-            self.emit_operand(arg, sink, scope);
-        }
-        let Some(id) = scope.function_ids.get(caller) else {
-            panic!("Function not found: {caller}");
-        };
-        sink.call(*id);
-        if var.ty == Type::Void {
-            return;
-        }
-        let var_id = scope.get_variable_id(var);
-        sink.local_set(var_id);
-    }
-
-    fn emit_cmp(
-        &mut self,
-        _label: Option<&String>,
-        var: &Variable,
-        lhs: &Operand,
-        rhs: &Operand,
-        sink: &mut InstructionSink<'_>,
-        scope: &mut LocalScope,
-    ) {
-        self.emit_operand(lhs, sink, scope);
-        self.emit_operand(rhs, sink, scope);
-        let ty = ir_type_to_wasm_ty(&var.ty).unwrap();
-        match ty {
-            ValType::I32 => sink.i32_eq(),
-            ValType::I64 => sink.i64_eq(),
-            ValType::F32 => sink.f32_eq(),
-            ValType::F64 => sink.f64_eq(),
-            ValType::V128 => todo!("V128"),
-            ValType::Ref(ref_type) => todo!("{ref_type:?}"),
-        };
-
-        let var_id = scope.get_variable_id(var);
-        sink.local_set(var_id);
-    }
-
-    fn emit_jump_if(
-        &mut self,
-        label: &str,
-        condition: &Operand,
-        sink: &mut InstructionSink<'_>,
-        scope: &mut LocalScope,
-    ) {
-        eprintln!("JUMP_IF: {label} {condition:?}");
-        self.emit_operand(condition, sink, scope);
-        let Some(label_id) = scope.get_label_id(label) else {
-            panic!("Label not found: {label}");
-        };
-        sink.i32_eqz();
-        sink.br_if(label_id + 1);
-    }
-
-    fn emit_jump(
-        &mut self,
-        jump_label: &str,
-        sink: &mut InstructionSink<'_>,
-        scope: &mut LocalScope,
-    ) {
-        let Some(label_id) = scope.get_label_id(jump_label) else {
-            panic!("Label not found: {jump_label}");
-        };
-        sink.br(label_id);
-    }
+    //     fn emit_call(
+    //         &mut self,
+    //         _label: Option<&String>,
+    //         var: &Variable,
+    //         caller: &str,
+    //         args: &[Operand],
+    //         sink: &mut InstructionSink<'_>,
+    //         scope: &mut LocalScope,
+    //     ) {
+    //         for arg in args.iter() {
+    //             self.emit_operand(arg, sink, scope);
+    //         }
+    //         let Some(id) = scope.function_ids.get(caller) else {
+    //             panic!("Function not found: {caller}");
+    //         };
+    //         sink.call(*id);
+    //         if var.ty == Type::Void {
+    //             return;
+    //         }
+    //         let var_id = scope.get_variable_id(var);
+    //         sink.local_set(var_id);
+    //     }
+    //
+    //     fn emit_cmp(
+    //         &mut self,
+    //         _label: Option<&String>,
+    //         var: &Variable,
+    //         lhs: &Operand,
+    //         rhs: &Operand,
+    //         sink: &mut InstructionSink<'_>,
+    //         scope: &mut LocalScope,
+    //     ) {
+    //         self.emit_operand(lhs, sink, scope);
+    //         self.emit_operand(rhs, sink, scope);
+    //         let ty = ir_type_to_wasm_ty(&var.ty).unwrap();
+    //         match ty {
+    //             ValType::I32 => sink.i32_eq(),
+    //             ValType::I64 => sink.i64_eq(),
+    //             ValType::F32 => sink.f32_eq(),
+    //             ValType::F64 => sink.f64_eq(),
+    //             ValType::V128 => todo!("V128"),
+    //             ValType::Ref(ref_type) => todo!("{ref_type:?}"),
+    //         };
+    //
+    //         let var_id = scope.get_variable_id(var);
+    //         sink.local_set(var_id);
+    //     }
+    //
+    //     fn emit_gt(
+    //         &mut self,
+    //         _label: Option<&String>,
+    //         var: &Variable,
+    //         lhs: &Operand,
+    //         rhs: &Operand,
+    //         sink: &mut InstructionSink<'_>,
+    //         scope: &mut LocalScope,
+    //     ) {
+    //         self.emit_operand(lhs, sink, scope);
+    //         self.emit_operand(rhs, sink, scope);
+    //         let ty = ir_type_to_wasm_ty(&var.ty).unwrap();
+    //         match ty {
+    //             ValType::I32 => sink.i32_gt_s(),
+    //             ValType::I64 => sink.i64_gt_s(),
+    //             ValType::F32 => sink.f32_gt(),
+    //             ValType::F64 => sink.f64_gt(),
+    //             ValType::V128 => todo!("V128"),
+    //             ValType::Ref(ref_type) => todo!("{ref_type:?}"),
+    //         };
+    //
+    //         let var_id = scope.get_variable_id(var);
+    //         sink.local_set(var_id);
+    //     }
+    //
+    //     fn emit_jump_if(
+    //         &mut self,
+    //         label: &str,
+    //         condition: &Operand,
+    //         sink: &mut InstructionSink<'_>,
+    //         scope: &mut LocalScope,
+    //     ) {
+    //         eprintln!("JUMP_IF: {label} {condition:?}");
+    //         self.emit_operand(condition, sink, scope);
+    //         let Some(label_id) = scope.get_label_id(label) else {
+    //             panic!("Label not found: {label}");
+    //         };
+    //         sink.i32_eqz();
+    //         sink.br_if(label_id + 1);
+    //     }
+    //
+    //     fn emit_jump(
+    //         &mut self,
+    //         jump_label: &str,
+    //         sink: &mut InstructionSink<'_>,
+    //         scope: &mut LocalScope,
+    //     ) {
+    //         let Some(label_id) = scope.get_label_id(jump_label) else {
+    //             panic!("Label not found: {jump_label}");
+    //         };
+    //         sink.br(label_id);
+    //     }
 }
 
 impl Default for Wasm32 {
@@ -375,7 +410,10 @@ impl Emitter for Wasm32 {
             .map(|p| ir_type_to_wasm_ty(&p.ty).unwrap())
             .collect();
 
-        let result_type = vec![ir_type_to_wasm_ty(&function.return_type).unwrap()];
+        let result_type = match ir_type_to_wasm_ty(&function.return_type) {
+            Some(t) => vec![t],
+            None => vec![],
+        };
         self.type_section.ty().function(param_types, result_type);
 
         // Function Section
@@ -423,8 +461,9 @@ impl Emitter for Wasm32 {
         //     Type::Void => BlockType::Empty,
         //     _ => BlockType::Result(ir_type_to_wasm_ty(&function.return_type).unwrap()),
         // };
+
         self.emit_block(&function.blocks, &mut instructions, &mut local_scope);
-        instructions.end();
+
         instructions.end();
         self.code_section.function(&f);
         self.funciton_count += 1;

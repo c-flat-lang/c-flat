@@ -1,4 +1,9 @@
+fn max(rhs: s32, lhs: s32) s32 {
+    // return if rhs > lhs { rhs } else {lhs};
+    if rhs > lhs { return rhs }
+    return lhs;
+}
+
 pub fn main() s32 {
-  // print(#"Hello, world!\n"#);
-  return 100;
+  return max(123, 321);
 }

@@ -1,9 +1,11 @@
-// fn get_condition() bool {
-//   return true;
+// fn max(x: s32, y: s32) s32 {
+//     return if x > y { x } else { y };
+// }
+
+// fn min(x: s32, y: s32) s32 {
+//     return if x < y { x } else { y };
 // }
 
 pub fn main() s32 {
-  // const condition: bool = get_condition();
-  const value: s32 = if true {101} else {20};
-  return value;
+  return 321 - 123;
 }

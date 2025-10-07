@@ -1,4 +1,4 @@
-use crate::stage::lexer::token::{Span, Token, TokenKind};
+use crate::lexer::token::{Span, Token, TokenKind};
 use std::fmt::Write;
 
 #[derive(Debug)]
@@ -9,8 +9,6 @@ pub enum CompilerError {
     ExpectedAType(Token),
     MissingClosingParen(Span),
     UnexpectedTopLevelItem(Token),
-    SymbolTableErrors(Vec<String>),
-    TypeErrors(Vec<String>),
 }
 
 impl CompilerError {
@@ -53,24 +51,6 @@ impl CompilerError {
                     .with_message(format!("unexpected top level item `{}`", token.lexeme))
                     .with_lines_above(3)
                     .build()
-            }
-            CompilerError::SymbolTableErrors(errors) => {
-                // TODO: lets not
-                let mut report = String::new();
-                for error in errors {
-                    report.push_str(&error);
-                    report.push('\n');
-                }
-                report
-            }
-            CompilerError::TypeErrors(errors) => {
-                // TODO: lets not
-                let mut report = String::new();
-                for error in errors {
-                    report.push_str(&error);
-                    report.push('\n');
-                }
-                report
             }
         }
     }
