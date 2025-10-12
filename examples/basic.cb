@@ -7,5 +7,7 @@
 // }
 
 pub fn main() s32 {
-  return 321 - 123;
+    let x: s32 = 123;
+    let y: s32 = 321;
+    return if x > y { x } else { y };
 }

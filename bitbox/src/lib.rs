@@ -6,9 +6,11 @@ pub mod passes;
 #[cfg(test)]
 mod test;
 
+// TODO: make default to be system dependent
 #[repr(usize)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Target {
+    #[default]
     Wasm32,
     X86_64Linux,
     Bitbeat,
@@ -37,6 +39,31 @@ impl Target {
             .chars()
             .rev()
             .collect()
+    }
+}
+
+impl std::str::FromStr for Target {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "bitbeat" => Ok(Target::Bitbeat),
+            "wasm32" => Ok(Target::Wasm32),
+            "x86_64-linux" => Ok(Target::X86_64Linux),
+            _ => Err(format!(
+                "Unknown target '{}'\noptions: bitbeat, wasm32, x86_64-linux",
+                s
+            )),
+        }
+    }
+}
+
+impl std::fmt::Display for Target {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Target::Bitbeat => "bitbeat",
+            Target::Wasm32 => "wasm32",
+            Target::X86_64Linux => "x86_64-linux",
+        })
     }
 }
 
