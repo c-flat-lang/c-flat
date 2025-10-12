@@ -73,9 +73,6 @@ pub struct Wasm32 {
     code_section: CodeSection,
     export_section: ExportSection,
     function_section: FunctionSection,
-
-    funciton_count: u32,
-    local_scope: LocalScope,
 }
 
 impl Wasm32 {

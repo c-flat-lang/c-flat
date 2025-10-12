@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::error::CompilerError;
 use crate::stage::lexer::token::{Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, Type};
@@ -223,8 +224,7 @@ impl<'st> TypeChecker<'st> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::semantic_analysis::symbol_table::SymbolTableBuilder;
-    use pretty_assertions::assert_eq;
+    use crate::stage::Stage;
 
     #[test]
     fn test_type_check() {
@@ -234,11 +234,18 @@ mod tests {
         }
         "#;
 
-        let mut ast = crate::parser::Parser::new(&src).parse().unwrap();
-        let mut symbol_table = SymbolTableBuilder::new().build(&ast).unwrap();
+        let tokens = crate::stage::lexer::Lexer::default().run(src);
+        let mut ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
+        let mut symbol_table =
+            crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::new()
+                .build(&mut ast)
+                .unwrap();
         eprintln!("{:#?}", symbol_table);
         let type_checker = TypeChecker::new(&mut symbol_table);
         if let Err(errors) = type_checker.check(&mut ast) {
+            let CompilerError::TypeErrors(errors) = errors else {
+                panic!("Expected TypeErrors");
+            };
             for error in errors {
                 eprintln!("{}", error);
             }

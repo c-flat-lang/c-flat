@@ -79,6 +79,8 @@ pub enum Instruction {
     Add(Variable, Operand, Operand),
     /// @assign <type> : <des>, <rhs>
     Assign(Variable, Operand),
+    /// @alloc <type> : <des>
+    Alloc(Type, Variable),
     /// @call <type> : <des> <func>(<args>)
     /// @call s32 : exit_code write(fact_result, 0)
     Call(Variable, String, Vec<Operand>),
@@ -117,6 +119,12 @@ pub enum Instruction {
         else_branch: Vec<Instruction>,
         result: Option<Variable>,
     },
+    IfElse_ {
+        cond: Vec<BasicBlock>,
+        then_branch: Vec<BasicBlock>,
+        else_branch: Vec<BasicBlock>,
+        result: Option<Variable>,
+    },
 }
 
 impl std::fmt::Display for Instruction {
@@ -131,6 +139,7 @@ impl std::fmt::Display for Instruction {
             Instruction::Assign(variable, operand) => {
                 write!(f, "@assign {} : {}, {}", variable.ty, variable, operand)
             }
+            Instruction::Alloc(ty, variable) => write!(f, "@alloc {} : {}", ty, variable),
             Instruction::Call(des, caller, args) => {
                 write!(
                     f,
@@ -209,6 +218,31 @@ impl std::fmt::Display for Instruction {
                     .map(|i| format!("  {}\n", i))
                     .collect::<String>(),
             ),
+            Instruction::IfElse_ {
+                cond,
+                then_branch,
+                else_branch,
+                result,
+            } => write!(
+                f,
+                "@if [\n    {}    ]{} then [\n    {}    ] else [\n    {}    ]",
+                cond.iter()
+                    .map(|i| format!("  {}\n", i))
+                    .collect::<String>(),
+                if let Some(result) = result {
+                    format!(": {}", result)
+                } else {
+                    "".to_string()
+                },
+                then_branch
+                    .iter()
+                    .map(|i| format!("  {}\n", i))
+                    .collect::<String>(),
+                else_branch
+                    .iter()
+                    .map(|i| format!("  {}\n", i))
+                    .collect::<String>(),
+            ),
         }
     }
 }
@@ -254,6 +288,10 @@ impl Operand {
             value: value.into(),
             ty: Type::Float(bits),
         }
+    }
+
+    pub fn is_variable(&self) -> bool {
+        matches!(self, Operand::Variable(_))
     }
 }
 

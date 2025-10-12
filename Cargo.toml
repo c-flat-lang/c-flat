@@ -7,10 +7,6 @@ edition = "2024"
 inkwell = { version = "0.6.0", features = ["llvm16-0"] }
 bitbeat = { version = "0.1.0", path = "bitbeat" }
 bitbox = { version = "0.1.0", path = "bitbox" }
-wasmi = "0.47.0"
-wasmtime = { version = "34.0.1", features = ['component-model', 'async', 'default', 'winch', 'debug-builtins'] }
-wasmtime-wasi = "34.0.1"
-anyhow = "1.0.98"
 
 
 [dev-dependencies]
@@ -18,4 +14,4 @@ insta = { version = "1.43.1", features = ["yaml"] }
 pretty_assertions = "1.4.0"
 
 [workspace]
-members = ["bitbeat", "bitbox"]
+members = ["bitbeat", "bitbox", "runtime"]

@@ -222,7 +222,7 @@ enum ProcessState {
     Crashed(&'static str),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Module {
     name: String,
     functions: BTreeMap<String, Arc<Function>>,

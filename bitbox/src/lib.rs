@@ -22,15 +22,35 @@ impl Target {
             Target::Bitbeat => Box::new(backend::bitbeat::BitbeatBackend),
         }
     }
+
+    fn get_new_path(&self, src_path: &str) -> String {
+        let extension = match self {
+            Target::Wasm32 => ".wasm",
+            Target::X86_64Linux => "",
+            Target::Bitbeat => ".bb",
+        };
+        src_path
+            .chars()
+            .rev()
+            .collect::<String>()
+            .replacen("bc.", &extension.chars().rev().collect::<String>(), 1)
+            .chars()
+            .rev()
+            .collect()
+    }
 }
 
 pub struct Compiler {
+    target: Target,
+    src_path: String,
     backend: Box<dyn backend::Backend>,
 }
 
 impl Compiler {
-    pub fn new(target: Target) -> Self {
+    pub fn new(src_path: impl Into<String>, target: Target) -> Self {
         Self {
+            target,
+            src_path: src_path.into(),
             backend: target.backend(),
         }
     }
@@ -44,13 +64,18 @@ impl Compiler {
             eprintln!("{}", e);
             std::process::exit(1);
         }
+
+        let compiler_result = ctx.output.finish();
+        let path = self.target.get_new_path(&self.src_path);
+        compiler_result.save_to_file(&path);
     }
 }
 
 #[test]
 fn test_compiler() {
     use crate::ir::{Instruction, Operand};
-    let compiler = Compiler::new(Target::Wasm32);
+    let src_name = "test.cb";
+    let compiler = Compiler::new(src_name, Target::Wasm32);
 
     let mut builder = crate::ir::builder::ModuleBuilder::default(); // {{{
     let mut main_function = crate::ir::builder::FunctionBuilder::new("main")

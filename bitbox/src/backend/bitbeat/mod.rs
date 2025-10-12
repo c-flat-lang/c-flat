@@ -1,5 +1,6 @@
 use crate::backend::Backend;
 use crate::passes::Pass;
+pub use bitbeat;
 
 #[derive(Debug, Default)]
 pub struct BitbeatBackend;

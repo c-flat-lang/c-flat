@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::stage::lexer::token::{Span, Token, TokenKind};
 use std::fmt::Write;
 

@@ -1,4 +1,5 @@
 use crate::ir::{BlockId, Variable};
+use std::collections::HashMap;
 
 use super::Pass;
 
@@ -59,20 +60,35 @@ pub type InstructionIndex = usize;
 
 #[derive(Debug, Default)]
 pub struct LivenessAnalysisInfo {
-    table: std::collections::HashMap<(BlockId, InstructionIndex), Vec<Variable>>,
+    table: HashMap<String, HashMap<(BlockId, InstructionIndex), Vec<Variable>>>,
 }
 
 impl LivenessAnalysisInfo {
-    pub fn add(&mut self, block_id: BlockId, index: InstructionIndex, variable: Variable) {
+    pub fn add(
+        &mut self,
+        function_name: &str,
+        block_id: BlockId,
+        index: InstructionIndex,
+        variable: Variable,
+    ) {
         self.table
+            .entry(function_name.to_string())
+            .or_default()
             .entry((block_id, index))
             .or_default()
             .push(variable);
     }
 
-    pub fn is_live(&self, block: BlockId, instr_index: usize, var: &Variable) -> bool {
+    pub fn is_live(
+        &self,
+        function_name: &str,
+        block: BlockId,
+        instr_index: usize,
+        var: &Variable,
+    ) -> bool {
         self.table
-            .get(&(block, instr_index))
+            .get(function_name)
+            .and_then(|block_table| block_table.get(&(block, instr_index)))
             .is_some_and(|vars| vars.contains(var))
     }
 }
@@ -106,7 +122,8 @@ impl Pass for LivenessAnalysisPass {
 
                     // Record which vars are live at this instruction
                     for var in &live_before {
-                        ctx.liveness.add(block.id, index, var.clone());
+                        ctx.liveness
+                            .add(function.name.as_str(), block.id, index, var.clone());
                     }
 
                     live_after = live_before;

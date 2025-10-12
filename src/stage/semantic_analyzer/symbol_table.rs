@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::error::CompilerError;
 use crate::stage::lexer::token::Token;
 
@@ -321,6 +322,7 @@ impl SymbolTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::stage::Stage;
     use pretty_assertions::assert_eq;
 
     fn create_symbol(
@@ -409,10 +411,14 @@ mod tests {
         }
         "#;
 
-        let ast = crate::parser::Parser::new(&src).parse().unwrap();
+        let tokens = crate::stage::lexer::Lexer::default().run(src);
+        let ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
         let symbol_table = match SymbolTableBuilder::new().build(&ast) {
             Ok(table) => table,
             Err(errors) => {
+                let CompilerError::TypeErrors(errors) = errors else {
+                    panic!("Expected TypeErrors");
+                };
                 for error in errors {
                     eprintln!("{}", error);
                 }

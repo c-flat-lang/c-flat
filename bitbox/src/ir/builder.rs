@@ -39,6 +39,7 @@ impl ModuleBuilder {
     }
 }
 
+#[derive(Debug)]
 pub struct AssemblerBuilder<'a> {
     blocks: &'a mut Vec<BasicBlock>,
     current_block: Option<BlockId>,
@@ -68,7 +69,7 @@ impl<'a> AssemblerBuilder<'a> {
         let id = self.blocks.len();
         self.current_block = Some(BlockId(id));
         self.blocks.push(BasicBlock {
-            id: BlockId(self.blocks.len()),
+            id: BlockId(id),
             instructions: vec![],
             label: label.into(),
         });
@@ -106,6 +107,12 @@ impl<'a> AssemblerBuilder<'a> {
     pub fn assign(&mut self, var: Variable, value: impl Into<Operand>) -> &mut Self {
         let value = value.into();
         self.push_instruction(Instruction::Assign(var, value));
+        self
+    }
+
+    /// @alloc <type> : <des>
+    pub fn alloc(&mut self, ty: Type, clone: Variable) -> &mut Self {
+        self.push_instruction(Instruction::Alloc(ty, clone));
         self
     }
 
@@ -233,6 +240,23 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let instruction = Instruction::IfElse {
             cond: cond.into(),
+            then_branch,
+            else_branch,
+            result,
+        };
+        self.push_instruction(instruction);
+        self
+    }
+
+    pub fn if_else_(
+        &mut self,
+        result: Option<Variable>,
+        cond: Vec<BasicBlock>,
+        then_branch: Vec<BasicBlock>,
+        else_branch: Vec<BasicBlock>,
+    ) -> &mut Self {
+        let instruction = Instruction::IfElse_ {
+            cond,
             then_branch,
             else_branch,
             result,

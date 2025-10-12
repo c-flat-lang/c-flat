@@ -14,9 +14,16 @@ fn front_end_compiler(src: &str) -> Result<bitbox::ir::Module, CompilerError> {
 }
 
 fn main() {
+    let src_name = "main.cb";
     let src = r#"
 pub fn main() s32 {
-  return 321 - 123;
+  const x: s32 = 123;
+  const y: s32 = 321;
+  return if x > y {
+    x
+  } else {
+    y
+  };
 }
 "#;
     let target = Target::Wasm32;
@@ -28,6 +35,5 @@ pub fn main() s32 {
         }
     };
     let mut ctx = bitbox::backend::Context::default();
-    bitbox::Compiler::new(target).run(&mut module, &mut ctx);
-    println!("{:#?}", module);
+    bitbox::Compiler::new(src_name, target).run(&mut module, &mut ctx);
 }
