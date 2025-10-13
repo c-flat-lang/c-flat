@@ -1,22 +1,48 @@
+mod cli;
 mod error;
 mod stage;
 use stage::Stage;
 
 use bitbox::Target;
+use cli::{Cli, DebugMode};
 
 use crate::error::CompilerError;
 
 use std::str::FromStr;
 
-fn front_end_compiler(src: &str) -> Result<bitbox::ir::Module, CompilerError> {
+fn front_end_compiler(cli_options: &Cli, src: &str) -> Result<bitbox::ir::Module, CompilerError> {
     let tokens = stage::lexer::Lexer::default().run(src);
+
+    if let Some(DebugMode::Token) = cli_options.debug_mode {
+        for token in &tokens {
+            eprintln!("{:?}", token);
+        }
+    }
+
     let mut ast = stage::parser::Parser::default().run(tokens)?;
+
+    if let Some(DebugMode::Ast) = cli_options.debug_mode {
+        eprintln!("{:#?}", ast);
+    }
+
     let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
-    stage::ir_builder::IRBuilder::default().run((symbol_table, ast))
+
+    if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
+        eprintln!("{:#?}", symbol_table);
+    }
+
+    let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
+
+    if let Some(DebugMode::Ir) = cli_options.debug_mode {
+        eprintln!("{}", module);
+    }
+
+    Ok(module)
 }
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
+    let mut cli_options = Cli::default();
 
     if args
         .iter()
@@ -27,6 +53,7 @@ fn main() {
         eprintln!("  Options:");
         eprintln!("    -t            Print tokens");
         eprintln!("    -a            Print AST");
+        eprintln!("    -s            Print symbol table");
         eprintln!("    -ir           Print IR");
         eprintln!("    --target      Target triple");
         eprintln!("    -h, --help    Print this help message");
@@ -39,11 +66,13 @@ fn main() {
     };
 
     if let Some(_) = args.iter().find(|arg| arg == &"-t") {
-        todo!("print tokens")
+        cli_options.debug_mode = Some(DebugMode::Token);
     } else if let Some(_) = args.iter().find(|arg| arg == &"-a") {
-        todo!("print ast")
+        cli_options.debug_mode = Some(DebugMode::Ast);
+    } else if let Some(_) = args.iter().find(|arg| arg == &"-s") {
+        cli_options.debug_mode = Some(DebugMode::SymbolTable);
     } else if let Some(_) = args.iter().find(|arg| arg == &"-ir") {
-        todo!("print ir")
+        cli_options.debug_mode = Some(DebugMode::Ir);
     }
 
     let mut target = Target::default();
@@ -60,7 +89,7 @@ fn main() {
 
     let source = std::fs::read_to_string(&file_path).unwrap();
 
-    let mut module = match front_end_compiler(&source) {
+    let mut module = match front_end_compiler(&cli_options, &source) {
         Ok(module) => module,
         Err(err) => {
             println!("{:?}", err);
