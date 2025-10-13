@@ -97,8 +97,11 @@ impl<'a> LoweringContext<'a> {
         self.variable_stack.push(var);
     }
 
-    pub fn pop(&mut self) -> Option<Variable> {
-        self.variable_stack.pop()
+    fn get_variable(&self, lexeme: &str) -> Option<Variable> {
+        self.variable_stack
+            .iter()
+            .find(|var| var.name == lexeme)
+            .cloned()
     }
 }
 
@@ -130,10 +133,10 @@ impl Lowerable for Expr {
             Expr::Assignment(assign) => assign.lower(assembler, ctx),
             Expr::Call(call) => call.lower(assembler, ctx),
             Expr::Identifier(ident) => {
-                if ctx.symbol_table.get(&ident.lexeme).is_none() {
+                let Some(_) = ctx.symbol_table.get(&ident.lexeme) else {
                     panic!("Symbol not found {}", ident.lexeme);
-                }
-                ctx.pop()
+                };
+                ctx.get_variable(&ident.lexeme)
             }
             Expr::Struct(_) => todo!("Struct expressions"),
         }
@@ -162,6 +165,7 @@ impl Lowerable for ExprBinary {
             TokenKind::Star => assembler.mul(des.clone(), lhs, rhs),
             TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
             TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
+            TokenKind::Less => assembler.lt(des.clone(), lhs, rhs),
             op => unimplemented!("Operator not implemented {op:?}"),
         };
         Some(des)
@@ -186,7 +190,7 @@ impl Lowerable for ExprIfElse {
         } else {
             let ty = ty.into_bitbox_type();
             let return_value = assembler.var(ty.clone());
-            assembler.alloc(ty, return_value.clone());
+            // assembler.alloc(ty, return_value.clone());
             Some(return_value)
         };
 
@@ -273,35 +277,30 @@ impl Lowerable for Litral {
                 let ty = Type::Unsigned(32);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, 32));
-                ctx.push(var.clone());
                 Some(var)
             }
             ast::Litral::Float(token) => {
                 let ty = Type::Float(32);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_float(&token.lexeme, 32));
-                ctx.push(var.clone());
                 Some(var)
             }
             ast::Litral::Char(token) => {
                 let ty = Type::Unsigned(8);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, 8));
-                ctx.push(var.clone());
                 Some(var)
             }
             ast::Litral::BoolTrue(_) => {
                 let ty = Type::Unsigned(32);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_bool(true));
-                ctx.push(var.clone());
                 Some(var)
             }
             ast::Litral::BoolFalse(_) => {
                 let ty = Type::Unsigned(32);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_bool(false));
-                ctx.push(var.clone());
                 Some(var)
             }
         }

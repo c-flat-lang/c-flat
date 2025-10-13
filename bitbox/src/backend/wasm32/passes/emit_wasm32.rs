@@ -9,6 +9,27 @@ use wasm_encoder::{
     InstructionSink, Module as WasmModule, TypeSection, ValType,
 };
 
+#[derive(Debug)]
+pub struct EmitWasm32Pass;
+
+impl Pass for EmitWasm32Pass {
+    fn run(
+        &mut self,
+        module: &mut Module,
+        ctx: &mut crate::backend::Context,
+    ) -> Result<(), crate::error::Error> {
+        eprintln!("EmitWasm32Pass");
+        // eprintln!("{:#?}", module);
+        // eprintln!("{}", module);
+        // eprintln!("{:#?}", ctx.local_function_variables.get("main"));
+
+        for function in module.functions.iter() {
+            function.lower(ctx)?;
+        }
+        Ok(())
+    }
+}
+
 trait LowerToWasm32 {
     fn lower_to_wasm32(
         &self,
@@ -66,26 +87,6 @@ impl Into<ValType> for ir::Type {
             ir::Type::Void => todo!(),
             _ => panic!("Unsupported type: {}", self),
         }
-    }
-}
-
-#[derive(Debug)]
-pub struct EmitWasm32Pass;
-
-impl Pass for EmitWasm32Pass {
-    fn run(
-        &mut self,
-        module: &mut Module,
-        ctx: &mut crate::backend::Context,
-    ) -> Result<(), crate::error::Error> {
-        eprintln!("EmitWasm32Pass");
-        // eprintln!("{:#?}", module);
-        // eprintln!("{}", module);
-
-        for function in module.functions.iter() {
-            function.lower(ctx)?;
-        }
-        Ok(())
     }
 }
 
@@ -202,6 +203,18 @@ impl LowerToWasm32 for ir::Instruction {
                 operand1.lower_to_wasm32(function_name, assembler, ctx);
                 match variable.ty.clone().into() {
                     ValType::I32 => assembler.i32_gt_s(),
+                    ValType::I64 => todo!("@gt i64"),
+                    ValType::F32 => todo!("@gt f32"),
+                    ValType::F64 => todo!("@gt f64"),
+                    ValType::V128 => todo!("@gt v128"),
+                    ValType::Ref(_) => todo!("@gt ref"),
+                };
+            }
+            ir::Instruction::Lt(variable, operand, operand1) => {
+                operand.lower_to_wasm32(function_name, assembler, ctx);
+                operand1.lower_to_wasm32(function_name, assembler, ctx);
+                match variable.ty.clone().into() {
+                    ValType::I32 => assembler.i32_lt_s(),
                     ValType::I64 => todo!("@gt i64"),
                     ValType::F32 => todo!("@gt f32"),
                     ValType::F64 => todo!("@gt f64"),

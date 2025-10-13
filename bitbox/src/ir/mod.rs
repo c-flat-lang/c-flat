@@ -90,6 +90,9 @@ pub enum Instruction {
     /// `@gt <type> : <des>, <lhs>, <rhs>`
     /// `@gt u1 : is_one, n, 1`
     Gt(Variable, Operand, Operand),
+    /// `@lt <type> : <des>, <lhs>, <rhs>`
+    /// `@lt u1 : is_one, n, 1`
+    Lt(Variable, Operand, Operand),
     /// @jump <label>
     /// @jump %recursive_case
     Jump(String),
@@ -160,6 +163,11 @@ impl std::fmt::Display for Instruction {
             Instruction::Gt(variable, operand, operand1) => write!(
                 f,
                 "@gt {} : {}, {}, {}",
+                variable.ty, variable, operand, operand1
+            ),
+            Instruction::Lt(variable, operand, operand1) => write!(
+                f,
+                "@lt {} : {}, {}, {}",
                 variable.ty, variable, operand, operand1
             ),
             Instruction::Jump(label) => write!(f, "@jump {}", label),

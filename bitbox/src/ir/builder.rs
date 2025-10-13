@@ -151,6 +151,20 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
+    /// `@lt <type> : <des>, <lhs>, <rhs>`
+    /// `@lt u1 : is_one, n, 1`
+    pub fn lt(
+        &mut self,
+        des: Variable,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(Instruction::Lt(des, lhs, rhs));
+        self
+    }
+
     /// @jump <label>
     /// @jump %recursive_case
     pub fn jump(&mut self, label: impl Into<String>) -> &mut Self {

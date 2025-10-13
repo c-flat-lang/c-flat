@@ -9,7 +9,10 @@ fn main() {
         eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
         std::process::exit(1);
     }
-    let wasm_bytes = std::fs::read(&args[0]).unwrap();
+    let Ok(wasm_bytes) = std::fs::read(&args[0]) else {
+        eprintln!("Failed to read file {}", &args[0]);
+        std::process::exit(1);
+    };
     run(&wasm_bytes).unwrap();
 }
 
