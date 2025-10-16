@@ -11,8 +11,13 @@ const imports = {
   },
 };
 
+function isBrowser() {
+  return (
+    typeof window !== "undefined" && typeof window.document !== "undefined"
+  );
+}
 async function getWasmBuffer(name) {
-  if (typeof window !== "undefined" && typeof window.document !== "undefined") {
+  if (isBrowser()) {
     const result = await fetch(name);
     return await result.arrayBuffer();
   } else {
@@ -21,8 +26,8 @@ async function getWasmBuffer(name) {
   }
 }
 
-async function main() {
-  const buffer = await getWasmBuffer("examples/test.wasm");
+async function main(filename) {
+  const buffer = await getWasmBuffer(filename);
   try {
     const module = await WebAssembly.instantiate(buffer, imports);
     const memory = module.instance.exports.memory;
@@ -30,13 +35,24 @@ async function main() {
       memoryBuffer = new Uint8Array(memory.buffer);
     }
 
-    // Instead of calling `main`, call `add`
-    const result = module.instance.exports.add(42, 58);
-    console.log("Result from wasm add:", result);
+    const result = module.instance.exports.main();
+    if (isBrowser()) {
+      const resultElement = document.getElementById("result");
+      console.log(resultElement);
+      resultElement.innerHTML = `Result from wasm main: ${result}`;
+    } else {
+      console.log("Result from wasm main:", result);
+    }
   } catch (e) {
     console.error("Error instantiating the wasm module:");
     console.error(e.message);
   }
 }
 
-main();
+if (!isBrowser()) {
+  main("examples/basic.wasm");
+} else {
+  document
+    .getElementById("run")
+    .addEventListener("click", () => main("basic.wasm"));
+}

@@ -66,7 +66,7 @@ impl Variable {
 
 impl std::fmt::Display for Variable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "_{}_v{}_", self.name, self.version)
+        write!(f, "{}_v{}", self.name, self.version)
     }
 }
 
@@ -371,7 +371,7 @@ impl std::fmt::Display for Function {
         let args = self
             .params
             .iter()
-            .map(|p| format!("{}, ", p))
+            .map(|p| format!("{}: {}, ", p, p.ty))
             .collect::<String>();
         writeln!(f, "function {}({}) {}{{", self.name, args, self.return_type)?;
         for block in &self.blocks {

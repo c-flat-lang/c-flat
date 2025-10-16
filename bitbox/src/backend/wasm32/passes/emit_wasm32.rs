@@ -117,7 +117,14 @@ impl Lower for ir::Function {
                 );
             }
 
-            let local_variables = ctx.local_function_variables.get(self.name.as_str());
+            let params_length = self.params.len();
+            let local_variables = ctx
+                .local_function_variables
+                .get(self.name.as_str())
+                .iter()
+                .skip(params_length)
+                .cloned()
+                .collect::<Vec<_>>();
             let mut locals: HashMap<ValType, u32> = HashMap::new();
             for var in local_variables {
                 let ty = var.ty.clone().into();
@@ -196,7 +203,21 @@ impl LowerToWasm32 for ir::Instruction {
                 // TODO: not sure what o output here.
                 eprintln!("@alloc {}", variable);
             }
-            ir::Instruction::Call(variable, _, operands) => todo!("@call"),
+            ir::Instruction::Call(variable, name, operands) => {
+                for operand in operands.iter() {
+                    operand.lower_to_wasm32(function_name, assembler, ctx);
+                }
+                let Some(function_id) = ctx.local_function_variables.get_function_id(name.as_str())
+                else {
+                    panic!("Function {:?} not found", name);
+                };
+                assembler.call(function_id as u32);
+                let variables = ctx.local_function_variables.get(function_name);
+                let Some(idx) = variables.iter().position(|v| v.name == variable.name) else {
+                    panic!("Variable {:?} not found", variable);
+                };
+                assembler.local_set(idx as u32);
+            }
             ir::Instruction::Cmp(variable, operand, operand1) => todo!("@cmp"),
             ir::Instruction::Gt(variable, operand, operand1) => {
                 operand.lower_to_wasm32(function_name, assembler, ctx);

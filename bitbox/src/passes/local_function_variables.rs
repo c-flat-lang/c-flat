@@ -5,15 +5,23 @@ use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
 pub struct LocalFunctionVariables {
-    table: HashMap<String, HashSet<Variable>>,
+    table: HashMap<String, Vec<Variable>>,
+    functions: Vec<String>,
 }
 
 impl LocalFunctionVariables {
     pub fn add(&mut self, function_name: impl Into<String>, variable: Variable) {
-        self.table
-            .entry(function_name.into())
-            .or_default()
-            .insert(variable);
+        let function_name = function_name.into();
+        if !self.functions.contains(&function_name) {
+            self.functions.push(function_name.clone());
+        }
+        let values = self.table.entry(function_name).or_default();
+
+        if values.contains(&variable) {
+            return;
+        }
+
+        values.push(variable);
     }
 
     pub fn get(&self, function_name: &str) -> Vec<Variable> {
@@ -21,6 +29,10 @@ impl LocalFunctionVariables {
             .get(function_name)
             .map(|set| set.iter().cloned().collect())
             .unwrap_or_default()
+    }
+
+    pub fn get_function_id(&self, as_str: &str) -> Option<usize> {
+        self.functions.iter().position(|f| f == as_str)
     }
 }
 
@@ -35,6 +47,10 @@ impl Pass for LocalFunctionVariablesPass {
     ) -> Result<(), crate::error::Error> {
         eprintln!("LocalFunctionVariablesPass");
         for function in module.functions.iter() {
+            for parameter in function.params.iter() {
+                ctx.local_function_variables
+                    .add(function.name.as_str(), parameter.clone());
+            }
             for block in function.blocks.iter() {
                 block_pass(function.name.as_str(), block, ctx);
             }

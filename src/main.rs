@@ -17,24 +17,28 @@ fn front_end_compiler(cli_options: &Cli, src: &str) -> Result<bitbox::ir::Module
         for token in &tokens {
             eprintln!("{:?}", token);
         }
+        std::process::exit(0);
     }
 
     let mut ast = stage::parser::Parser::default().run(tokens)?;
 
     if let Some(DebugMode::Ast) = cli_options.debug_mode {
         eprintln!("{:#?}", ast);
+        std::process::exit(0);
     }
 
     let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
         eprintln!("{:#?}", symbol_table);
+        std::process::exit(0);
     }
 
     let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
 
     if let Some(DebugMode::Ir) = cli_options.debug_mode {
         eprintln!("{}", module);
+        std::process::exit(0);
     }
 
     Ok(module)

@@ -51,10 +51,15 @@ impl IRBuilder {
             )
             .with_return_type(return_type.into_bitbox_type());
 
+        let mut ctx = LoweringContext::new(&mut self.symbol_table);
+
+        for param in function_builder.params.iter() {
+            ctx.push(param.clone());
+        }
+
         let mut assembler = function_builder.assembler();
         assembler.create_block("entry");
 
-        let mut ctx = LoweringContext::new(&mut self.symbol_table);
         body.lower(&mut assembler, &mut ctx);
 
         self.symbol_table.exit_scope();
@@ -152,11 +157,11 @@ impl Lowerable for ExprBinary {
         let lhs = self
             .left
             .lower(assembler, ctx)
-            .expect("lhs should produce a variable");
+            .expect(&format!("lhs {:?} should produce a variable", self.left));
         let rhs = self
             .right
             .lower(assembler, ctx)
-            .expect("rhs should produce a variable");
+            .expect(&format!("rhs {:?} should produce a variable", self.right));
 
         let des = assembler.var(lhs.ty.clone()); // Or infer type
         match self.op.kind {
@@ -323,7 +328,7 @@ impl Lowerable for ExprAssignment {
         // HACK: later we need to do type inference
         let ty = ty.clone().unwrap_or_default().into_bitbox_type();
         let Some(src) = expr.lower(assembler, ctx) else {
-            panic!("Failed to pop variable");
+            panic!("Failed to return variable from expr lowering");
         };
 
         let des = Variable::new(ident.lexeme.clone(), ty);
@@ -341,33 +346,29 @@ impl Lowerable for ExprCall {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        // let mut args = vec![];
-        // // TODO: We may need to reverse the args
-        // for arg in expr.args.iter() {
-        //     self.build_expr(assembler, arg);
-        //     let Some(arg_var) = self.pop() else {
-        //         panic!("Failed to pop variable");
-        //     };
-        //     args.push(Operand::from(arg_var));
-        // }
-        //
-        // // HACK: This works for now but later you probably would want to be able to call
-        // // (lambda x: x + 1)(2)
-        // // but thats if we want to support lambdas and I dont think we do
-        // let ast::Expr::Identifier(ident) = expr.caller.as_ref() else {
-        //     panic!("Caller must be an identifier");
-        // };
-        //
-        // let ty = if let Some(symbol) = self.symbol_table.get(&ident.lexeme) {
-        //     symbol.ty.into_bitbox_type()
-        // } else if ident.lexeme == "print" {
-        //     Type::Void
-        // } else {
-        //     panic!("Symbol not found {}", ident.lexeme);
-        // };
-        // let des = assembler.var(ty);
-        // assembler.call(des.clone(), ident.lexeme.clone(), &args);
-        // self.push(des);
-        None
+        // TODO: We may need to reverse the args
+        let args: Vec<Operand> = self
+            .args
+            .iter()
+            .filter_map(|arg| arg.lower(assembler, ctx).map(|var| var.into()))
+            .collect();
+
+        // HACK: This works for now but later you probably would want to be able to call
+        // (lambda x: x + 1)(2)
+        // but thats if we want to support lambdas and I dont think we do
+        let ast::Expr::Identifier(ident) = self.caller.as_ref() else {
+            panic!("Caller must be an identifier");
+        };
+
+        let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
+            symbol.ty.into_bitbox_type()
+        } else if ident.lexeme == "print" {
+            Type::Void
+        } else {
+            panic!("Symbol not found {}", ident.lexeme);
+        };
+        let des = assembler.var(ty);
+        assembler.call(des.clone(), ident.lexeme.clone(), &args);
+        Some(des)
     }
 }

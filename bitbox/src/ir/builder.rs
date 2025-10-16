@@ -43,7 +43,6 @@ impl ModuleBuilder {
 pub struct AssemblerBuilder<'a> {
     blocks: &'a mut Vec<BasicBlock>,
     current_block: Option<BlockId>,
-    counter: u32,
     variables: &'a mut Vec<Variable>,
 }
 
@@ -52,7 +51,6 @@ impl<'a> AssemblerBuilder<'a> {
         Self {
             blocks,
             current_block: None,
-            counter: 0,
             variables,
         }
     }
@@ -77,9 +75,7 @@ impl<'a> AssemblerBuilder<'a> {
 
     /// returns a new temporary variable
     pub fn var(&mut self, ty: Type) -> Variable {
-        let counter = self.counter;
-        self.counter += 1;
-        let var = Variable::new(format!("tmp{}", counter), ty);
+        let var = Variable::new(format!("{}", uuid::Uuid::new_v4()), ty);
         self.variables.push(var.clone());
         var
     }
@@ -282,12 +278,12 @@ impl<'a> AssemblerBuilder<'a> {
 
 #[derive(Debug, Default)]
 pub struct FunctionBuilder {
-    name: String,
-    visibility: Visibility,
-    params: Vec<Variable>,
-    return_type: Type,
-    blocks: Vec<BasicBlock>,
-    variables: Vec<Variable>,
+    pub name: String,
+    pub visibility: Visibility,
+    pub params: Vec<Variable>,
+    pub return_type: Type,
+    pub blocks: Vec<BasicBlock>,
+    pub variables: Vec<Variable>,
 }
 
 impl FunctionBuilder {
