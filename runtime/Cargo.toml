@@ -1,0 +1,10 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wasmi = "0.47.0"
+wasmtime = { version = "34.0.1", features = ['component-model', 'async', 'default', 'winch', 'debug-builtins'] }
+wasmtime-wasi = "34.0.1"
+anyhow = "1.0.98"

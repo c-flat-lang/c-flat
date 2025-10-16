@@ -1,17 +1,52 @@
-#![allow(unused)]
-mod ast;
-mod bbir_emitter;
+mod cli;
 mod error;
-mod lexer;
-mod llvm_codgen;
-mod parser;
-mod semantic_analysis;
+mod stage;
+use stage::Stage;
 
 use bitbox::Target;
+use cli::{Cli, DebugMode};
+
+use crate::error::CompilerError;
+
 use std::str::FromStr;
+
+fn front_end_compiler(cli_options: &Cli, src: &str) -> Result<bitbox::ir::Module, CompilerError> {
+    let tokens = stage::lexer::Lexer::default().run(src);
+
+    if let Some(DebugMode::Token) = cli_options.debug_mode {
+        for token in &tokens {
+            eprintln!("{:?}", token);
+        }
+        std::process::exit(0);
+    }
+
+    let mut ast = stage::parser::Parser::default().run(tokens)?;
+
+    if let Some(DebugMode::Ast) = cli_options.debug_mode {
+        eprintln!("{:#?}", ast);
+        std::process::exit(0);
+    }
+
+    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
+
+    if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
+        eprintln!("{:#?}", symbol_table);
+        std::process::exit(0);
+    }
+
+    let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
+
+    if let Some(DebugMode::Ir) = cli_options.debug_mode {
+        eprintln!("{}", module);
+        std::process::exit(0);
+    }
+
+    Ok(module)
+}
 
 fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
+    let mut cli_options = Cli::default();
 
     if args
         .iter()
@@ -22,6 +57,8 @@ fn main() {
         eprintln!("  Options:");
         eprintln!("    -t            Print tokens");
         eprintln!("    -a            Print AST");
+        eprintln!("    -s            Print symbol table");
+        eprintln!("    -ir           Print IR");
         eprintln!("    --target      Target triple");
         eprintln!("    -h, --help    Print this help message");
         std::process::exit(0);
@@ -31,6 +68,16 @@ fn main() {
         eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
         std::process::exit(1);
     };
+
+    if let Some(_) = args.iter().find(|arg| arg == &"-t") {
+        cli_options.debug_mode = Some(DebugMode::Token);
+    } else if let Some(_) = args.iter().find(|arg| arg == &"-a") {
+        cli_options.debug_mode = Some(DebugMode::Ast);
+    } else if let Some(_) = args.iter().find(|arg| arg == &"-s") {
+        cli_options.debug_mode = Some(DebugMode::SymbolTable);
+    } else if let Some(_) = args.iter().find(|arg| arg == &"-ir") {
+        cli_options.debug_mode = Some(DebugMode::Ir);
+    }
 
     let mut target = Target::default();
     if let Some(arg) = args.iter().find(|arg| arg.starts_with("--target")) {
@@ -46,50 +93,13 @@ fn main() {
 
     let source = std::fs::read_to_string(&file_path).unwrap();
 
-    if args.iter().find(|arg| arg == &"-t").is_some() {
-        let tokens = lexer::tokenize(&source);
-        eprintln!("{tokens:#?}");
-        return;
-    }
-
-    let mut ast = match parser::Parser::new(&source).parse() {
-        Ok(ast) => ast,
+    let mut module = match front_end_compiler(&cli_options, &source) {
+        Ok(module) => module,
         Err(err) => {
-            let report = err.report(&file_path, &source);
-            eprintln!("{}", report);
-            std::process::exit(1);
+            println!("{:?}", err);
+            return;
         }
     };
-
-    ast.sort_by(|a, b| match (a, b) {
-        (ast::Item::Function(a), ast::Item::Function(b)) => {
-            if a.name.lexeme == "main" {
-                std::cmp::Ordering::Greater
-            } else if b.name.lexeme == "main" {
-                std::cmp::Ordering::Less
-            } else {
-                a.name.lexeme.cmp(&b.name.lexeme)
-            }
-        }
-        _ => std::cmp::Ordering::Equal,
-    });
-
-    if args.iter().find(|arg| arg == &"-a").is_some() {
-        eprintln!("{ast:#?}");
-        return;
-    }
-
-    let program = bbir_emitter::emit(&mut ast);
-    eprintln!("{:#?}", program);
-
-    //if let Err(err) = bitbox::Compiler::default()
-    //    .target(target)
-    //    .program(program)
-    //    .filename(file_path)
-    //    .src(&source)
-    //    .compile()
-    //{
-    //    eprintln!("{}", err);
-    //    std::process::exit(1);
-    //}
+    let mut ctx = bitbox::backend::Context::default();
+    bitbox::Compiler::new(file_path, target).run(&mut module, &mut ctx);
 }
