@@ -260,13 +260,15 @@ impl<'a> AssemblerBuilder<'a> {
 
     pub fn if_else_(
         &mut self,
-        result: Option<Variable>,
         cond: Vec<BasicBlock>,
+        cond_result: Variable,
         then_branch: Vec<BasicBlock>,
         else_branch: Vec<BasicBlock>,
+        result: Option<Variable>,
     ) -> &mut Self {
         let instruction = Instruction::IfElse_ {
             cond,
+            cond_result,
             then_branch,
             else_branch,
             result,

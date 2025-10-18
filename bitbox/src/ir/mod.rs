@@ -124,6 +124,7 @@ pub enum Instruction {
     },
     IfElse_ {
         cond: Vec<BasicBlock>,
+        cond_result: Variable,
         then_branch: Vec<BasicBlock>,
         else_branch: Vec<BasicBlock>,
         result: Option<Variable>,
@@ -228,20 +229,22 @@ impl std::fmt::Display for Instruction {
             ),
             Instruction::IfElse_ {
                 cond,
+                cond_result,
                 then_branch,
                 else_branch,
                 result,
             } => write!(
                 f,
-                "@if [\n    {}    ]{} then [\n    {}    ] else [\n    {}    ]",
-                cond.iter()
-                    .map(|i| format!("  {}\n", i))
-                    .collect::<String>(),
+                "@if {} [\n    {}    ] {} then [\n    {}    ] else [\n    {}    ]",
                 if let Some(result) = result {
                     format!(": {}", result)
                 } else {
                     "".to_string()
                 },
+                cond_result,
+                cond.iter()
+                    .map(|i| format!("  {}\n", i))
+                    .collect::<String>(),
                 then_branch
                     .iter()
                     .map(|i| format!("  {}\n", i))

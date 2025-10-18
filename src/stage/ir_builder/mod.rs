@@ -171,6 +171,7 @@ impl Lowerable for ExprBinary {
             TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
             TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
             TokenKind::Less => assembler.lt(des.clone(), lhs, rhs),
+            TokenKind::EqualEqual => assembler.eq(des.clone(), lhs, rhs),
             op => unimplemented!("Operator not implemented {op:?}"),
         };
         Some(des)
@@ -204,7 +205,9 @@ impl Lowerable for ExprIfElse {
         let mut cond_blocks = vec![];
         let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
         cond_assembler.create_block("cond");
-        condition.lower(&mut cond_assembler, ctx);
+        let Some(cond_result) = condition.lower(&mut cond_assembler, ctx) else {
+            panic!("Condition should produce a variable");
+        };
 
         var.clear();
         let mut then_blocks = vec![];
@@ -212,8 +215,8 @@ impl Lowerable for ExprIfElse {
         then_assembler.create_block("then_branch");
         let then_block_result = then_branch.lower(&mut then_assembler, ctx);
 
-        if let Some(then_block_result) = then_block_result {
-            then_assembler.assign(result.clone().unwrap(), then_block_result);
+        if let (Some(then_block_result), Some(result)) = (then_block_result, result.clone()) {
+            then_assembler.assign(result, then_block_result);
         }
 
         let mut else_blocks = vec![];
@@ -228,7 +231,13 @@ impl Lowerable for ExprIfElse {
             }
         }
 
-        assembler.if_else_(result.clone(), cond_blocks, then_blocks, else_blocks);
+        assembler.if_else_(
+            cond_blocks,
+            cond_result,
+            then_blocks,
+            else_blocks,
+            result.clone(),
+        );
 
         result
     }
@@ -325,8 +334,11 @@ impl Lowerable for ExprAssignment {
             ty,
         } = self;
 
-        // HACK: later we need to do type inference
-        let ty = ty.clone().unwrap_or_default().into_bitbox_type();
+        let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
+            symbol.ty.clone().into_bitbox_type()
+        } else {
+            ty.clone().unwrap_or_default().into_bitbox_type()
+        };
         let Some(src) = expr.lower(assembler, ctx) else {
             panic!("Failed to return variable from expr lowering");
         };
@@ -367,7 +379,7 @@ impl Lowerable for ExprCall {
         } else {
             panic!("Symbol not found {}", ident.lexeme);
         };
-        let des = assembler.var(ty);
+        let des = assembler.var(ty.clone());
         assembler.call(des.clone(), ident.lexeme.clone(), &args);
         Some(des)
     }
