@@ -1,7 +1,7 @@
 use crate::ir::Variable;
 
 use super::Pass;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct LocalFunctionVariables {
@@ -108,6 +108,7 @@ fn block_pass(
             } => todo!("IfElse"),
             crate::ir::Instruction::IfElse_ {
                 cond,
+                cond_result,
                 then_branch,
                 else_branch,
                 result,
@@ -118,6 +119,8 @@ fn block_pass(
                 for block in cond.iter() {
                     block_pass(function_name, block, ctx);
                 }
+                ctx.local_function_variables
+                    .add(function_name, cond_result.clone());
                 for block in then_branch.iter() {
                     block_pass(function_name, block, ctx);
                 }

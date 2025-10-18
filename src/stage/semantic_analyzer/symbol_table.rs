@@ -5,20 +5,34 @@ use crate::stage::lexer::token::Token;
 use crate::stage::parser::ast::{self, Expr};
 use std::collections::HashMap;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
     errors: Vec<String>,
 }
 
-impl SymbolTableBuilder {
-    pub fn new() -> Self {
+impl Default for SymbolTableBuilder {
+    fn default() -> Self {
+        let mut table = SymbolTable::default();
+        table.enter_scope("global");
+        table.push(Symbol {
+            name: "print".to_string(),
+            ty: ast::Type::Void,
+            visibility: ast::Visibility::Public,
+            kind: SymbolKind::Function,
+            is_mutable: false,
+            params: Some(vec![ast::Type::UnsignedNumber(32)]),
+        });
+        table.exit_scope();
+
         Self {
-            table: SymbolTable::default(),
+            table,
             errors: Vec::new(),
         }
     }
+}
 
+impl SymbolTableBuilder {
     pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable, CompilerError> {
         for item in items {
             self.walk_item(&item);
@@ -98,23 +112,17 @@ impl SymbolTableBuilder {
 
     fn walk_expr(&mut self, expr: &ast::Expr) {
         match expr {
-            ast::Expr::Return(expr) => self.walk_expr_return(expr),
-            ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
+            ast::Expr::Return(ast::ExprReturn {
+                expr: Some(expr), ..
+            }) => self.walk_expr(expr),
+            ast::Expr::Struct(expr) => todo!("walk_expr_struct"),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
-            ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
+            _ => (),
         }
-    }
-
-    fn walk_expr_return(&mut self, expr: &ast::ExprReturn) {
-        // NOTE: ignoring return type
-    }
-
-    fn walk_expr_struct(&mut self, expr: &ast::ExprStruct) {
-        todo!("walk_expr_struct")
     }
 
     fn walk_expr_assignment(&mut self, expr: &ast::ExprAssignment) {
@@ -131,24 +139,17 @@ impl SymbolTableBuilder {
         self.table.push(symbol);
     }
 
-    fn walk_expr_litral(&mut self, _: &ast::Litral) {
-        // match expr {
-        //     ast::Litral::Integer(_) => todo!("Integer"),
-        //     ast::Litral::Float(_) => todo!("Float"),
-        //     ast::Litral::Char(_) => todo!("Char"),
-        //     ast::Litral::String(_) => todo!("String"),
-        //     ast::Litral::BoolTrue(_) => todo!("Bool True"),
-        //     ast::Litral::BoolFalse(_) => todo!("Bool Flase"),
-        // }
-    }
-
     fn walk_expr_call(&mut self, expr: &ast::ExprCall) {
-        let Expr::Identifier(token) = expr.caller.as_ref() else {
-            todo!("Not implemented")
-        };
-        eprintln!("TODO: {}: walk_expr_call {}", file!(), token.lexeme);
-
-        // todo!("Caller {:?}", self.table)
+        let ast::ExprCall {
+            caller,
+            left_paren: _,
+            args,
+            right_paren: _,
+        } = expr;
+        self.walk_expr(&caller);
+        for arg in args.iter() {
+            self.walk_expr(&arg);
+        }
     }
 
     fn walk_expr_binary(&mut self, expr: &ast::ExprBinary) {
@@ -413,7 +414,7 @@ mod tests {
 
         let tokens = crate::stage::lexer::Lexer::default().run(src);
         let ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
-        let symbol_table = match SymbolTableBuilder::new().build(&ast) {
+        let symbol_table = match SymbolTableBuilder::default().build(&ast) {
             Ok(table) => table,
             Err(errors) => {
                 let CompilerError::TypeErrors(errors) = errors else {

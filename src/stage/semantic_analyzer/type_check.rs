@@ -145,6 +145,11 @@ impl<'st> TypeChecker<'st> {
                 ))
             }
         }
+        self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
+            if s.ty == Type::Void && s.ty != value_type {
+                s.ty = value_type.clone()
+            }
+        });
         value_type
     }
 
@@ -237,7 +242,7 @@ mod tests {
         let tokens = crate::stage::lexer::Lexer::default().run(src);
         let mut ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
         let mut symbol_table =
-            crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::new()
+            crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::default()
                 .build(&mut ast)
                 .unwrap();
         eprintln!("{:#?}", symbol_table);
