@@ -1,37 +1,3 @@
-// #![allow(unused)]
-// use std::collections::HashMap;
-//
-// use crate::backend::Lower;
-// use crate::ir::{self, Module, Type, Visibility};
-// use crate::passes::Pass;
-//
-// #[derive(Debug)]
-// pub struct EmitX86_64LinuxPass;
-//
-// impl Pass for EmitX86_64LinuxPass {
-//     fn run(
-//         &mut self,
-//         module: &mut Module,
-//         ctx: &mut crate::backend::Context,
-//     ) -> Result<(), crate::error::Error> {
-//         eprintln!("EmitX86_64LinuxPass");
-//         for function in module.functions.iter() {
-//             function.lower(ctx, self)?;
-//         }
-//         Ok(())
-//     }
-// }
-//
-// impl Lower<EmitX86_64LinuxPass> for ir::Function {
-//     fn lower(
-//         &self,
-//         ctx: &mut crate::backend::Context,
-//         _: &EmitX86_64LinuxPass,
-//     ) -> Result<(), crate::error::Error> {
-//         todo!("lower function for x86_64 linux")
-//     }
-// }
-
 use inkwell::types::BasicMetadataTypeEnum;
 use inkwell::{
     builder::Builder, context::Context as LlvmContext, module::Module as LlvmModule,
@@ -123,7 +89,6 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
     ) -> Result<(), crate::error::Error> {
         let x86_llvm_ctx = ctx.output.get_mut_x86_64();
 
-        // === Step 1: Build the LLVM function type ===
         let param_types: Vec<BasicMetadataTypeEnum> = self
             .params
             .iter()
@@ -169,18 +134,6 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
             block.lower(&mut lower_ctx)?;
         }
 
-        // // === Step 2: Create entry block ===
-        // let entry = llvm_ctx.append_basic_block(function, "entry");
-        // builder.position_at_end(entry);
-        //
-        // // === Step 3: Example: emit constant return ===
-        // if self.return_type != ir::Type::Void {
-        //     let val = llvm_ctx.i32_type().const_int(42, false);
-        //     builder.build_return(Some(&val));
-        // } else {
-        //     builder.build_return(None);
-        // }
-
         Ok(())
     }
 }
@@ -210,14 +163,11 @@ impl LowerToLlvm for ir::Instruction {
             ir::Instruction::NoOp => todo!(),
             ir::Instruction::Add(variable, operand, operand1) => todo!(),
             ir::Instruction::Assign(variable, operand) => {
-                // Lower RHS to a BasicValueEnum
                 let llvm_value = operand.lower(ctx)?;
 
-                // Get or allocate a pointer for the variable (PointerValue<'ctx>)
                 let ptr = if let Some(existing_ptr) = ctx.variables.get(&variable.name) {
                     *existing_ptr
                 } else {
-                    // allocate in a type-specific manner inside match arms
                     let alloca = match variable.ty {
                         ir::Type::Signed(_) | ir::Type::Unsigned(_) => {
                             let int_ty = ctx.llvm_ctx.i32_type();
@@ -243,7 +193,6 @@ impl LowerToLlvm for ir::Instruction {
                     alloca
                 };
 
-                // Store the value into the pointer
                 ctx.builder.build_store(ptr, llvm_value).map_err(|e| {
                     crate::error::Error::InvalidInstruction {
                         index: 0,
@@ -273,10 +222,8 @@ impl LowerToLlvm for ir::Instruction {
                     return Ok(());
                 }
 
-                // Lower the operand value (this returns Result<BasicValueEnum>)
                 let val = operand.lower(ctx)?;
 
-                // Pass it as a reference wrapped in `Some(...)`
                 ctx.builder.build_return(Some(&val)).map_err(|e| {
                     crate::error::Error::InvalidInstruction {
                         index: 0,
@@ -315,7 +262,6 @@ impl<'ctx> ir::Operand {
                     panic!("Variable {:?} not found", var);
                 };
 
-                // 👇 convert your IR type to an LLVM type before using it
                 let llvm_ty = var.ty.to_llvm_type(ctx.llvm_ctx);
 
                 let output = ctx
