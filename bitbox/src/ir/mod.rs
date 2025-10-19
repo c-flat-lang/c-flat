@@ -387,6 +387,10 @@ impl Operand {
     pub fn is_variable(&self) -> bool {
         matches!(self, Operand::Variable(_))
     }
+
+    pub fn is_none(&self) -> bool {
+        matches!(self, Operand::None)
+    }
 }
 
 impl From<Variable> for Operand {

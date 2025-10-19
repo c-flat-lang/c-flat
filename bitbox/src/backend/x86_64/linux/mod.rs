@@ -1,4 +1,4 @@
-mod passes;
+pub mod passes;
 use crate::backend::Backend;
 use crate::passes::control_flow_graph::ControlFlowGraphPass;
 use crate::passes::liveness::LivenessAnalysisPass;

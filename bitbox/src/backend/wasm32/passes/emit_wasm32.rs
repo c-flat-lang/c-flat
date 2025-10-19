@@ -38,7 +38,7 @@ impl Pass for EmitWasm32Pass {
         }
 
         for function in module.functions.iter() {
-            function.lower(ctx)?;
+            function.lower(ctx, &*self)?;
         }
         Ok(())
     }
@@ -121,8 +121,12 @@ impl Into<BlockType> for ir::Type {
     }
 }
 
-impl Lower for ir::Function {
-    fn lower(&self, ctx: &mut crate::backend::Context) -> Result<(), crate::error::Error> {
+impl Lower<EmitWasm32Pass> for ir::Function {
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        _: &EmitWasm32Pass,
+    ) -> Result<(), crate::error::Error> {
         let f = {
             // Type Section
             let param_types: Vec<ValType> =

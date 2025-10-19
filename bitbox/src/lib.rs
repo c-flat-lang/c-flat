@@ -19,7 +19,17 @@ pub enum Target {
 }
 
 impl Target {
+    pub fn target_specific_context(&self) -> backend::TargetSpecificContext {
+        match self {
+            Target::Wasm32 => backend::TargetSpecificContext::Wasm32,
+            Target::X86_64Linux => {
+                backend::TargetSpecificContext::X86_64Linux(inkwell::context::Context::create())
+            }
+            Target::Bitbeat => backend::TargetSpecificContext::Bitbeat,
+        }
+    }
     pub fn backend(&self) -> Box<dyn backend::Backend> {
+        eprintln!("Target: {}", self);
         match self {
             Target::Wasm32 => Box::new(backend::wasm32::Wasm32Backend),
             Target::X86_64Linux => Box::new(backend::x86_64::linux::X86_64LinuxBackend),
@@ -86,13 +96,11 @@ impl Compiler {
         }
     }
 
-    pub fn run(
-        &self,
-        module: &mut ir::Module,
-        ctx: &mut backend::Context,
-    ) -> Result<(), error::Error> {
+    pub fn run(&self, module: &mut ir::Module) -> Result<(), error::Error> {
+        let csc = self.target.target_specific_context();
+        let mut ctx = backend::Context::new(&self.target, &csc);
         for mut pass in self.backend.passes() {
-            pass.run(module, ctx)?;
+            pass.run(module, &mut ctx)?;
             if pass.debug(&module, &ctx, self.debug_mode) {
                 return Ok(());
             }

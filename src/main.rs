@@ -60,7 +60,10 @@ fn main() {
         eprintln!("    -s            Print symbol table");
         eprintln!("    -ir           Print IR");
         eprintln!("    --target      Target triple");
+        eprintln!("    --dump-after  Print debug info after pass");
+        eprintln!("                  options: lowering");
         eprintln!("    -h, --help    Print this help message");
+
         std::process::exit(0);
     }
 
@@ -102,10 +105,9 @@ fn main() {
             return;
         }
     };
-    let mut ctx = bitbox::backend::Context::default();
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
     if let Err(error) =
-        bitbox::Compiler::new(file_path, target, compiler_debug_mode).run(&mut module, &mut ctx)
+        bitbox::Compiler::new(file_path, target, compiler_debug_mode).run(&mut module)
     {
         eprintln!("{}", error);
         std::process::exit(1);
