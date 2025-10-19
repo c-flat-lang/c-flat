@@ -5,8 +5,8 @@ use crate::backend::Lower;
 use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::Pass;
 use wasm_encoder::{
-    BlockType, CodeSection, ExportKind, ExportSection, Function as WasmFunction, FunctionSection,
-    InstructionSink, Module as WasmModule, TypeSection, ValType,
+    BlockType, CodeSection, EntityType, ExportKind, ExportSection, Function as WasmFunction,
+    FunctionSection, ImportSection, InstructionSink, Module as WasmModule, TypeSection, ValType,
 };
 
 #[derive(Debug)]
@@ -22,6 +22,20 @@ impl Pass for EmitWasm32Pass {
         // eprintln!("{:#?}", module);
         // eprintln!("{}", module);
         // eprintln!("{:#?}", ctx.local_function_variables.get("main"));
+
+        {
+            let mut module = ctx.output.get_mut_wasm32();
+
+            module
+                .import_section
+                .import("core", "write_i32", EntityType::Function(0));
+            module
+                .type_section
+                .ty()
+                .function(vec![ValType::I32], vec![]);
+
+            module.funciton_count += 1;
+        }
 
         for function in module.functions.iter() {
             function.lower(ctx)?;
@@ -57,6 +71,7 @@ trait LowerToWasm32 {
 pub struct Wasm32Module {
     module: WasmModule,
     type_section: TypeSection,
+    import_section: ImportSection,
     code_section: CodeSection,
     export_section: ExportSection,
     function_section: FunctionSection,
@@ -68,6 +83,7 @@ pub struct Wasm32Module {
 impl Wasm32Module {
     pub fn finish(&mut self) -> Vec<u8> {
         self.module.section(&self.type_section);
+        self.module.section(&self.import_section);
         self.module.section(&self.function_section);
         self.module.section(&self.export_section);
         self.module.section(&self.code_section);
@@ -250,11 +266,13 @@ impl LowerToWasm32 for ir::Instruction {
                     panic!("Function {:?} not found", name);
                 };
                 assembler.call(function_id as u32);
-                let variables = ctx.local_function_variables.get(function_name);
-                let Some(idx) = variables.iter().position(|v| v.name == variable.name) else {
-                    panic!("Variable {:?} not found", variable);
-                };
-                assembler.local_set(idx as u32);
+                if let Some(variable) = variable {
+                    let variables = ctx.local_function_variables.get(function_name);
+                    let Some(idx) = variables.iter().position(|v| v.name == variable.name) else {
+                        panic!("Variable {:?} not found", variable);
+                    };
+                    assembler.local_set(idx as u32);
+                }
             }
             ir::Instruction::Cmp(variable, lhs, rhs) => {
                 lhs.lower_to_wasm32(function_name, assembler, ctx);
@@ -365,12 +383,6 @@ impl LowerToWasm32 for ir::Instruction {
             }
             ir::Instruction::Div(variable, operand, operand1) => todo!("@div"),
             ir::Instruction::IfElse {
-                cond,
-                then_branch,
-                else_branch,
-                result,
-            } => todo!("@if IfElse"),
-            ir::Instruction::IfElse_ {
                 cond,
                 cond_result,
                 then_branch,

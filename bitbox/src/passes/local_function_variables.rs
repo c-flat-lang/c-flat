@@ -3,10 +3,19 @@ use crate::ir::Variable;
 use super::Pass;
 use std::collections::HashMap;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct LocalFunctionVariables {
     table: HashMap<String, Vec<Variable>>,
     functions: Vec<String>,
+}
+
+impl Default for LocalFunctionVariables {
+    fn default() -> Self {
+        Self {
+            table: HashMap::new(),
+            functions: vec!["print".to_string()],
+        }
+    }
 }
 
 impl LocalFunctionVariables {
@@ -75,7 +84,7 @@ fn block_pass(
             crate::ir::Instruction::Alloc(_, variable) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
-            crate::ir::Instruction::Call(variable, _, _) => ctx
+            crate::ir::Instruction::Call(Some(variable), _, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
             crate::ir::Instruction::Cmp(variable, _, _) => ctx
@@ -100,13 +109,6 @@ fn block_pass(
                 .local_function_variables
                 .add(function_name, variable.clone()),
             crate::ir::Instruction::IfElse {
-                ..
-                // cond,
-                // then_branch,
-                // else_branch,
-                // result,
-            } => todo!("IfElse"),
-            crate::ir::Instruction::IfElse_ {
                 cond,
                 cond_result,
                 then_branch,

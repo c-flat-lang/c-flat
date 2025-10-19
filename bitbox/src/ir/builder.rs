@@ -114,7 +114,12 @@ impl<'a> AssemblerBuilder<'a> {
 
     /// @call <type> : <des> <func>(<args>)
     /// @call s32 : exit_code write(fact_result, 0)
-    pub fn call(&mut self, des: Variable, name: impl Into<String>, args: &[Operand]) -> &mut Self {
+    pub fn call(
+        &mut self,
+        des: Option<Variable>,
+        name: impl Into<String>,
+        args: &[Operand],
+    ) -> &mut Self {
         self.push_instruction(Instruction::Call(des, name.into(), args.to_vec()));
         self
     }
@@ -243,30 +248,13 @@ impl<'a> AssemblerBuilder<'a> {
 
     pub fn if_else(
         &mut self,
-        result: Option<Variable>,
-        cond: impl Into<Operand>,
-        then_branch: Vec<Instruction>,
-        else_branch: Vec<Instruction>,
-    ) -> &mut Self {
-        let instruction = Instruction::IfElse {
-            cond: cond.into(),
-            then_branch,
-            else_branch,
-            result,
-        };
-        self.push_instruction(instruction);
-        self
-    }
-
-    pub fn if_else_(
-        &mut self,
         cond: Vec<BasicBlock>,
         cond_result: Variable,
         then_branch: Vec<BasicBlock>,
         else_branch: Vec<BasicBlock>,
         result: Option<Variable>,
     ) -> &mut Self {
-        let instruction = Instruction::IfElse_ {
+        let instruction = Instruction::IfElse {
             cond,
             cond_result,
             then_branch,

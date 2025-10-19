@@ -3,7 +3,7 @@ mod error;
 mod stage;
 use stage::Stage;
 
-use bitbox::Target;
+use bitbox::{Target, passes::DebugPass};
 use cli::{Cli, DebugMode};
 
 use crate::error::CompilerError;
@@ -77,6 +77,8 @@ fn main() {
         cli_options.debug_mode = Some(DebugMode::SymbolTable);
     } else if let Some(_) = args.iter().find(|arg| arg == &"-ir") {
         cli_options.debug_mode = Some(DebugMode::Ir);
+    } else if let Some(_) = args.iter().find(|arg| arg == &"--dump-after=lowering") {
+        cli_options.debug_mode = Some(DebugMode::LoweredIr);
     }
 
     let mut target = Target::default();
@@ -101,5 +103,11 @@ fn main() {
         }
     };
     let mut ctx = bitbox::backend::Context::default();
-    bitbox::Compiler::new(file_path, target).run(&mut module, &mut ctx);
+    let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
+    if let Err(error) =
+        bitbox::Compiler::new(file_path, target, compiler_debug_mode).run(&mut module, &mut ctx)
+    {
+        eprintln!("{}", error);
+        std::process::exit(1);
+    }
 }

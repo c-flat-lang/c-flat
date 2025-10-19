@@ -46,7 +46,7 @@ impl Pass for ControlFlowGraphPass {
                         }
                         crate::ir::Instruction::Jump(target) => {
                             let Some(target_block_id) = name_to_block_id.get(target) else {
-                                panic!("block not found");
+                                panic!("block {target} not found");
                             };
                             ctx.cfg.push_out(block.id, *target_block_id);
                             ctx.cfg.push_in(*target_block_id, block.id);

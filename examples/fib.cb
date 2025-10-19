@@ -6,6 +6,6 @@ fn fib(n: s32, a: s32, b: s32) s32 {
 }
 
 pub fn main() s32 {
- const value = fib(30, 0, 1);
- return value;
+  const value = fib(55, 0, 1);
+  return value;
 }

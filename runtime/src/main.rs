@@ -59,7 +59,14 @@ pub fn run(wasm_bytes: &[u8]) -> Result<()> {
 
     let instance = linker.instantiate(&mut store, &module)?;
     let main_func = instance.get_typed_func::<(), i32>(&mut store, "main")?;
+
+    let start = std::time::Instant::now();
+
     let ret = main_func.call(&mut store, ())?;
+
+    let seconds = start.elapsed().as_secs_f32();
+
+    println!("Done in {}", seconds);
     eprintln!("Return value: {}", ret);
     Ok(())
 }

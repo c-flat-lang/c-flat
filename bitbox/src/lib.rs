@@ -1,3 +1,5 @@
+use crate::passes::DebugPass;
+
 pub mod backend;
 pub mod error;
 pub mod ir;
@@ -71,80 +73,34 @@ pub struct Compiler {
     target: Target,
     src_path: String,
     backend: Box<dyn backend::Backend>,
+    debug_mode: Option<DebugPass>,
 }
 
 impl Compiler {
-    pub fn new(src_path: impl Into<String>, target: Target) -> Self {
+    pub fn new(src_path: impl Into<String>, target: Target, debug_mode: Option<DebugPass>) -> Self {
         Self {
             target,
             src_path: src_path.into(),
             backend: target.backend(),
+            debug_mode,
         }
     }
 
-    pub fn run(&self, module: &mut ir::Module, ctx: &mut backend::Context) {
+    pub fn run(
+        &self,
+        module: &mut ir::Module,
+        ctx: &mut backend::Context,
+    ) -> Result<(), error::Error> {
         for mut pass in self.backend.passes() {
-            let Err(e) = pass.run(module, ctx) else {
-                continue;
-            };
-
-            eprintln!("{}", e);
-            std::process::exit(1);
+            pass.run(module, ctx)?;
+            if pass.debug(&module, &ctx, self.debug_mode) {
+                return Ok(());
+            }
         }
 
         let compiler_result = ctx.output.finish();
         let path = self.target.get_new_path(&self.src_path);
         compiler_result.save_to_file(&path);
+        Ok(())
     }
-}
-
-#[test]
-fn test_compiler() {
-    use crate::ir::{Instruction, Operand};
-    let src_name = "test.cb";
-    let compiler = Compiler::new(src_name, Target::Wasm32);
-
-    let mut builder = crate::ir::builder::ModuleBuilder::default(); // {{{
-    let mut main_function = crate::ir::builder::FunctionBuilder::new("main")
-        .with_visibility(ir::Visibility::Public)
-        .with_return_type(ir::Type::Unsigned(32));
-    let mut assembler = main_function.assembler();
-
-    assembler.create_block("entry");
-
-    let condition = assembler.var(ir::Type::Unsigned(1));
-
-    let x = assembler.var(ir::Type::Unsigned(32));
-    assembler.assign(
-        x.clone(),
-        Operand::ConstantInt {
-            value: "1".into(),
-            ty: ir::Type::Unsigned(32),
-        },
-    );
-    let y = assembler.var(ir::Type::Unsigned(32));
-    assembler.assign(
-        y.clone(),
-        Operand::ConstantInt {
-            value: "2".into(),
-            ty: ir::Type::Unsigned(32),
-        },
-    );
-    assembler.gt(condition.clone(), x.clone(), y.clone());
-    let des = assembler.var(ir::Type::Unsigned(32));
-    assembler.if_else(
-        Some(des.clone()),
-        condition,
-        vec![Instruction::Assign(des.clone(), x.into())],
-        vec![Instruction::Assign(des, y.into())],
-    );
-
-    builder.function(main_function.build());
-
-    let mut module = builder.build(); // }}}
-
-    let mut ctx = backend::Context::default();
-    compiler.run(&mut module, &mut ctx);
-    eprintln!("{:#?}", ctx);
-    assert!(false);
 }

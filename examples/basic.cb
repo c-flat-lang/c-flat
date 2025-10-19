@@ -3,16 +3,14 @@ fn max_s32(x: s32, y: s32) s32 {
 }
 
 fn min_s32(x: s32, y: s32) s32 {
-    return if x < y { x } else { y };
-    // const value: s32 = y;
-    // if x < y {
-    //     value = x;
-    // }
-    // return value;
+    if x < y {
+        return x;
+    }
+    return y;
 }
 
 pub fn main() s32 {
-    const x: s32 = 123;
+    const x = 123;
     const y: s32 = 321;
-    return min_s32(x, y);
+    return max_s32(x, y);
 }

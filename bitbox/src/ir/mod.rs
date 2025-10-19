@@ -83,7 +83,7 @@ pub enum Instruction {
     Alloc(Type, Variable),
     /// @call <type> : <des> <func>(<args>)
     /// @call s32 : exit_code write(fact_result, 0)
-    Call(Variable, String, Vec<Operand>),
+    Call(Option<Variable>, String, Vec<Operand>),
     /// `@cmp <type> : <des>, <lhs>, <rhs>`
     /// `@cmp u1 : is_one, n, 1`
     Cmp(Variable, Operand, Operand),
@@ -117,12 +117,6 @@ pub enum Instruction {
     /// With out a result
     /// @if condition then [...] else [...]
     IfElse {
-        cond: Operand,
-        then_branch: Vec<Instruction>,
-        else_branch: Vec<Instruction>,
-        result: Option<Variable>,
-    },
-    IfElse_ {
         cond: Vec<BasicBlock>,
         cond_result: Variable,
         then_branch: Vec<BasicBlock>,
@@ -131,129 +125,218 @@ pub enum Instruction {
     },
 }
 
-impl std::fmt::Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+use std::fmt;
+use yansi::Paint;
+
+// helper to print binary ops with alignment
+fn bin_op(
+    f: &mut fmt::Formatter<'_>,
+    op: &str,
+    var: &crate::ir::Variable,
+    a: &crate::ir::Operand,
+    b: &crate::ir::Operand,
+) -> fmt::Result {
+    write!(
+        f,
+        "{} {:<5} : {}, {}, {}",
+        Paint::blue(&format!("@{}", op)),
+        Paint::yellow(&var.ty),
+        color_var(var),
+        color_op(a),
+        color_op(b),
+    )
+}
+
+// helper to shorten UUIDs for readability
+fn short_uuid(s: &impl fmt::Display) -> String {
+    let s = s.to_string();
+    let id = if s.len() > 8 { s[..8].to_string() } else { s };
+    Paint::bold(&id).cyan().to_string()
+}
+
+fn color_var(v: &Variable) -> impl fmt::Display + use<'_> {
+    Paint::bold(v).cyan()
+}
+
+fn color_op(o: &Operand) -> Box<dyn fmt::Display + '_> {
+    match o {
+        Operand::ConstantInt { value, .. } => Box::new(Paint::yellow(value)),
+        Operand::Variable(variable) => Box::new(color_var(variable)),
+        Operand::None => Box::new(""),
+    }
+}
+
+impl fmt::Display for Instruction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Instruction::NoOp => write!(f, "@noop"),
-            Instruction::Add(variable, operand, operand1) => write!(
-                f,
-                "@add {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
-            Instruction::Assign(variable, operand) => {
-                write!(f, "@assign {} : {}, {}", variable.ty, variable, operand)
-            }
-            Instruction::Alloc(ty, variable) => write!(f, "@alloc {} : {}", ty, variable),
-            Instruction::Call(des, caller, args) => {
+            Instruction::NoOp => write!(f, "{}", Paint::blue("@noop")),
+
+            Instruction::Add(var, a, b) => bin_op(f, "add", var, a, b),
+            Instruction::Sub(var, a, b) => bin_op(f, "sub", var, a, b),
+            Instruction::Mul(var, a, b) => bin_op(f, "mul", var, a, b),
+            Instruction::Div(var, a, b) => bin_op(f, "div", var, a, b),
+
+            Instruction::Cmp(var, a, b) => bin_op(f, "cmp", var, a, b),
+            Instruction::Gt(var, a, b) => bin_op(f, "gt", var, a, b),
+            Instruction::Lt(var, a, b) => bin_op(f, "lt", var, a, b),
+
+            Instruction::Assign(var, op) => {
                 write!(
                     f,
-                    "@call {} : {}, {}({})",
-                    des.ty,
-                    des,
-                    caller,
-                    args.iter()
-                        .map(|arg| format!("{}, ", arg))
-                        .collect::<String>()
+                    "{} {:<5} : {}, {}",
+                    Paint::blue("@assign"),
+                    Paint::yellow(&var.ty),
+                    color_var(var),
+                    color_op(op),
                 )
             }
-            Instruction::Cmp(variable, operand, operand1) => write!(
-                f,
-                "@cmp {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
-            Instruction::Gt(variable, operand, operand1) => write!(
-                f,
-                "@gt {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
-            Instruction::Lt(variable, operand, operand1) => write!(
-                f,
-                "@lt {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
-            Instruction::Jump(label) => write!(f, "@jump {}", label),
-            Instruction::JumpIf(operand, label) => write!(f, "@jumpif {}, {}", operand, label),
-            Instruction::Load(variable, operand) => {
-                write!(f, "@load {} : {}, {}", variable.ty, variable, operand)
-            }
-            Instruction::Mul(variable, operand, operand1) => write!(
-                f,
-                "@mul {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
-            Instruction::Phi(variable, items) => {
+
+            Instruction::Alloc(ty, var) => {
                 write!(
                     f,
-                    "@phi {} : {}, [{}]",
-                    variable.ty,
-                    variable,
-                    items
-                        .iter()
-                        .map(|(var, block)| format!("[{}, {}]", var, block))
-                        .collect::<String>()
+                    "{} {:<5} : {}",
+                    Paint::blue("@alloc"),
+                    Paint::yellow(&ty),
+                    color_var(var),
                 )
             }
-            Instruction::Return(ty, operand) => write!(f, "@ret {}, {}", ty, operand),
-            Instruction::Sub(variable, operand, operand1) => write!(
-                f,
-                "@sub {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
-            Instruction::Div(variable, operand, operand1) => write!(
-                f,
-                "@div {} : {}, {}, {}",
-                variable.ty, variable, operand, operand1
-            ),
+
+            Instruction::Load(var, op) => {
+                write!(
+                    f,
+                    "{} {:<5} : {}, {}",
+                    Paint::blue("@load"),
+                    Paint::yellow(&var.ty),
+                    color_var(var),
+                    color_op(op),
+                )
+            }
+
+            Instruction::Call(dest, caller, args) => {
+                let args_str = args
+                    .iter()
+                    .map(|a| format!("{}", color_op(a)))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if let Some(dest) = dest {
+                    return write!(
+                        f,
+                        "{} {:<5} : {}, {}({})",
+                        Paint::blue("@call"),
+                        Paint::yellow(&dest.ty),
+                        color_var(dest),
+                        Paint::magenta(caller),
+                        args_str
+                    );
+                }
+                write!(
+                    f,
+                    "{} {}({})",
+                    Paint::blue("@call"),
+                    Paint::magenta(caller),
+                    args_str
+                )
+            }
+
+            Instruction::Jump(label) => write!(f, "{} {}", Paint::blue("@jump"), short_uuid(label)),
+            Instruction::JumpIf(cond, label) => {
+                write!(
+                    f,
+                    "{} {}, {}",
+                    Paint::blue("@jumpif"),
+                    color_op(cond),
+                    short_uuid(label)
+                )
+            }
+
+            Instruction::Return(ty, op) => {
+                write!(
+                    f,
+                    "{} {:<5}, {}",
+                    Paint::blue("@ret"),
+                    Paint::yellow(&ty),
+                    color_op(op),
+                )
+            }
+
+            Instruction::Phi(var, items) => {
+                writeln!(
+                    f,
+                    "{} {:<5} : {},",
+                    Paint::blue("@phi"),
+                    Paint::yellow(&var.ty),
+                    color_var(var),
+                )?;
+                for (v, b) in items {
+                    writeln!(f, "    [{}, {}]", color_var(v), short_uuid(b))?;
+                }
+                Ok(())
+            }
+
             Instruction::IfElse {
                 cond,
-                then_branch,
-                else_branch,
-                result,
-            } => write!(
-                f,
-                "@if {}{} then [\n    {}    ] else [\n    {}    ]",
-                cond,
-                if let Some(result) = result {
-                    format!(": {}", result)
-                } else {
-                    "".to_string()
-                },
-                then_branch
-                    .iter()
-                    .map(|i| format!("  {}\n", i))
-                    .collect::<String>(),
-                else_branch
-                    .iter()
-                    .map(|i| format!("  {}\n", i))
-                    .collect::<String>(),
-            ),
-            Instruction::IfElse_ {
-                cond,
                 cond_result,
                 then_branch,
                 else_branch,
                 result,
-            } => write!(
-                f,
-                "@if {} [\n    {}    ] {} then [\n    {}    ] else [\n    {}    ]",
-                if let Some(result) = result {
-                    format!(": {}", result)
+            } => {
+                let res_str = if let Some(r) = result {
+                    format!(" -> {}", color_var(r))
                 } else {
                     "".to_string()
-                },
-                cond_result,
-                cond.iter()
-                    .map(|i| format!("  {}\n", i))
-                    .collect::<String>(),
-                then_branch
-                    .iter()
-                    .map(|i| format!("  {}\n", i))
-                    .collect::<String>(),
-                else_branch
-                    .iter()
-                    .map(|i| format!("  {}\n", i))
-                    .collect::<String>(),
-            ),
+                };
+
+                // header
+                writeln!(
+                    f,
+                    "{} {}{}:",
+                    Paint::blue("@if"),
+                    color_var(cond_result),
+                    res_str
+                )?;
+
+                // cond instructions, only if non-empty
+                if !cond.is_empty() {
+                    if cond.len() > 1 {
+                        writeln!(f, "  cond:")?;
+                        for b in cond {
+                            writeln!(f, "    block {}:", short_uuid(&b.label))?;
+                            for i in &b.instructions {
+                                writeln!(f, "        {}", i)?;
+                            }
+                        }
+                    } else {
+                        // inline single instruction
+                        for b in cond {
+                            for i in &b.instructions {
+                                writeln!(f, "    {}", i)?;
+                            }
+                        }
+                    }
+                }
+
+                // then branch
+                if !then_branch.is_empty() {
+                    writeln!(f, "  then:")?;
+                    for b in then_branch {
+                        for i in &b.instructions {
+                            writeln!(f, "    {}", i)?;
+                        }
+                    }
+                }
+
+                // else branch
+                if !else_branch.is_empty() {
+                    writeln!(f, "  else:")?;
+                    for b in else_branch {
+                        for i in &b.instructions {
+                            writeln!(f, "    {}", i)?;
+                        }
+                    }
+                }
+
+                Ok(())
+            }
         }
     }
 }
@@ -340,7 +423,13 @@ pub struct BasicBlock {
 
 impl std::fmt::Display for BasicBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "block {} {}:", self.id.0, self.label)?;
+        writeln!(
+            f,
+            "{} {} {}:",
+            Paint::red("block"),
+            Paint::bold(&self.id.0),
+            Paint::yellow(&self.label)
+        )?;
 
         for instruction in &self.instructions {
             writeln!(f, "    {}", instruction)?;
@@ -369,14 +458,21 @@ pub struct Function {
 impl std::fmt::Display for Function {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Visibility::Public = self.visibility {
-            write!(f, "public ")?;
+            write!(f, "{} ", Paint::red("public"))?;
         }
         let args = self
             .params
             .iter()
-            .map(|p| format!("{}: {}, ", p, p.ty))
+            .map(|p| format!("{}: {}, ", color_var(p), Paint::yellow(&p.ty)))
             .collect::<String>();
-        writeln!(f, "function {}({}) {}{{", self.name, args, self.return_type)?;
+        writeln!(
+            f,
+            "{} {}({}) {}{{",
+            Paint::red("function"),
+            Paint::magenta(&self.name),
+            args,
+            self.return_type
+        )?;
         for block in &self.blocks {
             write!(f, "  {}", block)?;
         }

@@ -50,7 +50,7 @@ impl crate::ir::Instruction {
             | Self::Assign(var, _)
             | Self::Load(var, _)
             | Self::Phi(var, _)
-            | Self::Call(var, _, _) => vec![var.clone()],
+            | Self::Call(Some(var), _, _) => vec![var.clone()],
             _ => vec![],
         }
     }
@@ -102,7 +102,7 @@ impl Pass for LivenessAnalysisPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("Running LivenessAnalysisPass");
+        eprintln!("LivenessAnalysisPass");
 
         for function in &module.functions {
             for block in &function.blocks {

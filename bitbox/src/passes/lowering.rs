@@ -1,4 +1,9 @@
-use crate::ir::{BasicBlock, BlockId, Instruction};
+use uuid::Uuid;
+
+use crate::{
+    ir::{BasicBlock, BlockId, Instruction, Operand},
+    passes::DebugPass,
+};
 
 use super::Pass;
 
@@ -6,103 +11,141 @@ use super::Pass;
 pub struct LoweringPass;
 
 impl Pass for LoweringPass {
+    fn debug(
+        &self,
+        module: &crate::ir::Module,
+        _ctx: &crate::backend::Context,
+        debug_mode: Option<DebugPass>,
+    ) -> bool {
+        if !matches!(debug_mode, Some(DebugPass::LoweredIr)) {
+            return false;
+        }
+
+        eprintln!("--- Dumping LoweringPass ---");
+        eprintln!("{}", module);
+        true
+    }
+
     fn run(
         &mut self,
         module: &mut crate::ir::Module,
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("LoweringPass");
-        for function in module.functions.iter_mut() {
-            let mut inserted_new_block: Option<usize> = None;
-            let mut new_blocks = Vec::new();
-            for (block_index, block) in function.blocks.iter_mut().enumerate() {
-                for (inst_index, instruction) in block.clone().instructions.iter().enumerate() {
-                    let Instruction::IfElse {
+        for func in &mut module.functions {
+            let mut i = 0;
+            while i < func.blocks.len() {
+                let mut block = func.blocks[i].clone();
+
+                let mut j = 0;
+                while j < block.instructions.len() {
+                    if let Instruction::IfElse {
                         cond,
+                        cond_result,
                         then_branch,
                         else_branch,
                         result,
-                    } = instruction
-                    else {
-                        continue;
-                    };
-                    inserted_new_block = Some(block_index);
+                    } = block.instructions[j].clone()
+                    {
+                        let after_if = block.instructions.split_off(j + 1);
+                        block.instructions.pop(); // remove the IfElse itself
 
-                    let then_label = format!("{}_then", block.label);
-                    let else_label = format!("{}_else", block.label);
-                    let merge_label = format!("{}_merge", block.label);
+                        let cond_label = format!("cond_{}", Uuid::new_v4());
+                        let then_label = format!("then_{}", Uuid::new_v4());
+                        let else_label = format!("else_{}", Uuid::new_v4());
+                        let merge_label = format!("merge_{}", Uuid::new_v4());
 
-                    let mut then_block = BasicBlock {
-                        id: BlockId(usize::MAX),
-                        label: then_label.clone(),
-                        instructions: then_branch.clone(),
-                    };
-
-                    let mut else_block = BasicBlock {
-                        id: BlockId(usize::MAX),
-                        label: else_label.clone(),
-                        instructions: else_branch.clone(),
-                    };
-
-                    let mut merge_block = BasicBlock {
-                        id: BlockId(usize::MAX),
-                        label: merge_label.clone(),
-                        instructions: vec![],
-                    };
-
-                    let jump_if = Instruction::JumpIf(cond.clone(), then_label.clone());
-                    let jump = Instruction::Jump(else_label.clone());
-
-                    block.instructions[inst_index] = jump_if;
-                    block.instructions.insert(inst_index + 1, jump);
-
-                    if let Some(res) = result.clone() {
-                        let val_then = match then_block.instructions.last().unwrap() {
-                            Instruction::Assign(v, _) => v.clone(),
-                            _ => {
-                                panic!("missing assignment in then block {:#?}", then_block)
+                        for mut cb in cond.clone() {
+                            cb.label = cond_label.clone();
+                            for inst in cb.instructions {
+                                block.instructions.push(inst);
                             }
-                        };
-                        let val_else = match else_block.instructions.last().unwrap() {
-                            Instruction::Assign(v, _) => v.clone(),
-                            _ => panic!("missing assignment in else block"),
-                        };
-                        merge_block.instructions.push(Instruction::Phi(
-                            res.clone(),
-                            vec![
-                                (val_then, then_label.clone()),
-                                (val_else, else_label.clone()),
-                            ],
+                        }
+
+                        block.instructions.push(Instruction::JumpIf(
+                            Operand::Variable(cond_result.clone()),
+                            then_label.clone(),
                         ));
+                        let jump_to_next_block = if else_branch.is_empty() {
+                            merge_label.clone()
+                        } else {
+                            else_label.clone()
+                        };
+                        block
+                            .instructions
+                            .push(Instruction::Jump(jump_to_next_block));
+
+                        let mut then_blocks = then_branch.clone();
+                        for tb in &mut then_blocks {
+                            tb.label = then_label.clone();
+                            let ends_in_ret_or_jump = tb.instructions.last().map(|inst| {
+                                matches!(
+                                    inst,
+                                    Instruction::Return(_, _)
+                                        | Instruction::Jump(_)
+                                        | Instruction::JumpIf(_, _)
+                                )
+                            });
+                            if ends_in_ret_or_jump != Some(true) {
+                                tb.instructions.push(Instruction::Jump(merge_label.clone()));
+                            }
+                        }
+
+                        let mut else_blocks = else_branch.clone();
+                        for eb in &mut else_blocks {
+                            eb.label = else_label.clone();
+                            let ends_in_ret_or_jump = eb.instructions.last().map(|inst| {
+                                matches!(
+                                    inst,
+                                    Instruction::Return(_, _)
+                                        | Instruction::Jump(_)
+                                        | Instruction::JumpIf(_, _)
+                                )
+                            });
+                            if ends_in_ret_or_jump != Some(true) {
+                                eb.instructions.push(Instruction::Jump(merge_label.clone()));
+                            }
+                        }
+
+                        let mut merge_block = BasicBlock {
+                            id: BlockId(0),
+                            label: merge_label.clone(),
+                            instructions: after_if,
+                        };
+
+                        if let Some(res_var) = result {
+                            merge_block.instructions.insert(
+                                0,
+                                Instruction::Phi(
+                                    res_var.clone(),
+                                    vec![
+                                        (res_var.clone(), then_label.clone()),
+                                        (res_var.clone(), else_label.clone()),
+                                    ],
+                                ),
+                            );
+                        }
+
+                        func.blocks[i] = block;
+                        let mut tail = func.blocks.split_off(i + 1);
+                        func.blocks.extend(then_blocks);
+                        func.blocks.extend(else_blocks);
+                        func.blocks.push(merge_block);
+                        func.blocks.append(&mut tail);
+
+                        for (idx, b) in func.blocks.iter_mut().enumerate() {
+                            b.id = BlockId(idx);
+                        }
+
+                        break;
                     }
 
-                    // After both then/else, jump to merge
-                    then_block
-                        .instructions
-                        .push(Instruction::Jump(merge_label.clone()));
-                    else_block
-                        .instructions
-                        .push(Instruction::Jump(merge_label.clone()));
-
-                    new_blocks.push(then_block);
-                    new_blocks.push(else_block);
-                    new_blocks.push(merge_block);
-                }
-            }
-            if let Some(index) = inserted_new_block {
-                for new_block in new_blocks.iter().rev() {
-                    function.blocks.insert(index + 1, new_block.clone());
+                    j += 1;
                 }
 
-                function
-                    .blocks
-                    .iter_mut()
-                    .enumerate()
-                    .for_each(|(index, block)| {
-                        block.id = BlockId(index);
-                    })
+                i += 1;
             }
         }
+
         Ok(())
     }
 }

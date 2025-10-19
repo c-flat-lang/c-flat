@@ -8,6 +8,9 @@ const imports = {
       );
       console.log(stringData);
     },
+    write_i32: (number) => {
+      console.log(number);
+    },
   },
 };
 
@@ -50,7 +53,11 @@ async function main(filename) {
 }
 
 if (!isBrowser()) {
-  main("examples/basic.wasm");
+  console.log("Running in node.js");
+  // get args
+  const args = process.argv.slice(2);
+  const filename = args[0];
+  main(filename);
 } else {
   document
     .getElementById("run")

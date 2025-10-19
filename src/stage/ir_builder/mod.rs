@@ -231,7 +231,7 @@ impl Lowerable for ExprIfElse {
             }
         }
 
-        assembler.if_else_(
+        assembler.if_else(
             cond_blocks,
             cond_result,
             then_blocks,
@@ -379,8 +379,14 @@ impl Lowerable for ExprCall {
         } else {
             panic!("Symbol not found {}", ident.lexeme);
         };
-        let des = assembler.var(ty.clone());
-        assembler.call(des.clone(), ident.lexeme.clone(), &args);
-        Some(des)
+        let des_var = if ty == Type::Void {
+            None
+        } else {
+            let des = assembler.var(ty.clone());
+            Some(des)
+        };
+        assembler.call(des_var.clone(), ident.lexeme.clone(), &args);
+
+        des_var
     }
 }
