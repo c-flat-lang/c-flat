@@ -4,6 +4,7 @@ pub mod backend;
 pub mod error;
 pub mod ir;
 pub mod passes;
+pub mod text;
 
 #[cfg(test)]
 mod test;

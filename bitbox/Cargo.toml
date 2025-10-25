@@ -18,3 +18,7 @@ pretty_assertions = "1.4.1"
 [lib]
 name = "bitbox"
 path = "src/lib.rs"
+
+[[bin]]
+name = "bitbox"
+path = "src/main.rs"

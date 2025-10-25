@@ -443,7 +443,7 @@ impl std::fmt::Display for BasicBlock {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Visibility {
     Public,
     #[default]

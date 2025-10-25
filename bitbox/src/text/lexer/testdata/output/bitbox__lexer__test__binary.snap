@@ -1,0 +1,40 @@
+---
+source: src/lexer/test.rs
+expression: snapshot_lexing(contents)
+---
+public function add(x: s32, y: s32) s32 {
+^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: 0..6 }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 7..15 }
+                ^^^ Token { kind: Identifier, lexeme: "add", span: 16..19 }
+                   ^ Token { kind: LeftParen, lexeme: "(", span: 19..20 }
+                    ^ Token { kind: Identifier, lexeme: "x", span: 20..21 }
+                     ^ Token { kind: Colon, lexeme: ":", span: 21..22 }
+                       ^^^ Token { kind: Identifier, lexeme: "s32", span: 23..26 }
+                          ^ Token { kind: Comma, lexeme: ",", span: 26..27 }
+                            ^ Token { kind: Identifier, lexeme: "y", span: 28..29 }
+                             ^ Token { kind: Colon, lexeme: ":", span: 29..30 }
+                               ^^^ Token { kind: Identifier, lexeme: "s32", span: 31..34 }
+                                  ^ Token { kind: RightParen, lexeme: ")", span: 34..35 }
+                                    ^^^ Token { kind: Identifier, lexeme: "s32", span: 36..39 }
+                                        ^^ Token { kind: LeftBrace, lexeme: "{", span: 40..42 }
+  %entry:
+  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: 44..51 }
+    @add s32 : z, x, y
+^ Token { kind: Delimiter, lexeme: "\\n", span: 51..52 }
+    ^^^^ Token { kind: Instruction(Add), lexeme: "@add", span: 56..60 }
+         ^^^ Token { kind: Identifier, lexeme: "s32", span: 61..64 }
+             ^ Token { kind: Colon, lexeme: ":", span: 65..66 }
+               ^ Token { kind: Identifier, lexeme: "z", span: 67..68 }
+                ^ Token { kind: Comma, lexeme: ",", span: 68..69 }
+                  ^ Token { kind: Identifier, lexeme: "x", span: 70..71 }
+                   ^ Token { kind: Comma, lexeme: ",", span: 71..72 }
+                     ^ Token { kind: Identifier, lexeme: "y", span: 73..74 }
+    @ret s32 : z
+^ Token { kind: Delimiter, lexeme: "\\n", span: 74..75 }
+    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: 79..83 }
+         ^^^ Token { kind: Identifier, lexeme: "s32", span: 84..87 }
+             ^ Token { kind: Colon, lexeme: ":", span: 88..89 }
+               ^ Token { kind: Identifier, lexeme: "z", span: 90..91 }
+}
+^ Token { kind: Delimiter, lexeme: "\\n", span: 91..92 }
+^^ Token { kind: RightBrace, lexeme: "}", span: 92..94 }

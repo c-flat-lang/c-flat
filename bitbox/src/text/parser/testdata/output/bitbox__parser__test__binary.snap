@@ -1,0 +1,101 @@
+---
+source: src/parser/test.rs
+expression: snapshot_parsing(contents)
+---
+Ok(
+    Program {
+        imports: [],
+        constants: [],
+        functions: [
+            Function {
+                visibility: Public,
+                name: "add",
+                params: [
+                    Variable {
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "x",
+                            span: 20..21,
+                        },
+                        ty: Signed(
+                            32,
+                        ),
+                        version: 0,
+                    },
+                    Variable {
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "y",
+                            span: 28..29,
+                        },
+                        ty: Signed(
+                            32,
+                        ),
+                        version: 1,
+                    },
+                ],
+                return_type: Signed(
+                    32,
+                ),
+                blocks: Block {
+                    blocks: [
+                        BasicBlock {
+                            id: 0,
+                            instructions: [
+                                Add(
+                                    Variable {
+                                        name: Token {
+                                            kind: Identifier,
+                                            lexeme: "z",
+                                            span: 67..68,
+                                        },
+                                        ty: Signed(
+                                            32,
+                                        ),
+                                        version: 0,
+                                    },
+                                    Variable(
+                                        Token {
+                                            kind: Identifier,
+                                            lexeme: "x",
+                                            span: 70..71,
+                                        },
+                                    ),
+                                    Variable(
+                                        Token {
+                                            kind: Identifier,
+                                            lexeme: "y",
+                                            span: 73..74,
+                                        },
+                                    ),
+                                ),
+                                Return(
+                                    Signed(
+                                        32,
+                                    ),
+                                    Variable(
+                                        Token {
+                                            kind: Identifier,
+                                            lexeme: "z",
+                                            span: 90..91,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            successors: [],
+                            predecessors: [],
+                        },
+                    ],
+                    table: Table {
+                        name_id: {
+                            "entry": 0,
+                        },
+                        id_name: {
+                            0: "entry",
+                        },
+                    },
+                },
+            },
+        ],
+    },
+)

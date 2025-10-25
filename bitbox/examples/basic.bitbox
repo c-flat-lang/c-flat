@@ -1,0 +1,5 @@
+public function add(x: s32, y: s32) s32 {
+  %entry:
+    @add s32 : z, x, y
+    @ret s32 : z
+}

@@ -24,7 +24,9 @@ pub fn run(wasm_bytes: &[u8]) -> Result<()> {
     let module = Module::new(&engine, wasm_bytes)?;
 
     let mut linker: Linker<WasiCtx> = Linker::new(&engine);
-    linker.func_wrap("core", "add", |a: i32, b: i32| -> i32 { a + b })?;
+    linker.func_wrap("core", "write_i32", |a: i32| {
+        print!("{}", a);
+    })?;
     linker.func_wrap(
         "core",
         "write",

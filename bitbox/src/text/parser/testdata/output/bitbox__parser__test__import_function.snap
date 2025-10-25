@@ -1,0 +1,153 @@
+---
+source: src/parser/test.rs
+expression: snapshot_parsing(contents)
+---
+Ok(
+    Program {
+        imports: [
+            Function(
+                FunctionSpec {
+                    module_name: Token {
+                        kind: Identifier,
+                        lexeme: "core",
+                        span: 16..20,
+                    },
+                    name: Token {
+                        kind: Identifier,
+                        lexeme: "write",
+                        span: 22..27,
+                    },
+                    params: [
+                        Signed(
+                            32,
+                        ),
+                        Signed(
+                            32,
+                        ),
+                    ],
+                    return_type: Signed(
+                        32,
+                    ),
+                },
+            ),
+        ],
+        constants: [
+            Constant {
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "value_ptr",
+                    span: 49..58,
+                },
+                ty: Pointer(
+                    Array(
+                        13,
+                        Unsigned(
+                            8,
+                        ),
+                    ),
+                ),
+                value: String(
+                    Token {
+                        kind: String,
+                        lexeme: "Hello World\n",
+                        span: 73..90,
+                    },
+                ),
+            },
+            Constant {
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "value_len",
+                    span: 97..106,
+                },
+                ty: Unsigned(
+                    32,
+                ),
+                value: Directive(
+                    Len(
+                        Token {
+                            kind: Identifier,
+                            lexeme: "value_ptr",
+                            span: 120..129,
+                        },
+                    ),
+                ),
+            },
+        ],
+        functions: [
+            Function {
+                visibility: Public,
+                name: "main",
+                params: [],
+                return_type: Signed(
+                    32,
+                ),
+                blocks: Block {
+                    blocks: [
+                        BasicBlock {
+                            id: 0,
+                            instructions: [
+                                Call(
+                                    Variable {
+                                        name: Token {
+                                            kind: Identifier,
+                                            lexeme: "result",
+                                            span: 186..192,
+                                        },
+                                        ty: Signed(
+                                            32,
+                                        ),
+                                        version: 0,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write",
+                                        span: 193..198,
+                                    },
+                                    [
+                                        Variable(
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "value_ptr",
+                                                span: 199..208,
+                                            },
+                                        ),
+                                        Variable(
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "value_len",
+                                                span: 210..219,
+                                            },
+                                        ),
+                                    ],
+                                ),
+                                Return(
+                                    Signed(
+                                        32,
+                                    ),
+                                    Variable(
+                                        Token {
+                                            kind: Identifier,
+                                            lexeme: "result",
+                                            span: 236..242,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            successors: [],
+                            predecessors: [],
+                        },
+                    ],
+                    table: Table {
+                        name_id: {
+                            "entry": 0,
+                        },
+                        id_name: {
+                            0: "entry",
+                        },
+                    },
+                },
+            },
+        ],
+    },
+)
