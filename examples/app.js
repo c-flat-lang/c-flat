@@ -60,6 +60,9 @@ if (!isBrowser()) {
   main(filename);
 } else {
   document
-    .getElementById("run")
+    .getElementById("run-basic")
     .addEventListener("click", () => main("basic.wasm"));
+  document
+    .getElementById("run-fib")
+    .addEventListener("click", () => main("fib.wasm"));
 }

@@ -144,6 +144,8 @@ impl Lowerable for Expr {
                 ctx.get_variable(&ident.lexeme)
             }
             Expr::Struct(_) => todo!("Struct expressions"),
+            Expr::Array(_) => todo!("Array expressions"),
+            Expr::ArrayIndex(_) => todo!("ArrayIndex expressions"),
         }
     }
 }

@@ -135,21 +135,40 @@ pub enum Expr {
     Binary(ExprBinary),
     Identifier(Token),
     IfElse(ExprIfElse),
+    Array(ExprArray),
+    ArrayIndex(ExprArrayIndex),
 }
 
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Expr::Return(expr_return) => expr_return.span(),
-            Expr::Struct(expr_struct) => expr_struct.span(),
-            Expr::Assignment(expr_assignment) => expr_assignment.span(),
-            Expr::Litral(litral) => litral.span(),
-            Expr::Call(expr_call) => expr_call.span(),
-            Expr::Binary(expr_binary) => expr_binary.span(),
-            Expr::Identifier(token) => token.span.clone(),
-            Expr::IfElse(expr_if_else) => expr_if_else.span(),
+            Self::Return(expr_return) => expr_return.span(),
+            Self::Struct(expr_struct) => expr_struct.span(),
+            Self::Assignment(expr_assignment) => expr_assignment.span(),
+            Self::Litral(litral) => litral.span(),
+            Self::Call(expr_call) => expr_call.span(),
+            Self::Binary(expr_binary) => expr_binary.span(),
+            Self::Identifier(token) => token.span.clone(),
+            Self::IfElse(expr_if_else) => expr_if_else.span(),
+            Self::Array(_) => todo!(),
+            Self::ArrayIndex(_) => todo!(),
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprArray {
+    pub open_bracket: Token,
+    pub elements: Vec<Expr>,
+    pub close_bracket: Token,
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprArrayIndex {
+    pub expr: Box<Expr>,
+    pub open_bracket: Token,
+    pub index: Box<Expr>,
+    pub close_bracket: Token,
 }
 
 #[derive(Debug, Clone)]

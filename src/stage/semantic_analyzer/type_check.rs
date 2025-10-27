@@ -118,6 +118,8 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
+            ast::Expr::Array(_) => todo!("Type Checking Array"),
+            ast::Expr::ArrayIndex(_) => todo!("Type Checking Array Index"),
         }
     }
 

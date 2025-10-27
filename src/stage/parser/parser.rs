@@ -406,11 +406,32 @@ impl Parser {
             TokenKind::Keyword(Keyword::False) => {
                 Ok(ast::Expr::Litral(ast::Litral::BoolFalse(token)))
             }
+            TokenKind::LeftBracket => self.parse_array_literal(token),
             _ => Err(CompilerError::ExpectedToken {
                 actual: token,
                 expected: TokenKind::Number,
             }),
         }
+    }
+
+    fn parse_array_literal(&mut self, open_bracket: Token) -> Result<ast::Expr, CompilerError> {
+        let mut elements = vec![];
+
+        while !self.peek(TokenKind::RightBracket) {
+            elements.push(self.parse_expr()?);
+            if self.peek(TokenKind::Comma) {
+                self.consume(TokenKind::Comma)?;
+            } else {
+                break;
+            }
+        }
+
+        let close_bracket = self.consume(TokenKind::RightBracket)?;
+        Ok(ast::Expr::Array(ast::ExprArray {
+            open_bracket,
+            elements,
+            close_bracket,
+        }))
     }
 }
 
