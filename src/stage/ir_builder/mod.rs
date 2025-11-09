@@ -5,7 +5,7 @@ use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 use crate::{error::CompilerError, stage::parser::ast, stage::parser::ast::Item};
 use bitbeat::Instruction;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
-use bitbox::ir::{Module, Operand, Type, Variable, Visibility};
+use bitbox::ir::{Constant, Module, Operand, Type, Variable, Visibility};
 
 #[derive(Debug, Default)]
 pub struct IRBuilder {
@@ -121,7 +121,8 @@ pub trait Lowerable {
 }
 
 use crate::stage::parser::ast::{
-    Block, Expr, ExprArray, ExprAssignment, ExprBinary, ExprCall, ExprIfElse, ExprReturn, Litral,
+    Block, Expr, ExprArray, ExprArrayIndex, ExprAssignment, ExprBinary, ExprCall, ExprIfElse,
+    ExprReturn, Litral,
 };
 
 impl Lowerable for Expr {
@@ -145,7 +146,7 @@ impl Lowerable for Expr {
             }
             Expr::Struct(_) => todo!("Struct expressions"),
             Expr::Array(expr) => expr.lower(assembler, ctx),
-            Expr::ArrayIndex(_) => todo!("ArrayIndex expressions"),
+            Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
         }
     }
 }
@@ -156,7 +157,27 @@ impl Lowerable for ExprArray {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        todo!("ExprArray lowering")
+        let ty = self.ty.clone().into_bitbox_type();
+        let size = Operand::ConstantInt {
+            value: format!("{}", self.elements.len() * (ty.size() as usize)),
+            ty: Type::Signed(32),
+        };
+        let ptr = assembler.var(ty.clone());
+        assembler.alloc(ty.clone(), ptr.clone(), size);
+        for (index, element) in self.elements.iter().enumerate() {
+            let Some(value) = element.lower(assembler, ctx) else {
+                panic!("Failed to return variable from expr lowering in Array");
+            };
+            assembler.elemset(
+                ptr.clone(),
+                Operand::ConstantInt {
+                    value: format!("{index}"),
+                    ty: Type::Signed(32),
+                },
+                value,
+            );
+        }
+        Some(ptr)
     }
 }
 
@@ -400,5 +421,26 @@ impl Lowerable for ExprCall {
         assembler.call(des_var.clone(), ident.lexeme.clone(), &args);
 
         des_var
+    }
+}
+
+impl Lowerable for ExprArrayIndex {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let Some(ptr) = self.expr.lower(assembler, ctx) else {
+            panic!("Failed to return variable from expr lowering");
+        };
+        let Some(index) = self.index.lower(assembler, ctx) else {
+            panic!("Failed to return variable from expr lowering");
+        };
+        let Type::Array(_, ty) = ptr.ty.clone() else {
+            panic!("Expected array type");
+        };
+        let des = assembler.var(*ty);
+        assembler.elemget(des.clone(), ptr, index);
+        Some(des)
     }
 }

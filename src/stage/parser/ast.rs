@@ -162,6 +162,7 @@ impl Expr {
 pub struct ExprArray {
     pub open_bracket: Token,
     pub elements: Vec<Expr>,
+    pub ty: Type,
     pub close_bracket: Token,
 }
 

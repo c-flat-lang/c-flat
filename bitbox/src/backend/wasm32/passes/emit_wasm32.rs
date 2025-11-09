@@ -119,9 +119,9 @@ impl Into<ValType> for ir::Type {
             ir::Type::Signed(1..=32) => ValType::I32,
             ir::Type::Float(1..=32) => ValType::F32,
             ir::Type::Float(33..=64) => ValType::F64,
-            ir::Type::Pointer(_) => todo!(),
-            ir::Type::Array(_, _) => todo!(),
-            ir::Type::Void => todo!(),
+            ir::Type::Pointer(_) => ValType::I32,
+            ir::Type::Array(_, _) => ValType::I32,
+            ir::Type::Void => unreachable!("Void is not a valid type"),
             _ => panic!("Unsupported type: {}", self),
         }
     }

@@ -119,7 +119,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
-            ast::Expr::ArrayIndex(_) => todo!("Type Checking Array Index"),
+            ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
         }
     }
 
@@ -241,7 +241,21 @@ impl<'st> TypeChecker<'st> {
                 ));
             }
         }
+        expr.ty = ty.clone();
         Type::Array(size, Box::new(ty))
+    }
+    fn walk_expr_array_index(&mut self, expr: &mut ast::ExprArrayIndex) -> Type {
+        let array_type = self.walk_expr(&mut expr.expr);
+        let index_type = self.walk_expr(&mut expr.index);
+        // HACK: This should be of type `usize` later once we have support for pointers
+        if index_type != Type::SignedNumber(32) {
+            self.errors
+                .push("Index must be a signed number".to_string());
+        }
+        let Type::Array(_, array_type) = array_type else {
+            panic!("Expected array type")
+        };
+        *array_type
     }
 }
 

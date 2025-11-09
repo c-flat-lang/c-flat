@@ -334,14 +334,37 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_call(&mut self) -> Result<ast::Expr, CompilerError> {
-        let mut expr = self.parse_assignment()?;
-
-        if let Some(left_paren) = self.lexer.next_if(one_of(&[TokenKind::LeftParen])) {
-            expr = self.finish_call(expr, left_paren)?;
+    fn parse_postfix(&mut self, mut expr: ast::Expr) -> Result<ast::Expr, CompilerError> {
+        loop {
+            if self.peek(TokenKind::LeftParen) {
+                let left_paren = self.consume(TokenKind::LeftParen)?;
+                expr = self.finish_call(expr, left_paren)?;
+            } else if self.peek(TokenKind::LeftBracket) {
+                let left_bracket = self.consume(TokenKind::LeftBracket)?;
+                let index = self.parse_expr()?;
+                let right_bracket = self.consume(TokenKind::RightBracket)?;
+                let array_index = ast::ExprArrayIndex {
+                    expr: Box::new(expr),
+                    open_bracket: left_bracket,
+                    index: Box::new(index),
+                    close_bracket: right_bracket,
+                };
+                expr = ast::Expr::ArrayIndex(array_index);
+            } else {
+                break;
+            }
         }
-
         Ok(expr)
+    }
+
+    fn parse_call(&mut self) -> Result<ast::Expr, CompilerError> {
+        let expr = self.parse_assignment()?;
+        self.parse_postfix(expr)
+        // if let Some(left_paren) = self.lexer.next_if(one_of(&[TokenKind::LeftParen])) {
+        //     expr = self.finish_call(expr, left_paren)?;
+        // }
+        //
+        // Ok(expr)
     }
 
     fn finish_call(
@@ -430,6 +453,9 @@ impl Parser {
         Ok(ast::Expr::Array(ast::ExprArray {
             open_bracket,
             elements,
+            // Set to Void because we don't know the type of the array.
+            // We will sent when we type check.
+            ty: ast::Type::Void,
             close_bracket,
         }))
     }
