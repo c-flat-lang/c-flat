@@ -96,7 +96,7 @@ impl Compiler {
         let mut ctx = backend::Context::new(&self.target, &csc);
         for mut pass in self.backend.passes() {
             pass.run(module, &mut ctx)?;
-            if pass.debug(&module, &ctx, self.debug_mode) {
+            if pass.debug(module, &ctx, self.debug_mode) {
                 return Ok(());
             }
         }

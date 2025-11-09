@@ -189,9 +189,7 @@ impl Parser {
             return Err(CompilerError::UnexpectedEndOfInput);
         };
         match tok.kind {
-            TokenKind::Identifier => {
-                token_as_type(&tok).map_err(|tok| CompilerError::ExpectedAType(tok))
-            }
+            TokenKind::Identifier => token_as_type(&tok).map_err(CompilerError::ExpectedAType),
             TokenKind::Star => {
                 let ty = self.parse_type()?;
                 Ok(ast::Type::Pointer(Box::new(ty)))

@@ -6,12 +6,12 @@ use crate::text::parser::ast;
 
 impl From<&str> for ir::Type {
     fn from(s: &str) -> Self {
-        if s.starts_with("u") {
-            ir::Type::Unsigned(s[1..].parse().unwrap())
-        } else if s.starts_with("s") {
-            ir::Type::Signed(s[1..].parse().unwrap())
-        } else if s.starts_with("f") {
-            ir::Type::Float(s[1..].parse().unwrap())
+        if let Some(stripped) = s.strip_prefix("u") {
+            ir::Type::Unsigned(stripped.parse().unwrap())
+        } else if let Some(stripped) = s.strip_prefix("s") {
+            ir::Type::Signed(stripped.parse().unwrap())
+        } else if let Some(stripped) = s.strip_prefix("f") {
+            ir::Type::Float(stripped.parse().unwrap())
         } else {
             unreachable!()
         }
@@ -189,10 +189,10 @@ impl Emitter {
 fn token_to_operand(token: &Token, ty: &ir::Type) -> Operand {
     match token.kind {
         TokenKind::Identifier => Operand::from(Variable::new(token.lexeme.clone(), ty.clone())),
-        TokenKind::Number => Operand::from(Operand::ConstantInt {
+        TokenKind::Number => Operand::ConstantInt {
             value: token.lexeme.clone(),
             ty: ty.clone(),
-        }),
+        },
         _ => unreachable!(),
     }
 }

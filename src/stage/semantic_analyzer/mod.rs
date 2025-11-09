@@ -11,7 +11,7 @@ pub struct SemanticAnalyzer {}
 
 impl Stage<&mut Vec<Item>, Result<SymbolTable, CompilerError>> for SemanticAnalyzer {
     fn run(&mut self, input: &mut Vec<Item>) -> Result<SymbolTable, CompilerError> {
-        let mut symbol_table = symbol_table::SymbolTableBuilder::default().build(&input)?;
+        let mut symbol_table = symbol_table::SymbolTableBuilder::default().build(input)?;
         type_check::TypeChecker::new(&mut symbol_table).check(input)?;
         Ok(symbol_table)
     }

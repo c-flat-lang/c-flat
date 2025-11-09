@@ -36,7 +36,7 @@ impl LocalFunctionVariables {
     pub fn get(&self, function_name: &str) -> Vec<Variable> {
         self.table
             .get(function_name)
-            .map(|set| set.iter().cloned().collect())
+            .map(|set| set.to_vec())
             .unwrap_or_default()
     }
 

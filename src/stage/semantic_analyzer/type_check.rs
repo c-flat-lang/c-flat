@@ -52,7 +52,7 @@ impl<'st> TypeChecker<'st> {
         }
     }
 
-    pub fn check(mut self, ast: &mut Vec<ast::Item>) -> Result<(), CompilerError> {
+    pub fn check(mut self, ast: &mut [ast::Item]) -> Result<(), CompilerError> {
         for item in ast.iter_mut() {
             self.walk_item(item);
         }
@@ -78,7 +78,7 @@ impl<'st> TypeChecker<'st> {
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
-        if &calulated_return_type != &function.return_type {
+        if calulated_return_type != function.return_type {
             let error_message = format!(
                 "{} expected return type `{}` but found `{}` instead",
                 function.name.lexeme, calulated_return_type, function.return_type
@@ -127,8 +127,7 @@ impl<'st> TypeChecker<'st> {
         let Some(expr) = expr.expr.as_mut() else {
             return Type::Void;
         };
-        let current_type = self.walk_expr(expr);
-        current_type
+        self.walk_expr(expr)
     }
 
     fn walk_expr_struct(&mut self, expr: &ast::ExprStruct) -> ast::Type {
@@ -137,15 +136,15 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_assignment(&mut self, expr: &mut ast::ExprAssignment) -> ast::Type {
         let value_type = self.walk_expr(&mut expr.expr);
-        if let Some(ty) = &expr.ty {
-            if ty != &value_type {
-                // TODO: log error and return the value_type
-                // Do not block
-                self.errors.push(format!(
-                    "Type mismatch: expected {} but got {}",
-                    ty, value_type
-                ))
-            }
+        if let Some(ty) = &expr.ty
+            && ty != &value_type
+        {
+            // TODO: log error and return the value_type
+            // Do not block
+            self.errors.push(format!(
+                "Type mismatch: expected {} but got {}",
+                ty, value_type
+            ))
         }
         self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
             if s.ty == Type::Void && s.ty != value_type {
@@ -233,7 +232,7 @@ impl<'st> TypeChecker<'st> {
         let size = expr.elements.len();
         let ty = self.walk_expr(&mut expr.elements[0]);
         for mut element in expr.elements.iter_mut().skip(1) {
-            let other = self.walk_expr(&mut element);
+            let other = self.walk_expr(element);
             if ty != other {
                 self.errors.push(format!(
                     "Type mismatch in array literal: {} != {}",

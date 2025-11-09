@@ -124,12 +124,12 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_delimiter(&mut self) -> Token {
-        while let Some(_) = self.next_if(|value| value == '\n') {}
+        while self.next_if(|value| value == '\n').is_some() {}
         self.spanned(TokenKind::Delimiter, "\\n")
     }
 
     fn parser_char_delemiter(&mut self, kind: TokenKind, char: char) -> Option<Token> {
-        while let Some(_) = self.next_if(|value| value == '\n') {}
+        while self.next_if(|value| value == '\n').is_some() {}
         Some(self.spanned(kind, char.to_string()))
     }
 

@@ -59,7 +59,7 @@ impl CompilerError {
                 // TODO: lets not
                 let mut report = String::new();
                 for error in errors {
-                    report.push_str(&error);
+                    report.push_str(error);
                     report.push('\n');
                 }
                 report
@@ -68,7 +68,7 @@ impl CompilerError {
                 // TODO: lets not
                 let mut report = String::new();
                 for error in errors {
-                    report.push_str(&error);
+                    report.push_str(error);
                     report.push('\n');
                 }
                 report

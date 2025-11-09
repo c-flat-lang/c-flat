@@ -1,5 +1,5 @@
 pub mod ast;
-mod parser;
+mod syntax_analyzer;
 use super::Stage;
 use crate::{error::CompilerError, stage::lexer::token::Token};
 
@@ -8,6 +8,6 @@ pub struct Parser {}
 
 impl Stage<Vec<Token>, Result<Vec<ast::Item>, CompilerError>> for Parser {
     fn run(&mut self, input: Vec<Token>) -> Result<Vec<ast::Item>, CompilerError> {
-        parser::Parser::new(input.into_iter().peekable()).parse()
+        syntax_analyzer::Parser::new(input.into_iter().peekable()).parse()
     }
 }

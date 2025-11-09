@@ -44,12 +44,12 @@ impl IRBuilder {
                     .iter()
                     .map(|param| Variable {
                         name: param.name.lexeme.clone(),
-                        ty: param.ty.into_bitbox_type(),
+                        ty: param.ty.as_bitbox_type(),
                         version: 0,
                     })
                     .collect(),
             )
-            .with_return_type(return_type.into_bitbox_type());
+            .with_return_type(return_type.as_bitbox_type());
 
         let mut ctx = LoweringContext::new(&mut self.symbol_table);
 
@@ -157,7 +157,7 @@ impl Lowerable for ExprArray {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ty = self.ty.clone().into_bitbox_type();
+        let ty = self.ty.clone().as_bitbox_type();
         let size = Operand::ConstantInt {
             value: format!("{}", self.elements.len() * (ty.size() as usize)),
             ty: Type::Signed(32),
@@ -190,11 +190,11 @@ impl Lowerable for ExprBinary {
         let lhs = self
             .left
             .lower(assembler, ctx)
-            .expect(&format!("lhs {:?} should produce a variable", self.left));
+            .unwrap_or_else(|| panic!("lhs {:?} should produce a variable", self.left));
         let rhs = self
             .right
             .lower(assembler, ctx)
-            .expect(&format!("rhs {:?} should produce a variable", self.right));
+            .unwrap_or_else(|| panic!("rhs {:?} should produce a variable", self.right));
 
         let des = assembler.var(lhs.ty.clone()); // Or infer type
         match self.op.kind {
@@ -227,7 +227,7 @@ impl Lowerable for ExprIfElse {
         let result = if ty == &ast::Type::Void {
             None
         } else {
-            let ty = ty.into_bitbox_type();
+            let ty = ty.as_bitbox_type();
             let return_value = assembler.var(ty.clone());
             // assembler.alloc(ty, return_value.clone());
             Some(return_value)
@@ -368,9 +368,9 @@ impl Lowerable for ExprAssignment {
         } = self;
 
         let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
-            symbol.ty.clone().into_bitbox_type()
+            symbol.ty.clone().as_bitbox_type()
         } else {
-            ty.clone().unwrap_or_default().into_bitbox_type()
+            ty.clone().unwrap_or_default().as_bitbox_type()
         };
         let Some(src) = expr.lower(assembler, ctx) else {
             panic!("Failed to return variable from expr lowering");
@@ -406,7 +406,7 @@ impl Lowerable for ExprCall {
         };
 
         let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
-            symbol.ty.into_bitbox_type()
+            symbol.ty.as_bitbox_type()
         } else if ident.lexeme == "print" {
             Type::Void
         } else {

@@ -125,9 +125,7 @@ impl<'a> Iterator for Tokenizer<'a> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let Some(c) = self.next_char() else {
-            return None;
-        };
+        let c = self.next_char()?;
         match c {
             '0'..='9' => Some(self.parse_number(c)),
             value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),

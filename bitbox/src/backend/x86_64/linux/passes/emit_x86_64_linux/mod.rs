@@ -123,7 +123,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
 
         let mut lower_ctx = LoweringContext {
             builder: &x86_llvm_ctx.builder,
-            llvm_ctx: &x86_llvm_ctx.llvm_context,
+            llvm_ctx: x86_llvm_ctx.llvm_context,
             variables: std::collections::HashMap::new(),
         };
         for block in self.blocks.iter() {
@@ -273,7 +273,7 @@ impl<'ctx> ir::Operand {
                         index: 0,
                         message: e.to_string(),
                     })?;
-                Ok(output.into())
+                Ok(output)
             }
 
             ir::Operand::None => panic!("None operand"),

@@ -35,7 +35,7 @@ impl Default for SymbolTableBuilder {
 impl SymbolTableBuilder {
     pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable, CompilerError> {
         for item in items {
-            self.walk_item(&item);
+            self.walk_item(item);
         }
         if !self.errors.is_empty() {
             return Err(CompilerError::SymbolTableErrors(self.errors));
@@ -86,7 +86,7 @@ impl SymbolTableBuilder {
             });
         }
 
-        self.walk_block(&body);
+        self.walk_block(body);
         self.table.exit_scope();
     }
 
@@ -101,13 +101,13 @@ impl SymbolTableBuilder {
     fn walk_block(&mut self, block: &ast::Block) {
         let ast::Block { statements, .. } = block;
         for stmt in statements {
-            self.walk_stmt(&stmt);
+            self.walk_stmt(stmt);
         }
     }
 
     fn walk_stmt(&mut self, stmt: &ast::Statement) {
         let ast::Statement { expr, .. } = stmt;
-        self.walk_expr(&expr);
+        self.walk_expr(expr);
     }
 
     fn walk_expr(&mut self, expr: &ast::Expr) {
@@ -146,16 +146,16 @@ impl SymbolTableBuilder {
             args,
             right_paren: _,
         } = expr;
-        self.walk_expr(&caller);
+        self.walk_expr(caller);
         for arg in args.iter() {
-            self.walk_expr(&arg);
+            self.walk_expr(arg);
         }
     }
 
     fn walk_expr_binary(&mut self, expr: &ast::ExprBinary) {
         let ast::ExprBinary { left, right, .. } = expr;
-        self.walk_expr(&left);
-        self.walk_expr(&right);
+        self.walk_expr(left);
+        self.walk_expr(right);
     }
 
     fn walk_expr_identifier(&mut self, token: &Token) {
@@ -176,12 +176,12 @@ impl SymbolTableBuilder {
             ty,
         } = expr;
 
-        self.walk_expr(&condition);
-        self.walk_block(&then_branch);
+        self.walk_expr(condition);
+        self.walk_block(then_branch);
         let Some(else_branch) = else_branch.as_ref() else {
             return;
         };
-        self.walk_block(&else_branch);
+        self.walk_block(else_branch);
     }
 }
 
@@ -278,10 +278,10 @@ impl SymbolTable {
         for i in (0..=self.scope_stack.len()).rev() {
             let scope_path = ScopePath::new(&self.scope_stack[0..i]);
 
-            if let Some(scope) = self.scopes.get(&scope_path) {
-                if let Some(symbol) = scope.lookup(name) {
-                    return Some(symbol);
-                }
+            if let Some(scope) = self.scopes.get(&scope_path)
+                && let Some(symbol) = scope.lookup(name)
+            {
+                return Some(symbol);
             }
         }
 
@@ -293,11 +293,11 @@ impl SymbolTable {
     pub fn get_mut(&mut self, name: &str, mut f: impl FnMut(&mut Symbol)) {
         for i in (0..self.scope_stack.len()).rev() {
             let scope_path = ScopePath::new(&self.scope_stack[0..=i]);
-            if let Some(scope) = self.scopes.get_mut(&scope_path) {
-                if let Some(symbol) = scope.get_mut(name) {
-                    f(symbol);
-                    return;
-                }
+            if let Some(scope) = self.scopes.get_mut(&scope_path)
+                && let Some(symbol) = scope.get_mut(name)
+            {
+                f(symbol);
+                return;
             }
         }
 

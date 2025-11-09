@@ -94,14 +94,14 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn into_bitbox_type(&self) -> bitbox::ir::Type {
+    pub fn as_bitbox_type(&self) -> bitbox::ir::Type {
         match self {
             Self::Bool => bitbox::ir::Type::Unsigned(32),
             Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
             Self::Array(size, ty) => {
-                bitbox::ir::Type::Array(*size, Box::new(ty.clone().into_bitbox_type()))
+                bitbox::ir::Type::Array(*size, Box::new(ty.clone().as_bitbox_type()))
             }
             Self::Pointer(_) => todo!(),
             Self::Struct(_) => todo!(),

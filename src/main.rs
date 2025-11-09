@@ -48,11 +48,7 @@ fn main() {
     let args = std::env::args().skip(1).collect::<Vec<_>>();
     let mut cli_options = Cli::default();
 
-    if args
-        .iter()
-        .find(|arg| arg == &"-h" || arg == &"--help")
-        .is_some()
-    {
+    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
         eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
         eprintln!("  Options:");
         eprintln!("    -t            Print tokens");
@@ -72,15 +68,15 @@ fn main() {
         std::process::exit(1);
     };
 
-    if let Some(_) = args.iter().find(|arg| arg == &"-t") {
+    if args.iter().any(|arg| arg == "-t") {
         cli_options.debug_mode = Some(DebugMode::Token);
-    } else if let Some(_) = args.iter().find(|arg| arg == &"-a") {
+    } else if args.iter().any(|arg| arg == "-a") {
         cli_options.debug_mode = Some(DebugMode::Ast);
-    } else if let Some(_) = args.iter().find(|arg| arg == &"-s") {
+    } else if args.iter().any(|arg| arg == "-s") {
         cli_options.debug_mode = Some(DebugMode::SymbolTable);
-    } else if let Some(_) = args.iter().find(|arg| arg == &"-ir") {
+    } else if args.iter().any(|arg| arg == "-ir") {
         cli_options.debug_mode = Some(DebugMode::Ir);
-    } else if let Some(_) = args.iter().find(|arg| arg == &"--dump-after=lowering") {
+    } else if args.iter().any(|arg| arg == "--dump-after=lowering") {
         cli_options.debug_mode = Some(DebugMode::LoweredIr);
     }
 
@@ -96,7 +92,7 @@ fn main() {
         };
     }
 
-    let source = std::fs::read_to_string(&file_path).unwrap();
+    let source = std::fs::read_to_string(file_path).unwrap();
 
     let mut module = match front_end_compiler(&cli_options, &source) {
         Ok(module) => module,

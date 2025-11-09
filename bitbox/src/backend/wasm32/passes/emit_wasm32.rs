@@ -112,9 +112,9 @@ impl Wasm32Module {
     }
 }
 
-impl Into<ValType> for ir::Type {
-    fn into(self) -> ValType {
-        match self {
+impl From<ir::Type> for ValType {
+    fn from(value: ir::Type) -> Self {
+        match value {
             ir::Type::Unsigned(1..=32) => ValType::I32,
             ir::Type::Signed(1..=32) => ValType::I32,
             ir::Type::Float(1..=32) => ValType::F32,
@@ -122,14 +122,14 @@ impl Into<ValType> for ir::Type {
             ir::Type::Pointer(_) => ValType::I32,
             ir::Type::Array(_, _) => ValType::I32,
             ir::Type::Void => unreachable!("Void is not a valid type"),
-            _ => panic!("Unsupported type: {}", self),
+            _ => panic!("Unsupported type: {}", value),
         }
     }
 }
 
-impl Into<BlockType> for ir::Type {
-    fn into(self) -> BlockType {
-        match self {
+impl From<ir::Type> for BlockType {
+    fn from(value: ir::Type) -> BlockType {
+        match value {
             ir::Type::Unsigned(1..=32) => BlockType::Result(ValType::I32),
             ir::Type::Signed(1..=32) => BlockType::Result(ValType::I32),
             ir::Type::Float(1..=32) => BlockType::Result(ValType::F32),
@@ -137,7 +137,7 @@ impl Into<BlockType> for ir::Type {
             ir::Type::Pointer(_) => todo!(),
             ir::Type::Array(_, _) => todo!(),
             ir::Type::Void => todo!(),
-            _ => panic!("Unsupported type: {}", self),
+            _ => panic!("Unsupported type: {}", value),
         }
     }
 }
@@ -338,7 +338,7 @@ impl LowerToWasm32 for ir::Instruction {
             }
             ir::Instruction::ElemGet(des, ptr, index) => {
                 index.lower_to_wasm32(function_name, assembler, ctx);
-                assembler.i32_const(des.ty.size() as i32);
+                assembler.i32_const(des.ty.size());
                 assembler.i32_mul();
 
                 ptr.lower_to_wasm32(function_name, assembler, ctx);
@@ -366,7 +366,7 @@ impl LowerToWasm32 for ir::Instruction {
             ir::Instruction::ElemSet(var, index, value) => {
                 let ty = var.ty.clone();
                 index.lower_to_wasm32(function_name, assembler, ctx);
-                assembler.i32_const(ty.size() as i32);
+                assembler.i32_const(ty.size());
                 assembler.i32_mul();
                 value.lower_to_wasm32(function_name, assembler, ctx);
                 match ty.clone().into() {
@@ -429,7 +429,7 @@ impl LowerToWasm32 for ir::Instruction {
             ir::Instruction::Load(variable, operand) => todo!("@load"),
             ir::Instruction::Mul(variable, operand, operand1) => todo!("@mul"),
             ir::Instruction::Phi(variable, items) => todo!("@phi"),
-            ir::Instruction::Return(ty, operand) => match ty.clone().into() {
+            ir::Instruction::Return(ty, operand) => match ty.clone() {
                 Type::Void => todo!("@return void"),
                 _ => {
                     operand.lower_to_wasm32(function_name, assembler, ctx);
