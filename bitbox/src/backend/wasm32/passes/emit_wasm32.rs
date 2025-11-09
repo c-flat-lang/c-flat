@@ -5,8 +5,9 @@ use crate::backend::Lower;
 use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::Pass;
 use wasm_encoder::{
-    BlockType, CodeSection, EntityType, ExportKind, ExportSection, Function as WasmFunction,
-    FunctionSection, ImportSection, InstructionSink, Module as WasmModule, TypeSection, ValType,
+    BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
+    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, ImportSection,
+    InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection, ValType,
 };
 
 #[derive(Debug)]
@@ -35,6 +36,22 @@ impl Pass for EmitWasm32Pass {
                 .function(vec![ValType::I32], vec![]);
 
             module.funciton_count += 1;
+
+            module.memory_section.memory(MemoryType {
+                minimum: 1,
+                maximum: None,
+                memory64: false,
+                shared: false,
+                page_size_log2: None,
+            });
+            module.global_section.global(
+                GlobalType {
+                    val_type: ValType::I32,
+                    mutable: true,
+                    shared: false,
+                },
+                &ConstExpr::i32_const(0),
+            );
         }
 
         for function in module.functions.iter() {
@@ -72,9 +89,11 @@ pub struct Wasm32Module {
     module: WasmModule,
     type_section: TypeSection,
     import_section: ImportSection,
-    code_section: CodeSection,
-    export_section: ExportSection,
     function_section: FunctionSection,
+    memory_section: MemorySection,
+    global_section: GlobalSection,
+    export_section: ExportSection,
+    code_section: CodeSection,
 
     /// Counter for function ids for the function section
     funciton_count: u32,
@@ -85,6 +104,8 @@ impl Wasm32Module {
         self.module.section(&self.type_section);
         self.module.section(&self.import_section);
         self.module.section(&self.function_section);
+        self.module.section(&self.memory_section);
+        self.module.section(&self.global_section);
         self.module.section(&self.export_section);
         self.module.section(&self.code_section);
         self.module.clone().finish()
@@ -257,9 +278,25 @@ impl LowerToWasm32 for ir::Instruction {
                 ValType::V128 => todo!("@assign v128"),
                 ValType::Ref(_) => todo!("@assign ref"),
             },
-            ir::Instruction::Alloc(_, variable) => {
-                // TODO: not sure what to output here.
-                eprintln!("@alloc {}", variable);
+            ir::Instruction::Alloc(ty, variable, operand) => {
+                variable.lower_to_wasm32(function_name, assembler, ctx);
+                operand.lower_to_wasm32(function_name, assembler, ctx)?;
+                assembler.i32_mul();
+
+                assembler.global_get(0); // HACK: probably need to make a HEAP index.
+
+                let Some(ptr_idx) = ctx
+                    .local_function_variables
+                    .get(function_name)
+                    .iter()
+                    .position(|v| v.name == variable.name)
+                else {
+                    panic!("Variable {:?} not found", variable);
+                };
+
+                assembler.local_tee(ptr_idx as u32);
+                assembler.i32_add();
+                assembler.global_set(0); // HACK: probably need to make a HEAP index.
             }
             ir::Instruction::Call(variable, name, operands) => {
                 for operand in operands.iter() {
@@ -298,6 +335,52 @@ impl LowerToWasm32 for ir::Instruction {
                     panic!("Variable {:?} not found", variable);
                 };
                 assembler.local_set(idx as u32);
+            }
+            ir::Instruction::ElemGet(des, ptr, index) => {
+                index.lower_to_wasm32(function_name, assembler, ctx);
+                assembler.i32_const(des.ty.size() as i32);
+                assembler.i32_mul();
+
+                ptr.lower_to_wasm32(function_name, assembler, ctx);
+                assembler.i32_add();
+
+                match des.ty.clone().into() {
+                    ValType::I32 => assembler.i32_load(wasm_encoder::MemArg {
+                        offset: 0,
+                        align: 2,
+                        memory_index: 0,
+                    }),
+                    ValType::I64 => todo!("@gt i64"),
+                    ValType::F32 => todo!("@gt f32"),
+                    ValType::F64 => todo!("@gt f64"),
+                    ValType::V128 => todo!("@gt v128"),
+                    ValType::Ref(_) => todo!("@gt ref"),
+                };
+
+                let variables = ctx.local_function_variables.get(function_name);
+                let Some(idx) = variables.iter().position(|v| v.name == des.name) else {
+                    panic!("Variable {:?} not found", self);
+                };
+                assembler.local_set(idx as u32);
+            }
+            ir::Instruction::ElemSet(var, index, value) => {
+                let ty = var.ty.clone();
+                index.lower_to_wasm32(function_name, assembler, ctx);
+                assembler.i32_const(ty.size() as i32);
+                assembler.i32_mul();
+                value.lower_to_wasm32(function_name, assembler, ctx);
+                match ty.clone().into() {
+                    ValType::I32 => assembler.i32_store(wasm_encoder::MemArg {
+                        offset: 0,
+                        align: 2,
+                        memory_index: 0,
+                    }),
+                    ValType::I64 => todo!("@gt i64"),
+                    ValType::F32 => todo!("@gt f32"),
+                    ValType::F64 => todo!("@gt f64"),
+                    ValType::V128 => todo!("@gt v128"),
+                    ValType::Ref(_) => todo!("@gt ref"),
+                };
             }
             ir::Instruction::Gt(variable, lhs, rhs) => {
                 lhs.lower_to_wasm32(function_name, assembler, ctx);
@@ -349,18 +432,19 @@ impl LowerToWasm32 for ir::Instruction {
             ir::Instruction::Return(ty, operand) => match ty.clone().into() {
                 Type::Void => todo!("@return void"),
                 _ => {
-                    if operand.is_variable() {
-                        let local_variables = ctx.local_function_variables.get(function_name);
-                        let ir::Operand::Variable(variable) = operand else {
-                            panic!("Operand is not a variable");
-                        };
-                        let Some(idx) =
-                            local_variables.iter().position(|v| v.name == variable.name)
-                        else {
-                            panic!("Variable {:?} not found", variable);
-                        };
-                        assembler.local_get(idx as u32);
-                    }
+                    operand.lower_to_wasm32(function_name, assembler, ctx);
+                    // if operand.is_variable() {
+                    //     let local_variables = ctx.local_function_variables.get(function_name);
+                    //     let ir::Operand::Variable(variable) = operand else {
+                    //         panic!("Operand is not a variable");
+                    //     };
+                    //     let Some(idx) =
+                    //         local_variables.iter().position(|v| v.name == variable.name)
+                    //     else {
+                    //         panic!("Variable {:?} not found", variable);
+                    //     };
+                    //     assembler.local_get(idx as u32);
+                    // }
                     assembler.return_();
                 }
             },
@@ -459,6 +543,23 @@ impl LowerToWasm32 for ir::Operand {
             }
             ir::Operand::None => todo!("@none"),
         }
+        Ok(())
+    }
+}
+
+impl LowerToWasm32 for ir::Variable {
+    fn lower_to_wasm32(
+        &self,
+        function_name: &str,
+        assembler: &mut InstructionSink<'_>,
+        ctx: &mut crate::backend::Context,
+    ) -> Result<(), crate::error::Error> {
+        let variables = ctx.local_function_variables.get(function_name);
+        let Some(idx) = variables.iter().position(|v| v.name == self.name) else {
+            panic!("Variable {:?} not found", self);
+        };
+        assembler.local_get(idx as u32);
+
         Ok(())
     }
 }

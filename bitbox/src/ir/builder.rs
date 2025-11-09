@@ -107,8 +107,8 @@ impl<'a> AssemblerBuilder<'a> {
     }
 
     /// @alloc <type> : <des>
-    pub fn alloc(&mut self, ty: Type, clone: Variable) -> &mut Self {
-        self.push_instruction(Instruction::Alloc(ty, clone));
+    pub fn alloc(&mut self, ty: Type, var: Variable, size: impl Into<Operand>) -> &mut Self {
+        self.push_instruction(Instruction::Alloc(ty, var, size.into()));
         self
     }
 
@@ -121,6 +121,28 @@ impl<'a> AssemblerBuilder<'a> {
         args: &[Operand],
     ) -> &mut Self {
         self.push_instruction(Instruction::Call(des, name.into(), args.to_vec()));
+        self
+    }
+
+    /// @elemget <type> : <des>, <ptr>, <index>
+    pub fn elemget(
+        &mut self,
+        des: Variable,
+        ptr: impl Into<Operand>,
+        index: impl Into<Operand>,
+    ) -> &mut Self {
+        self.push_instruction(Instruction::ElemGet(des, ptr.into(), index.into()));
+        self
+    }
+
+    /// @elemset <type> : <addr>, <index>, <value>
+    pub fn elemset(
+        &mut self,
+        addr: Variable,
+        index: impl Into<Operand>,
+        value: impl Into<Operand>,
+    ) -> &mut Self {
+        self.push_instruction(Instruction::ElemSet(addr, index.into(), value.into()));
         self
     }
 
@@ -208,8 +230,8 @@ impl<'a> AssemblerBuilder<'a> {
     }
 
     /// @ret <type> : <val>
-    pub fn ret(&mut self, val: Variable) -> &mut Self {
-        self.push_instruction(Instruction::Return(val.ty.clone(), Operand::from(val)));
+    pub fn ret(&mut self, ty: Type, val: impl Into<Operand>) -> &mut Self {
+        self.push_instruction(Instruction::Return(ty, val.into()));
         self
     }
 

@@ -118,7 +118,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
-            ast::Expr::Array(_) => todo!("Type Checking Array"),
+            ast::Expr::Array(expr) => self.walk_expr_array(expr),
             ast::Expr::ArrayIndex(_) => todo!("Type Checking Array Index"),
         }
     }
@@ -212,7 +212,9 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
-        if self.walk_expr(&mut expr.condition) == ast::Type::Bool {}
+        if self.walk_expr(&mut expr.condition) != ast::Type::Bool {
+            self.errors.push("Condition must be a boolean".to_string());
+        }
         let then_branch_type = self.walk_block(&mut expr.then_branch);
         if let Some(else_branch) = expr.else_branch.as_mut() {
             let else_branch_type = self.walk_block(else_branch);
@@ -225,6 +227,21 @@ impl<'st> TypeChecker<'st> {
             expr.ty = then_branch_type.clone();
         }
         then_branch_type
+    }
+
+    fn walk_expr_array(&mut self, expr: &mut ast::ExprArray) -> Type {
+        let size = expr.elements.len();
+        let ty = self.walk_expr(&mut expr.elements[0]);
+        for mut element in expr.elements.iter_mut().skip(1) {
+            let other = self.walk_expr(&mut element);
+            if ty != other {
+                self.errors.push(format!(
+                    "Type mismatch in array literal: {} != {}",
+                    ty, other
+                ));
+            }
+        }
+        Type::Array(size, Box::new(ty))
     }
 }
 

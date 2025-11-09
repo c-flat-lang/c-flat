@@ -81,13 +81,16 @@ fn block_pass(
             crate::ir::Instruction::Assign(variable, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
-            crate::ir::Instruction::Alloc(_, variable) => ctx
+            crate::ir::Instruction::Alloc(_, variable, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
             crate::ir::Instruction::Call(Some(variable), _, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
             crate::ir::Instruction::Cmp(variable, _, _) => ctx
+                .local_function_variables
+                .add(function_name, variable.clone()),
+            crate::ir::Instruction::ElemGet(variable, _, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
             crate::ir::Instruction::Gt(variable, _, _) => ctx
@@ -115,7 +118,7 @@ fn block_pass(
                 else_branch,
                 result,
             } => {
-                // NOTE: Due to the way the blcosk are independent of each other
+                // NOTE: Due to the way the blocks are independent of each other
                 // the names of variables could be the same as the outer block.
                 // This is a problem for future me.
                 for block in cond.iter() {

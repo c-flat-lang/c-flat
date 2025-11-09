@@ -13,10 +13,9 @@ function factorial(n: s32) s32 {
     @ret s32 : 1
 
   %recursive_case:
-    // @call s32 : recursive_result factorial(n_minus_one)
-    // @mul s32 : result, n, recursive_result
-    // @ret s32 : result
-    @ret s32 : 0
+    @call s32 : recursive_result factorial(n_minus_one)
+    @mul s32 : result, n, recursive_result
+    @ret s32 : result
 }
 
 public function main() s32 {

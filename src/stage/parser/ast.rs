@@ -100,7 +100,9 @@ impl Type {
             Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
-            Self::Array(_, _) => todo!(),
+            Self::Array(size, ty) => {
+                bitbox::ir::Type::Array(*size, Box::new(ty.clone().into_bitbox_type()))
+            }
             Self::Pointer(_) => todo!(),
             Self::Struct(_) => todo!(),
             Self::Enum(_) => todo!(),
@@ -116,7 +118,7 @@ impl std::fmt::Display for Type {
             Type::UnsignedNumber(n) => write!(f, "u{}", n),
             Type::SignedNumber(n) => write!(f, "s{}", n),
             Type::Float(n) => write!(f, "f{}", n),
-            Type::Array(size, ty) => write!(f, "[{}; {}]", ty, size),
+            Type::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
             Type::Pointer(ty) => write!(f, "*{}", ty),
             Type::Struct(name) => write!(f, "{}", name),
             Type::Enum(name) => write!(f, "{}", name),

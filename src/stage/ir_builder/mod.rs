@@ -121,7 +121,7 @@ pub trait Lowerable {
 }
 
 use crate::stage::parser::ast::{
-    Block, Expr, ExprAssignment, ExprBinary, ExprCall, ExprIfElse, ExprReturn, Litral,
+    Block, Expr, ExprArray, ExprAssignment, ExprBinary, ExprCall, ExprIfElse, ExprReturn, Litral,
 };
 
 impl Lowerable for Expr {
@@ -144,9 +144,19 @@ impl Lowerable for Expr {
                 ctx.get_variable(&ident.lexeme)
             }
             Expr::Struct(_) => todo!("Struct expressions"),
-            Expr::Array(_) => todo!("Array expressions"),
+            Expr::Array(expr) => expr.lower(assembler, ctx),
             Expr::ArrayIndex(_) => todo!("ArrayIndex expressions"),
         }
+    }
+}
+
+impl Lowerable for ExprArray {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        todo!("ExprArray lowering")
     }
 }
 
@@ -270,7 +280,7 @@ impl Lowerable for ExprReturn {
                 let Some(return_variable) = expr.lower(assembler, ctx) else {
                     panic!("Failed to pop variable");
                 };
-                assembler.ret(return_variable.clone());
+                assembler.ret(return_variable.ty.clone(), return_variable.clone());
                 Some(return_variable)
             }
             None => {

@@ -200,16 +200,18 @@ impl LowerToLlvm for ir::Instruction {
                     }
                 })?;
             }
-            ir::Instruction::Alloc(_, variable) => todo!(),
-            ir::Instruction::Call(variable, _, operands) => todo!(),
-            ir::Instruction::Cmp(variable, operand, operand1) => todo!(),
-            ir::Instruction::Gt(variable, operand, operand1) => todo!(),
-            ir::Instruction::Lt(variable, operand, operand1) => todo!(),
-            ir::Instruction::Jump(_) => todo!(),
-            ir::Instruction::JumpIf(operand, _) => todo!(),
-            ir::Instruction::Load(variable, operand) => todo!(),
-            ir::Instruction::Mul(variable, operand, operand1) => todo!(),
-            ir::Instruction::Phi(variable, items) => todo!(),
+            ir::Instruction::Alloc(_, _, _) => todo!("alloc"),
+            ir::Instruction::Call(variable, _, operands) => todo!("call"),
+            ir::Instruction::Cmp(variable, operand, operand1) => todo!("cmp"),
+            ir::Instruction::ElemGet(des, ptr, index) => todo!("elemget"),
+            ir::Instruction::ElemSet(ptr, index, value) => todo!("elemset"),
+            ir::Instruction::Gt(variable, operand, operand1) => todo!("gt"),
+            ir::Instruction::Lt(variable, operand, operand1) => todo!("lt"),
+            ir::Instruction::Jump(_) => todo!("jump"),
+            ir::Instruction::JumpIf(operand, _) => todo!("jumpif"),
+            ir::Instruction::Load(variable, operand) => todo!("load"),
+            ir::Instruction::Mul(variable, operand, operand1) => todo!("mul"),
+            ir::Instruction::Phi(variable, items) => todo!("phi"),
             ir::Instruction::Return(ty, operand) => {
                 if operand.is_none() {
                     debug_assert!(ty == &ir::Type::Void);

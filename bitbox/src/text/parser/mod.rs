@@ -171,8 +171,11 @@ impl Parser {
 
         let arguments = match inst {
             token::Instruction::Add => self.parse_add()?,
+            token::Instruction::Alloc => self.parse_alloc()?,
             token::Instruction::Call => self.parse_call()?,
             token::Instruction::Cmp => self.parse_cmp()?,
+            token::Instruction::ElemGet => self.parse_elem_get()?,
+            token::Instruction::ElemSet => self.parse_elem_set()?,
             token::Instruction::Jump => self.parse_jump()?,
             token::Instruction::JumpIf => self.parse_jump_if()?,
             token::Instruction::Load => self.parse_load()?,
@@ -266,6 +269,40 @@ impl Parser {
         let rhs = self.next()?;
         self.consume(TokenKind::Delimiter)?;
         Ok(vec![ty, des, lhs, rhs])
+    }
+
+    fn parse_alloc(&mut self) -> Result<Vec<Token>, BitBoxError> {
+        let ty = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Colon)?;
+        let des = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Comma)?;
+        let size = self.next()?;
+        self.consume(TokenKind::Delimiter)?;
+        Ok(vec![ty, des, size])
+    }
+
+    fn parse_elem_get(&mut self) -> Result<Vec<Token>, BitBoxError> {
+        let ty = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Colon)?;
+        let des = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Comma)?;
+        let ptr = self.next()?;
+        self.consume(TokenKind::Comma)?;
+        let idx = self.next()?;
+        self.consume(TokenKind::Delimiter)?;
+        Ok(vec![ty, des, ptr, idx])
+    }
+
+    fn parse_elem_set(&mut self) -> Result<Vec<Token>, BitBoxError> {
+        let ty = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Colon)?;
+        let des = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Comma)?;
+        let idx = self.next()?;
+        self.consume(TokenKind::Comma)?;
+        let value = self.next()?;
+        self.consume(TokenKind::Delimiter)?;
+        Ok(vec![ty, des, idx, value])
     }
 
     fn parse_mul(&mut self) -> Result<Vec<Token>, BitBoxError> {

@@ -21,25 +21,32 @@ pub struct Module {
 /// arguments -> <type> : <des> <func>(<args>)
 ///               ^^^^     ^^^   ^^^^   ^^^^
 ///               All tokens
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Instruction {
     pub instruction_kind: TokenInstruction,
     pub arguments: Vec<Token>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BasicBlock {
     pub label: Token,
     pub instructions: Vec<Instruction>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub name: Token,
     pub visibility: ir::Visibility,
+    /// (name, type)
     pub params: Vec<(Token, Token)>,
     pub return_type: Token,
     pub block: Vec<BasicBlock>,
+}
+
+impl Function {
+    pub fn get_param_type(&self, idx: usize) -> Option<Token> {
+        self.params.get(idx).map(|(_, ty)| ty.clone())
+    }
 }
 
 #[derive(Debug)]

@@ -52,8 +52,11 @@ pub enum TokenKind {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
     Add,
+    Alloc,
     Call,
     Cmp,
+    ElemGet,
+    ElemSet,
     Jump,
     JumpIf,
     Load,

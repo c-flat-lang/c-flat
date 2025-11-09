@@ -44,14 +44,8 @@ impl Target {
             Target::X86_64Linux => "",
             Target::Bitbeat => ".bb",
         };
-        src_path
-            .chars()
-            .rev()
-            .collect::<String>()
-            .replacen("bc.", &extension.chars().rev().collect::<String>(), 1)
-            .chars()
-            .rev()
-            .collect()
+        let path = src_path.rsplit_once('.').unwrap().0;
+        format!("{}{}", path, extension)
     }
 }
 

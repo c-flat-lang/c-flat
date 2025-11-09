@@ -28,6 +28,19 @@ pub enum Type {
     Void,
 }
 
+impl Type {
+    pub fn size(&self) -> i32 {
+        match self {
+            Type::Unsigned(bits) => *bits as i32 / 8,
+            Type::Signed(bits) => *bits as i32 / 8,
+            Type::Float(bits) => *bits as i32 / 8,
+            Type::Pointer(ty) => ty.size(),
+            Type::Array(size, ty) => ty.size() * (*size as i32),
+            Type::Void => 0,
+        }
+    }
+}
+
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -79,14 +92,18 @@ pub enum Instruction {
     Add(Variable, Operand, Operand),
     /// @assign <type> : <des>, <rhs>
     Assign(Variable, Operand),
-    /// @alloc <type> : <des>
-    Alloc(Type, Variable),
+    /// @alloc <type> : <des>, <size>
+    Alloc(Type, Variable, Operand),
     /// @call <type> : <des> <func>(<args>)
     /// @call s32 : exit_code write(fact_result, 0)
     Call(Option<Variable>, String, Vec<Operand>),
     /// `@cmp <type> : <des>, <lhs>, <rhs>`
     /// `@cmp u1 : is_one, n, 1`
     Cmp(Variable, Operand, Operand),
+    /// `@elemget <type> : <des>, <ptr>, <index>`
+    ElemGet(Variable, Operand, Operand),
+    /// `@elemset <type> : <addr>, <index>, <value>`
+    ElemSet(Variable, Operand, Operand),
     /// `@gt <type> : <des>, <lhs>, <rhs>`
     /// `@gt u1 : is_one, n, 1`
     Gt(Variable, Operand, Operand),
@@ -177,6 +194,8 @@ impl fmt::Display for Instruction {
             Instruction::Div(var, a, b) => bin_op(f, "div", var, a, b),
 
             Instruction::Cmp(var, a, b) => bin_op(f, "cmp", var, a, b),
+            Instruction::ElemGet(des, ptr, index) => bin_op(f, "elemget", des, ptr, index),
+            Instruction::ElemSet(var, a, b) => bin_op(f, "elemset", var, a, b),
             Instruction::Gt(var, a, b) => bin_op(f, "gt", var, a, b),
             Instruction::Lt(var, a, b) => bin_op(f, "lt", var, a, b),
 
@@ -191,13 +210,14 @@ impl fmt::Display for Instruction {
                 )
             }
 
-            Instruction::Alloc(ty, var) => {
+            Instruction::Alloc(ty, var, size) => {
                 write!(
                     f,
-                    "{} {:<5} : {}",
+                    "{} {:<5} : {}, {}",
                     Paint::blue("@alloc"),
                     Paint::yellow(&ty),
                     color_var(var),
+                    color_op(size),
                 )
             }
 
