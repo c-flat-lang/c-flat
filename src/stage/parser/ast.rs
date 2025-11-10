@@ -109,6 +109,20 @@ impl Type {
             Self::Void => bitbox::ir::Type::Void,
         }
     }
+
+    pub(crate) fn size(&self) -> usize {
+        match self {
+            Type::Bool => 1,
+            Type::UnsignedNumber(bytes) => *bytes as usize,
+            Type::SignedNumber(bytes) => *bytes as usize,
+            Type::Float(bytes) => *bytes as usize,
+            Type::Array(count, ty) => count * ty.size(),
+            Type::Pointer(_) => 32,
+            Type::Struct(_) => todo!("Size of struct"),
+            Type::Enum(_) => todo!("Size of enum"),
+            Type::Void => 0,
+        }
+    }
 }
 
 impl std::fmt::Display for Type {
@@ -131,6 +145,7 @@ impl std::fmt::Display for Type {
 pub enum Expr {
     Return(ExprReturn),
     Struct(ExprStruct),
+    Declare(ExprDecl),
     Assignment(ExprAssignment),
     Litral(Litral),
     Call(ExprCall),
@@ -146,15 +161,20 @@ impl Expr {
         match self {
             Self::Return(expr_return) => expr_return.span(),
             Self::Struct(expr_struct) => expr_struct.span(),
+            Self::Declare(expr_decl) => expr_decl.span(),
             Self::Assignment(expr_assignment) => expr_assignment.span(),
             Self::Litral(litral) => litral.span(),
             Self::Call(expr_call) => expr_call.span(),
             Self::Binary(expr_binary) => expr_binary.span(),
             Self::Identifier(token) => token.span.clone(),
             Self::IfElse(expr_if_else) => expr_if_else.span(),
-            Self::Array(_) => todo!(),
-            Self::ArrayIndex(_) => todo!(),
+            Self::Array(expr) => expr.span(),
+            Self::ArrayIndex(expr) => expr.span(),
         }
+    }
+
+    pub fn is_addressable(&self) -> bool {
+        matches!(self, Expr::Identifier(..) | Expr::ArrayIndex(..))
     }
 }
 
@@ -166,12 +186,29 @@ pub struct ExprArray {
     pub close_bracket: Token,
 }
 
+impl ExprArray {
+    pub fn span(&self) -> Span {
+        let start = self.open_bracket.span.start;
+        let end = self.close_bracket.span.end;
+        start..end
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ExprArrayIndex {
     pub expr: Box<Expr>,
     pub open_bracket: Token,
     pub index: Box<Expr>,
     pub close_bracket: Token,
+    pub ty: Type,
+}
+
+impl ExprArrayIndex {
+    pub fn span(&self) -> Span {
+        let start = self.expr.span().start;
+        let end = self.close_bracket.span.end;
+        start..end
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -228,18 +265,34 @@ impl Field {
 }
 
 #[derive(Debug, Clone)]
-pub struct ExprAssignment {
-    pub const_token: Token,
+pub struct ExprDecl {
+    pub let_token: Token,
+    pub mutable: bool,
     pub ty: Option<Type>,
     pub ident: Token,
     pub expr: Box<Expr>,
 }
 
+impl ExprDecl {
+    pub fn span(&self) -> Span {
+        let start = self.let_token.span.start;
+        let end = self.expr.span().end;
+        start..end
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprAssignment {
+    pub left: Box<Expr>,
+    pub equal: Token,
+    pub right: Box<Expr>,
+}
+
 impl ExprAssignment {
     pub fn span(&self) -> Span {
-        let start = self.const_token.span.start;
-        let end = self.expr.span();
-        start..end.end
+        let start = self.left.span();
+        let end = self.right.span();
+        start.start..end.end
     }
 }
 

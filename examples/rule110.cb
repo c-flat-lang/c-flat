@@ -1,4 +1,5 @@
 pub fn main() s32 {
-    const array: [10; s32] = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ];
-    return array[5];
+    let mut array: [1; s32] = [ 1000 ];
+    array[0] = 10;
+    return array[0];
 }

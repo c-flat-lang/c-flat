@@ -117,15 +117,35 @@ impl SymbolTableBuilder {
             }) => self.walk_expr(expr),
             ast::Expr::Struct(expr) => todo!("walk_expr_struct"),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
+            ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
-            _ => (),
+            Expr::Return(expr_return) => todo!(),
+            Expr::Struct(expr_struct) => todo!(),
+            Expr::Declare(expr_decl) => todo!(),
+            Expr::Assignment(expr_assignment) => todo!(),
+            Expr::Litral(litral) => {}
+            Expr::Call(expr_call) => todo!(),
+            Expr::Binary(expr_binary) => todo!(),
+            Expr::Identifier(token) => todo!(),
+            Expr::IfElse(expr_if_else) => todo!(),
+            Expr::Array(expr_array) => todo!(),
+            Expr::ArrayIndex(expr) => {
+                self.walk_expr(&expr.expr);
+                self.walk_expr(&expr.index);
+            }
         }
     }
 
     fn walk_expr_assignment(&mut self, expr: &ast::ExprAssignment) {
+        let ast::ExprAssignment { left, right, .. } = expr;
+        self.walk_expr(left);
+        self.walk_expr(right);
+    }
+
+    fn walk_expr_declare(&mut self, expr: &ast::ExprDecl) {
         let ty = expr.ty.as_ref().map_or(ast::Type::Void, |ty| ty.clone());
         let symbol = Symbol {
             name: expr.ident.lexeme.clone(),

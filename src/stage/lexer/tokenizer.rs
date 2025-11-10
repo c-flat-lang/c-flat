@@ -69,6 +69,7 @@ impl<'a> Tokenizer<'a> {
             "for" => TokenKind::Keyword(Keyword::For),
             "if" => TokenKind::Keyword(Keyword::If),
             "let" => TokenKind::Keyword(Keyword::Let),
+            "mut" => TokenKind::Keyword(Keyword::Mut),
             "pub" => TokenKind::Keyword(Keyword::Pub),
             "return" => TokenKind::Keyword(Keyword::Return),
             "struct" => TokenKind::Keyword(Keyword::Struct),

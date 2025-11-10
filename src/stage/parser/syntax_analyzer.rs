@@ -223,7 +223,7 @@ impl Parser {
     }
 
     fn parse_statement(&mut self) -> Result<ast::Statement, CompilerError> {
-        let expr = self.return_expression()?;
+        let expr = self.parse_let_declaration()?;
         let delem = if self.peek(TokenKind::Semicolon) {
             Some(self.consume(TokenKind::Semicolon)?)
         } else {
@@ -235,17 +235,49 @@ impl Parser {
         })
     }
 
-    fn return_expression(&mut self) -> Result<ast::Expr, CompilerError> {
-        if self.peek(TokenKind::Keyword(Keyword::Return)) {
-            let return_token = self.consume(TokenKind::Keyword(Keyword::Return))?;
-            let expr = self.parse_expr()?;
-            let return_expr = ast::ExprReturn {
-                return_token,
-                expr: Some(Box::new(expr)),
-            };
-            return Ok(ast::Expr::Return(return_expr));
+    fn parse_let_declaration(&mut self) -> Result<ast::Expr, CompilerError> {
+        if !self.peek(TokenKind::Keyword(Keyword::Let)) {
+            return self.return_expression();
         }
-        self.parse_expr()
+
+        let let_token = self.consume(TokenKind::Keyword(Keyword::Let))?;
+        let mutable = if self.peek(TokenKind::Keyword(Keyword::Mut)) {
+            self.consume(TokenKind::Keyword(Keyword::Mut))?;
+            true
+        } else {
+            false
+        };
+        let ident = self.consume(TokenKind::Identifier)?;
+        let ty = if self.peek(TokenKind::Colon) {
+            self.consume(TokenKind::Colon)?;
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+        self.consume(TokenKind::Equal)?;
+        let expr = self.parse_expr()?;
+
+        let decl = ast::ExprDecl {
+            let_token,
+            mutable,
+            ident,
+            ty,
+            expr: Box::new(expr),
+        };
+        Ok(ast::Expr::Declare(decl))
+    }
+
+    fn return_expression(&mut self) -> Result<ast::Expr, CompilerError> {
+        if !self.peek(TokenKind::Keyword(Keyword::Return)) {
+            return self.parse_expr();
+        }
+        let return_token = self.consume(TokenKind::Keyword(Keyword::Return))?;
+        let expr = self.parse_expr()?;
+        let return_expr = ast::ExprReturn {
+            return_token,
+            expr: Some(Box::new(expr)),
+        };
+        Ok(ast::Expr::Return(return_expr))
     }
 
     fn parse_expr(&mut self) -> Result<ast::Expr, CompilerError> {
@@ -253,27 +285,44 @@ impl Parser {
     }
 
     fn parse_if_else(&mut self) -> Result<ast::Expr, CompilerError> {
-        if self.peek(TokenKind::Keyword(Keyword::If)) {
-            self.consume(TokenKind::Keyword(Keyword::If))?;
-
-            let condition = self.parse_expr()?;
-            let then_branch = self.parse_block()?;
-            let else_branch = if self.peek(TokenKind::Keyword(Keyword::Else)) {
-                self.consume(TokenKind::Keyword(Keyword::Else))?;
-                Some(self.parse_block()?)
-            } else {
-                None
-            };
-
-            let if_else_expr = ast::ExprIfElse {
-                condition: Box::new(condition),
-                then_branch,
-                else_branch,
-                ty: ast::Type::Void,
-            };
-            return Ok(ast::Expr::IfElse(if_else_expr));
+        if !self.peek(TokenKind::Keyword(Keyword::If)) {
+            return self.parse_assignment();
         }
-        self.parse_comparison()
+        self.consume(TokenKind::Keyword(Keyword::If))?;
+
+        let condition = self.parse_expr()?;
+        let then_branch = self.parse_block()?;
+        let else_branch = if self.peek(TokenKind::Keyword(Keyword::Else)) {
+            self.consume(TokenKind::Keyword(Keyword::Else))?;
+            Some(self.parse_block()?)
+        } else {
+            None
+        };
+
+        let if_else_expr = ast::ExprIfElse {
+            condition: Box::new(condition),
+            then_branch,
+            else_branch,
+            ty: ast::Type::Void,
+        };
+        Ok(ast::Expr::IfElse(if_else_expr))
+    }
+
+    fn parse_assignment(&mut self) -> Result<ast::Expr, CompilerError> {
+        let expr = self.parse_comparison()?;
+        if !self.peek(TokenKind::Equal) {
+            return Ok(expr);
+        }
+
+        let equal = self.consume(TokenKind::Equal)?;
+        let right_expr = self.parse_expr()?;
+
+        let assignment = ast::ExprAssignment {
+            left: Box::new(expr),
+            equal,
+            right: Box::new(right_expr),
+        };
+        return Ok(ast::Expr::Assignment(assignment));
     }
 
     fn parse_comparison(&mut self) -> Result<ast::Expr, CompilerError> {
@@ -346,6 +395,7 @@ impl Parser {
                     open_bracket: left_bracket,
                     index: Box::new(index),
                     close_bracket: right_bracket,
+                    ty: ast::Type::Void,
                 };
                 expr = ast::Expr::ArrayIndex(array_index);
             } else {
@@ -356,13 +406,8 @@ impl Parser {
     }
 
     fn parse_call(&mut self) -> Result<ast::Expr, CompilerError> {
-        let expr = self.parse_assignment()?;
+        let expr = self.parse_primary()?;
         self.parse_postfix(expr)
-        // if let Some(left_paren) = self.lexer.next_if(one_of(&[TokenKind::LeftParen])) {
-        //     expr = self.finish_call(expr, left_paren)?;
-        // }
-        //
-        // Ok(expr)
     }
 
     fn finish_call(
@@ -385,30 +430,6 @@ impl Parser {
             args,
             right_paren,
         }))
-    }
-
-    fn parse_assignment(&mut self) -> Result<ast::Expr, CompilerError> {
-        if self.peek(TokenKind::Keyword(Keyword::Const)) {
-            let const_token = self.consume(TokenKind::Keyword(Keyword::Const))?;
-            let ident = self.consume(TokenKind::Identifier)?;
-            let ty = if self.peek(TokenKind::Colon) {
-                self.consume(TokenKind::Colon)?;
-                Some(self.parse_type()?)
-            } else {
-                None
-            };
-            self.consume(TokenKind::Equal)?;
-            let expr = self.parse_expr()?;
-
-            let assignment = ast::ExprAssignment {
-                const_token,
-                ident,
-                ty,
-                expr: Box::new(expr),
-            };
-            return Ok(ast::Expr::Assignment(assignment));
-        }
-        self.parse_primary()
     }
 
     fn parse_primary(&mut self) -> Result<ast::Expr, CompilerError> {

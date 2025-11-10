@@ -110,6 +110,19 @@ impl<'a> LoweringContext<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct Address {
+    variable: Variable,
+    offset: Variable,
+    size: usize,
+}
+
+#[derive(Debug, Clone)]
+pub enum AddressableVar {
+    Var(Variable),
+    Address(Address),
+}
+
 pub trait Lowerable {
     /// Lowers this AST node into IR using the provided assembler.
     /// Returns an optional variable representing the result of this expression.
@@ -120,9 +133,17 @@ pub trait Lowerable {
     ) -> Option<Variable>;
 }
 
+pub trait Addressable {
+    fn lower_to_address(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<AddressableVar>;
+}
+
 use crate::stage::parser::ast::{
-    Block, Expr, ExprArray, ExprArrayIndex, ExprAssignment, ExprBinary, ExprCall, ExprIfElse,
-    ExprReturn, Litral,
+    Block, Expr, ExprArray, ExprArrayIndex, ExprAssignment, ExprBinary, ExprCall, ExprDecl,
+    ExprIfElse, ExprReturn, Litral,
 };
 
 impl Lowerable for Expr {
@@ -137,6 +158,7 @@ impl Lowerable for Expr {
             Expr::IfElse(expr) => expr.lower(assembler, ctx),
             Expr::Litral(lit) => lit.lower(assembler, ctx),
             Expr::Assignment(assign) => assign.lower(assembler, ctx),
+            Expr::Declare(declare) => declare.lower(assembler, ctx),
             Expr::Call(call) => call.lower(assembler, ctx),
             Expr::Identifier(ident) => {
                 let Some(_) = ctx.symbol_table.get(&ident.lexeme) else {
@@ -147,6 +169,26 @@ impl Lowerable for Expr {
             Expr::Struct(_) => todo!("Struct expressions"),
             Expr::Array(expr) => expr.lower(assembler, ctx),
             Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
+        }
+    }
+}
+
+impl Addressable for Expr {
+    fn lower_to_address(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<AddressableVar> {
+        match self {
+            Expr::Identifier(ident) => {
+                let Some(_) = ctx.symbol_table.get(&ident.lexeme) else {
+                    panic!("Symbol not found {}", ident.lexeme);
+                };
+
+                ctx.get_variable(&ident.lexeme).map(AddressableVar::Var)
+            }
+            Expr::ArrayIndex(expr) => expr.lower_to_address(assembler, ctx),
+            _ => unreachable!(),
         }
     }
 }
@@ -360,8 +402,51 @@ impl Lowerable for ExprAssignment {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ast::ExprAssignment {
-            const_token: _,
+        let lhs = if self.left.is_addressable() {
+            let Some(addr) = self.left.lower_to_address(assembler, ctx) else {
+                panic!("Failed to return variable from expr lowering on assignment for left side");
+            };
+
+            match addr {
+                AddressableVar::Var(variable) => variable,
+                AddressableVar::Address(address) => {
+                    let Some(rhs) = self.right.lower(assembler, ctx) else {
+                        panic!(
+                            "Failed to return variable from expr lowering on assignment for right side"
+                        );
+                    };
+
+                    assembler.elemset(address.variable.clone(), address.offset, rhs);
+
+                    return Some(address.variable);
+                }
+            }
+        } else {
+            let Some(lhs) = self.left.lower(assembler, ctx) else {
+                panic!("Failed to return variable from expr lowering on assignment for left side");
+            };
+            lhs
+        };
+
+        let Some(rhs) = self.right.lower(assembler, ctx) else {
+            panic!("Failed to return variable from expr lowering on assignment for right side");
+        };
+
+        assembler.assign(lhs.clone(), rhs);
+
+        Some(lhs)
+    }
+}
+
+impl Lowerable for ExprDecl {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let ast::ExprDecl {
+            let_token: _,
+            mutable: _,
             ident,
             expr,
             ty,
@@ -442,5 +527,32 @@ impl Lowerable for ExprArrayIndex {
         let des = assembler.var(*ty);
         assembler.elemget(des.clone(), ptr, index);
         Some(des)
+    }
+}
+
+impl Addressable for ExprArrayIndex {
+    fn lower_to_address(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<AddressableVar> {
+        let Some(variable) = self.expr.lower(assembler, ctx) else {
+            panic!("Failed to return variable from ExprArrayIndex expr lowering");
+        };
+
+        let Some(offset) = self.index.lower(assembler, ctx) else {
+            panic!("Failed to return variable from ExprArrayIndex index lowering");
+        };
+
+        let ast::Type::Array(_, ty) = self.ty.clone() else {
+            panic!("Expected array type but got {}", self.ty);
+        };
+        let address = Address {
+            variable,
+            offset,
+            size: ty.size() as usize,
+        };
+        let var = AddressableVar::Address(address);
+        Some(var)
     }
 }

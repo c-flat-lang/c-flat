@@ -64,6 +64,7 @@ pub enum Keyword {
     For,
     If,
     Let,
+    Mut,
     Pub,
     Return,
     Struct,

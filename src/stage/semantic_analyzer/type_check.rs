@@ -113,6 +113,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Return(expr) => self.walk_expr_return(expr),
             ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
+            ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
@@ -135,6 +136,18 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_assignment(&mut self, expr: &mut ast::ExprAssignment) -> ast::Type {
+        let lhs = self.walk_expr(&mut expr.left);
+        let rhs = self.walk_expr(&mut expr.right);
+        if lhs != rhs {
+            self.errors.push(format!(
+                "Type mismatch in assignment found `{}` expected `{}`",
+                rhs, lhs
+            ))
+        }
+        lhs
+    }
+
+    fn walk_expr_declare(&mut self, expr: &mut ast::ExprDecl) -> ast::Type {
         let value_type = self.walk_expr(&mut expr.expr);
         if let Some(ty) = &expr.ty
             && ty != &value_type
@@ -251,6 +264,9 @@ impl<'st> TypeChecker<'st> {
             self.errors
                 .push("Index must be a signed number".to_string());
         }
+
+        expr.ty = array_type.clone();
+
         let Type::Array(_, array_type) = array_type else {
             panic!("Expected array type")
         };
