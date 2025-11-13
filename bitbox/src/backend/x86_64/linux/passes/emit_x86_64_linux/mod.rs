@@ -74,7 +74,7 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
         eprintln!("EmitLLVMIRPass");
 
         for function in module.functions.iter() {
-            function.lower(ctx, &*self)?;
+            function.lower(ctx, &mut *self)?;
         }
 
         Ok(())
@@ -82,11 +82,12 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
 }
 
 impl Lower<EmitX86_64LinuxPass> for ir::Function {
+    type Output = ();
     fn lower(
         &self,
         ctx: &mut crate::backend::Context,
-        backend: &EmitX86_64LinuxPass,
-    ) -> Result<(), crate::error::Error> {
+        backend: &mut EmitX86_64LinuxPass,
+    ) -> Result<Self::Output, crate::error::Error> {
         let x86_llvm_ctx = ctx.output.get_mut_x86_64();
 
         let param_types: Vec<BasicMetadataTypeEnum> = self
@@ -131,7 +132,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
                 .llvm_context
                 .append_basic_block(function, "entry");
             x86_llvm_ctx.builder.position_at_end(entry);
-            block.lower(&mut lower_ctx)?;
+            block.lower_to_llvm(&mut lower_ctx)?;
         }
 
         Ok(())
@@ -145,20 +146,20 @@ pub struct LoweringContext<'ctx> {
 }
 
 trait LowerToLlvm {
-    fn lower(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error>;
+    fn lower_to_llvm(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error>;
 }
 
 impl LowerToLlvm for ir::BasicBlock {
-    fn lower(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error> {
+    fn lower_to_llvm(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error> {
         for instruction in self.instructions.iter() {
-            instruction.lower(ctx)?;
+            instruction.lower_to_llvm(ctx)?;
         }
         Ok(())
     }
 }
 
 impl LowerToLlvm for ir::Instruction {
-    fn lower(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error> {
+    fn lower_to_llvm(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error> {
         match self {
             ir::Instruction::NoOp => todo!(),
             ir::Instruction::Add(variable, operand, operand1) => todo!(),

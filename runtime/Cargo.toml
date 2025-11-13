@@ -8,3 +8,6 @@ wasmi = "0.47.0"
 wasmtime = { version = "34.0.1", features = ['component-model', 'async', 'default', 'winch', 'debug-builtins'] }
 wasmtime-wasi = "34.0.1"
 anyhow = "1.0.98"
+bitbeat = { path = "../bitbeat" }
+ron = "0.11.0"
+serde = { version = "1.0.228", features = ["derive", "rc"] }

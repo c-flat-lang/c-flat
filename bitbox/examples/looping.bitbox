@@ -1,0 +1,14 @@
+
+public function main() s32 {
+  %entry:
+    @load u8 :  n, 0
+
+  %loop:
+    @cmp u1 : is_running, n, 10
+    @add u8 : n, n, 1
+    @jumpif is_running, %exit
+    @jump %loop
+
+  %exit:
+    @ret u8 : n
+}

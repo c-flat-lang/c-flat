@@ -4,18 +4,20 @@ use std::collections::{BTreeMap, VecDeque};
 use std::rc::Rc;
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 pub type Word = i64;
 pub type Pid = usize;
 
 pub const REG_COUNT: usize = 32;
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct Reg(pub usize);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
 pub struct Address(pub usize);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Instruction {
     Noop,
     Halt,
@@ -77,6 +79,7 @@ pub enum Instruction {
     },
 }
 
+#[derive(Debug)]
 pub struct InstructionBuilder<'a> {
     instructions: &'a mut Vec<Instruction>,
     labels: std::collections::BTreeMap<String, usize>,
@@ -222,7 +225,7 @@ enum ProcessState {
     Crashed(&'static str),
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Module {
     name: String,
     functions: BTreeMap<String, Arc<Function>>,
@@ -246,9 +249,14 @@ impl Module {
     pub fn get_function(&self, name: &str) -> Option<Arc<Function>> {
         self.functions.get(name).cloned()
     }
+
+    pub fn save_to_file(&self, path: &str) {
+        let data = ron::to_string(self).expect("Failed to serialize module");
+        std::fs::write(path, data).expect("Failed to write module to file");
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Function {
     name: String,
     arity: usize,

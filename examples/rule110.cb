@@ -1,5 +1,5 @@
 pub fn main() s32 {
-    let mut array: [1; s32] = [ 1000 ];
+    let mut array: [2; s32] = [ 0; 2 ];
     array[0] = 10;
-    return array[0];
+    return array[1];
 }

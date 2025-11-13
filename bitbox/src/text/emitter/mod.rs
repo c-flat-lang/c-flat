@@ -91,8 +91,8 @@ impl Emitter {
                     panic!("Invalid instruction arguments for @add");
                 };
                 let ty = ir::Type::from(ty.lexeme.as_str());
-                let lhs = Variable::new(lhs.lexeme.clone(), ty.clone());
-                let rhs = Variable::new(rhs.lexeme.clone(), ty.clone());
+                let lhs = token_to_operand(lhs, &ty);
+                let rhs = token_to_operand(rhs, &ty);
                 let des = Variable::new(des.lexeme.clone(), ty.clone());
                 _assembler.add(des, lhs, rhs);
             }
@@ -135,7 +135,18 @@ impl Emitter {
                 let des = Variable::new(des.lexeme.clone(), ty.clone());
                 _assembler.call(Some(des), name.lexeme.clone(), &args);
             }
-            super::lexer::token::Instruction::Cmp => todo!("Cmp"),
+            super::lexer::token::Instruction::Cmp => {
+                let [ty, des, lhs, rhs] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @cmp");
+                };
+
+                let ty = ir::Type::from(ty.lexeme.as_str());
+                let des = Variable::new(des.lexeme.clone(), ty.clone());
+                let lhs = token_to_operand(lhs, &ty);
+                let rhs = token_to_operand(rhs, &ty);
+                _assembler.eq(des, lhs, rhs);
+            }
             super::lexer::token::Instruction::ElemGet => {
                 let [ty, des, addr, index] = &instruction.arguments.as_slice() else {
                     // NOTE: If this happens then the parser is broken.
@@ -143,10 +154,8 @@ impl Emitter {
                 };
                 let ty = ir::Type::from(ty.lexeme.as_str());
                 let des = Variable::new(des.lexeme.clone(), ty.clone());
-                // HACK: We need a better way to get the types of tokens
-                let addr = token_to_operand(addr, &ir::Type::Unsigned(32));
-                // HACK: We need a better way to get the types of tokens
-                let index = token_to_operand(index, &ir::Type::Unsigned(32));
+                let addr = token_to_operand(addr, &ty);
+                let index = token_to_operand(index, &ty);
                 _assembler.elemget(des, addr, index);
             }
             super::lexer::token::Instruction::ElemSet => {
@@ -160,9 +169,32 @@ impl Emitter {
                 let value = token_to_operand(value, &ty);
                 _assembler.elemset(addr, index, value);
             }
-            super::lexer::token::Instruction::Jump => todo!("Jump"),
-            super::lexer::token::Instruction::JumpIf => todo!("JumpIf"),
-            super::lexer::token::Instruction::Load => todo!("Load"),
+            super::lexer::token::Instruction::Jump => {
+                let [label] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @jump");
+                };
+                _assembler.jump(label.lexeme.clone());
+            }
+            super::lexer::token::Instruction::JumpIf => {
+                let [cond, label] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @jumpif");
+                };
+                let cond = Variable::new(cond.lexeme.clone(), ir::Type::Unsigned(1));
+                _assembler.jump_if(cond, label.lexeme.clone());
+            }
+            super::lexer::token::Instruction::Load => {
+                let [ty, des, value] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @load");
+                };
+
+                let ty = ir::Type::from(ty.lexeme.as_str());
+                let des = Variable::new(des.lexeme.clone(), ty.clone());
+                let value = token_to_operand(value, &ty);
+                _assembler.load(des, value);
+            }
             super::lexer::token::Instruction::Mul => todo!("Mul"),
             super::lexer::token::Instruction::Phi => todo!("Phi"),
             super::lexer::token::Instruction::Ret => {

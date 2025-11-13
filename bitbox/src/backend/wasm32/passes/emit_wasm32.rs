@@ -55,7 +55,7 @@ impl Pass for EmitWasm32Pass {
         }
 
         for function in module.functions.iter() {
-            function.lower(ctx, &*self)?;
+            function.lower(ctx, &mut *self)?;
         }
         Ok(())
     }
@@ -143,11 +143,12 @@ impl From<ir::Type> for BlockType {
 }
 
 impl Lower<EmitWasm32Pass> for ir::Function {
+    type Output = ();
     fn lower(
         &self,
         ctx: &mut crate::backend::Context,
-        _: &EmitWasm32Pass,
-    ) -> Result<(), crate::error::Error> {
+        _: &mut EmitWasm32Pass,
+    ) -> Result<Self::Output, crate::error::Error> {
         let f = {
             // Type Section
             let param_types: Vec<ValType> =
@@ -425,8 +426,19 @@ impl LowerToWasm32 for ir::Instruction {
                 assembler.local_set(idx as u32);
             }
             ir::Instruction::Jump(_) => todo!("@jump"),
-            ir::Instruction::JumpIf(operand, _) => todo!("@jumpif"),
-            ir::Instruction::Load(variable, operand) => todo!("@load"),
+            ir::Instruction::JumpIf(operand, label) => {}
+            ir::Instruction::Load(variable, operand) => {
+                operand.lower_to_wasm32(function_name, assembler, ctx)?;
+                let Some(idx) = ctx
+                    .local_function_variables
+                    .get(function_name)
+                    .iter()
+                    .position(|v| v.name == variable.name)
+                else {
+                    panic!("Variable {:?} not found", variable);
+                };
+                assembler.local_set(idx as u32);
+            }
             ir::Instruction::Mul(variable, operand, operand1) => todo!("@mul"),
             ir::Instruction::Phi(variable, items) => todo!("@phi"),
             ir::Instruction::Return(ty, operand) => match ty.clone() {

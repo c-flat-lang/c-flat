@@ -154,6 +154,7 @@ pub enum Expr {
     IfElse(ExprIfElse),
     Array(ExprArray),
     ArrayIndex(ExprArrayIndex),
+    ArrayRepeat(ExprArrayRepeat),
 }
 
 impl Expr {
@@ -170,6 +171,7 @@ impl Expr {
             Self::IfElse(expr_if_else) => expr_if_else.span(),
             Self::Array(expr) => expr.span(),
             Self::ArrayIndex(expr) => expr.span(),
+            Self::ArrayRepeat(expr) => expr.span(),
         }
     }
 
@@ -206,6 +208,24 @@ pub struct ExprArrayIndex {
 impl ExprArrayIndex {
     pub fn span(&self) -> Span {
         let start = self.expr.span().start;
+        let end = self.close_bracket.span.end;
+        start..end
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprArrayRepeat {
+    pub open_bracket: Token,
+    pub count: Box<Expr>,
+    pub semicolon: Token,
+    pub value: Box<Expr>,
+    pub close_bracket: Token,
+    pub ty: Type,
+}
+
+impl ExprArrayRepeat {
+    pub fn span(&self) -> Span {
+        let start = self.open_bracket.span.start;
         let end = self.close_bracket.span.end;
         start..end
     }

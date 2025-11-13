@@ -457,7 +457,34 @@ impl Parser {
     }
 
     fn parse_array_literal(&mut self, open_bracket: Token) -> Result<ast::Expr, CompilerError> {
-        let mut elements = vec![];
+        if self.peek(TokenKind::RightBracket) {
+            let close_bracket = self.consume(TokenKind::RightBracket)?;
+            return Ok(ast::Expr::Array(ast::ExprArray {
+                open_bracket,
+                elements: vec![],
+                close_bracket,
+                ty: ast::Type::Void,
+            }));
+        }
+
+        let first = self.parse_expr()?;
+
+        if self.peek(TokenKind::Semicolon) {
+            let semicolon = self.consume(TokenKind::Semicolon)?;
+            let count = self.parse_expr()?; // must be compile-time integer
+            let close_bracket = self.consume(TokenKind::RightBracket)?;
+
+            return Ok(ast::Expr::ArrayRepeat(ast::ExprArrayRepeat {
+                open_bracket,
+                count: Box::new(count),
+                semicolon,
+                value: Box::new(first),
+                close_bracket,
+                ty: ast::Type::Void,
+            }));
+        }
+
+        let mut elements = vec![first];
 
         while !self.peek(TokenKind::RightBracket) {
             elements.push(self.parse_expr()?);

@@ -136,6 +136,9 @@ impl SymbolTableBuilder {
                 self.walk_expr(&expr.expr);
                 self.walk_expr(&expr.index);
             }
+            Expr::ArrayRepeat(expr) => {
+                // No need to do anything
+            }
         }
     }
 

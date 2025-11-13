@@ -142,8 +142,8 @@ pub trait Addressable {
 }
 
 use crate::stage::parser::ast::{
-    Block, Expr, ExprArray, ExprArrayIndex, ExprAssignment, ExprBinary, ExprCall, ExprDecl,
-    ExprIfElse, ExprReturn, Litral,
+    Block, Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprCall,
+    ExprDecl, ExprIfElse, ExprReturn, Litral,
 };
 
 impl Lowerable for Expr {
@@ -169,6 +169,7 @@ impl Lowerable for Expr {
             Expr::Struct(_) => todo!("Struct expressions"),
             Expr::Array(expr) => expr.lower(assembler, ctx),
             Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
+            Expr::ArrayRepeat(expr) => expr.lower(assembler, ctx),
         }
     }
 }
@@ -554,5 +555,38 @@ impl Addressable for ExprArrayIndex {
         };
         let var = AddressableVar::Address(address);
         Some(var)
+    }
+}
+
+impl Lowerable for ExprArrayRepeat {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let ast::Type::Array(count, ty) = self.ty.clone() else {
+            panic!("Expected array type but got {}", self.ty);
+        };
+        let size = Operand::ConstantInt {
+            value: format!("{}", count * (ty.size() as usize)),
+            ty: Type::Signed(32),
+        };
+        let ptr = assembler.var(ty.clone().as_bitbox_type());
+        assembler.alloc(ty.clone().as_bitbox_type(), ptr.clone(), size);
+        for index in 0..count {
+            let Some(value) = self.value.lower(assembler, ctx) else {
+                panic!("Failed to return variable from expr lowering in Array");
+            };
+            assembler.elemset(
+                ptr.clone(),
+                Operand::ConstantInt {
+                    value: format!("{index}"),
+                    ty: Type::Signed(32),
+                },
+                value,
+            );
+        }
+
+        Some(ptr)
     }
 }

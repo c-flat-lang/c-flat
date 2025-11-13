@@ -121,6 +121,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
             ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
+            ast::Expr::ArrayRepeat(expr) => self.walk_expr_array_repeat(expr),
         }
     }
 
@@ -271,6 +272,23 @@ impl<'st> TypeChecker<'st> {
             panic!("Expected array type")
         };
         *array_type
+    }
+
+    fn walk_expr_array_repeat(&mut self, expr: &mut ast::ExprArrayRepeat) -> Type {
+        let ast::ExprArrayRepeat { value, count, .. } = expr;
+        let value_type = self.walk_expr(value);
+        let count_type = self.walk_expr(count);
+        let Expr::Litral(ast::Litral::Integer(count_token)) = &**count else {
+            self.errors.push("count must be an integer".to_string());
+            return value_type;
+        };
+
+        expr.ty = Type::Array(
+            count_token.lexeme.parse::<usize>().unwrap(),
+            Box::new(value_type.clone()),
+        );
+
+        expr.ty.clone()
     }
 }
 

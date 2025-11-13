@@ -48,6 +48,13 @@ impl<'ctx> Output<'ctx> {
         }
     }
 
+    pub fn get_mut_bitbeat(&mut self) -> &mut bitbeat::bitbeat::Module {
+        match self {
+            Self::Bitbeat(module) => module,
+            v => panic!("Not wasm32 but {:?}", v),
+        }
+    }
+
     pub fn get_x86_64(&self) -> &x86_64::linux::passes::emit_x86_64_linux::LLVMContext<'ctx> {
         match &self {
             Self::X86_64(module) => module,
@@ -64,9 +71,9 @@ impl<'ctx> Output<'ctx> {
         }
     }
 
-    pub fn finish(&mut self) -> CompilerResult {
+    pub fn finish(mut self) -> CompilerResult {
         match self {
-            Self::Wasm32(module) => CompilerResult::Wasm32(module.finish()),
+            Self::Wasm32(mut module) => CompilerResult::Wasm32(module.finish()),
             Self::X86_64(ctx) => {
                 // Initialize native target
                 inkwell::targets::Target::initialize_native(&InitializationConfig::default())
@@ -107,7 +114,7 @@ impl<'ctx> Output<'ctx> {
 
                 CompilerResult::X86_64
             }
-            v => unimplemented!("{v:?}"),
+            Self::Bitbeat(module) => CompilerResult::Bitbeat(module),
         }
     }
 
@@ -134,7 +141,7 @@ impl<'ctx> Output<'ctx> {
     }
 
     fn new_bitbeat() -> Output<'ctx> {
-        Self::Bitbeat(bitbeat::bitbeat::Module::default())
+        Self::Bitbeat(bitbeat::bitbeat::Module::new("main"))
     }
 }
 
@@ -148,6 +155,7 @@ impl Default for Output<'_> {
 pub enum CompilerResult {
     Wasm32(Vec<u8>),
     X86_64,
+    Bitbeat(bitbeat::bitbeat::Module),
 }
 
 impl CompilerResult {
@@ -157,6 +165,7 @@ impl CompilerResult {
             Self::X86_64 => {
                 eprintln!("save to file is not implemented for X86_64");
             }
+            Self::Bitbeat(module) => module.save_to_file(path),
         }
     }
 }
@@ -183,5 +192,10 @@ pub trait Backend {
 }
 
 pub trait Lower<T> {
-    fn lower(&self, ctx: &mut crate::backend::Context, t: &T) -> Result<(), crate::error::Error>;
+    type Output;
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        t: &mut T,
+    ) -> Result<Self::Output, crate::error::Error>;
 }

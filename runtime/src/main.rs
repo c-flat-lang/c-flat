@@ -9,14 +9,32 @@ fn main() {
         eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
         std::process::exit(1);
     }
-    let Ok(wasm_bytes) = std::fs::read(&args[0]) else {
-        eprintln!("Failed to read file {}", &args[0]);
+    let file_path = &args[0];
+
+    if file_path.ends_with(".wasm") {
+        let Ok(data) = std::fs::read(file_path) else {
+            eprintln!("Failed to read file {}", &args[0]);
+            std::process::exit(1);
+        };
+        run_wasm(&data).unwrap();
+    } else if file_path.ends_with(".bb") {
+        run_bitbeat(std::fs::read_to_string(file_path).unwrap()).unwrap();
+    } else {
+        eprintln!("Unknown file type {}", &args[0]);
         std::process::exit(1);
-    };
-    run(&wasm_bytes).unwrap();
+    }
 }
 
-pub fn run(wasm_bytes: &[u8]) -> Result<()> {
+pub fn run_bitbeat(data: String) -> Result<()> {
+    let module: bitbeat::Module = ron::from_str(&data)?;
+    let mut machine = bitbeat::Machine::default();
+    machine.register_module(module);
+    machine.spawn("main", "main", &[]);
+    machine.run();
+    Ok(())
+}
+
+pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
     let engine = Engine::default();
     let wasi_ctx = WasiCtxBuilder::new().inherit_stdio().build();
     let mut store = Store::new(&engine, wasi_ctx);
