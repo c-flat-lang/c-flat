@@ -1,4 +1,5 @@
 use crate::backend::Lower;
+use crate::ir::instruction::{IAdd, ICmp};
 use crate::passes::Pass;
 
 #[derive(Debug)]
@@ -70,9 +71,7 @@ impl Lower<EmitBitbeatPass> for crate::ir::Function {
     ) -> Result<Self::Output, crate::error::Error> {
         let mut function = bitbeat::Function::new(&self.name);
         let is_returning = self.return_type != crate::ir::Type::Void;
-        if is_returning {
-            function = function.returns();
-        }
+        function = function.returns(is_returning);
 
         {
             let mut module = ctx.output.get_mut_bitbeat();
@@ -117,30 +116,28 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
         target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
-            crate::ir::Instruction::NoOp => todo!(),
-            crate::ir::Instruction::Add(variable, left_operand, right_operand) => {
-                let lhs_operand_result = left_operand.lower(ctx, target)?;
-                let rhs_operand_result = right_operand.lower(ctx, target)?;
-                let lhs = lhs_operand_result.lower(ctx, target)?;
-                let rhs = rhs_operand_result.lower(ctx, target)?;
-                let des = variable.lower(ctx, target)?;
+            crate::ir::Instruction::NoOp(..) => todo!(),
+            crate::ir::Instruction::Add(IAdd { des, lhs, rhs }) => {
+                let lhs = lhs.lower(ctx, target)?.lower(ctx, target)?;
+                let rhs = rhs.lower(ctx, target)?.lower(ctx, target)?;
+                let des = des.lower(ctx, target)?;
                 target.assembler.add(des, lhs, rhs);
             }
-            crate::ir::Instruction::Assign(variable, operand) => todo!(),
-            crate::ir::Instruction::Alloc(_, variable, operand) => todo!(),
-            crate::ir::Instruction::Call(variable, _, operands) => todo!(),
-            crate::ir::Instruction::Cmp(des_variable, left_operand, right_operand) => {
-                let lhs_operand_result = left_operand.lower(ctx, target)?;
-                let rhs_operand_result = right_operand.lower(ctx, target)?;
-                let lhs = lhs_operand_result.lower(ctx, target)?;
-                let rhs = rhs_operand_result.lower(ctx, target)?;
-                let des = des_variable.lower(ctx, target)?;
+            crate::ir::Instruction::Assign(..) => todo!("assign"),
+            crate::ir::Instruction::Alloc(..) => {
+                todo!("You need memory to do this instruction")
+            }
+            crate::ir::Instruction::Call(..) => todo!("call"),
+            crate::ir::Instruction::Cmp(ICmp { des, lhs, rhs }) => {
+                let lhs = lhs.lower(ctx, target)?.lower(ctx, target)?;
+                let rhs = rhs.lower(ctx, target)?.lower(ctx, target)?;
+                let des = des.lower(ctx, target)?;
                 target.assembler.cmp_eq(des, lhs, rhs);
             }
-            crate::ir::Instruction::ElemGet(variable, operand, operand1) => todo!(),
-            crate::ir::Instruction::ElemSet(variable, operand, operand1) => todo!(),
-            crate::ir::Instruction::Gt(variable, operand, operand1) => todo!(),
-            crate::ir::Instruction::Lt(variable, operand, operand1) => todo!(),
+            crate::ir::Instruction::ElemGet(..) => todo!("elemget"),
+            crate::ir::Instruction::ElemSet(..) => todo!("elemset"),
+            crate::ir::Instruction::Gt(..) => todo!("gt"),
+            crate::ir::Instruction::Lt(..) => todo!("lt"),
             crate::ir::Instruction::Jump(label) => {
                 target.assembler.jump(label);
             }
@@ -156,7 +153,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
                 let reg = variable.lower(ctx, target)?;
                 target.assembler.load_imm(reg, value);
             }
-            crate::ir::Instruction::Mul(variable, operand, operand1) => todo!(),
+            crate::ir::Instruction::Mul(imul) => todo!(),
             crate::ir::Instruction::Phi(variable, items) => todo!(),
             crate::ir::Instruction::Return(ty, operand) => {
                 let operand_result = operand.lower(ctx, target)?;
@@ -164,8 +161,8 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
                 target.assembler.print(reg);
                 // target.assembler.send(bitbeat::Reg(0), reg);
             }
-            crate::ir::Instruction::Sub(variable, operand, operand1) => todo!(),
-            crate::ir::Instruction::Div(variable, operand, operand1) => todo!(),
+            crate::ir::Instruction::Sub(isub) => todo!(),
+            crate::ir::Instruction::Div(idiv) => todo!(),
             crate::ir::Instruction::IfElse {
                 cond,
                 cond_result,

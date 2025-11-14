@@ -21,20 +21,20 @@ pub enum TargetSpecificContext {
 
 #[derive(Debug)]
 pub enum Output<'ctx> {
-    Wasm32(wasm32::passes::emit_wasm32::Wasm32Module),
+    Wasm32(wasm32::passes::emit::Wasm32Module),
     Bitbeat(bitbeat::bitbeat::Module),
     X86_64(x86_64::linux::passes::emit_x86_64_linux::LLVMContext<'ctx>),
 }
 
 impl<'ctx> Output<'ctx> {
-    pub fn get_wasm32(&self) -> &wasm32::passes::emit_wasm32::Wasm32Module {
+    pub fn get_wasm32(&self) -> &wasm32::passes::emit::Wasm32Module {
         match &self {
             Self::Wasm32(module) => module,
             v => panic!("Not wasm32 but {:?}", v),
         }
     }
 
-    pub fn get_mut_wasm32(&mut self) -> &mut wasm32::passes::emit_wasm32::Wasm32Module {
+    pub fn get_mut_wasm32(&mut self) -> &mut wasm32::passes::emit::Wasm32Module {
         match self {
             Self::Wasm32(module) => module,
             v => panic!("Not wasm32 but {:?}", v),
@@ -127,7 +127,7 @@ impl<'ctx> Output<'ctx> {
     }
 
     fn new_wasm32() -> Self {
-        Self::Wasm32(wasm32::passes::emit_wasm32::Wasm32Module::default())
+        Self::Wasm32(wasm32::passes::emit::Wasm32Module::default())
     }
 
     fn new_x86_64(scs: &'ctx TargetSpecificContext) -> Output<'ctx> {
@@ -147,7 +147,7 @@ impl<'ctx> Output<'ctx> {
 
 impl Default for Output<'_> {
     fn default() -> Self {
-        Self::Wasm32(wasm32::passes::emit_wasm32::Wasm32Module::default())
+        Self::Wasm32(wasm32::passes::emit::Wasm32Module::default())
     }
 }
 

@@ -1,3 +1,3 @@
-pub mod emit_wasm32;
+pub mod emit;
 
-pub use emit_wasm32::EmitWasm32Pass;
+pub use emit::EmitWasm32Pass;

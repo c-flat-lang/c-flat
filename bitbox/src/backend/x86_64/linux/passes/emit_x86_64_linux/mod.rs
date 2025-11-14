@@ -6,6 +6,7 @@ use inkwell::{
 
 use crate::backend::{Context as BackendContext, Lower};
 use crate::ir;
+use crate::ir::instruction::IAssign;
 
 impl ir::Type {
     pub fn to_llvm_type<'ctx>(&self, ctx: &'ctx LlvmContext) -> BasicTypeEnum<'ctx> {
@@ -161,36 +162,36 @@ impl LowerToLlvm for ir::BasicBlock {
 impl LowerToLlvm for ir::Instruction {
     fn lower_to_llvm(&self, ctx: &mut LoweringContext<'_>) -> Result<(), crate::error::Error> {
         match self {
-            ir::Instruction::NoOp => todo!(),
-            ir::Instruction::Add(variable, operand, operand1) => todo!(),
-            ir::Instruction::Assign(variable, operand) => {
-                let llvm_value = operand.lower(ctx)?;
+            ir::Instruction::NoOp(..) => todo!(),
+            ir::Instruction::Add(..) => todo!("add"),
+            ir::Instruction::Assign(IAssign { des, src }) => {
+                let llvm_value = src.lower(ctx)?;
 
-                let ptr = if let Some(existing_ptr) = ctx.variables.get(&variable.name) {
+                let ptr = if let Some(existing_ptr) = ctx.variables.get(&des.name) {
                     *existing_ptr
                 } else {
-                    let alloca = match variable.ty {
+                    let alloca = match des.ty {
                         ir::Type::Signed(_) | ir::Type::Unsigned(_) => {
                             let int_ty = ctx.llvm_ctx.i32_type();
-                            ctx.builder
-                                .build_alloca(int_ty, &variable.name)
-                                .map_err(|e| crate::error::Error::InvalidInstruction {
+                            ctx.builder.build_alloca(int_ty, &des.name).map_err(|e| {
+                                crate::error::Error::InvalidInstruction {
                                     index: 0,
                                     message: e.to_string(),
-                                })?
+                                }
+                            })?
                         }
                         ir::Type::Float(_) => {
                             let f_ty = ctx.llvm_ctx.f32_type();
-                            ctx.builder
-                                .build_alloca(f_ty, &variable.name)
-                                .map_err(|e| crate::error::Error::InvalidInstruction {
+                            ctx.builder.build_alloca(f_ty, &des.name).map_err(|e| {
+                                crate::error::Error::InvalidInstruction {
                                     index: 0,
                                     message: e.to_string(),
-                                })?
+                                }
+                            })?
                         }
-                        _ => todo!("unsupported type for variable {:?}", variable.ty),
+                        _ => todo!("unsupported type for variable {:?}", des.ty),
                     };
-                    ctx.variables.insert(variable.name.clone(), alloca);
+                    ctx.variables.insert(des.name.clone(), alloca);
                     alloca
                 };
 
@@ -201,18 +202,18 @@ impl LowerToLlvm for ir::Instruction {
                     }
                 })?;
             }
-            ir::Instruction::Alloc(_, _, _) => todo!("alloc"),
-            ir::Instruction::Call(variable, _, operands) => todo!("call"),
-            ir::Instruction::Cmp(variable, operand, operand1) => todo!("cmp"),
-            ir::Instruction::ElemGet(des, ptr, index) => todo!("elemget"),
-            ir::Instruction::ElemSet(ptr, index, value) => todo!("elemset"),
-            ir::Instruction::Gt(variable, operand, operand1) => todo!("gt"),
-            ir::Instruction::Lt(variable, operand, operand1) => todo!("lt"),
+            ir::Instruction::Alloc(..) => todo!("alloc"),
+            ir::Instruction::Call(..) => todo!("call"),
+            ir::Instruction::Cmp(..) => todo!("cmp"),
+            ir::Instruction::ElemGet(..) => todo!("elemget"),
+            ir::Instruction::ElemSet(..) => todo!("elemset"),
+            ir::Instruction::Gt(..) => todo!("gt"),
+            ir::Instruction::Lt(..) => todo!("lt"),
             ir::Instruction::Jump(_) => todo!("jump"),
-            ir::Instruction::JumpIf(operand, _) => todo!("jumpif"),
-            ir::Instruction::Load(variable, operand) => todo!("load"),
-            ir::Instruction::Mul(variable, operand, operand1) => todo!("mul"),
-            ir::Instruction::Phi(variable, items) => todo!("phi"),
+            ir::Instruction::JumpIf(..) => todo!("jumpif"),
+            ir::Instruction::Load(..) => todo!("load"),
+            ir::Instruction::Mul(..) => todo!("mul"),
+            ir::Instruction::Phi(..) => todo!("phi"),
             ir::Instruction::Return(ty, operand) => {
                 if operand.is_none() {
                     debug_assert!(ty == &ir::Type::Void);
@@ -234,8 +235,8 @@ impl LowerToLlvm for ir::Instruction {
                     }
                 })?;
             }
-            ir::Instruction::Sub(variable, operand, operand1) => todo!(),
-            ir::Instruction::Div(variable, operand, operand1) => todo!(),
+            ir::Instruction::Sub(..) => todo!("sub"),
+            ir::Instruction::Div(..) => todo!("div"),
             ir::Instruction::IfElse {
                 cond,
                 cond_result,

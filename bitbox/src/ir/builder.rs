@@ -1,4 +1,7 @@
 use crate::ir::{
+    instruction::{
+        IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, ILt, IMul, INoOp, ISub,
+    },
     BasicBlock, BlockId, Constant, Function, Import, Instruction, Module, Operand, Type, Variable,
     Visibility,
 };
@@ -55,11 +58,11 @@ impl<'a> AssemblerBuilder<'a> {
         }
     }
 
-    fn push_instruction(&mut self, instruction: Instruction) {
+    fn push_instruction(&mut self, instruction: impl Into<Instruction>) {
         let Some(BlockId(id)) = self.current_block else {
             panic!("block not set");
         };
-        self.blocks[id].instructions.push(instruction);
+        self.blocks[id].instructions.push(instruction.into());
     }
 
     /// Create a new block that you can jump to.
@@ -82,7 +85,7 @@ impl<'a> AssemblerBuilder<'a> {
 
     /// @noop
     pub fn noop(&mut self) -> &mut Self {
-        self.push_instruction(Instruction::NoOp);
+        self.push_instruction(Instruction::NoOp(INoOp));
         self
     }
 
@@ -95,20 +98,20 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Add(des, lhs, rhs));
+        self.push_instruction(IAdd::new(des, lhs, rhs));
         self
     }
 
     /// @assign <type> : <des>, <rhs>
     pub fn assign(&mut self, var: Variable, value: impl Into<Operand>) -> &mut Self {
         let value = value.into();
-        self.push_instruction(Instruction::Assign(var, value));
+        self.push_instruction(IAssign::new(var, value));
         self
     }
 
     /// @alloc <type> : <des>
-    pub fn alloc(&mut self, ty: Type, var: Variable, size: impl Into<Operand>) -> &mut Self {
-        self.push_instruction(Instruction::Alloc(ty, var, size.into()));
+    pub fn alloc(&mut self, ty: Type, des: Variable, size: impl Into<Operand>) -> &mut Self {
+        self.push_instruction(IAlloc::new(ty, des, size.into()));
         self
     }
 
@@ -120,7 +123,7 @@ impl<'a> AssemblerBuilder<'a> {
         name: impl Into<String>,
         args: &[Operand],
     ) -> &mut Self {
-        self.push_instruction(Instruction::Call(des, name.into(), args.to_vec()));
+        self.push_instruction(ICall::new(des, name.into(), args.to_vec()));
         self
     }
 
@@ -131,7 +134,7 @@ impl<'a> AssemblerBuilder<'a> {
         ptr: impl Into<Operand>,
         index: impl Into<Operand>,
     ) -> &mut Self {
-        self.push_instruction(Instruction::ElemGet(des, ptr.into(), index.into()));
+        self.push_instruction(IElemGet::new(des, ptr.into(), index.into()));
         self
     }
 
@@ -142,7 +145,7 @@ impl<'a> AssemblerBuilder<'a> {
         index: impl Into<Operand>,
         value: impl Into<Operand>,
     ) -> &mut Self {
-        self.push_instruction(Instruction::ElemSet(addr, index.into(), value.into()));
+        self.push_instruction(IElemSet::new(addr, index.into(), value.into()));
         self
     }
 
@@ -156,7 +159,7 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Cmp(des, lhs, rhs));
+        self.push_instruction(ICmp::new(des, lhs, rhs));
         self
     }
 
@@ -170,7 +173,7 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Gt(des, lhs, rhs));
+        self.push_instruction(IGt::new(des, lhs, rhs));
         self
     }
 
@@ -184,7 +187,7 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Lt(des, lhs, rhs));
+        self.push_instruction(ILt::new(des, lhs, rhs));
         self
     }
 
@@ -219,7 +222,7 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Mul(des, lhs, rhs));
+        self.push_instruction(IMul::new(des, lhs, rhs));
         self
     }
 
@@ -251,7 +254,7 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Sub(des, lhs, rhs));
+        self.push_instruction(ISub::new(des, lhs, rhs));
         self
     }
 
@@ -264,7 +267,7 @@ impl<'a> AssemblerBuilder<'a> {
     ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
-        self.push_instruction(Instruction::Div(des, lhs, rhs));
+        self.push_instruction(IDiv::new(des, lhs, rhs));
         self
     }
 

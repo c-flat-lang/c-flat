@@ -1,4 +1,4 @@
-use crate::ir::Variable;
+use crate::ir::{instruction::ICall, Variable};
 
 use super::Pass;
 use std::collections::HashMap;
@@ -75,42 +75,48 @@ fn block_pass(
 ) {
     for instruction in block.instructions.iter() {
         match instruction {
-            crate::ir::Instruction::Add(variable, _, _) => ctx
+            crate::ir::Instruction::Add(iadd) => ctx
+                .local_function_variables
+                .add(function_name, iadd.des.clone()),
+            crate::ir::Instruction::Assign(iassign) => ctx
+                .local_function_variables
+                .add(function_name, iassign.des.clone()),
+            crate::ir::Instruction::Alloc(ialloc) => ctx
+                .local_function_variables
+                .add(function_name, ialloc.des.clone()),
+            crate::ir::Instruction::Call(ICall {
+                des: Some(variable),
+                ..
+            }) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
-            crate::ir::Instruction::Assign(variable, _) => ctx
+            crate::ir::Instruction::Cmp(icmp) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
-            crate::ir::Instruction::Alloc(_, variable, _) => ctx
+                .add(function_name, icmp.des.clone()),
+            crate::ir::Instruction::ElemGet(ielemget) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
-            crate::ir::Instruction::Call(Some(variable), _, _) => ctx
+                .add(function_name, ielemget.des.clone()),
+            crate::ir::Instruction::Gt(igt) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
-            crate::ir::Instruction::Cmp(variable, _, _) => ctx
+                .add(function_name, igt.des.clone()),
+            crate::ir::Instruction::Lt(ilt) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
-            crate::ir::Instruction::ElemGet(variable, _, _) => ctx
-                .local_function_variables
-                .add(function_name, variable.clone()),
-            crate::ir::Instruction::Gt(variable, _, _) => ctx
-                .local_function_variables
-                .add(function_name, variable.clone()),
+                .add(function_name, ilt.des.clone()),
             crate::ir::Instruction::Load(variable, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
-            crate::ir::Instruction::Mul(variable, _, _) => ctx
+            crate::ir::Instruction::Mul(imul) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
+                .add(function_name, imul.des.clone()),
             crate::ir::Instruction::Phi(variable, _) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
-            crate::ir::Instruction::Sub(variable, _, _) => ctx
+            crate::ir::Instruction::Sub(isub) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
-            crate::ir::Instruction::Div(variable, _, _) => ctx
+                .add(function_name, isub.des.clone()),
+            crate::ir::Instruction::Div(idiv) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
+                .add(function_name, idiv.des.clone()),
             crate::ir::Instruction::IfElse {
                 cond,
                 cond_result,

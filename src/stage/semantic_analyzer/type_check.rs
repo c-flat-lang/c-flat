@@ -225,8 +225,10 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
-        if self.walk_expr(&mut expr.condition) != ast::Type::Bool {
-            self.errors.push("Condition must be a boolean".to_string());
+        let condition = self.walk_expr(&mut expr.condition);
+        if !matches!(condition, Type::Bool | Type::SignedNumber(_)) {
+            self.errors
+                .push(format!("Condition must be a boolean {:?}", condition));
         }
         let then_branch_type = self.walk_block(&mut expr.then_branch);
         if let Some(else_branch) = expr.else_branch.as_mut() {

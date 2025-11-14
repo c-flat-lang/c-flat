@@ -1,4 +1,7 @@
-use crate::ir::{BlockId, Variable};
+use crate::ir::{
+    instruction::{IAdd, IAssign, ICall, ICmp, IDiv, IGt, ILt, IMul, ISub},
+    BlockId, Variable,
+};
 use std::collections::HashMap;
 
 use super::Pass;
@@ -6,22 +9,23 @@ use super::Pass;
 impl crate::ir::Instruction {
     pub fn uses(&self) -> Vec<Variable> {
         match self {
-            Self::Add(_, a, b)
-            | Self::Sub(_, a, b)
-            | Self::Mul(_, a, b)
-            | Self::Div(_, a, b)
-            | Self::Cmp(_, a, b)
-            | Self::Gt(_, a, b) => {
+            Self::Add(IAdd { lhs, rhs, .. })
+            | Self::Sub(ISub { lhs, rhs, .. })
+            | Self::Mul(IMul { lhs, rhs, .. })
+            | Self::Div(IDiv { lhs, rhs, .. })
+            | Self::Cmp(ICmp { lhs, rhs, .. })
+            | Self::Gt(IGt { lhs, rhs, .. })
+            | Self::Lt(ILt { lhs, rhs, .. }) => {
                 let mut vars = Vec::new();
-                if let crate::ir::Operand::Variable(v) = a {
+                if let crate::ir::Operand::Variable(v) = lhs {
                     vars.push(v.clone());
                 }
-                if let crate::ir::Operand::Variable(v) = b {
+                if let crate::ir::Operand::Variable(v) = rhs {
                     vars.push(v.clone());
                 }
                 vars
             }
-            Self::Assign(_, op) | Self::Load(_, op) | Self::JumpIf(op, _) => {
+            Self::Assign(IAssign { src: op, .. }) | Self::Load(_, op) | Self::JumpIf(op, _) => {
                 if let crate::ir::Operand::Variable(v) = op {
                     vec![v.clone()]
                 } else {
@@ -41,16 +45,17 @@ impl crate::ir::Instruction {
 
     pub fn defines(&self) -> Vec<Variable> {
         match self {
-            Self::Add(var, _, _)
-            | Self::Sub(var, _, _)
-            | Self::Mul(var, _, _)
-            | Self::Div(var, _, _)
-            | Self::Cmp(var, _, _)
-            | Self::Gt(var, _, _)
-            | Self::Assign(var, _)
-            | Self::Load(var, _)
-            | Self::Phi(var, _)
-            | Self::Call(Some(var), _, _) => vec![var.clone()],
+            Self::Add(IAdd { des, .. })
+            | Self::Sub(ISub { des, .. })
+            | Self::Mul(IMul { des, .. })
+            | Self::Div(IDiv { des, .. })
+            | Self::Cmp(ICmp { des, .. })
+            | Self::Gt(IGt { des, .. })
+            | Self::Lt(ILt { des, .. })
+            | Self::Assign(IAssign { des, .. })
+            | Self::Load(des, _)
+            | Self::Phi(des, _)
+            | Self::Call(ICall { des: Some(des), .. }) => vec![des.clone()],
             _ => vec![],
         }
     }

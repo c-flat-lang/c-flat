@@ -322,7 +322,7 @@ impl Parser {
             equal,
             right: Box::new(right_expr),
         };
-        return Ok(ast::Expr::Assignment(assignment));
+        Ok(ast::Expr::Assignment(assignment))
     }
 
     fn parse_comparison(&mut self) -> Result<ast::Expr, CompilerError> {

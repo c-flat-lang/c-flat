@@ -551,7 +551,7 @@ impl Addressable for ExprArrayIndex {
         let address = Address {
             variable,
             offset,
-            size: ty.size() as usize,
+            size: ty.size(),
         };
         let var = AddressableVar::Address(address);
         Some(var)
@@ -568,7 +568,7 @@ impl Lowerable for ExprArrayRepeat {
             panic!("Expected array type but got {}", self.ty);
         };
         let size = Operand::ConstantInt {
-            value: format!("{}", count * (ty.size() as usize)),
+            value: format!("{}", count * ty.size()),
             ty: Type::Signed(32),
         };
         let ptr = assembler.var(ty.clone().as_bitbox_type());

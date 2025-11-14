@@ -276,8 +276,8 @@ impl Function {
 
     /// Marks the function as returning
     /// Return PID is stored in the first register
-    pub fn returns(mut self) -> Self {
-        self.returns = true;
+    pub fn returns(mut self, returns: bool) -> Self {
+        self.returns = returns;
         self
     }
 

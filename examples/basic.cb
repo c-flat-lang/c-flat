@@ -10,7 +10,7 @@ fn min_s32(x: s32, y: s32) s32 {
 }
 
 pub fn main() s32 {
-    const x = 123;
-    const y: s32 = 321;
+    let x = 123;
+    let y: s32 = 321;
     return max_s32(x, y);
 }

@@ -73,7 +73,7 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
             print!("{}", String::from_utf8(string.clone()).unwrap());
             std::io::stdout().flush().unwrap();
 
-            return 0;
+            0
         },
     )?;
 

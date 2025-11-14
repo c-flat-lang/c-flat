@@ -41,5 +41,5 @@ macro_rules! snapshot {
     };
 }
 
-snapshot!(binary, "../../../examples/basic.bitbox");
+snapshot!(binary, "../../../examples/array.bitbox");
 snapshot!(import_function, "../../../examples/import_function.bitbox");

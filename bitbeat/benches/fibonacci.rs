@@ -12,7 +12,7 @@ pub fn fibbonacci_recursive(c: &mut Criterion) {
     //     A = fib(N - 1)
     //     B = fib(N - 2)
     //     return A + B
-    let mut fib_function = Function::new("fib").arity(1).returns(); // Arg is in Reg(0)
+    let mut fib_function = Function::new("fib").arity(1).returns(true); // Arg is in Reg(0)
     fib_function
         .instructions()
         .load_imm(Reg(2), 1) // const_1 = 1
