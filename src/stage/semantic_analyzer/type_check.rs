@@ -10,16 +10,24 @@ impl Type {
         match (self, op, other) {
             (
                 Type::UnsignedNumber(lhs),
-                (Plus | Minus | Star | Slash | EqualEqual | Greater | GreaterEqual | Less
-                | LessEqual),
+                (Plus | Minus | Star | Slash),
                 Type::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(Type::UnsignedNumber(*lhs)),
             (
+                Type::UnsignedNumber(lhs),
+                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                Type::UnsignedNumber(rhs),
+            ) if lhs == rhs => Some(Type::Bool),
+            (Type::SignedNumber(lhs), (Plus | Minus | Star | Slash), Type::SignedNumber(rhs))
+                if lhs == rhs =>
+            {
+                Some(Type::SignedNumber(*lhs))
+            }
+            (
                 Type::SignedNumber(lhs),
-                (Plus | Minus | Star | Slash | EqualEqual | Greater | GreaterEqual | Less
-                | LessEqual),
+                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
                 Type::SignedNumber(rhs),
-            ) if lhs == rhs => Some(Type::SignedNumber(*lhs)),
+            ) if lhs == rhs => Some(Type::Bool),
             (Type::Float(lhs), TokenKind::Plus, Type::Float(rhs)) => Some(Type::Float(*lhs)),
             // (Type::Bool, TokenKind::, Type::Bool) => Some(Type::Bool),
             //(Type::Custom(name), op, Type::Custom(rhs)) => {
@@ -226,7 +234,7 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
         let condition = self.walk_expr(&mut expr.condition);
-        if !matches!(condition, Type::Bool | Type::SignedNumber(_)) {
+        if !matches!(condition, Type::Bool) {
             self.errors
                 .push(format!("Condition must be a boolean {:?}", condition));
         }
