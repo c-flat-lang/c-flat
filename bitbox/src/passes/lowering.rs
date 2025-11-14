@@ -1,7 +1,10 @@
 use uuid::Uuid;
 
 use crate::{
-    ir::{BasicBlock, BlockId, Instruction, Operand},
+    ir::{
+        instruction::{IIfElse, IJump, IJumpIf, IPhi},
+        BasicBlock, BlockId, Instruction, Operand,
+    },
     passes::DebugPass,
 };
 
@@ -38,13 +41,13 @@ impl Pass for LoweringPass {
 
                 let mut j = 0;
                 while j < block.instructions.len() {
-                    if let Instruction::IfElse {
+                    if let Instruction::IfElse(IIfElse {
                         cond,
                         cond_result,
                         then_branch,
                         else_branch,
                         result,
-                    } = block.instructions[j].clone()
+                    }) = block.instructions[j].clone()
                     {
                         let after_if = block.instructions.split_off(j + 1);
                         block.instructions.pop(); // remove the IfElse itself
@@ -61,10 +64,13 @@ impl Pass for LoweringPass {
                             }
                         }
 
-                        block.instructions.push(Instruction::JumpIf(
-                            Operand::Variable(cond_result.clone()),
-                            then_label.clone(),
-                        ));
+                        block.instructions.push(
+                            IJumpIf::new(
+                                Operand::Variable(cond_result.clone()),
+                                then_label.clone(),
+                            )
+                            .into(),
+                        );
                         let jump_to_next_block = if else_branch.is_empty() {
                             merge_label.clone()
                         } else {
@@ -72,7 +78,7 @@ impl Pass for LoweringPass {
                         };
                         block
                             .instructions
-                            .push(Instruction::Jump(jump_to_next_block));
+                            .push(IJump::new(jump_to_next_block).into());
 
                         let mut then_blocks = then_branch.clone();
                         for tb in &mut then_blocks {
@@ -80,13 +86,13 @@ impl Pass for LoweringPass {
                             let ends_in_ret_or_jump = tb.instructions.last().map(|inst| {
                                 matches!(
                                     inst,
-                                    Instruction::Return(_, _)
-                                        | Instruction::Jump(_)
-                                        | Instruction::JumpIf(_, _)
+                                    Instruction::Return(..)
+                                        | Instruction::Jump(..)
+                                        | Instruction::JumpIf(..)
                                 )
                             });
                             if ends_in_ret_or_jump != Some(true) {
-                                tb.instructions.push(Instruction::Jump(merge_label.clone()));
+                                tb.instructions.push(IJump::new(merge_label.clone()).into());
                             }
                         }
 
@@ -96,13 +102,13 @@ impl Pass for LoweringPass {
                             let ends_in_ret_or_jump = eb.instructions.last().map(|inst| {
                                 matches!(
                                     inst,
-                                    Instruction::Return(_, _)
-                                        | Instruction::Jump(_)
-                                        | Instruction::JumpIf(_, _)
+                                    Instruction::Return(..)
+                                        | Instruction::Jump(..)
+                                        | Instruction::JumpIf(..)
                                 )
                             });
                             if ends_in_ret_or_jump != Some(true) {
-                                eb.instructions.push(Instruction::Jump(merge_label.clone()));
+                                eb.instructions.push(IJump::new(merge_label.clone()).into());
                             }
                         }
 
@@ -115,13 +121,14 @@ impl Pass for LoweringPass {
                         if let Some(res_var) = result {
                             merge_block.instructions.insert(
                                 0,
-                                Instruction::Phi(
+                                IPhi::new(
                                     res_var.clone(),
                                     vec![
                                         (res_var.clone(), then_label.clone()),
                                         (res_var.clone(), else_label.clone()),
                                     ],
-                                ),
+                                )
+                                .into(),
                             );
                         }
 

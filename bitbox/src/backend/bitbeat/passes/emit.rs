@@ -1,5 +1,5 @@
 use crate::backend::Lower;
-use crate::ir::instruction::{IAdd, ICmp};
+use crate::ir::instruction::{IAdd, ICmp, IJumpIf, ILoad, IReturn};
 use crate::passes::Pass;
 
 #[derive(Debug)]
@@ -138,38 +138,32 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::ElemSet(..) => todo!("elemset"),
             crate::ir::Instruction::Gt(..) => todo!("gt"),
             crate::ir::Instruction::Lt(..) => todo!("lt"),
-            crate::ir::Instruction::Jump(label) => {
-                target.assembler.jump(label);
+            crate::ir::Instruction::Jump(ijump) => {
+                target.assembler.jump(&ijump.label);
             }
-            crate::ir::Instruction::JumpIf(operand, label) => {
-                let operand_result = operand.lower(ctx, target)?;
+            crate::ir::Instruction::JumpIf(IJumpIf { cond, label }) => {
+                let operand_result = cond.lower(ctx, target)?;
                 let reg = operand_result.lower(ctx, target)?;
                 target.assembler.jump_if(reg, label);
             }
-            crate::ir::Instruction::Load(variable, operand) => {
-                let OperandResult::Value(value) = operand.lower(ctx, target)? else {
+            crate::ir::Instruction::Load(ILoad { des, src }) => {
+                let OperandResult::Value(value) = src.lower(ctx, target)? else {
                     panic!("Load Imm expected value found register");
                 };
-                let reg = variable.lower(ctx, target)?;
+                let reg = des.lower(ctx, target)?;
                 target.assembler.load_imm(reg, value);
             }
-            crate::ir::Instruction::Mul(imul) => todo!(),
-            crate::ir::Instruction::Phi(variable, items) => todo!(),
-            crate::ir::Instruction::Return(ty, operand) => {
-                let operand_result = operand.lower(ctx, target)?;
+            crate::ir::Instruction::Mul(..) => todo!("mul"),
+            crate::ir::Instruction::Phi(..) => todo!("@phi"),
+            crate::ir::Instruction::Return(IReturn { ty, src }) => {
+                let operand_result = src.lower(ctx, target)?;
                 let reg = operand_result.lower(ctx, target)?;
                 target.assembler.print(reg);
                 // target.assembler.send(bitbeat::Reg(0), reg);
             }
-            crate::ir::Instruction::Sub(isub) => todo!(),
-            crate::ir::Instruction::Div(idiv) => todo!(),
-            crate::ir::Instruction::IfElse {
-                cond,
-                cond_result,
-                then_branch,
-                else_branch,
-                result,
-            } => todo!(),
+            crate::ir::Instruction::Sub(..) => todo!("sub"),
+            crate::ir::Instruction::Div(..) => todo!("div"),
+            crate::ir::Instruction::IfElse(..) => todo!("ifelse"),
         }
         Ok(())
     }

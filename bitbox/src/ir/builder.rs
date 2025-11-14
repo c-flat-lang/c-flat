@@ -1,6 +1,7 @@
 use crate::ir::{
     instruction::{
-        IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, ILt, IMul, INoOp, ISub,
+        IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
+        ILoad, ILt, IMul, INoOp, IPhi, IReturn, ISub,
     },
     BasicBlock, BlockId, Constant, Function, Import, Instruction, Module, Operand, Type, Variable,
     Visibility,
@@ -194,7 +195,7 @@ impl<'a> AssemblerBuilder<'a> {
     /// @jump <label>
     /// @jump %recursive_case
     pub fn jump(&mut self, label: impl Into<String>) -> &mut Self {
-        self.push_instruction(Instruction::Jump(label.into()));
+        self.push_instruction(IJump::new(label.into()));
         self
     }
 
@@ -202,14 +203,14 @@ impl<'a> AssemblerBuilder<'a> {
     /// @jumpif is_one, %return_one
     pub fn jump_if(&mut self, reg: impl Into<Operand>, label: impl Into<String>) -> &mut Self {
         let reg = reg.into();
-        self.push_instruction(Instruction::JumpIf(reg, label.into()));
+        self.push_instruction(IJumpIf::new(reg, label.into()));
         self
     }
 
     /// @load <type> : <des>, <addr>
     pub fn load(&mut self, des: Variable, addr: impl Into<Operand>) -> &mut Self {
         let addr = addr.into();
-        self.push_instruction(Instruction::Load(des, addr));
+        self.push_instruction(ILoad::new(des, addr));
         self
     }
 
@@ -228,19 +229,19 @@ impl<'a> AssemblerBuilder<'a> {
 
     /// @phi <type> : <des>, [(<var>, <label>)]
     pub fn phi(&mut self, des: Variable, values: Vec<(Variable, String)>) -> &mut Self {
-        self.push_instruction(Instruction::Phi(des, values));
+        self.push_instruction(IPhi::new(des, values));
         self
     }
 
     /// @ret <type> : <val>
     pub fn ret(&mut self, ty: Type, val: impl Into<Operand>) -> &mut Self {
-        self.push_instruction(Instruction::Return(ty, val.into()));
+        self.push_instruction(IReturn::new(ty, val.into()));
         self
     }
 
     /// @ret void
     pub fn void_ret(&mut self) -> &mut Self {
-        self.push_instruction(Instruction::Return(Type::Void, Operand::None));
+        self.push_instruction(IReturn::new(Type::Void, Operand::None));
         self
     }
 
@@ -279,7 +280,7 @@ impl<'a> AssemblerBuilder<'a> {
         else_branch: Vec<BasicBlock>,
         result: Option<Variable>,
     ) -> &mut Self {
-        let instruction = Instruction::IfElse {
+        let instruction = IIfElse {
             cond,
             cond_result,
             then_branch,

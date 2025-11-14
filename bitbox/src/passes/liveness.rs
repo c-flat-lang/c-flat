@@ -1,5 +1,5 @@
 use crate::ir::{
-    instruction::{IAdd, IAssign, ICall, ICmp, IDiv, IGt, ILt, IMul, ISub},
+    instruction::{IAdd, IAssign, ICall, ICmp, IDiv, IGt, IJumpIf, ILoad, ILt, IMul, IPhi, ISub},
     BlockId, Variable,
 };
 use std::collections::HashMap;
@@ -25,15 +25,17 @@ impl crate::ir::Instruction {
                 }
                 vars
             }
-            Self::Assign(IAssign { src: op, .. }) | Self::Load(_, op) | Self::JumpIf(op, _) => {
+            Self::Assign(IAssign { src: op, .. })
+            | Self::Load(ILoad { src: op, .. })
+            | Self::JumpIf(IJumpIf { cond: op, .. }) => {
                 if let crate::ir::Operand::Variable(v) = op {
                     vec![v.clone()]
                 } else {
                     vec![]
                 }
             }
-            Self::Return(_, op) => {
-                if let crate::ir::Operand::Variable(v) = op {
+            Self::Return(ireturn) => {
+                if let crate::ir::Operand::Variable(v) = &ireturn.src {
                     vec![v.clone()]
                 } else {
                     vec![]
@@ -53,8 +55,8 @@ impl crate::ir::Instruction {
             | Self::Gt(IGt { des, .. })
             | Self::Lt(ILt { des, .. })
             | Self::Assign(IAssign { des, .. })
-            | Self::Load(des, _)
-            | Self::Phi(des, _)
+            | Self::Load(ILoad { des, .. })
+            | Self::Phi(IPhi { des, .. })
             | Self::Call(ICall { des: Some(des), .. }) => vec![des.clone()],
             _ => vec![],
         }

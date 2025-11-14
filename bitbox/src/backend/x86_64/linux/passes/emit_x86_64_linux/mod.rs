@@ -6,7 +6,7 @@ use inkwell::{
 
 use crate::backend::{Context as BackendContext, Lower};
 use crate::ir;
-use crate::ir::instruction::IAssign;
+use crate::ir::instruction::{IAssign, IReturn};
 
 impl ir::Type {
     pub fn to_llvm_type<'ctx>(&self, ctx: &'ctx LlvmContext) -> BasicTypeEnum<'ctx> {
@@ -214,8 +214,8 @@ impl LowerToLlvm for ir::Instruction {
             ir::Instruction::Load(..) => todo!("load"),
             ir::Instruction::Mul(..) => todo!("mul"),
             ir::Instruction::Phi(..) => todo!("phi"),
-            ir::Instruction::Return(ty, operand) => {
-                if operand.is_none() {
+            ir::Instruction::Return(IReturn { ty, src }) => {
+                if src.is_none() {
                     debug_assert!(ty == &ir::Type::Void);
                     ctx.builder.build_return(None).map_err(|e| {
                         crate::error::Error::InvalidInstruction {
@@ -226,7 +226,7 @@ impl LowerToLlvm for ir::Instruction {
                     return Ok(());
                 }
 
-                let val = operand.lower(ctx)?;
+                let val = src.lower(ctx)?;
 
                 ctx.builder.build_return(Some(&val)).map_err(|e| {
                     crate::error::Error::InvalidInstruction {
@@ -237,13 +237,9 @@ impl LowerToLlvm for ir::Instruction {
             }
             ir::Instruction::Sub(..) => todo!("sub"),
             ir::Instruction::Div(..) => todo!("div"),
-            ir::Instruction::IfElse {
-                cond,
-                cond_result,
-                then_branch,
-                else_branch,
-                result,
-            } => unreachable!("Lowering pass should be used before llvm pass"),
+            ir::Instruction::IfElse(..) => {
+                unreachable!("Lowering pass should be used before llvm pass")
+            }
         }
         Ok(())
     }

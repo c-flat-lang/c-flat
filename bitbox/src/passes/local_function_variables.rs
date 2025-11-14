@@ -1,4 +1,7 @@
-use crate::ir::{instruction::ICall, Variable};
+use crate::ir::{
+    instruction::{ICall, IIfElse},
+    Variable,
+};
 
 use super::Pass;
 use std::collections::HashMap;
@@ -102,28 +105,28 @@ fn block_pass(
             crate::ir::Instruction::Lt(ilt) => ctx
                 .local_function_variables
                 .add(function_name, ilt.des.clone()),
-            crate::ir::Instruction::Load(variable, _) => ctx
+            crate::ir::Instruction::Load(iload) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
+                .add(function_name, iload.des.clone()),
             crate::ir::Instruction::Mul(imul) => ctx
                 .local_function_variables
                 .add(function_name, imul.des.clone()),
-            crate::ir::Instruction::Phi(variable, _) => ctx
+            crate::ir::Instruction::Phi(iphi) => ctx
                 .local_function_variables
-                .add(function_name, variable.clone()),
+                .add(function_name, iphi.des.clone()),
             crate::ir::Instruction::Sub(isub) => ctx
                 .local_function_variables
                 .add(function_name, isub.des.clone()),
             crate::ir::Instruction::Div(idiv) => ctx
                 .local_function_variables
                 .add(function_name, idiv.des.clone()),
-            crate::ir::Instruction::IfElse {
+            crate::ir::Instruction::IfElse(IIfElse {
                 cond,
                 cond_result,
                 then_branch,
                 else_branch,
                 result,
-            } => {
+            }) => {
                 // NOTE: Due to the way the blocks are independent of each other
                 // the names of variables could be the same as the outer block.
                 // This is a problem for future me.

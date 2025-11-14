@@ -31,18 +31,18 @@ pub enum Instruction {
     Lt(ILt),
     /// @jump <label>
     /// @jump %recursive_case
-    Jump(String),
-    /// @jumpif <reg>, <label>
+    Jump(IJump),
+    /// @jumpif <cond>, <label>
     /// @jumpif is_one, %return_one
-    JumpIf(Operand, String),
+    JumpIf(IJumpIf),
     /// @load <type> : <des>, <addr>
-    Load(Variable, Operand),
+    Load(ILoad),
     /// @mul <type> : <des>, <lhs>, <rhs>
     Mul(IMul),
     /// @phi <type> : <des>, [(<var>, <label>)]
-    Phi(Variable, Vec<(Variable, String)>),
+    Phi(IPhi),
     /// @ret <type> : <val>
-    Return(Type, Operand),
+    Return(IReturn),
     /// @sub <type> : <des>, <lhs>, <rhs>
     /// @sub s32 : n_minus_one, n, 1
     Sub(ISub),
@@ -52,13 +52,7 @@ pub enum Instruction {
     /// @if is_one : result then [@assign s32 : result, 1] else [@assign s32 : result, 0]
     /// With out a result
     /// @if condition then [...] else [...]
-    IfElse {
-        cond: Vec<BasicBlock>,
-        cond_result: Variable,
-        then_branch: Vec<BasicBlock>,
-        else_branch: Vec<BasicBlock>,
-        result: Option<Variable>,
-    },
+    IfElse(IIfElse),
 }
 
 impl fmt::Display for Instruction {
@@ -77,117 +71,12 @@ impl fmt::Display for Instruction {
             Instruction::Assign(iassign) => write!(f, "{iassign}"),
             Instruction::Alloc(ialloc) => write!(f, "{ialloc}"),
             Instruction::Call(icall) => write!(f, "{icall}"),
-
-            Instruction::Load(var, op) => {
-                write!(
-                    f,
-                    "{} {:<5} : {}, {}",
-                    Paint::blue("@load"),
-                    Paint::yellow(&var.ty),
-                    color_var(var),
-                    color_op(op),
-                )
-            }
-
-            Instruction::Jump(label) => write!(f, "{} {}", Paint::blue("@jump"), short_uuid(label)),
-            Instruction::JumpIf(cond, label) => {
-                write!(
-                    f,
-                    "{} {}, {}",
-                    Paint::blue("@jumpif"),
-                    color_op(cond),
-                    short_uuid(label)
-                )
-            }
-
-            Instruction::Return(ty, op) => {
-                write!(
-                    f,
-                    "{} {:<5}, {}",
-                    Paint::blue("@ret"),
-                    Paint::yellow(&ty),
-                    color_op(op),
-                )
-            }
-
-            Instruction::Phi(var, items) => {
-                writeln!(
-                    f,
-                    "{} {:<5} : {},",
-                    Paint::blue("@phi"),
-                    Paint::yellow(&var.ty),
-                    color_var(var),
-                )?;
-                for (v, b) in items {
-                    writeln!(f, "    [{}, {}]", color_var(v), short_uuid(b))?;
-                }
-                Ok(())
-            }
-
-            Instruction::IfElse {
-                cond,
-                cond_result,
-                then_branch,
-                else_branch,
-                result,
-            } => {
-                let res_str = if let Some(r) = result {
-                    format!(" -> {}", color_var(r))
-                } else {
-                    "".to_string()
-                };
-
-                // header
-                writeln!(
-                    f,
-                    "{} {}{}:",
-                    Paint::blue("@if"),
-                    color_var(cond_result),
-                    res_str
-                )?;
-
-                // cond instructions, only if non-empty
-                if !cond.is_empty() {
-                    if cond.len() > 1 {
-                        writeln!(f, "  cond:")?;
-                        for b in cond {
-                            writeln!(f, "    block {}:", short_uuid(&b.label))?;
-                            for i in &b.instructions {
-                                writeln!(f, "        {}", i)?;
-                            }
-                        }
-                    } else {
-                        // inline single instruction
-                        for b in cond {
-                            for i in &b.instructions {
-                                writeln!(f, "    {}", i)?;
-                            }
-                        }
-                    }
-                }
-
-                // then branch
-                if !then_branch.is_empty() {
-                    writeln!(f, "  then:")?;
-                    for b in then_branch {
-                        for i in &b.instructions {
-                            writeln!(f, "    {}", i)?;
-                        }
-                    }
-                }
-
-                // else branch
-                if !else_branch.is_empty() {
-                    writeln!(f, "  else:")?;
-                    for b in else_branch {
-                        for i in &b.instructions {
-                            writeln!(f, "    {}", i)?;
-                        }
-                    }
-                }
-
-                Ok(())
-            }
+            Instruction::Load(iload) => write!(f, "{iload}"),
+            Instruction::Jump(ijump) => write!(f, "{ijump}"),
+            Instruction::JumpIf(ijumpif) => write!(f, "{ijumpif}"),
+            Instruction::Return(ireturn) => write!(f, "{ireturn}"),
+            Instruction::Phi(iphi) => write!(f, "{iphi}"),
+            Instruction::IfElse(ifelse) => write!(f, "{ifelse}"),
         }
     }
 }
@@ -477,5 +366,248 @@ impl fmt::Display for ICall {
 impl From<ICall> for Instruction {
     fn from(i: ICall) -> Self {
         Instruction::Call(i)
+    }
+}
+
+/// @load <type> : <des>, <addr>
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ILoad {
+    pub des: Variable,
+    pub src: Operand,
+}
+
+impl ILoad {
+    pub fn new(des: Variable, src: Operand) -> Self {
+        Self { des, src }
+    }
+}
+
+impl fmt::Display for ILoad {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}",
+            Paint::blue("@load"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_op(&self.src),
+        )
+    }
+}
+
+impl From<ILoad> for Instruction {
+    fn from(i: ILoad) -> Self {
+        Instruction::Load(i)
+    }
+}
+
+/// @ret <type> : <val>
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IReturn {
+    pub ty: Type,
+    pub src: Operand,
+}
+
+impl IReturn {
+    pub fn new(ty: Type, src: Operand) -> Self {
+        Self { ty, src }
+    }
+}
+
+impl fmt::Display for IReturn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5}, {}",
+            Paint::blue("@ret"),
+            Paint::yellow(&self.ty),
+            color_op(&self.src),
+        )
+    }
+}
+
+impl From<IReturn> for Instruction {
+    fn from(i: IReturn) -> Self {
+        Instruction::Return(i)
+    }
+}
+
+/// @jump <label>
+/// @jump %recursive_case
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IJump {
+    pub label: String,
+}
+
+impl IJump {
+    pub fn new(label: String) -> Self {
+        Self { label }
+    }
+}
+
+impl fmt::Display for IJump {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", Paint::blue("@jump"), short_uuid(&self.label))
+    }
+}
+
+impl From<IJump> for Instruction {
+    fn from(i: IJump) -> Self {
+        Instruction::Jump(i)
+    }
+}
+
+/// @jumpif <cond>, <label>
+/// @jumpif is_one, %return_one
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IJumpIf {
+    pub cond: Operand,
+    pub label: String,
+}
+
+impl IJumpIf {
+    pub fn new(cond: Operand, label: String) -> Self {
+        Self { cond, label }
+    }
+}
+
+impl fmt::Display for IJumpIf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {}, {}",
+            Paint::blue("@jumpif"),
+            color_op(&self.cond),
+            short_uuid(&self.label)
+        )
+    }
+}
+
+impl From<IJumpIf> for Instruction {
+    fn from(i: IJumpIf) -> Self {
+        Instruction::JumpIf(i)
+    }
+}
+
+/// @phi <type> : <des>, [(<var>, <label>)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IPhi {
+    pub des: Variable,
+    pub branches: Vec<(Variable, String)>,
+}
+
+impl IPhi {
+    pub fn new(des: Variable, branches: Vec<(Variable, String)>) -> Self {
+        Self { des, branches }
+    }
+}
+
+impl fmt::Display for IPhi {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(
+            f,
+            "{} {:<5} : {},",
+            Paint::blue("@phi"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+        )?;
+        for (v, b) in self.branches.iter() {
+            writeln!(f, "    [{}, {}]", color_var(v), short_uuid(b))?;
+        }
+        Ok(())
+    }
+}
+
+impl From<IPhi> for Instruction {
+    fn from(i: IPhi) -> Self {
+        Instruction::Phi(i)
+    }
+}
+
+/// @if <cond> : <optional result> then [<then_branch>] else [<else_branch>]
+/// @if is_one : result then [@assign s32 : result, 1] else [@assign s32 : result, 0]
+/// With out a result
+/// @if condition then [...] else [...]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IIfElse {
+    pub cond: Vec<BasicBlock>,
+    pub cond_result: Variable,
+    pub then_branch: Vec<BasicBlock>,
+    pub else_branch: Vec<BasicBlock>,
+    pub result: Option<Variable>,
+}
+
+impl fmt::Display for IIfElse {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Self {
+            cond,
+            cond_result,
+            then_branch,
+            else_branch,
+            result,
+        } = self;
+
+        let res_str = if let Some(r) = result {
+            format!(" -> {}", color_var(r))
+        } else {
+            "".to_string()
+        };
+
+        // header
+        writeln!(
+            f,
+            "{} {}{}:",
+            Paint::blue("@if"),
+            color_var(cond_result),
+            res_str
+        )?;
+
+        // cond instructions, only if non-empty
+        if !cond.is_empty() {
+            if cond.len() > 1 {
+                writeln!(f, "  cond:")?;
+                for b in cond {
+                    writeln!(f, "    block {}:", short_uuid(&b.label))?;
+                    for i in &b.instructions {
+                        writeln!(f, "        {}", i)?;
+                    }
+                }
+            } else {
+                // inline single instruction
+                for b in cond {
+                    for i in &b.instructions {
+                        writeln!(f, "    {}", i)?;
+                    }
+                }
+            }
+        }
+
+        // then branch
+        if !then_branch.is_empty() {
+            writeln!(f, "  then:")?;
+            for b in then_branch {
+                for i in &b.instructions {
+                    writeln!(f, "    {}", i)?;
+                }
+            }
+        }
+
+        // else branch
+        if !else_branch.is_empty() {
+            writeln!(f, "  else:")?;
+            for b in else_branch {
+                for i in &b.instructions {
+                    writeln!(f, "    {}", i)?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl From<IIfElse> for Instruction {
+    fn from(i: IIfElse) -> Self {
+        Instruction::IfElse(i)
     }
 }

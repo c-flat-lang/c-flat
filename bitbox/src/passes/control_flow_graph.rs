@@ -1,3 +1,5 @@
+use crate::ir::instruction::IJumpIf;
+
 use super::Pass;
 
 type Table = std::collections::HashMap<crate::ir::BlockId, Vec<crate::ir::BlockId>>;
@@ -37,16 +39,16 @@ impl Pass for ControlFlowGraphPass {
             for block in function.blocks.iter() {
                 for instruction in block.instructions.iter() {
                     match instruction {
-                        crate::ir::Instruction::JumpIf(_, target) => {
-                            let Some(target_block_id) = name_to_block_id.get(target) else {
+                        crate::ir::Instruction::JumpIf(IJumpIf { label, .. }) => {
+                            let Some(target_block_id) = name_to_block_id.get(label) else {
                                 panic!("block not found");
                             };
                             ctx.cfg.push_out(block.id, *target_block_id);
                             ctx.cfg.push_in(*target_block_id, block.id);
                         }
-                        crate::ir::Instruction::Jump(target) => {
-                            let Some(target_block_id) = name_to_block_id.get(target) else {
-                                panic!("block {target} not found");
+                        crate::ir::Instruction::Jump(ijump) => {
+                            let Some(target_block_id) = name_to_block_id.get(&ijump.label) else {
+                                panic!("block {} not found", ijump.label);
                             };
                             ctx.cfg.push_out(block.id, *target_block_id);
                             ctx.cfg.push_in(*target_block_id, block.id);

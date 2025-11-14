@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::backend::Lower;
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, ILt, ISub,
+    IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IIfElse, ILoad, ILt, ISub,
 };
 use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::Pass;
@@ -62,10 +62,11 @@ impl Pass for EmitWasm32Pass {
 }
 
 #[derive(Debug)]
-struct Wasm32LowerContext<'ctx> {
-    function_name: String,
-    assembler: &'ctx mut InstructionSink<'ctx>,
+pub(crate) struct Wasm32LowerContext<'ctx> {
+    pub function_name: String,
+    pub assembler: &'ctx mut InstructionSink<'ctx>,
 }
+
 impl<'ctx> Wasm32LowerContext<'ctx> {
     fn new(function_name: String, assembler: &'ctx mut InstructionSink<'ctx>) -> Self {
         Self {
@@ -249,227 +250,21 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
             ir::Instruction::NoOp(..) => todo!("@noop"),
-            ir::Instruction::Add(IAdd { des, lhs, rhs }) => {
-                lhs.lower(ctx, target);
-                rhs.lower(ctx, target);
-                match des.ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_add(),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == des.name)
-                else {
-                    panic!("Variable {:?} not found", des);
-                };
-                target.assembler.local_set(idx as u32);
-            }
-            ir::Instruction::Assign(IAssign { des, src }) => match des.ty.clone().into() {
-                ValType::I32 => {
-                    let variables = ctx.local_function_variables.get(&target.function_name);
-                    let Some(idx) = variables.iter().position(|v| v.name == des.name) else {
-                        panic!("Variable {:?} not found", des);
-                    };
-                    src.lower(ctx, target);
-                    target.assembler.local_set(idx as u32);
-                }
-                ValType::I64 => todo!("@assign i64"),
-                ValType::F32 => todo!("@assign f32"),
-                ValType::F64 => todo!("@assign f64"),
-                ValType::V128 => todo!("@assign v128"),
-                ValType::Ref(_) => todo!("@assign ref"),
-            },
-            ir::Instruction::Alloc(IAlloc { ty, des, size }) => {
-                des.lower(ctx, target);
-                size.lower(ctx, target)?;
-                target.assembler.i32_mul();
-
-                target.assembler.global_get(0); // HACK: probably need to make a HEAP index.
-
-                let Some(ptr_idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == des.name)
-                else {
-                    panic!("Variable {:?} not found", des);
-                };
-
-                target.assembler.local_tee(ptr_idx as u32);
-                target.assembler.i32_add();
-                target.assembler.global_set(0); // HACK: probably need to make a HEAP index.
-            }
-            ir::Instruction::Call(ICall {
-                des: variable,
-                callee: name,
-                args: operands,
-            }) => {
-                for operand in operands.iter() {
-                    operand.lower(ctx, target);
-                }
-                let Some(function_id) = ctx.local_function_variables.get_function_id(name.as_str())
-                else {
-                    panic!("Function {:?} not found", name);
-                };
-                target.assembler.call(function_id as u32);
-                if let Some(variable) = variable {
-                    let variables = ctx.local_function_variables.get(&target.function_name);
-                    let Some(idx) = variables.iter().position(|v| v.name == variable.name) else {
-                        panic!("Variable {:?} not found", variable);
-                    };
-                    target.assembler.local_set(idx as u32);
-                }
-            }
-            ir::Instruction::Cmp(ICmp { des, lhs, rhs }) => {
-                lhs.lower(ctx, target);
-                rhs.lower(ctx, target);
-                match des.ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_eq(),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == des.name)
-                else {
-                    panic!("Variable {:?} not found", des);
-                };
-                target.assembler.local_set(idx as u32);
-            }
-            ir::Instruction::ElemGet(IElemGet { des, ptr, index }) => {
-                index.lower(ctx, target);
-                target.assembler.i32_const(des.ty.size());
-                target.assembler.i32_mul();
-
-                ptr.lower(ctx, target);
-                target.assembler.i32_add();
-
-                match des.ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_load(wasm_encoder::MemArg {
-                        offset: 0,
-                        align: 2,
-                        memory_index: 0,
-                    }),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-
-                let variables = ctx.local_function_variables.get(&target.function_name);
-                let Some(idx) = variables.iter().position(|v| v.name == des.name) else {
-                    panic!("Variable {:?} not found", self);
-                };
-                target.assembler.local_set(idx as u32);
-            }
-            ir::Instruction::ElemSet(IElemSet { addr, index, value }) => {
-                let ty = addr.ty.clone();
-                index.lower(ctx, target);
-                target.assembler.i32_const(ty.size());
-                target.assembler.i32_mul();
-                value.lower(ctx, target);
-                match ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_store(wasm_encoder::MemArg {
-                        offset: 0,
-                        align: 2,
-                        memory_index: 0,
-                    }),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-            }
-            ir::Instruction::Gt(IGt { des, lhs, rhs }) => {
-                lhs.lower(ctx, target);
-                rhs.lower(ctx, target);
-                match des.ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_gt_s(),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == des.name)
-                else {
-                    panic!("Variable {:?} not found", des);
-                };
-                target.assembler.local_set(idx as u32);
-            }
-            ir::Instruction::Lt(ILt { des, lhs, rhs }) => {
-                lhs.lower(ctx, target);
-                rhs.lower(ctx, target);
-                match des.ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_lt_s(),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == des.name)
-                else {
-                    panic!("Variable {:?} not found", des);
-                };
-                target.assembler.local_set(idx as u32);
-            }
-            ir::Instruction::Jump(_) => todo!("@jump"),
-            ir::Instruction::JumpIf(operand, label) => {}
-            ir::Instruction::Load(variable, operand) => {
-                operand.lower(ctx, target)?;
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == variable.name)
-                else {
-                    panic!("Variable {:?} not found", variable);
-                };
-                target.assembler.local_set(idx as u32);
-            }
+            ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
+            ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
+            ir::Instruction::Alloc(ialloc) => ialloc.lower(ctx, target)?,
+            ir::Instruction::Call(icall) => icall.lower(ctx, target)?,
+            ir::Instruction::Cmp(icmp) => icmp.lower(ctx, target)?,
+            ir::Instruction::ElemGet(ielemget) => ielemget.lower(ctx, target)?,
+            ir::Instruction::ElemSet(ielemset) => ielemset.lower(ctx, target)?,
+            ir::Instruction::Gt(igt) => igt.lower(ctx, target)?,
+            ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
+            ir::Instruction::Jump(..) => todo!("@jump"),
+            ir::Instruction::JumpIf(..) => todo!("@jump_if"),
+            ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => todo!("@mul"),
-            ir::Instruction::Phi(variable, items) => todo!("@phi"),
-            ir::Instruction::Return(ty, operand) => match ty.clone() {
-                Type::Void => todo!("@return void"),
-                _ => {
-                    operand.lower(ctx, target);
-                    // if operand.is_variable() {
-                    //     let local_variables = ctx.local_function_variables.get(function_name);
-                    //     let ir::Operand::Variable(variable) = operand else {
-                    //         panic!("Operand is not a variable");
-                    //     };
-                    //     let Some(idx) =
-                    //         local_variables.iter().position(|v| v.name == variable.name)
-                    //     else {
-                    //         panic!("Variable {:?} not found", variable);
-                    //     };
-                    //     assembler.local_get(idx as u32);
-                    // }
-                    target.assembler.return_();
-                }
-            },
+            ir::Instruction::Phi(..) => todo!("@phi"),
+            ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(ISub { des, lhs, rhs }) => {
                 lhs.lower(ctx, target);
                 rhs.lower(ctx, target);
@@ -492,13 +287,13 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
                 target.assembler.local_set(idx as u32);
             }
             ir::Instruction::Div(idiv) => todo!("@div"),
-            ir::Instruction::IfElse {
+            ir::Instruction::IfElse(IIfElse {
                 cond,
                 cond_result,
                 then_branch,
                 else_branch,
                 result,
-            } => {
+            }) => {
                 for block in cond.iter() {
                     block.lower(ctx, target)?;
                 }
