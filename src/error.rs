@@ -8,6 +8,9 @@ pub trait Report: std::fmt::Debug {
     fn report(&self, filename: &str, src: &str) -> String;
 }
 
+pub type CompilerError = Box<dyn Report>;
+pub type Result<T> = std::result::Result<T, CompilerError>;
+
 #[derive(Debug)]
 pub struct ErrorMissMatchedType {
     pub span: Span,
@@ -126,7 +129,7 @@ impl Report for ErrorMissingPairedClosingChar {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.span)
             .with_message("missing closing pair")
-            .with_note(&format!("expected {:?}", self.expected))
+            .with_note(format!("expected {:?}", self.expected))
             .with_lines_above(3)
             .build()
     }
@@ -184,37 +187,6 @@ impl Report for ErrorUndefinedSymbol {
         ReportBuilder::new(filename, src, &self.found.span)
             .with_message(format!("undefined symbol `{}`", &self.found.lexeme))
             .build()
-    }
-}
-
-#[derive(Debug)]
-pub enum CompilerError {
-    UnsupportedBinaryOp(ErrorUnsupportedBinaryOp),
-    MissMatchedType(ErrorMissMatchedType),
-    ExpectedKeyWord(ErrorExpectedKeyWord),
-    ExpectedToken(ErrorExpectedToken),
-    UnexpectedEndOfInput(ErrorUnexpectedEndOfInput),
-    ExpectedType(ErrorExpectedType),
-    MissingPairedClosingChar(ErrorMissingPairedClosingChar),
-    UnexpectedTopLevelItem(ErrorUnexpectedTopLevelItem),
-    UndefinedSymbol(ErrorUndefinedSymbol),
-    Errors(Errors),
-}
-
-impl CompilerError {
-    pub fn report(&self, filename: &str, src: &str) -> String {
-        match self {
-            Self::UnsupportedBinaryOp(error) => error.report(filename, src),
-            Self::MissMatchedType(error) => error.report(filename, src),
-            Self::ExpectedKeyWord(error) => error.report(filename, src),
-            Self::ExpectedToken(error) => error.report(filename, src),
-            Self::UnexpectedEndOfInput(error) => error.report(filename, src),
-            Self::ExpectedType(error) => error.report(filename, src),
-            Self::MissingPairedClosingChar(error) => error.report(filename, src),
-            Self::UnexpectedTopLevelItem(error) => error.report(filename, src),
-            Self::UndefinedSymbol(error) => error.report(filename, src),
-            Self::Errors(error) => error.report(filename, src),
-        }
     }
 }
 

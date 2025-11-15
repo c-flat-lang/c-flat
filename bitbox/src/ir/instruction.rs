@@ -348,7 +348,7 @@ impl fmt::Display for ICall {
                 "{} {:<5} : {}, {}({})",
                 Paint::blue("@call"),
                 Paint::yellow(&dest.ty),
-                color_var(&dest),
+                color_var(dest),
                 Paint::magenta(&self.callee),
                 args_str
             );

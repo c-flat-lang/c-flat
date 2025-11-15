@@ -7,7 +7,7 @@ mod tests;
 
 use super::Stage;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Lexer;
 
 impl Stage<&str, Vec<Token>> for Lexer {

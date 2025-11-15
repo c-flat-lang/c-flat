@@ -1,5 +1,7 @@
 #![allow(unused)]
-use crate::error::{CompilerError, ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report};
+use crate::error::{
+    CompilerError, ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result,
+};
 use crate::stage::lexer::token::{Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, Type};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
@@ -60,12 +62,12 @@ impl<'st> TypeChecker<'st> {
         }
     }
 
-    pub fn check(mut self, ast: &mut [ast::Item]) -> Result<(), CompilerError> {
+    pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
         for item in ast.iter_mut() {
             self.walk_item(item);
         }
         if !self.errors.is_empty() {
-            return Err(CompilerError::Errors(Errors {
+            return Err(Box::new(Errors {
                 errors: self.errors,
             }));
         }
@@ -329,7 +331,7 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer::default().run(src);
+        let tokens = crate::stage::lexer::Lexer.run(src);
         let mut ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
         let mut symbol_table =
             crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::default()

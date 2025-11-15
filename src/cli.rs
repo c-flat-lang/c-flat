@@ -44,7 +44,7 @@ impl Cli {
 
     #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
     pub fn debug_mode(&self) -> Option<DebugMode> {
-        self.debug_mode.clone()
+        self.debug_mode
     }
 
     #[cfg(not(feature = "wasm"))]

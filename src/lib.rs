@@ -81,7 +81,7 @@ pub fn front_end_compiler(
     src: &str,
     cli_options: &Cli,
 ) -> Result<bitbox::ir::Module, CompilerError> {
-    let tokens = stage::lexer::Lexer::default().run(src);
+    let tokens = stage::lexer::Lexer.run(src);
 
     if let Some(DebugMode::Token) = cli_options.debug_mode {
         for token in &tokens {

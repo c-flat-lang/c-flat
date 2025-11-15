@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crate::error::{CompilerError, ErrorUndefinedSymbol, Errors, Report};
+use crate::error::{CompilerError, ErrorUndefinedSymbol, Errors, Report, Result};
 use crate::stage::lexer::token::Token;
 
 use crate::stage::parser::ast::{self, Expr};
@@ -33,12 +33,12 @@ impl Default for SymbolTableBuilder {
 }
 
 impl SymbolTableBuilder {
-    pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable, CompilerError> {
+    pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable> {
         for item in items {
             self.walk_item(item);
         }
         if !self.errors.is_empty() {
-            return Err(CompilerError::Errors(Errors {
+            return Err(Box::new(Errors {
                 errors: self.errors,
             }));
         }
@@ -437,7 +437,7 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer::default().run(src);
+        let tokens = crate::stage::lexer::Lexer.run(src);
         let ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
         let symbol_table = match SymbolTableBuilder::default().build(&ast) {
             Ok(table) => table,

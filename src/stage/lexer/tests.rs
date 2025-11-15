@@ -3,7 +3,7 @@ use crate::stage::Stage;
 use std::fmt::Write;
 
 pub fn snapshot_lexing(input: &str) -> String {
-    let tokens = Lexer::default().run(input);
+    let tokens = Lexer.run(input);
     let mut tokens = std::collections::VecDeque::from(tokens);
     let mut output = String::new();
     let mut total = 0;

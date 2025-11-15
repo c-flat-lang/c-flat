@@ -9,12 +9,12 @@ pub mod x86_64;
 
 #[derive(Debug)]
 pub enum Output {
-    Wasm32(wasm32::passes::emit::Wasm32Module),
+    Wasm32(Box<wasm32::passes::emit::Wasm32Module>),
     Bitbeat(bitbeat::bitbeat::Module),
     X86_64(String),
 }
 
-impl<'ctx> Output {
+impl Output {
     pub fn get_wasm32(&self) -> &wasm32::passes::emit::Wasm32Module {
         match &self {
             Self::Wasm32(module) => module,
@@ -74,7 +74,7 @@ impl<'ctx> Output {
     }
 
     fn new_wasm32() -> Self {
-        Self::Wasm32(wasm32::passes::emit::Wasm32Module::default())
+        Self::Wasm32(Box::default())
     }
 
     fn new_x86_64() -> Output {
@@ -88,7 +88,7 @@ impl<'ctx> Output {
 
 impl Default for Output {
     fn default() -> Self {
-        Self::Wasm32(wasm32::passes::emit::Wasm32Module::default())
+        Self::new_wasm32()
     }
 }
 
