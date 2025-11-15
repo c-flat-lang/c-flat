@@ -1,4 +1,0 @@
-pub fn main() s32 {
-  // print(123);
-  return 100;
-}

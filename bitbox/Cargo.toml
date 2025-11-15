@@ -7,13 +7,18 @@ edition = "2021"
 bitbeat = { version = "0.1.0", path = "../bitbeat" }
 uuid = { version = "1.18.1", features = ["v4"] }
 wasm-encoder = "0.240.0"
+# used for colored output for ir dump
 yansi = "1.0.1"
 # iced-x86 = "1.21.0"
-inkwell = { version = "0.6.0", features = ["llvm16-0"] }
+wasm-bindgen = {version = "0.2.105", optional = true}
 
 [dev-dependencies]
 insta = { version = "1.42.2", features = ["yaml"] }
 pretty_assertions = "1.4.1"
+
+[features]
+default = []
+wasm = ["wasm-bindgen", "uuid/js"]
 
 [lib]
 name = "bitbox"

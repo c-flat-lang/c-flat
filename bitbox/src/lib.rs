@@ -1,4 +1,4 @@
-use crate::passes::DebugPass;
+use crate::{backend::CompilerResult, passes::DebugPass};
 
 pub mod backend;
 pub mod error;
@@ -9,7 +9,11 @@ pub mod text;
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "wasm")]
+use wasm_bindgen::prelude::*;
+
 // TODO: make default to be system dependent
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Target {
@@ -20,15 +24,6 @@ pub enum Target {
 }
 
 impl Target {
-    pub fn target_specific_context(&self) -> backend::TargetSpecificContext {
-        match self {
-            Target::Wasm32 => backend::TargetSpecificContext::Wasm32,
-            Target::X86_64Linux => {
-                backend::TargetSpecificContext::X86_64Linux(inkwell::context::Context::create())
-            }
-            Target::Bitbeat => backend::TargetSpecificContext::Bitbeat,
-        }
-    }
     pub fn backend(&self) -> Box<dyn backend::Backend> {
         eprintln!("Target: {}", self);
         match self {
@@ -91,19 +86,19 @@ impl Compiler {
         }
     }
 
-    pub fn run(&self, module: &mut ir::Module) -> Result<(), error::Error> {
-        let csc = self.target.target_specific_context();
-        let mut ctx = backend::Context::new(&self.target, &csc);
+    pub fn run(&self, module: &mut ir::Module) -> Result<CompilerResult, error::Error> {
+        let mut ctx = backend::Context::new(&self.target);
         for mut pass in self.backend.passes() {
             pass.run(module, &mut ctx)?;
             if pass.debug(module, &ctx, self.debug_mode) {
-                return Ok(());
+                return Ok(CompilerResult::default());
             }
         }
 
         let compiler_result = ctx.output.finish();
         let path = self.target.get_new_path(&self.src_path);
+        #[cfg(not(feature = "wasm"))]
         compiler_result.save_to_file(&path);
-        Ok(())
+        Ok(compiler_result)
     }
 }

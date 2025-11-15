@@ -5,7 +5,7 @@ use crate::passes::liveness::LivenessAnalysisPass;
 use crate::passes::local_function_variables::LocalFunctionVariablesPass;
 use crate::passes::lowering::LoweringPass;
 use crate::passes::Pass;
-use passes::emit_x86_64_linux::EmitX86_64LinuxPass;
+use passes::emit::EmitX86_64LinuxPass;
 
 pub struct X86_64LinuxBackend;
 

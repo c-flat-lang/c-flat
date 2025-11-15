@@ -1,0 +1,44 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 10px;
+  background-color: #1e1e1e;
+  height: 100vh;
+  color: white;
+}
+
+/* #container { */
+/*   display: flex; */
+/*   height: 80%; */
+/* } */
+
+#container {
+  display: flex;
+  height: 80vh;
+  gap: 10px;
+}
+#editor,
+#output {
+  flex: 1;
+  border: 1px solid #555;
+  overflow: auto;
+}
+
+/* #editor { */
+/*   flex: 1; */
+/*   border: 1px solid #555; */
+/*   flex-grow: 1; */
+/* } */
+/**/
+/* #output { */
+/*   flex: 1; */
+/*   border: 1px solid #555; */
+/*   background-color: #1e1e1e; */
+/* } */
+
+#vim-status {
+  color: #fff;
+  background-color: #333;
+  font-family: monospace;
+  padding: 2px 5px;
+}

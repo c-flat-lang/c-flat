@@ -1,100 +1,13 @@
-mod cli;
-mod error;
-mod stage;
-use stage::Stage;
+use bitbox::passes::DebugPass;
+use cflat::Cli;
 
-use bitbox::{Target, passes::DebugPass};
-use cli::{Cli, DebugMode};
-
-use crate::error::CompilerError;
-
-use std::str::FromStr;
-
-fn front_end_compiler(cli_options: &Cli, src: &str) -> Result<bitbox::ir::Module, CompilerError> {
-    let tokens = stage::lexer::Lexer::default().run(src);
-
-    if let Some(DebugMode::Token) = cli_options.debug_mode {
-        for token in &tokens {
-            eprintln!("{:?}", token);
-        }
-        std::process::exit(0);
-    }
-
-    let mut ast = stage::parser::Parser::default().run(tokens)?;
-
-    if let Some(DebugMode::Ast) = cli_options.debug_mode {
-        eprintln!("{:#?}", ast);
-        std::process::exit(0);
-    }
-
-    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
-
-    if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
-        eprintln!("{:#?}", symbol_table);
-        std::process::exit(0);
-    }
-
-    let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
-
-    if let Some(DebugMode::Ir) = cli_options.debug_mode {
-        eprintln!("{}", module);
-        std::process::exit(0);
-    }
-
-    Ok(module)
-}
-
+use cflat::front_end_compiler;
+#[cfg(feature = "default")]
 fn main() {
-    let args = std::env::args().skip(1).collect::<Vec<_>>();
-    let mut cli_options = Cli::default();
+    let cli_options = Cli::parse();
+    let source = std::fs::read_to_string(&cli_options.file_path).expect("Failed to read file");
 
-    if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-        eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
-        eprintln!("  Options:");
-        eprintln!("    -t            Print tokens");
-        eprintln!("    -a            Print AST");
-        eprintln!("    -s            Print symbol table");
-        eprintln!("    -ir           Print IR");
-        eprintln!("    --target      Target triple");
-        eprintln!("    --dump-after  Print debug info after pass");
-        eprintln!("                  options: lowering");
-        eprintln!("    -h, --help    Print this help message");
-
-        std::process::exit(0);
-    }
-
-    let Some(file_path) = args.last() else {
-        eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
-        std::process::exit(1);
-    };
-
-    if args.iter().any(|arg| arg == "-t") {
-        cli_options.debug_mode = Some(DebugMode::Token);
-    } else if args.iter().any(|arg| arg == "-a") {
-        cli_options.debug_mode = Some(DebugMode::Ast);
-    } else if args.iter().any(|arg| arg == "-s") {
-        cli_options.debug_mode = Some(DebugMode::SymbolTable);
-    } else if args.iter().any(|arg| arg == "-ir") {
-        cli_options.debug_mode = Some(DebugMode::Ir);
-    } else if args.iter().any(|arg| arg == "--dump-after=lowering") {
-        cli_options.debug_mode = Some(DebugMode::LoweredIr);
-    }
-
-    let mut target = Target::default();
-    if let Some(arg) = args.iter().find(|arg| arg.starts_with("--target")) {
-        let value = arg.strip_prefix("--target=").unwrap();
-        target = match Target::from_str(value) {
-            Ok(target) => target,
-            Err(err) => {
-                eprintln!("{} '{}'", err, value);
-                std::process::exit(1);
-            }
-        };
-    }
-
-    let source = std::fs::read_to_string(file_path).unwrap();
-
-    let mut module = match front_end_compiler(&cli_options, &source) {
+    let mut module = match front_end_compiler(&source, &cli_options) {
         Ok(module) => module,
         Err(err) => {
             println!("{:?}", err);
@@ -102,8 +15,12 @@ fn main() {
         }
     };
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
-    if let Err(error) =
-        bitbox::Compiler::new(file_path, target, compiler_debug_mode).run(&mut module)
+    if let Err(error) = bitbox::Compiler::new(
+        &cli_options.file_path,
+        cli_options.target,
+        compiler_debug_mode,
+    )
+    .run(&mut module)
     {
         eprintln!("{}", error);
         std::process::exit(1);

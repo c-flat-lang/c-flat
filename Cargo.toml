@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-inkwell = { version = "0.6.0", features = ["llvm16-0"] }
 bitbeat = { version = "0.1.0", path = "bitbeat" }
 bitbox = { version = "0.1.0", path = "bitbox" }
+wasm-bindgen = {version = "0.2.105", optional = true}
+js-sys = {version = "0.3.82", optional = true}
 
 
 [dev-dependencies]
@@ -15,3 +16,15 @@ pretty_assertions = "1.4.0"
 
 [workspace]
 members = ["bitbeat", "bitbox", "runtime"]
+
+[features]
+default = []
+wasm = ["wasm-bindgen", "js-sys", "bitbox/wasm"]
+
+[lib]
+name = "cflat"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "cflat"
+path = "src/main.rs"

@@ -1,11 +1,6 @@
 #![allow(unused)]
 use std::{collections::HashMap, path::Path, process::Command};
 
-use inkwell::{
-    targets::{InitializationConfig, TargetMachine},
-    OptimizationLevel,
-};
-
 use crate::{ir::Variable, Target};
 
 pub mod bitbeat;
@@ -13,20 +8,13 @@ pub mod wasm32;
 pub mod x86_64;
 
 #[derive(Debug)]
-pub enum TargetSpecificContext {
-    Wasm32,
-    X86_64Linux(inkwell::context::Context),
-    Bitbeat,
-}
-
-#[derive(Debug)]
-pub enum Output<'ctx> {
+pub enum Output {
     Wasm32(wasm32::passes::emit::Wasm32Module),
     Bitbeat(bitbeat::bitbeat::Module),
-    X86_64(x86_64::linux::passes::emit_x86_64_linux::LLVMContext<'ctx>),
+    X86_64(String),
 }
 
-impl<'ctx> Output<'ctx> {
+impl<'ctx> Output {
     pub fn get_wasm32(&self) -> &wasm32::passes::emit::Wasm32Module {
         match &self {
             Self::Wasm32(module) => module,
@@ -55,16 +43,14 @@ impl<'ctx> Output<'ctx> {
         }
     }
 
-    pub fn get_x86_64(&self) -> &x86_64::linux::passes::emit_x86_64_linux::LLVMContext<'ctx> {
+    pub fn get_x86_64(&self) -> &str {
         match &self {
             Self::X86_64(module) => module,
             v => panic!("Not wasm32 but {:?}", v),
         }
     }
 
-    pub fn get_mut_x86_64(
-        &mut self,
-    ) -> &mut x86_64::linux::passes::emit_x86_64_linux::LLVMContext<'ctx> {
+    pub fn get_mut_x86_64(&mut self) -> &mut String {
         match self {
             Self::X86_64(module) => module,
             v => panic!("Not wasm32 but {:?}", v),
@@ -74,54 +60,15 @@ impl<'ctx> Output<'ctx> {
     pub fn finish(mut self) -> CompilerResult {
         match self {
             Self::Wasm32(mut module) => CompilerResult::Wasm32(module.finish()),
-            Self::X86_64(ctx) => {
-                // Initialize native target
-                inkwell::targets::Target::initialize_native(&InitializationConfig::default())
-                    .expect("Failed to initialize target");
-                // Create target machine for object file generation
-                let triple = TargetMachine::get_default_triple();
-                let target =
-                    inkwell::targets::Target::from_triple(&triple).expect("Failed to get target");
-                let target_machine = target
-                    .create_target_machine(
-                        &triple,
-                        "generic",
-                        "",
-                        OptimizationLevel::Default,
-                        inkwell::targets::RelocMode::Default,
-                        inkwell::targets::CodeModel::Default,
-                    )
-                    .expect("Failed to create target machine");
-
-                // Write object file
-                target_machine
-                    .write_to_file(
-                        &ctx.llvm_module,
-                        inkwell::targets::FileType::Object,
-                        Path::new("output.o"),
-                    )
-                    .expect("Failed to write object file");
-
-                println!("Generated object file: output.o");
-
-                // Link the object file into an executable using GCC
-                Command::new("gcc")
-                    .args(["output.o", "-o", "output", "-static"])
-                    .status()
-                    .expect("Failed to link executable");
-
-                println!("Executable created: output");
-
-                CompilerResult::X86_64
-            }
+            Self::X86_64(..) => CompilerResult::X86_64,
             Self::Bitbeat(module) => CompilerResult::Bitbeat(module),
         }
     }
 
-    fn new(target: &Target, csc: &'ctx TargetSpecificContext) -> Self {
+    fn new(target: &Target) -> Self {
         match target {
             Target::Wasm32 => Self::new_wasm32(),
-            Target::X86_64Linux => Self::new_x86_64(csc),
+            Target::X86_64Linux => Self::new_x86_64(),
             Target::Bitbeat => Self::new_bitbeat(),
         }
     }
@@ -130,22 +77,16 @@ impl<'ctx> Output<'ctx> {
         Self::Wasm32(wasm32::passes::emit::Wasm32Module::default())
     }
 
-    fn new_x86_64(scs: &'ctx TargetSpecificContext) -> Output<'ctx> {
-        let TargetSpecificContext::X86_64Linux(llvm_context) = scs else {
-            panic!("Expected X86_64 compiler specific context");
-        };
-        Self::X86_64(x86_64::linux::passes::emit_x86_64_linux::LLVMContext::new(
-            llvm_context,
-            "bitbox",
-        ))
+    fn new_x86_64() -> Output {
+        Self::X86_64(String::new())
     }
 
-    fn new_bitbeat() -> Output<'ctx> {
+    fn new_bitbeat() -> Output {
         Self::Bitbeat(bitbeat::bitbeat::Module::new("main"))
     }
 }
 
-impl Default for Output<'_> {
+impl Default for Output {
     fn default() -> Self {
         Self::Wasm32(wasm32::passes::emit::Wasm32Module::default())
     }
@@ -156,6 +97,11 @@ pub enum CompilerResult {
     Wasm32(Vec<u8>),
     X86_64,
     Bitbeat(bitbeat::bitbeat::Module),
+}
+impl Default for CompilerResult {
+    fn default() -> Self {
+        Self::Wasm32(Vec::new())
+    }
 }
 
 impl CompilerResult {
@@ -171,17 +117,17 @@ impl CompilerResult {
 }
 
 #[derive(Debug, Default)]
-pub struct Context<'ctx> {
+pub struct Context {
     pub cfg: crate::passes::control_flow_graph::ControlFlowGraph,
     pub liveness: crate::passes::liveness::LivenessAnalysisInfo,
     pub local_function_variables: crate::passes::local_function_variables::LocalFunctionVariables,
-    pub output: Output<'ctx>,
+    pub output: Output,
 }
 
-impl<'ctx> Context<'ctx> {
-    pub(crate) fn new(target: &Target, csc: &'ctx TargetSpecificContext) -> Self {
+impl Context {
+    pub(crate) fn new(target: &Target) -> Self {
         Self {
-            output: Output::new(target, csc),
+            output: Output::new(target),
             ..Default::default()
         }
     }
