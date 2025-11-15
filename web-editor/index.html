@@ -4,70 +4,7 @@
     <meta charset="UTF-8" />
     <title>CFlat Web Editor</title>
 
-    <style>
-      html,
-      body {
-        margin: 0;
-        height: 100hv;
-        background: #1e1e1e;
-        color: white;
-        font-family: sans-serif;
-      }
-
-      body {
-        display: flex;
-        flex-direction: column;
-      }
-
-      h1 {
-        margin: 10px;
-      }
-
-      #container {
-        display: flex;
-        flex: 1; /* Fill remaining vertical space */
-        gap: 10px;
-        padding: 10px;
-        height: calc(100vh - 60px); /* subtract header + button heights */
-      }
-
-      #editor-wrapper,
-      #output-wrapper {
-        flex: 2;
-        display: flex;
-        flex-direction: column;
-        height: 90vh;
-      }
-
-      #editor {
-        flex: 1; /* Fill most of wrapper */
-        height: 100vh;
-      }
-
-      #vim-status {
-        flex: 2; /* Fill most of wrapper */
-        height: 24px; /* fixed height for status bar */
-        line-height: 24px;
-        background: #2b2b2b;
-        color: #ffcc00;
-        font-family: monospace;
-        padding-left: 8px;
-      }
-
-      #output {
-        flex: 1;
-        background: #1e1e1e;
-        border: 1px solid #555;
-        padding: 10px;
-        overflow: auto;
-        white-space: pre-wrap;
-      }
-
-      #run-btn {
-        margin: 10px;
-        padding: 6px 12px;
-      }
-    </style>
+    <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <div id="container">

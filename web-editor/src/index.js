@@ -1,18 +1,9 @@
-// src/index.js
 import CodeMirror, { inputStyles } from "codemirror/lib/codemirror.js";
-import Vim from "codemirror/keymap/vim.js";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/dracula.css";
-
 import "codemirror/addon/mode/simple.js";
-
-// Rust mode
 import "codemirror/mode/rust/rust.js";
-
-// Vim keymap
 import "codemirror/keymap/vim.js";
-
-// WASM compiler
 import init, { compile_source, Cli, Target } from "../pkg/cflat.js";
 
 async function run(buffer) {
@@ -48,7 +39,7 @@ async function main() {
 
   const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
     value: "",
-    mode: "text/x-csrc",
+    mode: "rust",
     theme: "gruvbox-dark",
     lineNumbers: true,
     keyMap: "vim",
@@ -62,11 +53,8 @@ async function main() {
     keys = keys + key;
     vimStatus.innerHTML = keys;
   });
-  CodeMirror.on(editor, "vim-mode-change", function (e) {
-    console.log("mode: ", e.mode);
-  });
+  CodeMirror.on(editor, "vim-mode-change", function (e) {});
   CodeMirror.on(editor, "vim-command-done", function (e) {
-    console.log("vim-command-done: ", e);
     keys = "";
     vimStatus.innerHTML = keys;
   });
