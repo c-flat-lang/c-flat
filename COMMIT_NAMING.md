@@ -29,6 +29,7 @@
   | **runtime** | Any built-in runtime or support library |
   | **cli** | Frontend command-line tool |
   | **tests** | Integration and regression tests |
+  | **error** | Error handling |
   | **docs** | Docs, specs, design notes |
 
 ## Breaking Changes
