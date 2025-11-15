@@ -2,10 +2,13 @@ pub mod token;
 mod tokenizer;
 use token::Token;
 
+#[cfg(test)]
+mod tests;
+
 use super::Stage;
 
 #[derive(Debug, Default)]
-pub struct Lexer {}
+pub struct Lexer;
 
 impl Stage<&str, Vec<Token>> for Lexer {
     fn run(&mut self, input: &str) -> Vec<Token> {

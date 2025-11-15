@@ -349,21 +349,23 @@ impl ExprBinary {
 
 #[derive(Debug, Clone)]
 pub struct ExprIfElse {
+    pub if_token: Token,
     pub condition: Box<Expr>,
     pub then_branch: Block,
+    pub else_token: Option<Token>,
     pub else_branch: Option<Block>,
     pub ty: Type,
 }
 
 impl ExprIfElse {
     pub fn span(&self) -> Span {
-        let start = self.condition.span();
+        let start = self.if_token.span.start;
         let end = self
             .else_branch
             .as_ref()
-            .map(|b| b.span())
-            .unwrap_or(self.then_branch.span());
-        start.start..end.end
+            .map(|b| b.close_brace.span.end)
+            .unwrap_or(self.then_branch.close_brace.span.end);
+        start..end
     }
 }
 

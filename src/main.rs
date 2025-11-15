@@ -10,7 +10,8 @@ fn main() {
     let mut module = match front_end_compiler(&source, &cli_options) {
         Ok(module) => module,
         Err(err) => {
-            println!("{:?}", err);
+            let errors = err.report(&cli_options.file_path, &source);
+            eprintln!("{}", errors);
             return;
         }
     };

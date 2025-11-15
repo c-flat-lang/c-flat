@@ -265,6 +265,7 @@ impl Lowerable for ExprIfElse {
             then_branch,
             else_branch,
             ty,
+            ..
         } = self;
 
         let result = if ty == &ast::Type::Void {

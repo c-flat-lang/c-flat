@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crate::error::CompilerError;
+use crate::error::{CompilerError, ErrorUndefinedSymbol, Errors, Report};
 use crate::stage::lexer::token::Token;
 
 use crate::stage::parser::ast::{self, Expr};
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
-    errors: Vec<String>,
+    errors: Vec<Box<dyn Report>>,
 }
 
 impl Default for SymbolTableBuilder {
@@ -38,7 +38,9 @@ impl SymbolTableBuilder {
             self.walk_item(item);
         }
         if !self.errors.is_empty() {
-            return Err(CompilerError::SymbolTableErrors(self.errors));
+            return Err(CompilerError::Errors(Errors {
+                errors: self.errors,
+            }));
         }
         Ok(self.table)
     }
@@ -183,10 +185,9 @@ impl SymbolTableBuilder {
 
     fn walk_expr_identifier(&mut self, token: &Token) {
         let Some(symbol) = self.table.get(token.lexeme.as_str()) else {
-            self.errors.push(format!(
-                "{:?}: Undefined variable {}",
-                token.span, token.lexeme
-            ));
+            self.errors.push(Box::new(ErrorUndefinedSymbol {
+                found: token.clone(),
+            }));
             return;
         };
     }
@@ -197,6 +198,7 @@ impl SymbolTableBuilder {
             then_branch,
             else_branch,
             ty,
+            ..
         } = expr;
 
         self.walk_expr(condition);
@@ -440,13 +442,8 @@ mod tests {
         let symbol_table = match SymbolTableBuilder::default().build(&ast) {
             Ok(table) => table,
             Err(errors) => {
-                let CompilerError::TypeErrors(errors) = errors else {
-                    panic!("Expected TypeErrors");
-                };
-                for error in errors {
-                    eprintln!("{}", error);
-                }
-                panic!("Failed to build symbol table");
+                eprintln!("{}", errors.report("symbol_table.cb", src));
+                return;
             }
         };
         let symbol = symbol_table.get("add");

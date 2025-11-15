@@ -37,8 +37,12 @@ async function run(buffer) {
 async function main() {
   await init();
 
-  const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
-    value: "",
+  const editorEl = document.getElementById("editor");
+  const editor = CodeMirror.fromTextArea(editorEl, {
+    value: `pub fn main() s32 {
+  let value = if 32 { 1 } else { 2 };
+  return value;
+}`,
     mode: "rust",
     theme: "gruvbox-dark",
     lineNumbers: true,

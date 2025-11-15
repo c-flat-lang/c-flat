@@ -1,78 +1,219 @@
 #![allow(unused)]
-use crate::stage::lexer::token::{Span, Token, TokenKind};
+
+use crate::stage::lexer::token::{Keyword, Span, Token, TokenKind};
+use crate::stage::parser::ast::Type;
 use std::fmt::Write;
+
+pub trait Report: std::fmt::Debug {
+    fn report(&self, filename: &str, src: &str) -> String;
+}
+
+#[derive(Debug)]
+pub struct ErrorMissMatchedType {
+    pub span: Span,
+    pub found: Type,
+    pub expected: Type,
+}
+
+impl Report for ErrorMissMatchedType {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("mismatched type")
+            .with_note(format!(
+                "expected `{}`, found `{}`",
+                self.expected, self.found
+            ))
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorUnsupportedBinaryOp {
+    pub span: Span,
+    pub lhs: Type,
+    pub rhs: Type,
+    pub op: Token,
+}
+
+impl Report for ErrorUnsupportedBinaryOp {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("unsupported binary operator")
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorExpectedKeyWord {
+    pub span: Span,
+    pub actual: Token,
+    pub expected: Vec<Keyword>,
+}
+
+impl Report for ErrorExpectedKeyWord {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("expected keyword")
+            .with_note(format!(
+                "expected `{}`, found `{}`",
+                self.expected
+                    .iter()
+                    .map(|k| k.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                self.actual.lexeme
+            ))
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorExpectedToken {
+    pub actual: Token,
+    pub expected: TokenKind,
+}
+
+impl Report for ErrorExpectedToken {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.actual.span)
+            .with_message(format!(
+                "expected token `{:?}`, found `{}`",
+                self.expected, self.actual.lexeme
+            ))
+            .with_lines_above(3)
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorUnexpectedEndOfInput;
+
+impl Report for ErrorUnexpectedEndOfInput {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &Span::default())
+            .with_message("unexpected end of input")
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorExpectedType {
+    pub found: Token,
+}
+
+impl Report for ErrorExpectedType {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
+            .with_message(format!(
+                "expected a type definition but found '{}'",
+                self.found.lexeme
+            ))
+            .with_lines_above(3)
+            .with_note(
+                "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`",
+            )
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorMissingPairedClosingChar {
+    pub span: Span,
+    pub expected: TokenKind,
+}
+
+impl Report for ErrorMissingPairedClosingChar {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("missing closing pair")
+            .with_note(&format!("expected {:?}", self.expected))
+            .with_lines_above(3)
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorUnexpectedTopLevelItem {
+    pub found: Token,
+    pub expected: Vec<Keyword>,
+}
+
+impl Report for ErrorUnexpectedTopLevelItem {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
+            .with_message(format!(
+                "unexpected top level item `{}`",
+                &self.found.lexeme
+            ))
+            .with_note(format!(
+                "expected one of `{}`",
+                self.expected
+                    .iter()
+                    .map(|k| k.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ))
+            .with_lines_above(3)
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct Errors {
+    pub errors: Vec<Box<dyn Report>>,
+}
+
+impl Report for Errors {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut final_report = String::new();
+        for error in self.errors.iter() {
+            final_report.push_str(&error.report(filename, src));
+            final_report.push('\n');
+        }
+        final_report
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorUndefinedSymbol {
+    pub found: Token,
+}
+
+impl Report for ErrorUndefinedSymbol {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
+            .with_message(format!("undefined symbol `{}`", &self.found.lexeme))
+            .build()
+    }
+}
 
 #[derive(Debug)]
 pub enum CompilerError {
-    InvalidToken(Token),
-    ExpectedToken { actual: Token, expected: TokenKind },
-    UnexpectedEndOfInput,
-    ExpectedAType(Token),
-    MissingClosingParen(Span),
-    UnexpectedTopLevelItem(Token),
-    SymbolTableErrors(Vec<String>),
-    TypeErrors(Vec<String>),
+    UnsupportedBinaryOp(ErrorUnsupportedBinaryOp),
+    MissMatchedType(ErrorMissMatchedType),
+    ExpectedKeyWord(ErrorExpectedKeyWord),
+    ExpectedToken(ErrorExpectedToken),
+    UnexpectedEndOfInput(ErrorUnexpectedEndOfInput),
+    ExpectedType(ErrorExpectedType),
+    MissingPairedClosingChar(ErrorMissingPairedClosingChar),
+    UnexpectedTopLevelItem(ErrorUnexpectedTopLevelItem),
+    UndefinedSymbol(ErrorUndefinedSymbol),
+    Errors(Errors),
 }
 
 impl CompilerError {
     pub fn report(&self, filename: &str, src: &str) -> String {
         match self {
-            CompilerError::InvalidToken(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("invalid token")
-                .with_lines_above(3)
-                .build(),
-            CompilerError::ExpectedToken { actual, expected } => {
-                ReportBuilder::new(filename, src, &actual.span)
-                    .with_message(format!(
-                        "expected token `{:?}`, found `{}`",
-                        expected, actual.lexeme
-                    ))
-                    .with_lines_above(3)
-                    .build()
-            }
-            CompilerError::UnexpectedEndOfInput => {
-                ReportBuilder::new(filename, src, &Span::default())
-                    .with_message("unexpected end of input")
-                    .build()
-            }
-            CompilerError::ExpectedAType(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message(format!(
-                    "expected a type definition but found '{}'",
-                    token.lexeme
-                ))
-                .with_lines_above(3)
-                .with_note(
-                    "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`",
-                )
-                .build(),
-            CompilerError::MissingClosingParen(range) => ReportBuilder::new(filename, src, range)
-                .with_message("missing closing parenthesis")
-                .with_lines_above(3)
-                .build(),
-            CompilerError::UnexpectedTopLevelItem(token) => {
-                ReportBuilder::new(filename, src, &token.span)
-                    .with_message(format!("unexpected top level item `{}`", token.lexeme))
-                    .with_lines_above(3)
-                    .build()
-            }
-            CompilerError::SymbolTableErrors(errors) => {
-                // TODO: lets not
-                let mut report = String::new();
-                for error in errors {
-                    report.push_str(error);
-                    report.push('\n');
-                }
-                report
-            }
-            CompilerError::TypeErrors(errors) => {
-                // TODO: lets not
-                let mut report = String::new();
-                for error in errors {
-                    report.push_str(error);
-                    report.push('\n');
-                }
-                report
-            }
+            Self::UnsupportedBinaryOp(error) => error.report(filename, src),
+            Self::MissMatchedType(error) => error.report(filename, src),
+            Self::ExpectedKeyWord(error) => error.report(filename, src),
+            Self::ExpectedToken(error) => error.report(filename, src),
+            Self::UnexpectedEndOfInput(error) => error.report(filename, src),
+            Self::ExpectedType(error) => error.report(filename, src),
+            Self::MissingPairedClosingChar(error) => error.report(filename, src),
+            Self::UnexpectedTopLevelItem(error) => error.report(filename, src),
+            Self::UndefinedSymbol(error) => error.report(filename, src),
+            Self::Errors(error) => error.report(filename, src),
         }
     }
 }
@@ -118,6 +259,7 @@ impl<'a> ReportBuilder<'a> {
         self
     }
 
+    /// Lines to use above starting [Span]
     pub fn with_lines_above(mut self, lines_above: usize) -> Self {
         self.lines_above = lines_above;
         self

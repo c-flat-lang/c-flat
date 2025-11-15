@@ -1,6 +1,9 @@
 use std::iter::Peekable;
 
-use crate::error::CompilerError;
+use crate::error::{
+    CompilerError, ErrorExpectedKeyWord, ErrorExpectedToken, ErrorExpectedType,
+    ErrorMissingPairedClosingChar, ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem,
+};
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
 use crate::stage::parser::ast;
 
@@ -18,7 +21,9 @@ impl Parser {
         while self.lexer.peek().is_some() {
             let visibility = self.parse_visibility()?;
             let Some(token) = self.lexer.peek() else {
-                return Err(CompilerError::UnexpectedEndOfInput);
+                return Err(CompilerError::UnexpectedEndOfInput(
+                    ErrorUnexpectedEndOfInput,
+                ));
             };
 
             match token.kind {
@@ -46,7 +51,17 @@ impl Parser {
                     items.push(ast::Item::Use(ast::Use { use_token, path }));
                 }
                 _ => {
-                    return Err(CompilerError::UnexpectedTopLevelItem(token.clone()));
+                    return Err(CompilerError::UnexpectedTopLevelItem(
+                        ErrorUnexpectedTopLevelItem {
+                            found: token.clone(),
+                            expected: vec![
+                                Keyword::Fn,
+                                Keyword::Type,
+                                Keyword::Use,
+                                Keyword::Const,
+                            ],
+                        },
+                    ));
                 }
             }
         }
@@ -60,11 +75,13 @@ impl Parser {
     fn consume(&mut self, kind: TokenKind) -> Result<Token, CompilerError> {
         match self.lexer.next() {
             Some(token) if token.kind == kind => Ok(token),
-            Some(token) => Err(CompilerError::ExpectedToken {
+            Some(token) => Err(CompilerError::ExpectedToken(ErrorExpectedToken {
                 actual: token,
                 expected: kind,
-            }),
-            None => Err(CompilerError::UnexpectedEndOfInput),
+            })),
+            None => Err(CompilerError::UnexpectedEndOfInput(
+                ErrorUnexpectedEndOfInput,
+            )),
         }
     }
 
@@ -82,7 +99,9 @@ impl Parser {
                 Ok(ast::Visibility::Public)
             }
             Some(_) => Ok(ast::Visibility::Private),
-            None => Err(CompilerError::UnexpectedEndOfInput),
+            None => Err(CompilerError::UnexpectedEndOfInput(
+                ErrorUnexpectedEndOfInput,
+            )),
         }
     }
 
@@ -92,19 +111,27 @@ impl Parser {
     ) -> Result<ast::TypeDef, CompilerError> {
         let type_token = self.consume(TokenKind::Keyword(Keyword::Type))?;
         let name = self.consume(TokenKind::Identifier)?;
-        if self.peek(TokenKind::Keyword(Keyword::Struct)) {
-            let expr_struct = self.parse_struct()?;
-            return Ok(ast::TypeDef::Struct(ast::Struct {
-                visibility,
-                type_token,
-                name,
-                expr: Box::new(expr_struct),
+
+        if !self.peek(TokenKind::Keyword(Keyword::Struct)) {
+            let Some(token) = self.lexer.next() else {
+                return Err(CompilerError::UnexpectedEndOfInput(
+                    ErrorUnexpectedEndOfInput,
+                ));
+            };
+            return Err(CompilerError::ExpectedKeyWord(ErrorExpectedKeyWord {
+                span: token.span.clone(),
+                actual: token,
+                expected: vec![Keyword::Struct, Keyword::Enum],
             }));
         }
-        let Some(token) = self.lexer.next() else {
-            return Err(CompilerError::UnexpectedEndOfInput);
-        };
-        Err(CompilerError::InvalidToken(token))
+
+        let expr_struct = self.parse_struct()?;
+        Ok(ast::TypeDef::Struct(ast::Struct {
+            visibility,
+            type_token,
+            name,
+            expr: Box::new(expr_struct),
+        }))
     }
 
     fn parse_struct(&mut self) -> Result<ast::Expr, CompilerError> {
@@ -186,10 +213,13 @@ impl Parser {
 
     fn parse_type(&mut self) -> Result<ast::Type, CompilerError> {
         let Some(tok) = self.lexer.next() else {
-            return Err(CompilerError::UnexpectedEndOfInput);
+            return Err(CompilerError::UnexpectedEndOfInput(
+                ErrorUnexpectedEndOfInput,
+            ));
         };
         match tok.kind {
-            TokenKind::Identifier => token_as_type(&tok).map_err(CompilerError::ExpectedAType),
+            TokenKind::Identifier => token_as_type(&tok)
+                .map_err(|tok| CompilerError::ExpectedType(ErrorExpectedType { found: tok })),
             TokenKind::Star => {
                 let ty = self.parse_type()?;
                 Ok(ast::Type::Pointer(Box::new(ty)))
@@ -204,7 +234,9 @@ impl Parser {
                     Box::new(ty),
                 ))
             }
-            _ => Err(CompilerError::ExpectedAType(tok)),
+            _ => Err(CompilerError::ExpectedType(ErrorExpectedType {
+                found: tok,
+            })),
         }
     }
 
@@ -288,20 +320,23 @@ impl Parser {
         if !self.peek(TokenKind::Keyword(Keyword::If)) {
             return self.parse_assignment();
         }
-        self.consume(TokenKind::Keyword(Keyword::If))?;
+        let if_token = self.consume(TokenKind::Keyword(Keyword::If))?;
 
         let condition = self.parse_expr()?;
         let then_branch = self.parse_block()?;
+        let mut else_token = None;
         let else_branch = if self.peek(TokenKind::Keyword(Keyword::Else)) {
-            self.consume(TokenKind::Keyword(Keyword::Else))?;
+            else_token = Some(self.consume(TokenKind::Keyword(Keyword::Else))?);
             Some(self.parse_block()?)
         } else {
             None
         };
 
         let if_else_expr = ast::ExprIfElse {
+            if_token,
             condition: Box::new(condition),
             then_branch,
+            else_token,
             else_branch,
             ty: ast::Type::Void,
         };
@@ -422,7 +457,12 @@ impl Parser {
         }
         let Some(right_paren) = self.lexer.next_if(|tok| tok.kind == TokenKind::RightParen) else {
             let span = args.last().map(|e| e.span()).unwrap_or(left_paren.span);
-            return Err(CompilerError::MissingClosingParen(span));
+            return Err(CompilerError::MissingPairedClosingChar(
+                ErrorMissingPairedClosingChar {
+                    span,
+                    expected: TokenKind::RightParen,
+                },
+            ));
         };
         Ok(ast::Expr::Call(ast::ExprCall {
             caller: Box::new(caller),
@@ -434,7 +474,9 @@ impl Parser {
 
     fn parse_primary(&mut self) -> Result<ast::Expr, CompilerError> {
         let Some(token) = self.lexer.next() else {
-            return Err(CompilerError::UnexpectedEndOfInput);
+            return Err(CompilerError::UnexpectedEndOfInput(
+                ErrorUnexpectedEndOfInput,
+            ));
         };
         match token.kind {
             TokenKind::Number => Ok(ast::Expr::Litral(ast::Litral::Integer(token))),
@@ -449,10 +491,10 @@ impl Parser {
                 Ok(ast::Expr::Litral(ast::Litral::BoolFalse(token)))
             }
             TokenKind::LeftBracket => self.parse_array_literal(token),
-            _ => Err(CompilerError::ExpectedToken {
+            _ => Err(CompilerError::ExpectedToken(ErrorExpectedToken {
                 actual: token,
                 expected: TokenKind::Number,
-            }),
+            })),
         }
     }
 

@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crate::error::CompilerError;
+use crate::error::{CompilerError, ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report};
 use crate::stage::lexer::token::{Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, Type};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
@@ -29,7 +29,7 @@ impl Type {
                 Type::SignedNumber(rhs),
             ) if lhs == rhs => Some(Type::Bool),
             (Type::Float(lhs), TokenKind::Plus, Type::Float(rhs)) => Some(Type::Float(*lhs)),
-            // (Type::Bool, TokenKind::, Type::Bool) => Some(Type::Bool),
+            (Type::Bool, TokenKind::EqualEqual, Type::Bool) => Some(Type::Bool),
             //(Type::Custom(name), op, Type::Custom(rhs)) => {
             //    // For operator overloading — check user-defined impls
             //    // e.g., lookup "impl Add for MyType { ... }" in your symbol table maybe
@@ -48,7 +48,7 @@ impl Type {
 pub struct TypeChecker<'st> {
     symbol_table: &'st mut SymbolTable,
     current_type: Option<Type>,
-    errors: Vec<String>,
+    errors: Vec<Box<dyn Report>>,
 }
 
 impl<'st> TypeChecker<'st> {
@@ -65,7 +65,9 @@ impl<'st> TypeChecker<'st> {
             self.walk_item(item);
         }
         if !self.errors.is_empty() {
-            return Err(CompilerError::TypeErrors(self.errors));
+            return Err(CompilerError::Errors(Errors {
+                errors: self.errors,
+            }));
         }
         Ok(())
     }
@@ -87,11 +89,11 @@ impl<'st> TypeChecker<'st> {
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
         if calulated_return_type != function.return_type {
-            let error_message = format!(
-                "{} expected return type `{}` but found `{}` instead",
-                function.name.lexeme, calulated_return_type, function.return_type
-            );
-            self.errors.push(error_message);
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: function.fn_token.span.clone(),
+                found: calulated_return_type,
+                expected: function.return_type.clone(),
+            }));
         }
         function.return_type.clone()
     }
@@ -148,10 +150,11 @@ impl<'st> TypeChecker<'st> {
         let lhs = self.walk_expr(&mut expr.left);
         let rhs = self.walk_expr(&mut expr.right);
         if lhs != rhs {
-            self.errors.push(format!(
-                "Type mismatch in assignment found `{}` expected `{}`",
-                rhs, lhs
-            ))
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: expr.right.span(),
+                found: rhs,
+                expected: lhs.clone(),
+            }));
         }
         lhs
     }
@@ -161,12 +164,11 @@ impl<'st> TypeChecker<'st> {
         if let Some(ty) = &expr.ty
             && ty != &value_type
         {
-            // TODO: log error and return the value_type
-            // Do not block
-            self.errors.push(format!(
-                "Type mismatch: expected {} but got {}",
-                ty, value_type
-            ))
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: expr.span(),
+                found: value_type.clone(),
+                expected: ty.clone(),
+            }));
         }
         self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
             if s.ty == Type::Void && s.ty != value_type {
@@ -199,9 +201,10 @@ impl<'st> TypeChecker<'st> {
         }
 
         let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()) else {
-            self.errors
-                .push(format!("Undefined function: {}", ident.lexeme));
-            return Type::Void;
+            // self.errors
+            //     .push(format!("Undefined function: {}", ident.lexeme));
+            // return Type::Void;
+            unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
         symbol.ty.clone()
     }
@@ -209,25 +212,23 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_binary(&mut self, expr: &mut ast::ExprBinary) -> ast::Type {
         let left_ty = self.walk_expr(&mut expr.left);
         let right_ty = self.walk_expr(&mut expr.right);
+        let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty);
+        let Some(result_ty) = result_ty else {
+            self.errors.push(Box::new(ErrorUnsupportedBinaryOp {
+                span: expr.span(),
+                lhs: left_ty.clone(),
+                rhs: right_ty.clone(),
+                op: expr.op.clone(),
+            }));
 
-        match left_ty.supports_binary_op(&expr.op.kind, &right_ty) {
-            Some(result_ty) => result_ty,
-            None => {
-                self.errors.push(format!(
-                    "Unsupported binary operation: lhs: {} {} rhs: {}",
-                    left_ty, expr.op.lexeme, right_ty
-                ));
-
-                Type::Void
-            }
-        }
+            return Type::Void;
+        };
+        result_ty
     }
 
     fn walk_expr_identifier(&mut self, expr: &Token) -> ast::Type {
         let Some(symbol) = self.symbol_table.get(expr.lexeme.as_str()) else {
-            self.errors
-                .push(format!("Undefined variable: {}", expr.lexeme));
-            return Type::Void;
+            unimplemented!("I also do not think this is a reachable state. Hope I never see this.");
         };
         symbol.ty.clone()
     }
@@ -235,17 +236,21 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
         let condition = self.walk_expr(&mut expr.condition);
         if !matches!(condition, Type::Bool) {
-            self.errors
-                .push(format!("Condition must be a boolean {:?}", condition));
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: expr.condition.span(),
+                found: condition,
+                expected: Type::Bool,
+            }));
         }
         let then_branch_type = self.walk_block(&mut expr.then_branch);
         if let Some(else_branch) = expr.else_branch.as_mut() {
             let else_branch_type = self.walk_block(else_branch);
             if then_branch_type != else_branch_type {
-                self.errors.push(format!(
-                    "Type mismatch in if-else block: {} != {}",
-                    then_branch_type, else_branch_type
-                ));
+                self.errors.push(Box::new(ErrorMissMatchedType {
+                    span: expr.span(),
+                    found: then_branch_type.clone(),
+                    expected: else_branch_type.clone(),
+                }));
             }
             expr.ty = then_branch_type.clone();
         }
@@ -258,10 +263,11 @@ impl<'st> TypeChecker<'st> {
         for mut element in expr.elements.iter_mut().skip(1) {
             let other = self.walk_expr(element);
             if ty != other {
-                self.errors.push(format!(
-                    "Type mismatch in array literal: {} != {}",
-                    ty, other
-                ));
+                self.errors.push(Box::new(ErrorMissMatchedType {
+                    span: element.span(),
+                    found: ty.clone(),
+                    expected: other,
+                }));
             }
         }
         expr.ty = ty.clone();
@@ -272,8 +278,12 @@ impl<'st> TypeChecker<'st> {
         let index_type = self.walk_expr(&mut expr.index);
         // HACK: This should be of type `usize` later once we have support for pointers
         if index_type != Type::SignedNumber(32) {
-            self.errors
-                .push("Index must be a signed number".to_string());
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: expr.span(),
+                found: index_type.clone(),
+                // HACK: usize
+                expected: Type::SignedNumber(32),
+            }));
         }
 
         expr.ty = array_type.clone();
@@ -289,7 +299,11 @@ impl<'st> TypeChecker<'st> {
         let value_type = self.walk_expr(value);
         let count_type = self.walk_expr(count);
         let Expr::Litral(ast::Litral::Integer(count_token)) = &**count else {
-            self.errors.push("count must be an integer".to_string());
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: count.span(),
+                found: count_type.clone(),
+                expected: Type::SignedNumber(32),
+            }));
             return value_type;
         };
 
@@ -324,12 +338,7 @@ mod tests {
         eprintln!("{:#?}", symbol_table);
         let type_checker = TypeChecker::new(&mut symbol_table);
         if let Err(errors) = type_checker.check(&mut ast) {
-            let CompilerError::TypeErrors(errors) = errors else {
-                panic!("Expected TypeErrors");
-            };
-            for error in errors {
-                eprintln!("{}", error);
-            }
+            eprintln!("{}", errors.report("type_check.cb", src));
             assert!(false);
         }
     }

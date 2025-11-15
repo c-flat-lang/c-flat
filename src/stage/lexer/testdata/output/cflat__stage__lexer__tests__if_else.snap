@@ -1,0 +1,57 @@
+---
+source: src/stage/lexer/tests.rs
+expression: snapshot_lexing(contents)
+---
+fn conditional() bool {
+^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 0..2 }
+   ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "conditional", span: 3..14 }
+              ^ Token { kind: LeftParen, lexeme: "(", span: 14..15 }
+               ^ Token { kind: RightParen, lexeme: ")", span: 15..16 }
+                 ^^^^ Token { kind: Identifier, lexeme: "bool", span: 17..21 }
+                      ^ Token { kind: LeftBrace, lexeme: "{", span: 22..23 }
+  return true;
+  ^^^^^^ Token { kind: Keyword(Return), lexeme: "return", span: 26..32 }
+         ^^^^ Token { kind: Keyword(True), lexeme: "true", span: 33..37 }
+             ^ Token { kind: Semicolon, lexeme: ";", span: 37..38 }
+}
+^ Token { kind: RightBrace, lexeme: "}", span: 39..40 }
+
+fn main() s32 {
+^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 42..44 }
+   ^^^^ Token { kind: Identifier, lexeme: "main", span: 45..49 }
+       ^ Token { kind: LeftParen, lexeme: "(", span: 49..50 }
+        ^ Token { kind: RightParen, lexeme: ")", span: 50..51 }
+          ^^^ Token { kind: Identifier, lexeme: "s32", span: 52..55 }
+              ^ Token { kind: LeftBrace, lexeme: "{", span: 56..57 }
+  const condition: bool = conditional();
+  ^^^^^ Token { kind: Keyword(Const), lexeme: "const", span: 60..65 }
+        ^^^^^^^^^ Token { kind: Identifier, lexeme: "condition", span: 66..75 }
+                 ^ Token { kind: Colon, lexeme: ":", span: 75..76 }
+                   ^^^^ Token { kind: Identifier, lexeme: "bool", span: 77..81 }
+                        ^ Token { kind: Equal, lexeme: "=", span: 82..83 }
+                          ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "conditional", span: 84..95 }
+                                     ^ Token { kind: LeftParen, lexeme: "(", span: 95..96 }
+                                      ^ Token { kind: RightParen, lexeme: ")", span: 96..97 }
+                                       ^ Token { kind: Semicolon, lexeme: ";", span: 97..98 }
+  const value: s32 = if condition {101} else {20};
+  ^^^^^ Token { kind: Keyword(Const), lexeme: "const", span: 101..106 }
+        ^^^^^ Token { kind: Identifier, lexeme: "value", span: 107..112 }
+             ^ Token { kind: Colon, lexeme: ":", span: 112..113 }
+               ^^^ Token { kind: Identifier, lexeme: "s32", span: 114..117 }
+                   ^ Token { kind: Equal, lexeme: "=", span: 118..119 }
+                     ^^ Token { kind: Keyword(If), lexeme: "if", span: 120..122 }
+                        ^^^^^^^^^ Token { kind: Identifier, lexeme: "condition", span: 123..132 }
+                                  ^ Token { kind: LeftBrace, lexeme: "{", span: 133..134 }
+                                   ^^^ Token { kind: Number, lexeme: "101", span: 134..137 }
+                                      ^ Token { kind: RightBrace, lexeme: "}", span: 137..138 }
+                                        ^^^^ Token { kind: Keyword(Else), lexeme: "else", span: 139..143 }
+                                             ^ Token { kind: LeftBrace, lexeme: "{", span: 144..145 }
+                                              ^^ Token { kind: Number, lexeme: "20", span: 145..147 }
+                                                ^ Token { kind: RightBrace, lexeme: "}", span: 147..148 }
+                                                 ^ Token { kind: Semicolon, lexeme: ";", span: 148..149 }
+  return value;
+  ^^^^^^ Token { kind: Keyword(Return), lexeme: "return", span: 152..158 }
+         ^^^^^ Token { kind: Identifier, lexeme: "value", span: 159..164 }
+              ^ Token { kind: Semicolon, lexeme: ";", span: 164..165 }
+}
+^ Token { kind: RightBrace, lexeme: "}", span: 166..167 }

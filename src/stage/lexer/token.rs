@@ -59,6 +59,7 @@ pub enum TokenKind {
 pub enum Keyword {
     Const,
     Else,
+    Enum,
     False,
     Fn,
     For,
@@ -72,4 +73,27 @@ pub enum Keyword {
     Type,
     Use,
     While,
+}
+
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Keyword::Const => write!(f, "const"),
+            Keyword::Else => write!(f, "else"),
+            Keyword::Enum => write!(f, "enum"),
+            Keyword::False => write!(f, "false"),
+            Keyword::Fn => write!(f, "fn"),
+            Keyword::For => write!(f, "for"),
+            Keyword::If => write!(f, "if"),
+            Keyword::Let => write!(f, "let"),
+            Keyword::Mut => write!(f, "mut"),
+            Keyword::Pub => write!(f, "pub"),
+            Keyword::Return => write!(f, "return"),
+            Keyword::Struct => write!(f, "struct"),
+            Keyword::True => write!(f, "true"),
+            Keyword::Type => write!(f, "type"),
+            Keyword::Use => write!(f, "use"),
+            Keyword::While => write!(f, "while"),
+        }
+    }
 }
