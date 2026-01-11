@@ -21,7 +21,7 @@ type Point struct {
 ^ Token { kind: RightBrace, lexeme: "}", span: 44..45 }
 
 enum Color {
-^^^^ Token { kind: Identifier, lexeme: "enum", span: 47..51 }
+^^^^ Token { kind: Keyword(Enum), lexeme: "enum", span: 47..51 }
      ^^^^^ Token { kind: Identifier, lexeme: "Color", span: 52..57 }
            ^ Token { kind: LeftBrace, lexeme: "{", span: 58..59 }
     Red,

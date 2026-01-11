@@ -1,0 +1,72 @@
+---
+source: bitbox/src/text/lexer/test.rs
+expression: snapshot_lexing(contents)
+---
+import function core::write(s32, s32) s32
+^^^^^^ Token { kind: Keyword(Import), lexeme: "import", span: 0..6 }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 7..15 }
+                ^^^^ Token { kind: Identifier, lexeme: "core", span: 16..20 }
+                    ^^ Token { kind: PathSeparator, lexeme: "::", span: 20..22 }
+                      ^^^^^ Token { kind: Identifier, lexeme: "write", span: 22..27 }
+                           ^ Token { kind: LeftParen, lexeme: "(", span: 27..28 }
+                            ^^^ Token { kind: Identifier, lexeme: "s32", span: 28..31 }
+                               ^ Token { kind: Comma, lexeme: ",", span: 31..32 }
+                                 ^^^ Token { kind: Identifier, lexeme: "s32", span: 33..36 }
+                                    ^ Token { kind: RightParen, lexeme: ")", span: 36..37 }
+                                      ^^^ Token { kind: Identifier, lexeme: "s32", span: 38..41 }
+
+^^ Token { kind: Delimiter, lexeme: "\\n", span: 41..43 }
+const value_ptr : *[13; u8] = #"Hello World\n"#
+^^^^^ Token { kind: Keyword(Const), lexeme: "const", span: 43..48 }
+      ^^^^^^^^^ Token { kind: Identifier, lexeme: "value_ptr", span: 49..58 }
+                ^ Token { kind: Colon, lexeme: ":", span: 59..60 }
+                  ^ Token { kind: Star, lexeme: "*", span: 61..62 }
+                   ^ Token { kind: LeftBracket, lexeme: "[", span: 62..63 }
+                    ^^ Token { kind: Number, lexeme: "13", span: 63..65 }
+                      ^ Token { kind: Semicolon, lexeme: ";", span: 65..66 }
+                        ^^ Token { kind: Identifier, lexeme: "u8", span: 67..69 }
+                          ^ Token { kind: RightBracket, lexeme: "]", span: 69..70 }
+                            ^ Token { kind: Equals, lexeme: "=", span: 71..72 }
+                              ^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello World\n", span: 73..90 }
+const value_len : u32 = .len value_ptr
+^ Token { kind: Delimiter, lexeme: "\\n", span: 90..91 }
+^^^^^ Token { kind: Keyword(Const), lexeme: "const", span: 91..96 }
+      ^^^^^^^^^ Token { kind: Identifier, lexeme: "value_len", span: 97..106 }
+                ^ Token { kind: Colon, lexeme: ":", span: 107..108 }
+                  ^^^ Token { kind: Identifier, lexeme: "u32", span: 109..112 }
+                      ^ Token { kind: Equals, lexeme: "=", span: 113..114 }
+                        ^^^^ Token { kind: Directive(Len), lexeme: ".len", span: 115..119 }
+                             ^^^^^^^^^ Token { kind: Identifier, lexeme: "value_ptr", span: 120..129 }
+
+^^ Token { kind: Delimiter, lexeme: "\\n", span: 129..131 }
+public function main() s32 {
+^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: 131..137 }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 138..146 }
+                ^^^^ Token { kind: Identifier, lexeme: "main", span: 147..151 }
+                    ^ Token { kind: LeftParen, lexeme: "(", span: 151..152 }
+                     ^ Token { kind: RightParen, lexeme: ")", span: 152..153 }
+                       ^^^ Token { kind: Identifier, lexeme: "s32", span: 154..157 }
+                           ^^ Token { kind: LeftBrace, lexeme: "{", span: 158..160 }
+  %entry:
+  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: 162..169 }
+    @call s32 : result write(value_ptr, value_len)
+^ Token { kind: Delimiter, lexeme: "\\n", span: 169..170 }
+    ^^^^^ Token { kind: Instruction(Call), lexeme: "@call", span: 174..179 }
+          ^^^ Token { kind: Identifier, lexeme: "s32", span: 180..183 }
+              ^ Token { kind: Colon, lexeme: ":", span: 184..185 }
+                ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 186..192 }
+                       ^^^^^ Token { kind: Identifier, lexeme: "write", span: 193..198 }
+                            ^ Token { kind: LeftParen, lexeme: "(", span: 198..199 }
+                             ^^^^^^^^^ Token { kind: Identifier, lexeme: "value_ptr", span: 199..208 }
+                                      ^ Token { kind: Comma, lexeme: ",", span: 208..209 }
+                                        ^^^^^^^^^ Token { kind: Identifier, lexeme: "value_len", span: 210..219 }
+                                                 ^ Token { kind: RightParen, lexeme: ")", span: 219..220 }
+    @ret s32 : result
+^ Token { kind: Delimiter, lexeme: "\\n", span: 220..221 }
+    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: 225..229 }
+         ^^^ Token { kind: Identifier, lexeme: "s32", span: 230..233 }
+             ^ Token { kind: Colon, lexeme: ":", span: 234..235 }
+               ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 236..242 }
+}
+^ Token { kind: Delimiter, lexeme: "\\n", span: 242..243 }
+^^ Token { kind: RightBrace, lexeme: "}", span: 243..245 }

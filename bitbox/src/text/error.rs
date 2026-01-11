@@ -1,185 +1,211 @@
-use crate::text::lexer::token::{Span, Token, TokenKind};
-use std::fmt::Write;
+use crate::ir::Type;
+use crate::text::lexer::token::{Keyword, Span, Token, TokenKind};
+use report::ReportBuilder;
+pub use report::{Report, Result};
 
 #[derive(Debug)]
-pub enum BitBoxError {
-    UnexpectedToken {
-        expected: TokenKind,
-        actual: Token,
-    },
-    InvalidContantValue(Token),
-    InvalidInstruction(Token),
-    InvalidToken(Token),
-    UnexpectedEndOfStream,
-    ExpectedTopLevelItem(Token),
-    ExpectedType(Token),
-    UndefinedVariable(Token),
-    InvalidType {
-        expected: String,
-        actual_type: String,
-        actual: Token,
-    },
-    ExpectedBlockName(Token),
-    ToManyItemsOnOneLine(Token),
+pub struct ErrorMissMatchedType {
+    pub span: Span,
+    pub found: Type,
+    pub expected: Type,
 }
 
-impl BitBoxError {
-    pub fn report(&self, filename: &str, src: &str) -> String {
-        match self {
-            Self::InvalidToken(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("invalid token found")
-                .build(),
-            Self::InvalidContantValue(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message(format!("invalid constant value '{}'", token.lexeme))
-                .with_note("expected a directive, number or string")
-                .build(),
-            Self::InvalidInstruction(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("invalid instruction")
-                .with_note("expected one of: add, call, ret, sub ...")
-                .build(),
-            Self::UnexpectedToken { expected, actual } => {
-                ReportBuilder::new(filename, src, &actual.span)
-                    .with_message(format!("unexpected token '{}'", actual.lexeme))
-                    .with_lines_above(3)
-                    .with_note(format!(
-                        "expected: {:?}, found: {}",
-                        expected, actual.lexeme
-                    ))
-                    .build()
+impl Report for ErrorMissMatchedType {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("mismatched type")
+            .with_note(format!(
+                "expected `{}`, found `{}`",
+                self.expected, self.found
+            ))
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorUnsupportedBinaryOp {
+    pub span: Span,
+    pub lhs: Type,
+    pub rhs: Type,
+    pub op: Token,
+}
+
+impl Report for ErrorUnsupportedBinaryOp {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("unsupported binary operator")
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorExpectedKeyWord {
+    pub span: Span,
+    pub actual: Token,
+    pub expected: Vec<Keyword>,
+}
+
+impl Report for ErrorExpectedKeyWord {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("expected keyword")
+            .with_note(format!(
+                "expected `{}`, found `{}`",
+                self.expected
+                    .iter()
+                    .map(|k| k.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                self.actual.lexeme
+            ))
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorExpectedToken {
+    pub actual: Token,
+    pub expected: TokenKind,
+}
+
+impl Report for ErrorExpectedToken {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let message = match &self.expected {
+            TokenKind::Keyword(keyword) => {
+                format!(
+                    "expected keyword like `{}`, but found `{}`",
+                    keyword, self.actual.lexeme
+                )
             }
-            Self::UnexpectedEndOfStream => {
-                ReportBuilder::new(filename, src, &(src.len().saturating_sub(1)..src.len()))
-                    .with_message("unexpected end of stream")
-                    .build()
+            TokenKind::Instruction(instruction) => {
+                format!(
+                    "expected instruction like `{}`, but found `{}`",
+                    instruction, self.actual.lexeme
+                )
             }
-            Self::ExpectedTopLevelItem(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("expected a top level item")
-                .with_note("function, import or constant")
-                .with_lines_above(3)
-                .build(),
-            Self::ExpectedType(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message(format!("expected a type but found {:?}", token.kind))
-                .with_note("expected a type: s32, u32, f32, ...")
-                .build(),
-            Self::UndefinedVariable(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("undefined variable")
-                .with_note("variable's must be forwarded defined")
-                .build(),
-            Self::InvalidType {
-                expected,
-                actual_type,
-                actual,
-            } => ReportBuilder::new(filename, src, &actual.span)
-                .with_message(format!("invalid type for {}", actual.lexeme))
-                .with_note(format!("expected: {}, found: {}", expected, actual_type))
-                .build(),
-
-            Self::ExpectedBlockName(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("expected a block name")
-                .with_note("example %block_name:")
-                .build(),
-            Self::ToManyItemsOnOneLine(token) => ReportBuilder::new(filename, src, &token.span)
-                .with_message("too many items on one line")
-                .with_note("expected a single line")
-                .build(),
-        }
+            _ => format!(
+                "expected token `{:?}`, found `{}`",
+                self.expected, self.actual.lexeme
+            ),
+        };
+        ReportBuilder::new(filename, src, &self.actual.span)
+            .with_message(message)
+            .with_lines_above(3)
+            .build()
     }
 }
 
-impl From<Token> for BitBoxError {
-    fn from(token: Token) -> Self {
-        Self::InvalidToken(token)
+#[derive(Debug)]
+pub struct ErrorUnexpectedEndOfInput;
+
+impl Report for ErrorUnexpectedEndOfInput {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &Span::default())
+            .with_message("unexpected end of input")
+            .build()
     }
 }
 
-pub struct ReportBuilder<'a> {
-    message: String,
-    filename: &'a str,
-    row: usize,
-    col: usize,
-    src: &'a str,
-    problem_line: &'a str,
-    lines_above: usize,
-    note: Option<String>,
-    underline: String,
+#[derive(Debug)]
+pub struct ErrorExpectedType {
+    pub found: Token,
 }
 
-impl<'a> ReportBuilder<'a> {
-    pub fn new(filename: &'a str, src: &'a str, span: &'a Span) -> Self {
-        let (row, col) = Self::get_row_col_from_span(src, span);
-        let problem_line = Self::get_problem_src_line(src, row);
-        let underline = Self::get_underline(col, span);
+impl Report for ErrorExpectedType {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
+            .with_message(format!(
+                "expected a type definition but found '{}'",
+                self.found.lexeme
+            ))
+            .with_lines_above(3)
+            .with_note(
+                "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`",
+            )
+            .build()
+    }
+}
 
-        Self {
-            message: String::new(),
-            filename,
-            row,
-            col,
-            src,
-            problem_line,
-            lines_above: 0,
-            note: None,
-            underline,
+#[derive(Debug)]
+pub struct ErrorMissingPairedClosingChar {
+    pub span: Span,
+    pub expected: TokenKind,
+}
+
+impl Report for ErrorMissingPairedClosingChar {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
+            .with_message("missing closing pair")
+            .with_note(format!("expected {:?}", self.expected))
+            .with_lines_above(3)
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct ErrorUnexpectedTopLevelItem {
+    pub found: Token,
+    pub expected: Vec<Keyword>,
+}
+
+impl Report for ErrorUnexpectedTopLevelItem {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
+            .with_message(format!(
+                "unexpected top level item `{}`",
+                &self.found.lexeme
+            ))
+            .with_note(format!(
+                "expected one of `{}`",
+                self.expected
+                    .iter()
+                    .map(|k| k.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ))
+            .with_lines_above(3)
+            .build()
+    }
+}
+
+#[derive(Debug)]
+pub struct Errors {
+    pub errors: Vec<Box<dyn Report>>,
+}
+
+impl Report for Errors {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut final_report = String::new();
+        for error in self.errors.iter() {
+            final_report.push_str(&error.report(filename, src));
+            final_report.push('\n');
         }
+        final_report
     }
+}
 
-    pub fn with_message(mut self, message: impl Into<String>) -> Self {
-        self.message = message.into();
-        self
+#[derive(Debug)]
+pub struct ErrorUndefinedSymbol {
+    pub found: Token,
+}
+
+impl Report for ErrorUndefinedSymbol {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
+            .with_message(format!("undefined symbol `{}`", &self.found.lexeme))
+            .build()
     }
+}
 
-    pub fn with_note(mut self, note: impl Into<String>) -> Self {
-        self.note = Some(note.into());
-        self
-    }
+#[derive(Debug)]
+pub struct ErrorMissingSymbol {
+    pub symbol: Token,
+}
 
-    pub fn with_lines_above(mut self, lines_above: usize) -> Self {
-        self.lines_above = lines_above;
-        self
-    }
-
-    pub fn build(&self) -> String {
-        let mut report = String::new();
-        writeln!(&mut report, "{}:{}:{}", self.row, self.col, self.filename)
-            .expect("failed to write report");
-        if !self.message.is_empty() {
-            writeln!(&mut report, " --> {}", self.message).expect("failed to write message");
-        }
-        let starting_row_above = self.row.saturating_sub(self.lines_above);
-        for (idx, line) in self
-            .src
-            .lines()
-            .enumerate()
-            .skip(starting_row_above.min(starting_row_above))
-            .take(self.lines_above)
-        {
-            writeln!(&mut report, "{:<3}| {}", idx, line).expect("failed to write line");
-        }
-
-        writeln!(&mut report, "{:<3}| {}", self.row, self.problem_line)
-            .expect("failed to write problem line");
-        writeln!(&mut report, "   | {}", self.underline).expect("failed to write underline");
-        if let Some(note) = &self.note {
-            writeln!(&mut report, "   | = note: {}", note).expect("failed to write help");
-        }
-        report
-    }
-
-    fn get_row_col_from_span(src: &str, span: &Span) -> (usize, usize) {
-        let row = src[..span.start].chars().filter(|&c| c == '\n').count();
-        let col = span.start - src[..span.start].rfind('\n').map(|n| n + 1).unwrap_or(0);
-        (row, col)
-    }
-
-    fn get_problem_src_line(src: &'a str, row: usize) -> &'a str {
-        src.lines()
-            .nth(row)
-            .unwrap_or("Failed to extract source line")
-    }
-
-    fn get_underline(col: usize, span: &Span) -> String {
-        let spacing = " ".repeat(col);
-        let underline = "^".repeat(span.len());
-        format!("{}{}", spacing, underline)
+impl Report for ErrorMissingSymbol {
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.symbol.span)
+            .with_message(format!("symbol `{}` not found", &self.symbol.lexeme))
+            .build()
     }
 }

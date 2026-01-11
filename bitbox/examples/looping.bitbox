@@ -1,14 +1,17 @@
-
 public function main() s32 {
   %entry:
-    @load u8 :  n, 0
+    @load u8 : start, 0
+    @jump %loop
 
   %loop:
-    @cmp u1 : is_running, n, 10
-    @add u8 : n, n, 1
+    @phi u8 : result, [(%entry, start), (%loop, next)]
+
+    @cmp u8 : is_running, result, 10
+    @add u8 : next, result, 1
+
     @jumpif is_running, %exit
     @jump %loop
 
   %exit:
-    @ret u8 : n
+    @ret u8 : result
 }

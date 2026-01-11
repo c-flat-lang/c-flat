@@ -1,11 +1,29 @@
+use super::{BitbeatLowerContext, OperandResult};
 use crate::backend::Lower;
 use crate::ir::instruction::{IAdd, ICmp, IJumpIf, ILoad, IReturn};
-use crate::passes::Pass;
+use crate::passes::{DebugPass, Pass};
 
 #[derive(Debug)]
 pub struct EmitBitbeatPass;
 
 impl Pass for EmitBitbeatPass {
+    fn debug(
+        &self,
+        module: &crate::ir::Module,
+        ctx: &crate::backend::Context,
+        debug_mode: Option<DebugPass>,
+    ) -> bool {
+        let Some(DebugPass::EmitBitbeat) = debug_mode else {
+            return false;
+        };
+        eprintln!("--- Dump Bitbeat ---");
+        let module = ctx.output.get_bitbeat();
+        let data = ron::ser::to_string_pretty(module, ron::ser::PrettyConfig::default())
+            .expect("Failed to serialize module");
+        eprintln!("{}", data);
+        true
+    }
+
     fn run(
         &mut self,
         module: &mut crate::ir::Module,
@@ -19,49 +37,6 @@ impl Pass for EmitBitbeatPass {
     }
 }
 
-#[derive(Debug)]
-struct BitbeatLowerContext<'ctx> {
-    function_name: String,
-    assembler: bitbeat::InstructionBuilder<'ctx>,
-    registery: [bool; bitbeat::REG_COUNT],
-    current_block_id: crate::ir::BlockId,
-    ip: usize,
-    // HACK: key should be a Variable not String
-    variables: std::collections::BTreeMap<String, bitbeat::Reg>,
-}
-
-impl<'ctx> BitbeatLowerContext<'ctx> {
-    fn new(function_name: String, assembler: bitbeat::InstructionBuilder<'ctx>) -> Self {
-        Self {
-            function_name,
-            assembler,
-            registery: [false; bitbeat::REG_COUNT],
-            current_block_id: crate::ir::BlockId(0),
-            ip: 0,
-            variables: std::collections::BTreeMap::new(),
-        }
-    }
-
-    fn returns(&mut self) -> &mut Self {
-        self.registery[0] = true;
-        self
-    }
-
-    fn alloc(&mut self) -> bitbeat::Reg {
-        let id = self
-            .registery
-            .iter()
-            .position(|r| !r)
-            .expect("Out of registers");
-        self.registery[id] = true;
-        bitbeat::Reg(id)
-    }
-
-    fn free(&mut self, reg: &bitbeat::Reg) {
-        self.registery[reg.0] = false
-    }
-}
-
 impl Lower<EmitBitbeatPass> for crate::ir::Function {
     type Output = ();
     fn lower(
@@ -69,7 +44,7 @@ impl Lower<EmitBitbeatPass> for crate::ir::Function {
         ctx: &mut crate::backend::Context,
         _: &mut EmitBitbeatPass,
     ) -> Result<Self::Output, crate::error::Error> {
-        let mut function = bitbeat::Function::new(&self.name);
+        let mut function = bitbeat::Function::new(&self.name).arity(self.params.len());
         let is_returning = self.return_type != crate::ir::Type::Void;
         function = function.returns(is_returning);
 
@@ -79,6 +54,12 @@ impl Lower<EmitBitbeatPass> for crate::ir::Function {
             if is_returning {
                 target.returns();
             }
+
+            for param in self.params.iter() {
+                let reg = target.alloc();
+                target.variables.insert(param.to_string(), reg);
+            }
+
             for block in self.blocks.iter() {
                 target.assembler.label(&block.label);
                 target.current_block_id = block.id;
@@ -117,62 +98,30 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
             crate::ir::Instruction::NoOp(..) => todo!(),
-            crate::ir::Instruction::Add(IAdd { des, lhs, rhs }) => {
-                let lhs = lhs.lower(ctx, target)?.lower(ctx, target)?;
-                let rhs = rhs.lower(ctx, target)?.lower(ctx, target)?;
-                let des = des.lower(ctx, target)?;
-                target.assembler.add(des, lhs, rhs);
-            }
-            crate::ir::Instruction::Assign(..) => todo!("assign"),
+            crate::ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
+            crate::ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
             crate::ir::Instruction::Alloc(..) => {
                 todo!("You need memory to do this instruction")
             }
-            crate::ir::Instruction::Call(..) => todo!("call"),
-            crate::ir::Instruction::Cmp(ICmp { des, lhs, rhs }) => {
-                let lhs = lhs.lower(ctx, target)?.lower(ctx, target)?;
-                let rhs = rhs.lower(ctx, target)?.lower(ctx, target)?;
-                let des = des.lower(ctx, target)?;
-                target.assembler.cmp_eq(des, lhs, rhs);
-            }
+            crate::ir::Instruction::Call(icall) => icall.lower(ctx, target)?,
+            crate::ir::Instruction::Cmp(icmp) => icmp.lower(ctx, target)?,
+            crate::ir::Instruction::Copy(..) => todo!("copy"),
             crate::ir::Instruction::ElemGet(..) => todo!("elemget"),
             crate::ir::Instruction::ElemSet(..) => todo!("elemset"),
             crate::ir::Instruction::Gt(..) => todo!("gt"),
             crate::ir::Instruction::Lt(..) => todo!("lt"),
-            crate::ir::Instruction::Jump(ijump) => {
-                target.assembler.jump(&ijump.label);
-            }
-            crate::ir::Instruction::JumpIf(IJumpIf { cond, label }) => {
-                let operand_result = cond.lower(ctx, target)?;
-                let reg = operand_result.lower(ctx, target)?;
-                target.assembler.jump_if(reg, label);
-            }
-            crate::ir::Instruction::Load(ILoad { des, src }) => {
-                let OperandResult::Value(value) = src.lower(ctx, target)? else {
-                    panic!("Load Imm expected value found register");
-                };
-                let reg = des.lower(ctx, target)?;
-                target.assembler.load_imm(reg, value);
-            }
-            crate::ir::Instruction::Mul(..) => todo!("mul"),
+            crate::ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
+            crate::ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
+            crate::ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
+            crate::ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
             crate::ir::Instruction::Phi(..) => todo!("@phi"),
-            crate::ir::Instruction::Return(IReturn { ty, src }) => {
-                let operand_result = src.lower(ctx, target)?;
-                let reg = operand_result.lower(ctx, target)?;
-                target.assembler.print(reg);
-                // target.assembler.send(bitbeat::Reg(0), reg);
-            }
-            crate::ir::Instruction::Sub(..) => todo!("sub"),
+            crate::ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
+            crate::ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             crate::ir::Instruction::Div(..) => todo!("div"),
             crate::ir::Instruction::IfElse(..) => todo!("ifelse"),
         }
         Ok(())
     }
-}
-
-#[derive(Debug, Clone)]
-enum OperandResult {
-    Register(bitbeat::Reg),
-    Value(i64),
 }
 
 impl Lower<BitbeatLowerContext<'_>> for OperandResult {
@@ -185,7 +134,6 @@ impl Lower<BitbeatLowerContext<'_>> for OperandResult {
         match self {
             OperandResult::Register(reg) => Ok(*reg),
             OperandResult::Value(value) => {
-                // HACK: register registery
                 let des = target.alloc();
                 target.assembler.load_imm(des, *value);
                 Ok(des)

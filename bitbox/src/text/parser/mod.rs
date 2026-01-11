@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod test;
-use crate::text::error::BitBoxError;
+use crate::text::error::{
+    ErrorExpectedToken, ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem, Result,
+};
 use crate::text::lexer::token::{self, Token, TokenKind};
 pub mod ast;
 use crate::ir::Visibility;
@@ -24,11 +26,11 @@ impl Parser {
             .unwrap_or_default()
     }
 
-    fn consume(&mut self, expected: TokenKind) -> Result<Token, BitBoxError> {
+    fn consume(&mut self, expected: TokenKind) -> Result<Token> {
         match self.stream.next() {
             Some(actual) if actual.kind == expected => Ok(actual),
-            Some(actual) => Err(BitBoxError::UnexpectedToken { expected, actual }),
-            None => Err(BitBoxError::UnexpectedEndOfStream),
+            Some(actual) => Err(Box::new(ErrorExpectedToken { expected, actual })),
+            None => Err(Box::new(ErrorUnexpectedEndOfInput)),
         }
     }
 
@@ -40,9 +42,9 @@ impl Parser {
         self.stream.peek().is_none()
     }
 
-    fn next(&mut self) -> Result<Token, BitBoxError> {
+    fn next(&mut self) -> Result<Token> {
         let Some(token) = self.stream.next() else {
-            return Err(BitBoxError::UnexpectedEndOfStream);
+            return Err(Box::new(ErrorUnexpectedEndOfInput));
         };
         Ok(token)
     }
@@ -55,7 +57,7 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<ast::Module, BitBoxError> {
+    pub fn parse(&mut self) -> Result<ast::Module> {
         let mut imports = vec![];
         let mut functions = vec![];
         let mut constants = vec![];
@@ -78,7 +80,7 @@ impl Parser {
         })
     }
 
-    fn parse_top_level(&mut self) -> Result<TopLevel, BitBoxError> {
+    fn parse_top_level(&mut self) -> Result<TopLevel> {
         let visibility = self.parse_visibility();
         if self.is_peek_a(TokenKind::Keyword(token::Keyword::Function)) {
             Ok(TopLevel::Function(self.parse_function(visibility)?))
@@ -88,11 +90,18 @@ impl Parser {
             Ok(TopLevel::Constant(self.parse_constant()?))
         } else {
             let tok = self.next()?;
-            Err(BitBoxError::ExpectedTopLevelItem(tok))
+            Err(Box::new(ErrorUnexpectedTopLevelItem {
+                found: tok,
+                expected: vec![
+                    token::Keyword::Function,
+                    token::Keyword::Import,
+                    token::Keyword::Const,
+                ],
+            }))
         }
     }
 
-    fn parse_function(&mut self, visibility: Visibility) -> Result<ast::Function, BitBoxError> {
+    fn parse_function(&mut self, visibility: Visibility) -> Result<ast::Function> {
         self.consume(TokenKind::Keyword(token::Keyword::Function))?;
         let func_name = self.consume(TokenKind::Identifier)?;
         let params = self.parse_function_params()?;
@@ -110,7 +119,7 @@ impl Parser {
         Ok(function)
     }
 
-    fn parse_function_params(&mut self) -> Result<Vec<(Token, Token)>, BitBoxError> {
+    fn parse_function_params(&mut self) -> Result<Vec<(Token, Token)>> {
         self.consume(TokenKind::LeftParen)?;
         let mut params = vec![];
 
@@ -128,19 +137,25 @@ impl Parser {
         Ok(params)
     }
 
-    fn _parse_label(&mut self) -> Result<Token, BitBoxError> {
+    fn _parse_label(&mut self) -> Result<Token> {
         let name = self.next()?;
         if name.kind != TokenKind::LabelDefinition {
-            return Err(BitBoxError::ExpectedBlockName(name));
+            return Err(Box::new(ErrorExpectedToken {
+                actual: name,
+                expected: TokenKind::LabelDefinition,
+            }));
         }
         let delim = self.next()?;
         if delim.kind != TokenKind::Delimiter {
-            return Err(BitBoxError::ToManyItemsOnOneLine(delim));
+            return Err(Box::new(ErrorExpectedToken {
+                actual: delim,
+                expected: TokenKind::Delimiter,
+            }));
         }
         Ok(name)
     }
 
-    fn parse_function_block(&mut self) -> Result<Vec<ast::BasicBlock>, BitBoxError> {
+    fn parse_function_block(&mut self) -> Result<Vec<ast::BasicBlock>> {
         let mut blocks = vec![];
         self.consume(TokenKind::LeftBrace)?;
         while !self.end_of_stream() && !self.is_peek_a(TokenKind::RightBrace) {
@@ -163,10 +178,13 @@ impl Parser {
         Ok(blocks)
     }
 
-    fn parse_instruction(&mut self) -> Result<ast::Instruction, BitBoxError> {
+    fn parse_instruction(&mut self) -> Result<ast::Instruction> {
         let tok = self.next()?;
         let TokenKind::Instruction(inst) = tok.kind else {
-            return Err(BitBoxError::InvalidInstruction(tok));
+            return Err(Box::new(ErrorExpectedToken {
+                actual: tok,
+                expected: TokenKind::Instruction(token::Instruction::Add),
+            }));
         };
 
         let arguments = match inst {
@@ -180,7 +198,7 @@ impl Parser {
             token::Instruction::JumpIf => self.parse_jump_if()?,
             token::Instruction::Load => self.parse_load()?,
             token::Instruction::Mul => self.parse_mul()?,
-            token::Instruction::Phi => todo!("implement phi"),
+            token::Instruction::Phi => self.parse_phi()?,
             token::Instruction::Ret => self.parse_return()?,
             token::Instruction::Sub => self.parse_sub()?,
         };
@@ -192,7 +210,7 @@ impl Parser {
         Ok(instruction)
     }
 
-    fn parse_arguments(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_arguments(&mut self) -> Result<Vec<Token>> {
         self.consume(TokenKind::LeftParen)?;
         let mut args = vec![];
         while !self.end_of_stream() && !self.is_peek_a(TokenKind::RightParen) {
@@ -207,7 +225,7 @@ impl Parser {
         Ok(args)
     }
 
-    fn parse_import_function_params(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_import_function_params(&mut self) -> Result<Vec<Token>> {
         let mut params = vec![];
         self.consume(TokenKind::LeftParen)?;
         while !self.end_of_stream() {
@@ -222,7 +240,7 @@ impl Parser {
         Ok(params)
     }
 
-    fn parse_import(&mut self) -> Result<ast::Import, BitBoxError> {
+    fn parse_import(&mut self) -> Result<ast::Import> {
         self.consume(TokenKind::Keyword(token::Keyword::Import))?;
         self.consume(TokenKind::Keyword(token::Keyword::Function))?;
         let module_name = self.consume(TokenKind::Identifier)?;
@@ -231,16 +249,15 @@ impl Parser {
         let params = self.parse_import_function_params()?;
         let return_type = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Delimiter)?;
-        Ok(ast::Import {
+        Ok(ast::Import::Function(ast::ImportFunction {
             module_name,
             name,
             params,
             return_type,
-            kind: ast::ImportKind::Function,
-        })
+        }))
     }
 
-    fn parse_constant(&mut self) -> Result<ast::Constant, BitBoxError> {
+    fn parse_constant(&mut self) -> Result<ast::Constant> {
         self.consume(TokenKind::Keyword(token::Keyword::Const))?;
         let name = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
@@ -251,7 +268,7 @@ impl Parser {
         Ok(ast::Constant { name, ty, value })
     }
 
-    fn parse_return(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_return(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let value = self.next()?;
@@ -259,7 +276,7 @@ impl Parser {
         Ok(vec![ty, value])
     }
 
-    fn parse_add(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_add(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -271,7 +288,36 @@ impl Parser {
         Ok(vec![ty, des, lhs, rhs])
     }
 
-    fn parse_alloc(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_phi(&mut self) -> Result<Vec<Token>> {
+        let ty = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Colon)?;
+        let des = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Comma)?;
+        self.consume(TokenKind::LeftBracket)?;
+
+        let mut items = vec![ty, des];
+        while !self.is_peek_a(TokenKind::RightBracket) {
+            self.consume(TokenKind::LeftParen)?;
+
+            let label = self.consume(TokenKind::Label)?;
+            self.consume(TokenKind::Comma)?;
+            let var = self.consume(TokenKind::Identifier)?;
+
+            items.push(label);
+            items.push(var);
+
+            self.consume(TokenKind::RightParen)?;
+            if self.is_peek_a(TokenKind::Comma) {
+                self.consume(TokenKind::Comma)?;
+            }
+        }
+
+        self.consume(TokenKind::RightBracket)?;
+        self.consume(TokenKind::Delimiter)?;
+        Ok(items)
+    }
+
+    fn parse_alloc(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -281,7 +327,7 @@ impl Parser {
         Ok(vec![ty, des, size])
     }
 
-    fn parse_elem_get(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_elem_get(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -293,7 +339,7 @@ impl Parser {
         Ok(vec![ty, des, ptr, idx])
     }
 
-    fn parse_elem_set(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_elem_set(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -305,7 +351,7 @@ impl Parser {
         Ok(vec![ty, des, idx, value])
     }
 
-    fn parse_mul(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_mul(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -317,7 +363,7 @@ impl Parser {
         Ok(vec![ty, des, lhs, rhs])
     }
 
-    fn parse_sub(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_sub(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -329,7 +375,7 @@ impl Parser {
         Ok(vec![ty, des, lhs, rhs])
     }
 
-    fn parse_call(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_call(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -341,7 +387,7 @@ impl Parser {
         Ok(result)
     }
 
-    fn parse_cmp(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_cmp(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;
@@ -353,7 +399,7 @@ impl Parser {
         Ok(vec![ty, des, lhs, rhs])
     }
 
-    fn parse_jump_if(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_jump_if(&mut self) -> Result<Vec<Token>> {
         let condition = self.next()?;
         self.consume(TokenKind::Comma)?;
         let target = self.consume(TokenKind::Label)?;
@@ -361,13 +407,13 @@ impl Parser {
         Ok(vec![condition, target])
     }
 
-    fn parse_jump(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_jump(&mut self) -> Result<Vec<Token>> {
         let target = self.consume(TokenKind::Label)?;
         self.consume(TokenKind::Delimiter)?;
         Ok(vec![target])
     }
 
-    fn parse_load(&mut self) -> Result<Vec<Token>, BitBoxError> {
+    fn parse_load(&mut self) -> Result<Vec<Token>> {
         let ty = self.consume(TokenKind::Identifier)?;
         self.consume(TokenKind::Colon)?;
         let des = self.consume(TokenKind::Identifier)?;

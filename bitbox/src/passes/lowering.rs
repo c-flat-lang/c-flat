@@ -2,8 +2,8 @@ use uuid::Uuid;
 
 use crate::{
     ir::{
-        instruction::{IIfElse, IJump, IJumpIf, IPhi},
         BasicBlock, BlockId, Instruction, Operand,
+        instruction::{IIfElse, IJump, IJumpIf, IPhi},
     },
     passes::DebugPass,
 };
@@ -124,8 +124,8 @@ impl Pass for LoweringPass {
                                 IPhi::new(
                                     res_var.clone(),
                                     vec![
-                                        (res_var.clone(), then_label.clone()),
-                                        (res_var.clone(), else_label.clone()),
+                                        (then_label.clone(), res_var.clone()),
+                                        (else_label.clone(), res_var.clone()),
                                     ],
                                 )
                                 .into(),

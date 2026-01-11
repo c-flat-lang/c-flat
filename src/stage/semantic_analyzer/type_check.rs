@@ -1,7 +1,5 @@
 #![allow(unused)]
-use crate::error::{
-    CompilerError, ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result,
-};
+use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
 use crate::stage::lexer::token::{Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, Type};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;

@@ -1,16 +1,19 @@
 [package]
 name = "bitbox"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 bitbeat = { version = "0.1.0", path = "../bitbeat" }
+report = { version = "0.1.0", path = "../report" }
 uuid = { version = "1.18.1", features = ["v4"] }
 wasm-encoder = "0.240.0"
 # used for colored output for ir dump
 yansi = "1.0.1"
 # iced-x86 = "1.21.0"
 wasm-bindgen = {version = "0.2.105", optional = true}
+wasmprinter = "0.241.2"
+ron = "0.12.0"
 
 [dev-dependencies]
 insta = { version = "1.42.2", features = ["yaml"] }

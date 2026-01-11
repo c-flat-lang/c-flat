@@ -1,12 +1,13 @@
-use wasm_encoder::ValType;
+use wasm_encoder::{BlockType, ValType};
 
-use crate::backend::wasm32::passes::emit::Wasm32LowerContext;
+use super::Wasm32LowerContext;
 use crate::backend::Lower;
 
-use crate::ir::instruction::{
-    IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, ILoad, ILt, IReturn,
-};
 use crate::ir::Type;
+use crate::ir::instruction::{
+    IAdd, IAlloc, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IIfElse, ILoad, ILt,
+    IReturn, ISub,
+};
 
 impl Lower<Wasm32LowerContext<'_>> for IAdd {
     type Output = ();
@@ -19,6 +20,36 @@ impl Lower<Wasm32LowerContext<'_>> for IAdd {
         self.rhs.lower(ctx, target);
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_add(),
+            ValType::I64 => todo!("@gt i64"),
+            ValType::F32 => todo!("@gt f32"),
+            ValType::F64 => todo!("@gt f64"),
+            ValType::V128 => todo!("@gt v128"),
+            ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for ISub {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target);
+        self.rhs.lower(ctx, target);
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_sub(),
             ValType::I64 => todo!("@gt i64"),
             ValType::F32 => todo!("@gt f32"),
             ValType::F64 => todo!("@gt f64"),
@@ -138,6 +169,27 @@ impl Lower<Wasm32LowerContext<'_>> for ICmp {
             ValType::V128 => todo!("@gt v128"),
             ValType::Ref(_) => todo!("@gt ref"),
         };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for ICopy {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.src.lower(ctx, target);
         let Some(idx) = ctx
             .local_function_variables
             .get(&target.function_name)
@@ -310,6 +362,50 @@ impl Lower<Wasm32LowerContext<'_>> for IReturn {
                 target.assembler.return_();
             }
         }
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IIfElse {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        for block in self.cond.iter() {
+            block.lower(ctx, target)?;
+        }
+
+        // let ty: BlockType = result
+        //     .as_ref()
+        //     .map(|r| r.ty.clone().into())
+        //     .unwrap_or(BlockType::Empty);
+
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.cond_result.name)
+        else {
+            panic!("Variable {:?} not found", self.cond_result);
+        };
+
+        target.assembler.local_get(idx as u32);
+        target.assembler.if_(BlockType::Empty);
+
+        for block in self.then_branch.iter() {
+            block.lower(ctx, target)?;
+        }
+
+        if !self.else_branch.is_empty() {
+            target.assembler.else_();
+            for block in self.else_branch.iter() {
+                block.lower(ctx, target)?;
+            }
+        }
+
+        target.assembler.end();
         Ok(())
     }
 }

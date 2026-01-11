@@ -43,3 +43,4 @@ macro_rules! snapshot {
 
 snapshot!(binary, "../../../examples/array.bitbox");
 snapshot!(import_function, "../../../examples/import_function.bitbox");
+snapshot!(looping, "../../../examples/looping.bitbox");

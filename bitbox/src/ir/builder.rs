@@ -1,10 +1,10 @@
 use crate::ir::{
-    instruction::{
-        IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
-        ILoad, ILt, IMul, INoOp, IPhi, IReturn, ISub,
-    },
     BasicBlock, BlockId, Constant, Function, Import, Instruction, Module, Operand, Type, Variable,
     Visibility,
+    instruction::{
+        IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
+        ILoad, ILt, IMul, INoOp, IPhi, IReturn, ISub, Label,
+    },
 };
 
 #[derive(Debug, Default)]
@@ -228,7 +228,7 @@ impl<'a> AssemblerBuilder<'a> {
     }
 
     /// @phi <type> : <des>, [(<var>, <label>)]
-    pub fn phi(&mut self, des: Variable, values: Vec<(Variable, String)>) -> &mut Self {
+    pub fn phi(&mut self, des: Variable, values: Vec<(Label, Variable)>) -> &mut Self {
         self.push_instruction(IPhi::new(des, values));
         self
     }

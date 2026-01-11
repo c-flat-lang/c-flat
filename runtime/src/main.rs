@@ -30,7 +30,13 @@ pub fn run_bitbeat(data: String) -> Result<()> {
     let mut machine = bitbeat::Machine::default();
     machine.register_module(module);
     machine.spawn("main", "main", &[]);
+
+    let start = std::time::Instant::now();
     machine.run();
+
+    let seconds = start.elapsed().as_secs_f32();
+    println!("Done in {}", seconds);
+
     Ok(())
 }
 

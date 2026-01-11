@@ -1,4 +1,4 @@
-use crate::ir::instruction::IJumpIf;
+use crate::{ir::instruction::IJumpIf, passes::DebugPass};
 
 use super::Pass;
 
@@ -6,8 +6,8 @@ type Table = std::collections::HashMap<crate::ir::BlockId, Vec<crate::ir::BlockI
 
 #[derive(Debug, Default)]
 pub struct ControlFlowGraph {
-    in_bound: Table,
-    out_bound: Table,
+    pub in_bound: Table,
+    pub out_bound: Table,
 }
 
 impl ControlFlowGraph {
@@ -23,6 +23,38 @@ impl ControlFlowGraph {
 pub struct ControlFlowGraphPass;
 
 impl Pass for ControlFlowGraphPass {
+    fn debug(
+        &self,
+        _module: &crate::ir::Module,
+        ctx: &crate::backend::Context,
+        debug_mode: Option<DebugPass>,
+    ) -> bool {
+        if !matches!(debug_mode, Some(DebugPass::ControlFlowGraph)) {
+            return false;
+        }
+
+        eprintln!("{:?}", DebugPass::ControlFlowGraph);
+
+        let mut in_bound = ctx
+            .cfg
+            .in_bound
+            .iter()
+            .map(|(k, v)| (k, v))
+            .collect::<Vec<_>>();
+        in_bound.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
+        eprintln!("in_bound: {in_bound:#?}",);
+        let mut out_bound = ctx
+            .cfg
+            .out_bound
+            .iter()
+            .map(|(k, v)| (k, v))
+            .collect::<Vec<_>>();
+        out_bound.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
+        eprintln!("out_bound: {out_bound:#?}",);
+
+        true
+    }
+
     fn run(
         &mut self,
         module: &mut crate::ir::Module,

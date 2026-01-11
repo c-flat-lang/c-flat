@@ -1,0 +1,71 @@
+---
+source: bitbox/src/text/lexer/test.rs
+expression: snapshot_lexing(contents)
+---
+public function main() s32 {
+^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: 0..6 }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 7..15 }
+                ^^^^ Token { kind: Identifier, lexeme: "main", span: 16..20 }
+                    ^ Token { kind: LeftParen, lexeme: "(", span: 20..21 }
+                     ^ Token { kind: RightParen, lexeme: ")", span: 21..22 }
+                       ^^^ Token { kind: Identifier, lexeme: "s32", span: 23..26 }
+                           ^^ Token { kind: LeftBrace, lexeme: "{", span: 27..29 }
+  %entry:
+  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: 31..38 }
+    @alloc s32 : arr, 3
+^ Token { kind: Delimiter, lexeme: "\\n", span: 38..39 }
+    ^^^^^^ Token { kind: Instruction(Alloc), lexeme: "@alloc", span: 43..49 }
+           ^^^ Token { kind: Identifier, lexeme: "s32", span: 50..53 }
+               ^ Token { kind: Colon, lexeme: ":", span: 54..55 }
+                 ^^^ Token { kind: Identifier, lexeme: "arr", span: 56..59 }
+                    ^ Token { kind: Comma, lexeme: ",", span: 59..60 }
+                      ^ Token { kind: Number, lexeme: "3", span: 61..62 }
+    @elemset s32 : arr, 0, 100
+^ Token { kind: Delimiter, lexeme: "\\n", span: 62..63 }
+    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: 67..75 }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: 76..79 }
+                 ^ Token { kind: Colon, lexeme: ":", span: 80..81 }
+                   ^^^ Token { kind: Identifier, lexeme: "arr", span: 82..85 }
+                      ^ Token { kind: Comma, lexeme: ",", span: 85..86 }
+                        ^ Token { kind: Number, lexeme: "0", span: 87..88 }
+                         ^ Token { kind: Comma, lexeme: ",", span: 88..89 }
+                           ^^^ Token { kind: Number, lexeme: "100", span: 90..93 }
+    @elemset s32 : arr, 1, 200
+^ Token { kind: Delimiter, lexeme: "\\n", span: 93..94 }
+    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: 98..106 }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: 107..110 }
+                 ^ Token { kind: Colon, lexeme: ":", span: 111..112 }
+                   ^^^ Token { kind: Identifier, lexeme: "arr", span: 113..116 }
+                      ^ Token { kind: Comma, lexeme: ",", span: 116..117 }
+                        ^ Token { kind: Number, lexeme: "1", span: 118..119 }
+                         ^ Token { kind: Comma, lexeme: ",", span: 119..120 }
+                           ^^^ Token { kind: Number, lexeme: "200", span: 121..124 }
+    @elemset s32 : arr, 2, 300
+^ Token { kind: Delimiter, lexeme: "\\n", span: 124..125 }
+    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: 129..137 }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: 138..141 }
+                 ^ Token { kind: Colon, lexeme: ":", span: 142..143 }
+                   ^^^ Token { kind: Identifier, lexeme: "arr", span: 144..147 }
+                      ^ Token { kind: Comma, lexeme: ",", span: 147..148 }
+                        ^ Token { kind: Number, lexeme: "2", span: 149..150 }
+                         ^ Token { kind: Comma, lexeme: ",", span: 150..151 }
+                           ^^^ Token { kind: Number, lexeme: "300", span: 152..155 }
+    @elemget s32: ret, arr, 1
+^ Token { kind: Delimiter, lexeme: "\\n", span: 155..156 }
+    ^^^^^^^^ Token { kind: Instruction(ElemGet), lexeme: "@elemget", span: 160..168 }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: 169..172 }
+                ^ Token { kind: Colon, lexeme: ":", span: 172..173 }
+                  ^^^ Token { kind: Identifier, lexeme: "ret", span: 174..177 }
+                     ^ Token { kind: Comma, lexeme: ",", span: 177..178 }
+                       ^^^ Token { kind: Identifier, lexeme: "arr", span: 179..182 }
+                          ^ Token { kind: Comma, lexeme: ",", span: 182..183 }
+                            ^ Token { kind: Number, lexeme: "1", span: 184..185 }
+    @ret s32 : ret
+^ Token { kind: Delimiter, lexeme: "\\n", span: 185..186 }
+    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: 190..194 }
+         ^^^ Token { kind: Identifier, lexeme: "s32", span: 195..198 }
+             ^ Token { kind: Colon, lexeme: ":", span: 199..200 }
+               ^^^ Token { kind: Identifier, lexeme: "ret", span: 201..204 }
+}
+^ Token { kind: Delimiter, lexeme: "\\n", span: 204..205 }
+^^ Token { kind: RightBrace, lexeme: "}", span: 205..207 }

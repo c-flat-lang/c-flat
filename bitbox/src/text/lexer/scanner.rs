@@ -87,6 +87,7 @@ impl<'a> Lexer<'a> {
             "@jump" => Instruction::Jump,
             "@jumpif" => Instruction::JumpIf,
             "@load" => Instruction::Load,
+            "@phi" => Instruction::Phi,
             "@mul" => Instruction::Mul,
             "@ret" => Instruction::Ret,
             "@sub" => Instruction::Sub,

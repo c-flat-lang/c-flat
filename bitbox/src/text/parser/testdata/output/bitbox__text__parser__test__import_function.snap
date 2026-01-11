@@ -1,0 +1,14 @@
+---
+source: bitbox/src/text/parser/test.rs
+expression: snapshot_parsing(contents)
+---
+Err(
+    ErrorExpectedToken {
+        actual: Token {
+            kind: Star,
+            lexeme: "*",
+            span: 61..62,
+        },
+        expected: Identifier,
+    },
+)

@@ -4,6 +4,7 @@ import "codemirror/theme/dracula.css";
 import "codemirror/addon/mode/simple.js";
 import "codemirror/mode/rust/rust.js";
 import "codemirror/keymap/vim.js";
+import "codemirror/addon/display/panel.js";
 import init, { compile_source, Cli, Target } from "../pkg/cflat.js";
 
 async function run(buffer) {
@@ -54,6 +55,7 @@ async function main() {
   const vimStatus = document.getElementById("vim-status");
   let keys = "";
   CodeMirror.on(editor, "vim-keypress", function (key) {
+    console.log("vim keypress: ", { key });
     keys = keys + key;
     vimStatus.innerHTML = keys;
   });

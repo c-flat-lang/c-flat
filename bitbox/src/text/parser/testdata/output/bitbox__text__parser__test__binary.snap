@@ -1,0 +1,172 @@
+---
+source: bitbox/src/text/parser/test.rs
+expression: snapshot_parsing(contents)
+---
+Ok(
+    Module {
+        functions: [
+            Function {
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "main",
+                    span: 16..20,
+                },
+                visibility: Public,
+                params: [],
+                return_type: Token {
+                    kind: Identifier,
+                    lexeme: "s32",
+                    span: 23..26,
+                },
+                block: [
+                    BasicBlock {
+                        label: Token {
+                            kind: LabelDefinition,
+                            lexeme: "entry",
+                            span: 31..38,
+                        },
+                        instructions: [
+                            Instruction {
+                                instruction_kind: Alloc,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "s32",
+                                        span: 50..53,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "arr",
+                                        span: 56..59,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "3",
+                                        span: 61..62,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: ElemSet,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "s32",
+                                        span: 76..79,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "arr",
+                                        span: 82..85,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "0",
+                                        span: 87..88,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "100",
+                                        span: 90..93,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: ElemSet,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "s32",
+                                        span: 107..110,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "arr",
+                                        span: 113..116,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "1",
+                                        span: 118..119,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "200",
+                                        span: 121..124,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: ElemSet,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "s32",
+                                        span: 138..141,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "arr",
+                                        span: 144..147,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "2",
+                                        span: 149..150,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "300",
+                                        span: 152..155,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: ElemGet,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "s32",
+                                        span: 169..172,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "ret",
+                                        span: 174..177,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "arr",
+                                        span: 179..182,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "1",
+                                        span: 184..185,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: Ret,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "s32",
+                                        span: 195..198,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "ret",
+                                        span: 201..204,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+        imports: [],
+        constants: [],
+    },
+)

@@ -1,6 +1,6 @@
 import function core::write(s32, s32) s32
 
-const input : s32 = 5
+// const input : s32 = 5
 
 function factorial(n: s32) s32 {
   %entry:
@@ -20,7 +20,8 @@ function factorial(n: s32) s32 {
 
 public function main() s32 {
   %entry:
+    @load s32 : input, 5
     @call s32 : fact_result factorial(input)
     @call s32 : exit_code write(fact_result, 0)
-    @ret s32 : exit_code
+    @ret s32 : fact_result
 }

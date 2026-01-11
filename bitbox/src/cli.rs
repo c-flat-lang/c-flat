@@ -1,19 +1,6 @@
 use bitbox::Target;
-#[cfg(not(feature = "wasm"))]
 use std::str::FromStr;
-#[cfg(feature = "wasm")]
-use wasm_bindgen::prelude::*;
 
-#[cfg(feature = "wasm")]
-#[wasm_bindgen]
-#[derive(Debug, Clone)]
-pub struct Cli {
-    debug_mode: Option<DebugMode>,
-    target: Target,
-    file_path: String,
-}
-
-#[cfg(not(feature = "wasm"))]
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
@@ -21,33 +8,7 @@ pub struct Cli {
     pub file_path: String,
 }
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
 impl Cli {
-    #[cfg_attr(feature = "wasm", wasm_bindgen(constructor))]
-    pub fn new(target: Target, file_path: String, debug_mode: Option<DebugMode>) -> Self {
-        Self {
-            target,
-            file_path,
-            debug_mode,
-        }
-    }
-
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
-    pub fn target(&self) -> Target {
-        self.target
-    }
-
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
-    pub fn file_path(&self) -> String {
-        self.file_path.clone()
-    }
-
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
-    pub fn debug_mode(&self) -> Option<DebugMode> {
-        self.debug_mode
-    }
-
-    #[cfg(not(feature = "wasm"))]
     pub fn parse() -> Self {
         let args = std::env::args().skip(1).collect::<Vec<_>>();
 
@@ -121,7 +82,6 @@ impl Cli {
     }
 }
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Debug, Clone, Copy)]
 pub enum DebugMode {
     Ast,

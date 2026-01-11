@@ -2,6 +2,8 @@ use crate::ir::{BasicBlock, Operand, Type, Variable};
 use std::fmt;
 use yansi::Paint;
 
+pub type Label = String;
+
 /// All instructions in text form start with @
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
@@ -19,6 +21,8 @@ pub enum Instruction {
     /// `@cmp <type> : <des>, <lhs>, <rhs>`
     /// `@cmp u1 : is_one, n, 1`
     Cmp(ICmp),
+    /// @copy <type> : <des>, <src>
+    Copy(ICopy),
     /// `@elemget <type> : <des>, <ptr>, <index>`
     ElemGet(IElemGet),
     /// `@elemset <type> : <addr>, <index>, <value>`
@@ -64,6 +68,7 @@ impl fmt::Display for Instruction {
             Instruction::Mul(imul) => write!(f, "{imul}"),
             Instruction::Div(idiv) => write!(f, "{idiv}"),
             Instruction::Cmp(icmp) => write!(f, "{icmp}"),
+            Instruction::Copy(icopy) => write!(f, "{icopy}"),
             Instruction::ElemGet(ielemget) => write!(f, "{ielemget}"),
             Instruction::ElemSet(ielemset) => write!(f, "{ielemset}"),
             Instruction::Gt(igt) => write!(f, "{igt}"),
@@ -203,6 +208,25 @@ create_binary_instruction!(
     Lt,
     "lt"
 );
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ICopy {
+    pub des: Variable,
+    pub src: Operand,
+}
+
+impl fmt::Display for ICopy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}",
+            Paint::blue("@copy"),
+            Paint::yellow(&self.des.ty),
+            Paint::yellow(&self.des),
+            color_op(&self.src),
+        )
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IElemGet {
@@ -493,11 +517,11 @@ impl From<IJumpIf> for Instruction {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IPhi {
     pub des: Variable,
-    pub branches: Vec<(Variable, String)>,
+    pub branches: Vec<(Label, Variable)>,
 }
 
 impl IPhi {
-    pub fn new(des: Variable, branches: Vec<(Variable, String)>) -> Self {
+    pub fn new(des: Variable, branches: Vec<(Label, Variable)>) -> Self {
         Self { des, branches }
     }
 }
@@ -511,8 +535,8 @@ impl fmt::Display for IPhi {
             Paint::yellow(&self.des.ty),
             color_var(&self.des),
         )?;
-        for (v, b) in self.branches.iter() {
-            writeln!(f, "    [{}, {}]", color_var(v), short_uuid(b))?;
+        for (b, v) in self.branches.iter() {
+            writeln!(f, "    [{}, {}]", short_uuid(b), color_var(v))?;
         }
         Ok(())
     }

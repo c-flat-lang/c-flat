@@ -6,7 +6,7 @@ use crate::ir::instruction::{
     IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IIfElse, ILoad, ILt, ISub,
 };
 use crate::ir::{self, Module, Type, Visibility};
-use crate::passes::Pass;
+use crate::passes::{DebugPass, Pass};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
     Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, ImportSection,
@@ -17,6 +17,28 @@ use wasm_encoder::{
 pub struct EmitWasm32Pass;
 
 impl Pass for EmitWasm32Pass {
+    fn debug(
+        &self,
+        module: &crate::ir::Module,
+        ctx: &crate::backend::Context,
+        debug_mode: Option<DebugPass>,
+    ) -> bool {
+        let Some(DebugPass::EmitWasm32) = debug_mode else {
+            return false;
+        };
+        eprintln!("--- Dump Wasm32 ---");
+        let mut wasm_module = ctx.output.get_wasm32().clone();
+        let bytes = wasm_module.finish();
+        let Ok(wat) = wasmprinter::print_bytes(&bytes) else {
+            eprintln!("Failed to print wasm module");
+            return true;
+        };
+
+        eprintln!("{}", wat);
+
+        true
+    }
+
     fn run(
         &mut self,
         module: &mut Module,
@@ -90,7 +112,7 @@ impl<'ctx> Wasm32LowerContext<'ctx> {
 /// 10      0x0a    Code
 /// 11      0x0b    Data
 /// 12      0x0c    Data Count
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Wasm32Module {
     module: WasmModule,
     type_section: TypeSection,
@@ -255,6 +277,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Alloc(ialloc) => ialloc.lower(ctx, target)?,
             ir::Instruction::Call(icall) => icall.lower(ctx, target)?,
             ir::Instruction::Cmp(icmp) => icmp.lower(ctx, target)?,
+            ir::Instruction::Copy(icopy) => icopy.lower(ctx, target)?,
             ir::Instruction::ElemGet(ielemget) => ielemget.lower(ctx, target)?,
             ir::Instruction::ElemSet(ielemset) => ielemset.lower(ctx, target)?,
             ir::Instruction::Gt(igt) => igt.lower(ctx, target)?,
@@ -265,69 +288,9 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Mul(imul) => todo!("@mul"),
             ir::Instruction::Phi(..) => todo!("@phi"),
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
-            ir::Instruction::Sub(ISub { des, lhs, rhs }) => {
-                lhs.lower(ctx, target);
-                rhs.lower(ctx, target);
-                match des.ty.clone().into() {
-                    ValType::I32 => target.assembler.i32_sub(),
-                    ValType::I64 => todo!("@gt i64"),
-                    ValType::F32 => todo!("@gt f32"),
-                    ValType::F64 => todo!("@gt f64"),
-                    ValType::V128 => todo!("@gt v128"),
-                    ValType::Ref(_) => todo!("@gt ref"),
-                };
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == des.name)
-                else {
-                    panic!("Variable {:?} not found", des);
-                };
-                target.assembler.local_set(idx as u32);
-            }
+            ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             ir::Instruction::Div(idiv) => todo!("@div"),
-            ir::Instruction::IfElse(IIfElse {
-                cond,
-                cond_result,
-                then_branch,
-                else_branch,
-                result,
-            }) => {
-                for block in cond.iter() {
-                    block.lower(ctx, target)?;
-                }
-
-                // let ty: BlockType = result
-                //     .as_ref()
-                //     .map(|r| r.ty.clone().into())
-                //     .unwrap_or(BlockType::Empty);
-
-                let Some(idx) = ctx
-                    .local_function_variables
-                    .get(&target.function_name)
-                    .iter()
-                    .position(|v| v.name == cond_result.name)
-                else {
-                    panic!("Variable {:?} not found", cond_result);
-                };
-
-                target.assembler.local_get(idx as u32);
-                target.assembler.if_(BlockType::Empty);
-
-                for block in then_branch.iter() {
-                    block.lower(ctx, target)?;
-                }
-
-                if !else_branch.is_empty() {
-                    target.assembler.else_();
-                    for block in else_branch.iter() {
-                        block.lower(ctx, target)?;
-                    }
-                }
-
-                target.assembler.end();
-            }
+            ir::Instruction::IfElse(iifelse) => iifelse.lower(ctx, target)?,
         }
         Ok(())
     }

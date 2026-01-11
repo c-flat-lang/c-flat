@@ -1,5 +1,4 @@
-#![allow(unused)]
-use crate::error::{CompilerError, ErrorUndefinedSymbol, Errors, Report, Result};
+use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
 use crate::stage::lexer::token::Token;
 
 use crate::stage::parser::ast::{self, Expr};
@@ -53,18 +52,18 @@ impl SymbolTableBuilder {
         }
     }
 
-    fn walk_use(&mut self, item: &ast::Use) {
+    fn walk_use(&mut self, _: &ast::Use) {
         todo!()
     }
 
     fn walk_function(&mut self, function: &ast::Function) {
         let ast::Function {
             visibility,
-            fn_token,
             name,
             params,
             return_type,
             body,
+            ..
         } = function;
 
         self.table.push(Symbol {
@@ -92,12 +91,12 @@ impl SymbolTableBuilder {
         self.table.exit_scope();
     }
 
-    fn walk_type_def(&mut self, type_def: &ast::TypeDef) {
+    fn walk_type_def(&mut self, _: &ast::TypeDef) {
         todo!()
     }
 
-    fn walk_struct(&mut self, struct_def: &ast::Struct) {
-        todo!()
+    fn walk_struct(&mut self, _: &ast::ExprStruct) {
+        todo!("walk_expr_struct");
     }
 
     fn walk_block(&mut self, block: &ast::Block) {
@@ -117,29 +116,22 @@ impl SymbolTableBuilder {
             ast::Expr::Return(ast::ExprReturn {
                 expr: Some(expr), ..
             }) => self.walk_expr(expr),
-            ast::Expr::Struct(expr) => todo!("walk_expr_struct"),
+            ast::Expr::Struct(expr) => self.walk_struct(expr),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
-            Expr::Return(expr_return) => todo!(),
-            Expr::Struct(expr_struct) => todo!(),
-            Expr::Declare(expr_decl) => todo!(),
-            Expr::Assignment(expr_assignment) => todo!(),
-            Expr::Litral(litral) => {}
-            Expr::Call(expr_call) => todo!(),
-            Expr::Binary(expr_binary) => todo!(),
-            Expr::Identifier(token) => todo!(),
-            Expr::IfElse(expr_if_else) => todo!(),
-            Expr::Array(expr_array) => todo!(),
+            Expr::Return(..) => todo!(),
+            Expr::Litral(..) => {}
+            Expr::Array(..) => todo!(),
             Expr::ArrayIndex(expr) => {
                 self.walk_expr(&expr.expr);
                 self.walk_expr(&expr.index);
             }
-            Expr::ArrayRepeat(expr) => {
-                // No need to do anything
+            Expr::ArrayRepeat(_) => {
+                unreachable!("No need to do anything")
             }
         }
     }
@@ -184,7 +176,7 @@ impl SymbolTableBuilder {
     }
 
     fn walk_expr_identifier(&mut self, token: &Token) {
-        let Some(symbol) = self.table.get(token.lexeme.as_str()) else {
+        if self.table.get(token.lexeme.as_str()).is_none() {
             self.errors.push(Box::new(ErrorUndefinedSymbol {
                 found: token.clone(),
             }));
@@ -197,7 +189,6 @@ impl SymbolTableBuilder {
             condition,
             then_branch,
             else_branch,
-            ty,
             ..
         } = expr;
 
@@ -260,9 +251,9 @@ impl ScopePath {
         Self(parts.to_vec())
     }
 
-    fn as_key(&self) -> String {
-        self.0.join(SymbolTable::SEPARATOR)
-    }
+    // fn as_key(&self) -> String {
+    //     self.0.join(SymbolTable::SEPARATOR)
+    // }
 
     fn global() -> Self {
         Self::new(&[SymbolTable::GLOBAL_SCOPE.to_string()])

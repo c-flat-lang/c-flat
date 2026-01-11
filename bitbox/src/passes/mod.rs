@@ -6,6 +6,10 @@ pub mod lowering;
 #[derive(Debug, Clone, Copy)]
 pub enum DebugPass {
     LoweredIr,
+    EmitWasm32,
+    EmitBitbeat,
+    ControlFlowGraph,
+    LivenessAnalysis,
 }
 
 pub trait Pass {

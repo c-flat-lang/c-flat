@@ -35,14 +35,20 @@ pub enum TokenKind {
     Keyword(Keyword),
     Label,
     LabelDefinition,
+    /// '{'
     LeftBrace,
+    /// '['
     LeftBracket,
+    /// '('
     LeftParen,
     Number,
     PathSeparator,
     Plus,
+    /// '}'
     RightBrace,
+    /// ']'
     RightBracket,
+    /// ')'
     RightParen,
     Semicolon,
     Star,
@@ -66,6 +72,26 @@ pub enum Instruction {
     Sub,
 }
 
+impl std::fmt::Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Instruction::Add => write!(f, "@add"),
+            Instruction::Alloc => write!(f, "@alloc"),
+            Instruction::Call => write!(f, "@call"),
+            Instruction::Cmp => write!(f, "@cmp"),
+            Instruction::ElemGet => write!(f, "@elemget"),
+            Instruction::ElemSet => write!(f, "@elemset"),
+            Instruction::Jump => write!(f, "@jump"),
+            Instruction::JumpIf => write!(f, "@jumpif"),
+            Instruction::Load => write!(f, "@load"),
+            Instruction::Mul => write!(f, "@mul"),
+            Instruction::Phi => write!(f, "@phi"),
+            Instruction::Ret => write!(f, "@ret"),
+            Instruction::Sub => write!(f, "@sub"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Directive {
     Len,
@@ -77,4 +103,15 @@ pub enum Keyword {
     Import,
     Function,
     Public,
+}
+
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Keyword::Const => write!(f, "const"),
+            Keyword::Import => write!(f, "import"),
+            Keyword::Function => write!(f, "function"),
+            Keyword::Public => write!(f, "public"),
+        }
+    }
 }

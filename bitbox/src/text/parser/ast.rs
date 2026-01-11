@@ -50,14 +50,13 @@ impl Function {
 }
 
 #[derive(Debug)]
-pub enum ImportKind {
-    Function,
+pub enum Import {
+    Function(ImportFunction),
 }
 
 #[derive(Debug)]
-pub struct Import {
+pub struct ImportFunction {
     pub module_name: Token,
-    pub kind: ImportKind,
     pub name: Token,
     pub params: Vec<Token>,
     pub return_type: Token,

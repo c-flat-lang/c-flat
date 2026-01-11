@@ -1,4 +1,3 @@
 pub mod emit;
-pub mod instruction;
 
-pub use emit::EmitWasm32Pass;
+pub use emit::{EmitWasm32Pass, Wasm32Module};

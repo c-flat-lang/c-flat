@@ -1,0 +1,210 @@
+---
+source: bitbox/src/text/parser/test.rs
+expression: snapshot_parsing(contents)
+---
+Ok(
+    Module {
+        functions: [
+            Function {
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "main",
+                    span: 16..20,
+                },
+                visibility: Public,
+                params: [],
+                return_type: Token {
+                    kind: Identifier,
+                    lexeme: "s32",
+                    span: 23..26,
+                },
+                block: [
+                    BasicBlock {
+                        label: Token {
+                            kind: LabelDefinition,
+                            lexeme: "entry",
+                            span: 31..38,
+                        },
+                        instructions: [
+                            Instruction {
+                                instruction_kind: Load,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "u8",
+                                        span: 49..51,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "start",
+                                        span: 55..60,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "0",
+                                        span: 62..63,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: Jump,
+                                arguments: [
+                                    Token {
+                                        kind: Label,
+                                        lexeme: "loop",
+                                        span: 74..79,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    BasicBlock {
+                        label: Token {
+                            kind: LabelDefinition,
+                            lexeme: "loop",
+                            span: 83..89,
+                        },
+                        instructions: [
+                            Instruction {
+                                instruction_kind: Phi,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "u8",
+                                        span: 99..101,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "result",
+                                        span: 104..110,
+                                    },
+                                    Token {
+                                        kind: Label,
+                                        lexeme: "entry",
+                                        span: 114..120,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "start",
+                                        span: 122..127,
+                                    },
+                                    Token {
+                                        kind: Label,
+                                        lexeme: "loop",
+                                        span: 131..136,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "next",
+                                        span: 138..142,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: Cmp,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "u1",
+                                        span: 154..156,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "is_running",
+                                        span: 159..169,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "n1",
+                                        span: 171..173,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "10",
+                                        span: 175..177,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: Add,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "u8",
+                                        span: 187..189,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "next",
+                                        span: 192..196,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "result",
+                                        span: 198..204,
+                                    },
+                                    Token {
+                                        kind: Number,
+                                        lexeme: "1",
+                                        span: 206..207,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: JumpIf,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "is_running",
+                                        span: 221..231,
+                                    },
+                                    Token {
+                                        kind: Label,
+                                        lexeme: "exit",
+                                        span: 233..238,
+                                    },
+                                ],
+                            },
+                            Instruction {
+                                instruction_kind: Jump,
+                                arguments: [
+                                    Token {
+                                        kind: Label,
+                                        lexeme: "loop",
+                                        span: 249..254,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                    BasicBlock {
+                        label: Token {
+                            kind: LabelDefinition,
+                            lexeme: "exit",
+                            span: 258..264,
+                        },
+                        instructions: [
+                            Instruction {
+                                instruction_kind: Ret,
+                                arguments: [
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "u8",
+                                        span: 274..276,
+                                    },
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "result",
+                                        span: 279..285,
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+        imports: [],
+        constants: [],
+    },
+)

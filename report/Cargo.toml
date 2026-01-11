@@ -1,0 +1,10 @@
+[package]
+name = "report"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[lib]
+name = "report"
+src = "src/lib.rs"

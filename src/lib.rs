@@ -3,7 +3,7 @@ pub mod error;
 pub mod stage;
 use stage::Stage;
 
-use crate::error::CompilerError;
+use crate::error::Result;
 pub use bitbox::{self, Target};
 #[cfg(feature = "wasm")]
 pub use bitbox::{backend::CompilerResult, passes::DebugPass};
@@ -12,11 +12,8 @@ pub use cli::{Cli, DebugMode};
 use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "wasm")]
-pub fn front_end_compiler(
-    src: &str,
-    cli_options: Cli,
-) -> Result<bitbox::ir::Module, CompilerError> {
-    let tokens = stage::lexer::Lexer::default().run(src);
+pub fn front_end_compiler(src: &str, cli_options: Cli) -> Result<bitbox::ir::Module> {
+    let tokens = stage::lexer::Lexer.run(src);
 
     if let Some(DebugMode::Token) = cli_options.debug_mode() {
         for token in &tokens {
@@ -51,7 +48,10 @@ pub fn front_end_compiler(
 
 #[cfg(feature = "wasm")]
 #[wasm_bindgen]
-pub fn compile_source(source: &str, cli_options: Cli) -> Result<js_sys::Uint8Array, JsValue> {
+pub fn compile_source(
+    source: &str,
+    cli_options: Cli,
+) -> std::result::Result<js_sys::Uint8Array, JsValue> {
     let mut module = match front_end_compiler(&source, cli_options.clone()) {
         Ok(module) => module,
         Err(err) => {
@@ -77,10 +77,7 @@ pub fn compile_source(source: &str, cli_options: Cli) -> Result<js_sys::Uint8Arr
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn front_end_compiler(
-    src: &str,
-    cli_options: &Cli,
-) -> Result<bitbox::ir::Module, CompilerError> {
+pub fn front_end_compiler(src: &str, cli_options: &Cli) -> Result<bitbox::ir::Module> {
     let tokens = stage::lexer::Lexer.run(src);
 
     if let Some(DebugMode::Token) = cli_options.debug_mode {

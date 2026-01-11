@@ -2,7 +2,7 @@
 use super::Stage;
 use crate::stage::lexer::token::{Token, TokenKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
-use crate::{error::CompilerError, stage::parser::ast, stage::parser::ast::Item};
+use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbeat::Instruction;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
 use bitbox::ir::{Constant, Module, Operand, Type, Variable, Visibility};
@@ -67,11 +67,8 @@ impl IRBuilder {
     }
 }
 
-impl Stage<(SymbolTable, Vec<Item>), Result<Module, CompilerError>> for IRBuilder {
-    fn run(
-        &mut self,
-        (symbol_table, ast): (SymbolTable, Vec<Item>),
-    ) -> Result<Module, CompilerError> {
+impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
+    fn run(&mut self, (symbol_table, ast): (SymbolTable, Vec<Item>)) -> Result<Module> {
         self.symbol_table = symbol_table;
         let mut mb = ModuleBuilder::default();
         for item in ast {

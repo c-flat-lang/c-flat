@@ -58,7 +58,7 @@ impl std::fmt::Display for Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Variable {
     pub name: String,
     pub ty: Type,
@@ -73,10 +73,10 @@ impl Variable {
             version: 0,
         }
     }
-    pub fn new_version(self) -> Self {
+    pub fn new_version(&self) -> Self {
         Self {
             version: self.version + 1,
-            ..self
+            ..self.clone()
         }
     }
 }

@@ -1,0 +1,94 @@
+---
+source: bitbox/src/text/lexer/test.rs
+expression: snapshot_lexing(contents)
+---
+public function main() s32 {
+^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: 0..6 }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 7..15 }
+                ^^^^ Token { kind: Identifier, lexeme: "main", span: 16..20 }
+                    ^ Token { kind: LeftParen, lexeme: "(", span: 20..21 }
+                     ^ Token { kind: RightParen, lexeme: ")", span: 21..22 }
+                       ^^^ Token { kind: Identifier, lexeme: "s32", span: 23..26 }
+                           ^^ Token { kind: LeftBrace, lexeme: "{", span: 27..29 }
+  %entry:
+  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: 31..38 }
+    @load u8 :  start, 0
+^ Token { kind: Delimiter, lexeme: "\\n", span: 38..39 }
+    ^^^^^ Token { kind: Instruction(Load), lexeme: "@load", span: 43..48 }
+          ^^ Token { kind: Identifier, lexeme: "u8", span: 49..51 }
+             ^ Token { kind: Colon, lexeme: ":", span: 52..53 }
+                ^^^^^ Token { kind: Identifier, lexeme: "start", span: 55..60 }
+                     ^ Token { kind: Comma, lexeme: ",", span: 60..61 }
+                       ^ Token { kind: Number, lexeme: "0", span: 62..63 }
+    @jump %loop
+^ Token { kind: Delimiter, lexeme: "\\n", span: 63..64 }
+    ^^^^^ Token { kind: Instruction(Jump), lexeme: "@jump", span: 68..73 }
+          ^^^^^ Token { kind: Label, lexeme: "loop", span: 74..79 }
+
+^^ Token { kind: Delimiter, lexeme: "\\n", span: 79..81 }
+  %loop:
+  ^^^^^^ Token { kind: LabelDefinition, lexeme: "loop", span: 83..89 }
+    @phi u8 : result, [(%entry, start), (%loop, next)]
+^ Token { kind: Delimiter, lexeme: "\\n", span: 89..90 }
+    ^^^^ Token { kind: Instruction(Phi), lexeme: "@phi", span: 94..98 }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: 99..101 }
+            ^ Token { kind: Colon, lexeme: ":", span: 102..103 }
+              ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 104..110 }
+                    ^ Token { kind: Comma, lexeme: ",", span: 110..111 }
+                      ^ Token { kind: LeftBracket, lexeme: "[", span: 112..113 }
+                       ^ Token { kind: LeftParen, lexeme: "(", span: 113..114 }
+                        ^^^^^^ Token { kind: Label, lexeme: "entry", span: 114..120 }
+                              ^ Token { kind: Comma, lexeme: ",", span: 120..121 }
+                                ^^^^^ Token { kind: Identifier, lexeme: "start", span: 122..127 }
+                                     ^ Token { kind: RightParen, lexeme: ")", span: 127..128 }
+                                      ^ Token { kind: Comma, lexeme: ",", span: 128..129 }
+                                        ^ Token { kind: LeftParen, lexeme: "(", span: 130..131 }
+                                         ^^^^^ Token { kind: Label, lexeme: "loop", span: 131..136 }
+                                              ^ Token { kind: Comma, lexeme: ",", span: 136..137 }
+                                                ^^^^ Token { kind: Identifier, lexeme: "next", span: 138..142 }
+                                                    ^ Token { kind: RightParen, lexeme: ")", span: 142..143 }
+                                                     ^ Token { kind: RightBracket, lexeme: "]", span: 143..144 }
+    @cmp u1 : is_running, n1, 10
+^ Token { kind: Delimiter, lexeme: "\\n", span: 144..145 }
+    ^^^^ Token { kind: Instruction(Cmp), lexeme: "@cmp", span: 149..153 }
+         ^^ Token { kind: Identifier, lexeme: "u1", span: 154..156 }
+            ^ Token { kind: Colon, lexeme: ":", span: 157..158 }
+              ^^^^^^^^^^ Token { kind: Identifier, lexeme: "is_running", span: 159..169 }
+                        ^ Token { kind: Comma, lexeme: ",", span: 169..170 }
+                          ^^ Token { kind: Identifier, lexeme: "n1", span: 171..173 }
+                            ^ Token { kind: Comma, lexeme: ",", span: 173..174 }
+                              ^^ Token { kind: Number, lexeme: "10", span: 175..177 }
+    @add u8 : next, result, 1
+^ Token { kind: Delimiter, lexeme: "\\n", span: 177..178 }
+    ^^^^ Token { kind: Instruction(Add), lexeme: "@add", span: 182..186 }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: 187..189 }
+            ^ Token { kind: Colon, lexeme: ":", span: 190..191 }
+              ^^^^ Token { kind: Identifier, lexeme: "next", span: 192..196 }
+                  ^ Token { kind: Comma, lexeme: ",", span: 196..197 }
+                    ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 198..204 }
+                          ^ Token { kind: Comma, lexeme: ",", span: 204..205 }
+                            ^ Token { kind: Number, lexeme: "1", span: 206..207 }
+
+^^ Token { kind: Delimiter, lexeme: "\\n", span: 207..209 }
+    @jumpif is_running, %exit
+    ^^^^^^^ Token { kind: Instruction(JumpIf), lexeme: "@jumpif", span: 213..220 }
+            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "is_running", span: 221..231 }
+                      ^ Token { kind: Comma, lexeme: ",", span: 231..232 }
+                        ^^^^^ Token { kind: Label, lexeme: "exit", span: 233..238 }
+    @jump %loop
+^ Token { kind: Delimiter, lexeme: "\\n", span: 238..239 }
+    ^^^^^ Token { kind: Instruction(Jump), lexeme: "@jump", span: 243..248 }
+          ^^^^^ Token { kind: Label, lexeme: "loop", span: 249..254 }
+
+^^ Token { kind: Delimiter, lexeme: "\\n", span: 254..256 }
+  %exit:
+  ^^^^^^ Token { kind: LabelDefinition, lexeme: "exit", span: 258..264 }
+    @ret u8 : result
+^ Token { kind: Delimiter, lexeme: "\\n", span: 264..265 }
+    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: 269..273 }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: 274..276 }
+            ^ Token { kind: Colon, lexeme: ":", span: 277..278 }
+              ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 279..285 }
+}
+^ Token { kind: Delimiter, lexeme: "\\n", span: 285..286 }
+^^ Token { kind: RightBrace, lexeme: "}", span: 286..288 }
