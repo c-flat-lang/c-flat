@@ -1,14 +1,14 @@
 use bitbeat::Reg;
 
 use super::BitbeatLowerContext;
-use crate::backend::bitbeat::passes::emit::OperandResult;
 use crate::backend::Lower;
+use crate::backend::bitbeat::passes::emit::OperandResult;
 
+use crate::ir::Type;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IJump, IJumpIf, ILoad, ILt, IMul,
-    IReturn, ISub,
+    IReturn, ISub, IXOr,
 };
-use crate::ir::Type;
 
 impl Lower<BitbeatLowerContext<'_>> for IAdd {
     type Output = ();
@@ -144,6 +144,21 @@ impl Lower<BitbeatLowerContext<'_>> for IElemSet {
     }
 }
 
+impl Lower<BitbeatLowerContext<'_>> for IXOr {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut BitbeatLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let lhs = self.lhs.lower(ctx, target)?.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?.lower(ctx, target)?;
+        let des = self.des.lower(ctx, target)?;
+        target.assembler.xor(des, lhs, rhs);
+        Ok(())
+    }
+}
+
 impl Lower<BitbeatLowerContext<'_>> for IGt {
     type Output = ();
     fn lower(
@@ -162,6 +177,10 @@ impl Lower<BitbeatLowerContext<'_>> for ILt {
         ctx: &mut crate::backend::Context,
         target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
+        let des = self.des.lower(ctx, target)?;
+        let lhs = self.lhs.lower(ctx, target)?.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?.lower(ctx, target)?;
+        target.assembler.lt(des, lhs, rhs);
         Ok(())
     }
 }

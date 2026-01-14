@@ -67,6 +67,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Copy(..) => todo!("copy"),
             ir::Instruction::ElemGet(..) => todo!("elemget"),
             ir::Instruction::ElemSet(..) => todo!("elemset"),
+            ir::Instruction::XOr(..) => todo!("xor"),
             ir::Instruction::Gt(..) => todo!("gt"),
             ir::Instruction::Lt(..) => todo!("lt"),
             ir::Instruction::Jump(_) => todo!("jump"),

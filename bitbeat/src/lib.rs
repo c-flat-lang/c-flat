@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, VecDeque};
 use std::rc::Rc;
 use std::sync::Arc;
 
+use ron::ser::PrettyConfig;
 use serde::{Deserialize, Serialize};
 
 pub type Word = i64;
@@ -50,6 +51,11 @@ pub enum Instruction {
         lhs: Reg,
         rhs: Reg,
     },
+    Lt {
+        dst: Reg,
+        lhs: Reg,
+        rhs: Reg,
+    },
     Mov {
         dst: Reg,
         src: Reg,
@@ -76,6 +82,11 @@ pub enum Instruction {
     },
     Recv {
         dst_reg: Reg,
+    },
+    XOr {
+        dst: Reg,
+        lhs: Reg,
+        rhs: Reg,
     },
 }
 
@@ -142,6 +153,16 @@ impl<'a> InstructionBuilder<'a> {
 
     pub fn cmp_eq(&mut self, dst: Reg, lhs: Reg, rhs: Reg) -> &mut Self {
         self.instructions.push(Instruction::CmpEq { dst, lhs, rhs });
+        self
+    }
+
+    pub fn xor(&mut self, dst: Reg, lhs: Reg, rhs: Reg) -> &mut Self {
+        self.instructions.push(Instruction::XOr { dst, lhs, rhs });
+        self
+    }
+
+    pub fn lt(&mut self, dst: Reg, lhs: Reg, rhs: Reg) -> &mut Self {
+        self.instructions.push(Instruction::Lt { dst, lhs, rhs });
         self
     }
 
@@ -251,7 +272,8 @@ impl Module {
     }
 
     pub fn save_to_file(&self, path: &str) {
-        let data = ron::to_string(self).expect("Failed to serialize module");
+        let data = ron::ser::to_string_pretty(self, PrettyConfig::default())
+            .expect("Failed to serialize module");
         std::fs::write(path, data).expect("Failed to write module to file");
     }
 }
@@ -358,6 +380,8 @@ impl Process {
             Instruction::Mul { dst, lhs, rhs } => self.handle_mul(*dst, *lhs, *rhs),
             Instruction::CmpEq { dst, lhs, rhs } => self.handle_cmp_eq(*dst, *lhs, *rhs),
             Instruction::CmpLE { dst, lhs, rhs } => self.handle_cmp_le(*dst, *lhs, *rhs),
+            Instruction::Lt { dst, lhs, rhs } => self.handle_lt(*dst, *lhs, *rhs),
+            Instruction::XOr { dst, lhs, rhs } => self.handle_xor(*dst, *lhs, *rhs),
             Instruction::Mov { dst, src } => self.handle_mov(*dst, *src),
             Instruction::JumpIf { cmp, target } => self.handle_jump_if(*cmp, *target),
             Instruction::Jump { target } => self.handle_jump(*target),
@@ -429,6 +453,10 @@ impl Process {
         self.regs[dst.0] = (self.regs[lhs.0] <= self.regs[rhs.0]) as i64;
     }
 
+    fn handle_lt(&mut self, dst: Reg, lhs: Reg, rhs: Reg) {
+        self.regs[dst.0] = (self.regs[lhs.0] < self.regs[rhs.0]) as i64;
+    }
+
     fn handle_mov(&mut self, dst: Reg, src: Reg) {
         self.regs[dst.0] = self.regs[src.0];
     }
@@ -475,6 +503,10 @@ impl Process {
 
         self.regs[dst_reg.0] = msg;
         self.state = ProcessState::Running;
+    }
+
+    fn handle_xor(&mut self, dst: Reg, lhs: Reg, rhs: Reg) {
+        self.regs[dst.0] = self.regs[lhs.0] ^ self.regs[rhs.0];
     }
 }
 

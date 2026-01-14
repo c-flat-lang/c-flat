@@ -1,4 +1,5 @@
 pub mod control_flow_graph;
+pub mod detect_loops;
 pub mod liveness;
 pub mod local_function_variables;
 pub mod lowering;
@@ -10,6 +11,7 @@ pub enum DebugPass {
     EmitBitbeat,
     ControlFlowGraph,
     LivenessAnalysis,
+    DetectLoops,
 }
 
 pub trait Pass {

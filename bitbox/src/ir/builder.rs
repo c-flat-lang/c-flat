@@ -3,7 +3,7 @@ use crate::ir::{
     Visibility,
     instruction::{
         IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
-        ILoad, ILt, IMul, INoOp, IPhi, IReturn, ISub, Label,
+        ILoad, ILt, IMul, INoOp, IPhi, IReturn, ISub, IXOr, Label,
     },
 };
 
@@ -67,14 +67,16 @@ impl<'a> AssemblerBuilder<'a> {
     }
 
     /// Create a new block that you can jump to.
-    pub fn create_block(&mut self, label: impl Into<String>) {
+    pub fn create_block(&mut self, label: impl Into<String>) -> String {
         let id = self.blocks.len();
+        let label = label.into();
         self.current_block = Some(BlockId(id));
         self.blocks.push(BasicBlock {
             id: BlockId(id),
             instructions: vec![],
-            label: label.into(),
+            label: label.clone(),
         });
+        label
     }
 
     /// returns a new temporary variable
@@ -162,6 +164,13 @@ impl<'a> AssemblerBuilder<'a> {
         let rhs = rhs.into();
         self.push_instruction(ICmp::new(des, lhs, rhs));
         self
+    }
+
+    /// `@xor <type> : <des>, <lhs>, <rhs>`
+    pub fn xor(&mut self, des: Variable, lhs: impl Into<Operand>, rhs: impl Into<Operand>) {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(IXOr::new(des, lhs, rhs));
     }
 
     /// `@gt <type> : <des>, <lhs>, <rhs>`

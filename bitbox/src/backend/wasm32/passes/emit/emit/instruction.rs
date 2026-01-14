@@ -5,8 +5,8 @@ use crate::backend::Lower;
 
 use crate::ir::Type;
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IIfElse, ILoad, ILt,
-    IReturn, ISub,
+    IAdd, IAlloc, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
+    ILoad, ILt, IReturn, ISub, IXOr,
 };
 
 impl Lower<Wasm32LowerContext<'_>> for IAdd {
@@ -267,6 +267,36 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
     }
 }
 
+impl Lower<Wasm32LowerContext<'_>> for IXOr {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target);
+        self.rhs.lower(ctx, target);
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_xor(),
+            ValType::I64 => todo!("@gt i64"),
+            ValType::F32 => todo!("@gt f32"),
+            ValType::F64 => todo!("@gt f64"),
+            ValType::V128 => todo!("@gt v128"),
+            ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
 impl Lower<Wasm32LowerContext<'_>> for IGt {
     type Output = ();
     fn lower(
@@ -323,6 +353,37 @@ impl Lower<Wasm32LowerContext<'_>> for ILt {
             panic!("Variable {:?} not found", self.des);
         };
         target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IJump {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let Some(block_id) = target.blocks.get(&self.label).copied() else {
+            panic!("Block {:?} not found", self.label);
+        };
+        target.assembler.br(block_id);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IJumpIf {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let Some(block_id) = target.blocks.get(&self.label).copied() else {
+            panic!("Block {:?} not found", self.label);
+        };
+        self.cond.lower(ctx, target);
+        target.assembler.br_if(block_id);
         Ok(())
     }
 }

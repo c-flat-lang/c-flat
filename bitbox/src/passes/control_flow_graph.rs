@@ -1,21 +1,42 @@
 use crate::{ir::instruction::IJumpIf, passes::DebugPass};
+use std::collections::HashMap;
 
 use super::Pass;
 
-type Table = std::collections::HashMap<crate::ir::BlockId, Vec<crate::ir::BlockId>>;
+type Table = HashMap<crate::ir::BlockId, Vec<crate::ir::BlockId>>;
 
 #[derive(Debug, Default)]
 pub struct ControlFlowGraph {
-    pub in_bound: Table,
-    pub out_bound: Table,
+    pub in_bound: HashMap<String, Table>,
+    pub out_bound: HashMap<String, Table>,
 }
 
 impl ControlFlowGraph {
-    pub fn push_in(&mut self, from: crate::ir::BlockId, to: crate::ir::BlockId) {
-        self.in_bound.entry(from).or_default().push(to);
+    pub fn push_in(
+        &mut self,
+        function: impl Into<String>,
+        from: crate::ir::BlockId,
+        to: crate::ir::BlockId,
+    ) {
+        self.in_bound
+            .entry(function.into())
+            .or_default()
+            .entry(from)
+            .or_default()
+            .push(to);
     }
-    pub fn push_out(&mut self, from: crate::ir::BlockId, to: crate::ir::BlockId) {
-        self.out_bound.entry(from).or_default().push(to);
+    pub fn push_out(
+        &mut self,
+        function: impl Into<String>,
+        from: crate::ir::BlockId,
+        to: crate::ir::BlockId,
+    ) {
+        self.out_bound
+            .entry(function.into())
+            .or_default()
+            .entry(from)
+            .or_default()
+            .push(to);
     }
 }
 
@@ -35,22 +56,31 @@ impl Pass for ControlFlowGraphPass {
 
         eprintln!("{:?}", DebugPass::ControlFlowGraph);
 
-        let mut in_bound = ctx
-            .cfg
-            .in_bound
-            .iter()
-            .map(|(k, v)| (k, v))
-            .collect::<Vec<_>>();
-        in_bound.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
-        eprintln!("in_bound: {in_bound:#?}",);
-        let mut out_bound = ctx
-            .cfg
-            .out_bound
-            .iter()
-            .map(|(k, v)| (k, v))
-            .collect::<Vec<_>>();
-        out_bound.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
-        eprintln!("out_bound: {out_bound:#?}",);
+        let formater = |data: &HashMap<String, Table>, kind: &str| {
+            let mut data = data
+                .iter()
+                .map(|(k, v)| {
+                    (
+                        k.clone(),
+                        v.iter().map(|(k, v)| (*k, v.clone())).collect::<Vec<_>>(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            eprintln!("{kind}:");
+            for (name, data) in data.iter_mut() {
+                data.sort_by(|a, b| a.0.0.cmp(&b.0.0));
+                eprintln!("{name}:");
+                for (block_id, in_bounds) in data.iter() {
+                    eprintln!("  {block_id:?}:");
+                    for in_bound in in_bounds.iter() {
+                        eprintln!("    {in_bound:?}");
+                    }
+                }
+            }
+        };
+
+        formater(&ctx.cfg.in_bound, "IN BOUND");
+        formater(&ctx.cfg.out_bound, "OUT BOUND");
 
         true
     }
@@ -75,15 +105,15 @@ impl Pass for ControlFlowGraphPass {
                             let Some(target_block_id) = name_to_block_id.get(label) else {
                                 panic!("block not found");
                             };
-                            ctx.cfg.push_out(block.id, *target_block_id);
-                            ctx.cfg.push_in(*target_block_id, block.id);
+                            ctx.cfg.push_out(&function.name, block.id, *target_block_id);
+                            ctx.cfg.push_in(&function.name, *target_block_id, block.id);
                         }
                         crate::ir::Instruction::Jump(ijump) => {
                             let Some(target_block_id) = name_to_block_id.get(&ijump.label) else {
                                 panic!("block {} not found", ijump.label);
                             };
-                            ctx.cfg.push_out(block.id, *target_block_id);
-                            ctx.cfg.push_in(*target_block_id, block.id);
+                            ctx.cfg.push_out(&function.name, block.id, *target_block_id);
+                            ctx.cfg.push_in(&function.name, *target_block_id, block.id);
                         }
                         _ => {}
                     }

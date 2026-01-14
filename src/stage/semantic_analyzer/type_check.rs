@@ -127,6 +127,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
+            ast::Expr::While(expr) => self.walk_expr_while(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
@@ -313,6 +314,18 @@ impl<'st> TypeChecker<'st> {
         );
 
         expr.ty.clone()
+    }
+
+    fn walk_expr_while(&mut self, expr: &mut ast::ExprWhile) -> Type {
+        let condition = self.walk_expr(&mut expr.condition);
+        if !matches!(condition, Type::Bool) {
+            self.errors.push(Box::new(ErrorMissMatchedType {
+                span: expr.condition.span(),
+                found: condition,
+                expected: Type::Bool,
+            }));
+        }
+        self.walk_block(&mut expr.body)
     }
 }
 

@@ -1,11 +1,13 @@
 #![allow(unused)]
+
+mod instruction;
 use std::collections::HashMap;
 
 use crate::backend::Lower;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IIfElse, ILoad, ILt, ISub,
 };
-use crate::ir::{self, Module, Type, Visibility};
+use crate::ir::{self, BlockId, Module, Type, Visibility};
 use crate::passes::{DebugPass, Pass};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
@@ -29,13 +31,10 @@ impl Pass for EmitWasm32Pass {
         eprintln!("--- Dump Wasm32 ---");
         let mut wasm_module = ctx.output.get_wasm32().clone();
         let bytes = wasm_module.finish();
-        let Ok(wat) = wasmprinter::print_bytes(&bytes) else {
-            eprintln!("Failed to print wasm module");
-            return true;
-        };
-
-        eprintln!("{}", wat);
-
+        match wasmprinter::print_bytes(&bytes) {
+            Ok(wat) => eprintln!("{wat}"),
+            Err(err) => eprintln!("{err}"),
+        }
         true
     }
 
@@ -87,6 +86,7 @@ impl Pass for EmitWasm32Pass {
 pub(crate) struct Wasm32LowerContext<'ctx> {
     pub function_name: String,
     pub assembler: &'ctx mut InstructionSink<'ctx>,
+    pub blocks: HashMap<String, u32>,
 }
 
 impl<'ctx> Wasm32LowerContext<'ctx> {
@@ -94,6 +94,7 @@ impl<'ctx> Wasm32LowerContext<'ctx> {
         Self {
             function_name,
             assembler,
+            blocks: HashMap::new(),
         }
     }
 }
@@ -235,8 +236,29 @@ impl Lower<EmitWasm32Pass> for ir::Function {
             // };
 
             let mut target = Wasm32LowerContext::new(self.name.to_string(), &mut instructions);
+            let mut block_count: u32 = 1;
             for block in self.blocks.iter() {
+                let mut inserted_block = 0;
+                if let Some(loops) = ctx.loops.get(self.name.as_str()) {
+                    if loops.header == block.id {
+                        target.assembler.block(BlockType::Empty);
+                        for BlockId(exit) in &loops.exits {
+                            let label = self.blocks[*exit].label.clone();
+                            target.blocks.insert(label, block_count);
+                            block_count += 1;
+                            inserted_block += 1;
+                        }
+
+                        let label = self.blocks[loops.header.0].label.clone();
+                        target.blocks.insert(label, 0);
+                        target.assembler.loop_(BlockType::Empty);
+                        inserted_block += 1;
+                    }
+                }
                 block.lower(ctx, &mut target)?;
+                for _ in 0..inserted_block {
+                    target.assembler.end();
+                }
             }
 
             target.assembler.end();
@@ -280,10 +302,11 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Copy(icopy) => icopy.lower(ctx, target)?,
             ir::Instruction::ElemGet(ielemget) => ielemget.lower(ctx, target)?,
             ir::Instruction::ElemSet(ielemset) => ielemset.lower(ctx, target)?,
+            ir::Instruction::XOr(ixor) => ixor.lower(ctx, target)?,
             ir::Instruction::Gt(igt) => igt.lower(ctx, target)?,
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
-            ir::Instruction::Jump(..) => todo!("@jump"),
-            ir::Instruction::JumpIf(..) => todo!("@jump_if"),
+            ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
+            ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => todo!("@mul"),
             ir::Instruction::Phi(..) => todo!("@phi"),
@@ -306,6 +329,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
         match self {
             ir::Operand::ConstantInt { value, ty } => match ty.clone().into() {
                 ValType::I32 => {
+                    let value = value.replace("_", "");
                     target.assembler.i32_const(value.parse().unwrap());
                 }
                 ValType::I64 => todo!("@const_i64"),

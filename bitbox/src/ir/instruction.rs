@@ -27,6 +27,8 @@ pub enum Instruction {
     ElemGet(IElemGet),
     /// `@elemset <type> : <addr>, <index>, <value>`
     ElemSet(IElemSet),
+    /// `@xor <type> : <des>, <lhs>, <rhs>`
+    XOr(IXOr),
     /// `@gt <type> : <des>, <lhs>, <rhs>`
     /// `@gt u1 : is_one, n, 1`
     Gt(IGt),
@@ -71,6 +73,7 @@ impl fmt::Display for Instruction {
             Instruction::Copy(icopy) => write!(f, "{icopy}"),
             Instruction::ElemGet(ielemget) => write!(f, "{ielemget}"),
             Instruction::ElemSet(ielemset) => write!(f, "{ielemset}"),
+            Instruction::XOr(ixor) => write!(f, "{ixor}"),
             Instruction::Gt(igt) => write!(f, "{igt}"),
             Instruction::Lt(ilt) => write!(f, "{ilt}"),
             Instruction::Assign(iassign) => write!(f, "{iassign}"),
@@ -189,6 +192,15 @@ create_binary_instruction!(
     ICmp,
     Cmp,
     "cmp"
+);
+create_binary_instruction!(
+    "`@xor <type> : <des>, <lhs>, <rhs>`
+
+`@xor u1 : is_one, n, 1`
+",
+    IXOr,
+    XOr,
+    "xor"
 );
 create_binary_instruction!(
     "`@gt <type> : <des>, <lhs>, <rhs>`

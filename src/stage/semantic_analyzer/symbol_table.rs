@@ -133,6 +133,7 @@ impl SymbolTableBuilder {
             Expr::ArrayRepeat(_) => {
                 unreachable!("No need to do anything")
             }
+            Expr::While(expr) => self.walk_expr_while(expr),
         }
     }
 
@@ -198,6 +199,14 @@ impl SymbolTableBuilder {
             return;
         };
         self.walk_block(else_branch);
+    }
+
+    fn walk_expr_while(&mut self, expr: &ast::ExprWhile) {
+        let ast::ExprWhile {
+            condition, body, ..
+        } = expr;
+        self.walk_expr(condition);
+        self.walk_block(body);
     }
 }
 

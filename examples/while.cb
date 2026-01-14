@@ -1,0 +1,9 @@
+pub fn main() s32 {
+    // let mut array: [2; s32] = [ 0; 2 ];
+    let mut i: s32 = 0;
+    while i < 2_000_000 {
+        // print(i);
+        i = i + 1;
+    }
+    return i;
+}

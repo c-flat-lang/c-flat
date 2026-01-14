@@ -1,6 +1,16 @@
 use bitbox::Target;
 use std::str::FromStr;
 
+trait HasArg {
+    fn has_arg(&self, expected: &str) -> bool;
+}
+
+impl HasArg for Vec<String> {
+    fn has_arg(&self, expected: &str) -> bool {
+        self.iter().any(|arg| arg == expected)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
@@ -26,6 +36,7 @@ impl Cli {
             eprintln!("                  options: emit-bitbeat");
             eprintln!("                  options: control-flow-graph");
             eprintln!("                  options: liveness-analysis");
+            eprintln!("                  options: detect-loops");
             eprintln!("    -h, --help    Print this help message");
 
             std::process::exit(0);
@@ -37,30 +48,27 @@ impl Cli {
         };
 
         let mut debug_mode = None;
-        if args.iter().any(|arg| arg == "-t") {
+
+        if args.has_arg("-t") {
             debug_mode = Some(DebugMode::Token);
-        } else if args.iter().any(|arg| arg == "-a") {
+        } else if args.has_arg("-a") {
             debug_mode = Some(DebugMode::Ast);
-        } else if args.iter().any(|arg| arg == "-s") {
+        } else if args.has_arg("-s") {
             debug_mode = Some(DebugMode::SymbolTable);
-        } else if args.iter().any(|arg| arg == "-ir") {
+        } else if args.has_arg("-ir") {
             debug_mode = Some(DebugMode::Ir);
-        } else if args.iter().any(|arg| arg == "--dump-after=lowering-ir") {
+        } else if args.has_arg("--dump-after=lowering-ir") {
             debug_mode = Some(DebugMode::LoweredIr);
-        } else if args.iter().any(|arg| arg == "--dump-after=emit-wasm32") {
+        } else if args.has_arg("--dump-after=emit-wasm32") {
             debug_mode = Some(DebugMode::EmitWasm32);
-        } else if args.iter().any(|arg| arg == "--dump-after=emit-bitbeat") {
+        } else if args.has_arg("--dump-after=emit-bitbeat") {
             debug_mode = Some(DebugMode::EmitBitbeat);
-        } else if args
-            .iter()
-            .any(|arg| arg == "--dump-after=control-flow-graph")
-        {
+        } else if args.has_arg("--dump-after=control-flow-graph") {
             debug_mode = Some(DebugMode::ControlFlowGraph);
-        } else if args
-            .iter()
-            .any(|arg| arg == "--dump-after=liveness-analysis")
-        {
+        } else if args.has_arg("--dump-after=liveness-analysis") {
             debug_mode = Some(DebugMode::LivenessAnalysis);
+        } else if args.has_arg("--dump-after=detect-loops") {
+            debug_mode = Some(DebugMode::DetectLoops);
         }
 
         let mut target = Target::default();
@@ -93,6 +101,7 @@ pub enum DebugMode {
     LoweredIr,
     SymbolTable,
     Token,
+    DetectLoops,
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
@@ -103,6 +112,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::EmitBitbeat => Some(bitbox::passes::DebugPass::EmitBitbeat),
             DebugMode::ControlFlowGraph => Some(bitbox::passes::DebugPass::ControlFlowGraph),
             DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
+            DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
             _ => None,
         }
     }

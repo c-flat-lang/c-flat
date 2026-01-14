@@ -243,7 +243,7 @@ impl Parser {
 
     fn parse_let_declaration(&mut self) -> Result<ast::Expr> {
         if !self.peek(TokenKind::Keyword(Keyword::Let)) {
-            return self.return_expression();
+            return self.while_expression();
         }
 
         let let_token = self.consume(TokenKind::Keyword(Keyword::Let))?;
@@ -271,6 +271,21 @@ impl Parser {
             expr: Box::new(expr),
         };
         Ok(ast::Expr::Declare(decl))
+    }
+
+    fn while_expression(&mut self) -> Result<ast::Expr> {
+        if !self.peek(TokenKind::Keyword(Keyword::While)) {
+            return self.return_expression();
+        }
+        let while_token = self.consume(TokenKind::Keyword(Keyword::While))?;
+        let condition = self.parse_expr()?;
+        let body = self.parse_block()?;
+        let while_expr = ast::ExprWhile {
+            while_token,
+            condition: Box::new(condition),
+            body,
+        };
+        Ok(ast::Expr::While(while_expr))
     }
 
     fn return_expression(&mut self) -> Result<ast::Expr> {

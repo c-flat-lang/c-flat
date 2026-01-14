@@ -198,6 +198,13 @@ impl Pass for LivenessAnalysisPass {
                 live_out.insert(block.id, HashSet::new());
             }
 
+            let out_bound = ctx
+                .cfg
+                .out_bound
+                .get(&function.name)
+                .cloned()
+                .unwrap_or_default();
+
             let mut changed = true;
             while changed {
                 changed = false;
@@ -207,12 +214,7 @@ impl Pass for LivenessAnalysisPass {
 
                     let mut new_live_out: HashSet<crate::ir::Variable> = HashSet::new();
 
-                    let succs = ctx
-                        .cfg
-                        .out_bound
-                        .get(&b_id)
-                        .cloned()
-                        .unwrap_or_else(Vec::new);
+                    let succs = out_bound.get(&b_id).cloned().unwrap_or_else(Vec::new);
 
                     for succ in succs {
                         let succ_live_in = live_in.get(&succ).cloned().unwrap_or_default();

@@ -1,6 +1,6 @@
 use crate::ir::{
-    instruction::{ICall, IIfElse},
     Variable,
+    instruction::{ICall, IIfElse},
 };
 
 use super::Pass;
@@ -99,6 +99,9 @@ fn block_pass(
             crate::ir::Instruction::ElemGet(ielemget) => ctx
                 .local_function_variables
                 .add(function_name, ielemget.des.clone()),
+            crate::ir::Instruction::XOr(ixor) => ctx
+                .local_function_variables
+                .add(function_name, ixor.des.clone()),
             crate::ir::Instruction::Gt(igt) => ctx
                 .local_function_variables
                 .add(function_name, igt.des.clone()),

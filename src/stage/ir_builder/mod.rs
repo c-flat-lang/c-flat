@@ -140,7 +140,7 @@ pub trait Addressable {
 
 use crate::stage::parser::ast::{
     Block, Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprCall,
-    ExprDecl, ExprIfElse, ExprReturn, Litral,
+    ExprDecl, ExprIfElse, ExprReturn, ExprWhile, Litral,
 };
 
 impl Lowerable for Expr {
@@ -167,6 +167,7 @@ impl Lowerable for Expr {
             Expr::Array(expr) => expr.lower(assembler, ctx),
             Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
             Expr::ArrayRepeat(expr) => expr.lower(assembler, ctx),
+            Expr::While(expr) => expr.lower(assembler, ctx),
         }
     }
 }
@@ -586,5 +587,34 @@ impl Lowerable for ExprArrayRepeat {
         }
 
         Some(ptr)
+    }
+}
+
+impl Lowerable for ExprWhile {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let while_block = assembler.create_block("while_loop");
+        let Some(cond) = self.condition.lower(assembler, ctx) else {
+            panic!("Failed to return variable from expr lowering");
+        };
+
+        let not_cond = assembler.var(Type::Signed(32));
+        assembler.xor(
+            not_cond.clone(),
+            cond,
+            Operand::ConstantInt {
+                value: "1".to_string(),
+                ty: Type::Signed(32),
+            },
+        );
+
+        assembler.jump_if(not_cond, "while_exit");
+        let body = self.body.lower(assembler, ctx);
+        assembler.jump(while_block);
+        assembler.create_block("while_exit");
+        body
     }
 }

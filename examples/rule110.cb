@@ -1,5 +1,13 @@
 pub fn main() s32 {
     let mut array: [2; s32] = [ 0; 2 ];
-    array[0] = 10;
-    return array[1];
+    let length = 2;
+    let index = 0;
+
+    while index < length {
+        let temp = array[index];
+        array[index] = temp + 1;
+        index = index + 1;
+    }
+
+    return array[0];
 }

@@ -150,6 +150,7 @@ pub enum Expr {
     Litral(Litral),
     Call(ExprCall),
     Binary(ExprBinary),
+    While(ExprWhile),
     Identifier(Token),
     IfElse(ExprIfElse),
     Array(ExprArray),
@@ -167,6 +168,7 @@ impl Expr {
             Self::Litral(litral) => litral.span(),
             Self::Call(expr_call) => expr_call.span(),
             Self::Binary(expr_binary) => expr_binary.span(),
+            Self::While(expr_while) => expr_while.span(),
             Self::Identifier(token) => token.span.clone(),
             Self::IfElse(expr_if_else) => expr_if_else.span(),
             Self::Array(expr) => expr.span(),
@@ -344,6 +346,21 @@ impl ExprBinary {
         let start = self.left.span();
         let end = self.right.span();
         start.start..end.end
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprWhile {
+    pub while_token: Token,
+    pub condition: Box<Expr>,
+    pub body: Block,
+}
+
+impl ExprWhile {
+    pub fn span(&self) -> Span {
+        let start = self.while_token.span.start;
+        let end = self.body.close_brace.span.end;
+        start..end
     }
 }
 
