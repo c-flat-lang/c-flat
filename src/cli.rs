@@ -6,11 +6,15 @@ use wasm_bindgen::prelude::*;
 
 trait HasArg {
     fn has_arg(&self, expected: &str) -> bool;
+    fn has_prefix(&self, expected: &str) -> bool;
 }
 
 impl HasArg for Vec<String> {
     fn has_arg(&self, expected: &str) -> bool {
         self.iter().any(|arg| arg == expected)
+    }
+    fn has_prefix(&self, expected: &str) -> bool {
+        self.iter().any(|arg| arg.starts_with(expected))
     }
 }
 
@@ -95,18 +99,27 @@ impl Cli {
             debug_mode = Some(DebugMode::SymbolTable);
         } else if args.has_arg("-ir") {
             debug_mode = Some(DebugMode::Ir);
-        } else if args.has_arg("--dump-after=lowering-ir") {
-            debug_mode = Some(DebugMode::LoweredIr);
-        } else if args.has_arg("--dump-after=emit-wasm32") {
-            debug_mode = Some(DebugMode::EmitWasm32);
-        } else if args.has_arg("--dump-after=emit-bitbeat") {
-            debug_mode = Some(DebugMode::EmitBitbeat);
-        } else if args.has_arg("--dump-after=control-flow-graph") {
-            debug_mode = Some(DebugMode::ControlFlowGraph);
-        } else if args.has_arg("--dump-after=liveness-analysis") {
-            debug_mode = Some(DebugMode::LivenessAnalysis);
-        } else if args.has_arg("--dump-after=detect-loops") {
-            debug_mode = Some(DebugMode::DetectLoops);
+        } else if args.has_prefix("--dump-after=") {
+            let value = args
+                .iter()
+                .find(|arg| arg.starts_with("--dump-after="))
+                .unwrap();
+            let mode = match value.strip_prefix("--dump-after=").unwrap() {
+                "lowering-ir" => DebugMode::LoweredIr,
+                "emit-wasm32" => DebugMode::EmitWasm32,
+                "emit-bitbeat" => DebugMode::EmitBitbeat,
+                "control-flow-graph" => DebugMode::ControlFlowGraph,
+                "liveness-analysis" => DebugMode::LivenessAnalysis,
+                "detect-loops" => DebugMode::DetectLoops,
+                _ => {
+                    eprintln!("Unknown debug mode: {}", value);
+                    eprintln!(
+                        "lowering-ir, emit-wasm32, emit-bitbeat, control-flow-graph, liveness-analysis, detect-loops"
+                    );
+                    std::process::exit(1);
+                }
+            };
+            debug_mode = Some(mode);
         }
 
         let mut target = Target::default();

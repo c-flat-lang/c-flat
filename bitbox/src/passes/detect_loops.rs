@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ir::{BlockId, Module};
+use crate::ir::{BlockId, Function, Module};
 use crate::passes::{DebugPass, Pass};
 
 #[derive(Debug, Default)]
@@ -36,9 +36,32 @@ impl Pass for DetectLoopsPass {
         };
         eprintln!("--- Dump Loop Detection ---");
 
+        let formatter = |functions: &[Function], BlockId(id): &BlockId, function_name: &str| {
+            let function = functions.iter().find(|f| &f.name == function_name).unwrap();
+            let block = &function.blocks[*id];
+            eprintln!("Block: {}", block.label);
+        };
+
         for loop_ in &ctx.loops.loops {
-            eprintln!("Loop: {:#?}", loop_);
-            // module.functions.
+            eprintln!("Head Block:");
+
+            formatter(&module.functions, &loop_.1.header, loop_.0);
+
+            if !loop_.1.body.is_empty() {
+                eprintln!("Body Block:");
+            }
+
+            for block in &loop_.1.body {
+                formatter(&module.functions, &block, loop_.0);
+            }
+
+            if !loop_.1.exits.is_empty() {
+                eprintln!("Exit Block:");
+            }
+
+            for block in &loop_.1.exits {
+                formatter(&module.functions, &block, loop_.0);
+            }
         }
 
         true

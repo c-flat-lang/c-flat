@@ -123,6 +123,7 @@ impl SymbolTableBuilder {
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
+            Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
             Expr::Return(..) => todo!(),
             Expr::Litral(..) => {}
             Expr::Array(..) => todo!(),
@@ -207,6 +208,12 @@ impl SymbolTableBuilder {
         } = expr;
         self.walk_expr(condition);
         self.walk_block(body);
+    }
+
+    fn walk_expr_member_access(&mut self, expr: &ast::ExprMemberAccess) {
+        let ast::ExprMemberAccess { base, .. } = expr;
+
+        self.walk_expr(base);
     }
 }
 

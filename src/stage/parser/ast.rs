@@ -153,6 +153,7 @@ pub enum Expr {
     While(ExprWhile),
     Identifier(Token),
     IfElse(ExprIfElse),
+    MemberAccess(ExprMemberAccess),
     Array(ExprArray),
     ArrayIndex(ExprArrayIndex),
     ArrayRepeat(ExprArrayRepeat),
@@ -171,6 +172,7 @@ impl Expr {
             Self::While(expr_while) => expr_while.span(),
             Self::Identifier(token) => token.span.clone(),
             Self::IfElse(expr_if_else) => expr_if_else.span(),
+            Self::MemberAccess(expr) => expr.span(),
             Self::Array(expr) => expr.span(),
             Self::ArrayIndex(expr) => expr.span(),
             Self::ArrayRepeat(expr) => expr.span(),
@@ -382,6 +384,21 @@ impl ExprIfElse {
             .as_ref()
             .map(|b| b.close_brace.span.end)
             .unwrap_or(self.then_branch.close_brace.span.end);
+        start..end
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ExprMemberAccess {
+    pub base: Box<Expr>,
+    pub dot: Token,
+    pub member: Token,
+}
+
+impl ExprMemberAccess {
+    pub fn span(&self) -> Span {
+        let start = self.base.span().start;
+        let end = self.member.span.end;
         start..end
     }
 }

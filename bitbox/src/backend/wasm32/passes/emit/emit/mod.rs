@@ -230,10 +230,6 @@ impl Lower<EmitWasm32Pass> for ir::Function {
             });
             let mut f = WasmFunction::new(locals);
             let mut instructions = f.instructions();
-            // let function_return_type = match self.return_type {
-            //     Type::Void => BlockType::Empty,
-            //     _ => BlockType::Result(self.return_type.clone().into()),
-            // };
 
             let mut target = Wasm32LowerContext::new(self.name.to_string(), &mut instructions);
             let mut block_count: u32 = 1;
@@ -314,6 +310,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             ir::Instruction::Div(idiv) => todo!("@div"),
             ir::Instruction::IfElse(iifelse) => iifelse.lower(ctx, target)?,
+            ir::Instruction::Loop(iloop) => iloop.lower(ctx, target)?,
         }
         Ok(())
     }

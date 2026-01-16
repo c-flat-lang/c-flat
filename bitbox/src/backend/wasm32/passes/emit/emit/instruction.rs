@@ -6,7 +6,7 @@ use crate::backend::Lower;
 use crate::ir::Type;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
-    ILoad, ILt, IReturn, ISub, IXOr,
+    ILoad, ILoop, ILt, IReturn, ISub, IXOr,
 };
 
 impl Lower<Wasm32LowerContext<'_>> for IAdd {
@@ -80,7 +80,10 @@ impl Lower<Wasm32LowerContext<'_>> for IAssign {
             ValType::I32 => {
                 let variables = ctx.local_function_variables.get(&target.function_name);
                 let Some(idx) = variables.iter().position(|v| v.name == self.des.name) else {
-                    panic!("Variable {:?} not found", self.des);
+                    panic!(
+                        "Variable {:?} not found in {:?}",
+                        self.des, target.function_name
+                    );
                 };
                 self.src.lower(ctx, target);
                 target.assembler.local_set(idx as u32);
@@ -365,7 +368,7 @@ impl Lower<Wasm32LowerContext<'_>> for IJump {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         let Some(block_id) = target.blocks.get(&self.label).copied() else {
-            panic!("Block {:?} not found", self.label);
+            panic!("Block {:?} not found {:#?}", self.label, target.blocks);
         };
         target.assembler.br(block_id);
         Ok(())
@@ -380,7 +383,7 @@ impl Lower<Wasm32LowerContext<'_>> for IJumpIf {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         let Some(block_id) = target.blocks.get(&self.label).copied() else {
-            panic!("Block {:?} not found", self.label);
+            panic!("Block {:?} not found {:#?}", self.label, target.blocks);
         };
         self.cond.lower(ctx, target);
         target.assembler.br_if(block_id);
@@ -467,6 +470,46 @@ impl Lower<Wasm32LowerContext<'_>> for IIfElse {
         }
 
         target.assembler.end();
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for ILoop {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.block(BlockType::Empty); // exit block
+        target.assembler.loop_(BlockType::Empty); // loop block
+
+        for block in self.cond.iter() {
+            block.lower(ctx, target)?;
+        }
+
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.cond_result.name)
+        else {
+            panic!("Variable {:?} not found", self.cond_result);
+        };
+
+        target.assembler.local_get(idx as u32);
+
+        target.assembler.i32_eqz();
+        target.assembler.br_if(1);
+
+        for block in self.body.iter() {
+            block.lower(ctx, target)?;
+        }
+
+        target.assembler.br(0); // loop back to cond
+
+        target.assembler.end(); // end loop
+        target.assembler.end(); // end block
         Ok(())
     }
 }

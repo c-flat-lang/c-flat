@@ -120,6 +120,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             crate::ir::Instruction::Div(..) => todo!("div"),
             crate::ir::Instruction::IfElse(..) => todo!("ifelse"),
+            crate::ir::Instruction::Loop(..) => todo!("loop"),
         }
         Ok(())
     }
@@ -156,6 +157,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Operand {
                 Ok(OperandResult::Register(reg))
             }
             crate::ir::Operand::ConstantInt { value, .. } => {
+                let value = value.replace("_", "");
                 Ok(OperandResult::Value(value.parse::<i64>().unwrap()))
             }
             crate::ir::Operand::None => unimplemented!("Missing Operand None"),

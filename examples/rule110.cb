@@ -1,9 +1,8 @@
 pub fn main() s32 {
-    let mut array: [2; s32] = [ 0; 2 ];
-    let length = 2;
+    let mut array: [10; s32] = [ 0; 10 ];
     let index = 0;
 
-    while index < length {
+    while index < array.len {
         let temp = array[index];
         array[index] = temp + 1;
         index = index + 1;

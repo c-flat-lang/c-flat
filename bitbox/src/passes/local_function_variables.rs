@@ -123,6 +123,14 @@ fn block_pass(
             crate::ir::Instruction::Div(idiv) => ctx
                 .local_function_variables
                 .add(function_name, idiv.des.clone()),
+            crate::ir::Instruction::Loop(iloop) => {
+                for block in iloop.cond.iter() {
+                    block_pass(function_name, block, ctx);
+                }
+                for block in iloop.body.iter() {
+                    block_pass(function_name, block, ctx);
+                }
+            }
             crate::ir::Instruction::IfElse(IIfElse {
                 cond,
                 cond_result,
@@ -149,7 +157,13 @@ fn block_pass(
                         .add(function_name, result.clone());
                 }
             }
-            _ => (),
+            crate::ir::Instruction::Call(..)
+            | crate::ir::Instruction::NoOp(..)
+            | crate::ir::Instruction::Copy(..)
+            | crate::ir::Instruction::ElemSet(..)
+            | crate::ir::Instruction::Jump(..)
+            | crate::ir::Instruction::JumpIf(..)
+            | crate::ir::Instruction::Return(..) => (),
         }
     }
 }

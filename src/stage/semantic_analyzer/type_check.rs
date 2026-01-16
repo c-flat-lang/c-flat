@@ -130,6 +130,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::While(expr) => self.walk_expr_while(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
+            ast::Expr::MemberAccess(..) => self.walk_expr_member_access(expr),
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
             ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
             ast::Expr::ArrayRepeat(expr) => self.walk_expr_array_repeat(expr),
@@ -326,6 +327,25 @@ impl<'st> TypeChecker<'st> {
             }));
         }
         self.walk_block(&mut expr.body)
+    }
+
+    fn walk_expr_member_access(&mut self, expr: &mut ast::Expr) -> Type {
+        let ast::Expr::MemberAccess(mut member_access) = expr.clone() else {
+            panic!("Expected ExprArray");
+        };
+        let base_type = self.walk_expr(&mut member_access.base);
+        match base_type {
+            Type::Array(size, _) if member_access.member.lexeme == "len" => {
+                let token = Token {
+                    kind: TokenKind::Number,
+                    lexeme: size.to_string(),
+                    span: expr.span(),
+                };
+                *expr = ast::Expr::Litral(ast::Litral::Integer(token));
+                Type::SignedNumber(32)
+            }
+            _ => unimplemented!("Handle member access for non array types"),
+        }
     }
 }
 

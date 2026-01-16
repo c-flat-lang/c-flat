@@ -103,14 +103,14 @@ impl Pass for ControlFlowGraphPass {
                     match instruction {
                         crate::ir::Instruction::JumpIf(IJumpIf { label, .. }) => {
                             let Some(target_block_id) = name_to_block_id.get(label) else {
-                                panic!("block not found");
+                                panic!("block {} not found for jump if", label);
                             };
                             ctx.cfg.push_out(&function.name, block.id, *target_block_id);
                             ctx.cfg.push_in(&function.name, *target_block_id, block.id);
                         }
                         crate::ir::Instruction::Jump(ijump) => {
                             let Some(target_block_id) = name_to_block_id.get(&ijump.label) else {
-                                panic!("block {} not found", ijump.label);
+                                panic!("block {} not found for jump", ijump.label);
                             };
                             ctx.cfg.push_out(&function.name, block.id, *target_block_id);
                             ctx.cfg.push_in(&function.name, *target_block_id, block.id);

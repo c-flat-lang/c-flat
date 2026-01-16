@@ -5,7 +5,7 @@ use crate::error::{
     ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem, Result,
 };
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
-use crate::stage::parser::ast;
+use crate::stage::parser::ast::{self, ExprMemberAccess};
 
 pub struct Parser {
     lexer: std::iter::Peekable<std::vec::IntoIter<Token>>,
@@ -422,6 +422,14 @@ impl Parser {
                     ty: ast::Type::Void,
                 };
                 expr = ast::Expr::ArrayIndex(array_index);
+            } else if self.peek(TokenKind::Dot) {
+                let dot = self.consume(TokenKind::Dot)?;
+                let member = self.consume(TokenKind::Identifier)?;
+                expr = ast::Expr::MemberAccess(ExprMemberAccess {
+                    base: Box::new(expr),
+                    dot,
+                    member,
+                })
             } else {
                 break;
             }

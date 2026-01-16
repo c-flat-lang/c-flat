@@ -1,7 +1,7 @@
 pub mod builder;
 pub mod instruction;
 
-pub use instruction::{color_var, Instruction};
+pub use instruction::{Instruction, color_var};
 use yansi::Paint;
 
 pub type Span = std::ops::Range<usize>;

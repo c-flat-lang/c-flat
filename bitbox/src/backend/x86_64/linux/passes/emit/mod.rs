@@ -78,7 +78,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Return(..) => todo!("ret"),
             ir::Instruction::Sub(..) => todo!("sub"),
             ir::Instruction::Div(..) => todo!("div"),
-            ir::Instruction::IfElse(..) => {
+            ir::Instruction::Loop(..) | ir::Instruction::IfElse(..) => {
                 unreachable!("Lowering pass should be used before llvm pass")
             }
         }

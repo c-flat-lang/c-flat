@@ -3,7 +3,7 @@ use crate::ir::{
     Visibility,
     instruction::{
         IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
-        ILoad, ILt, IMul, INoOp, IPhi, IReturn, ISub, IXOr, Label,
+        ILoad, ILoop, ILt, IMul, INoOp, IPhi, IReturn, ISub, IXOr, Label,
     },
 };
 
@@ -281,6 +281,7 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
+    /// This instruction is was created to make traslation to wasm easier
     pub fn if_else(
         &mut self,
         cond: Vec<BasicBlock>,
@@ -295,6 +296,23 @@ impl<'a> AssemblerBuilder<'a> {
             then_branch,
             else_branch,
             result,
+        };
+        self.push_instruction(instruction);
+        self
+    }
+
+    /// This instruction is was created to make traslation to wasm easier
+    /// @loop <cond>, [<body>]
+    pub fn loop_(
+        &mut self,
+        cond: Vec<BasicBlock>,
+        cond_result: Variable,
+        body: Vec<BasicBlock>,
+    ) -> &mut Self {
+        let instruction = ILoop {
+            cond,
+            cond_result,
+            body,
         };
         self.push_instruction(instruction);
         self

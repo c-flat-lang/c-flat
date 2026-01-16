@@ -59,32 +59,36 @@ pub enum Instruction {
     /// With out a result
     /// @if condition then [...] else [...]
     IfElse(IIfElse),
+    /// @loop <cond> [<loop_body>]
+    /// @loop condition [...]
+    Loop(ILoop),
 }
 
 impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Instruction::NoOp(inoop) => write!(f, "{inoop}"),
-            Instruction::Add(iadd) => write!(f, "{iadd}"),
-            Instruction::Sub(isub) => write!(f, "{isub}"),
-            Instruction::Mul(imul) => write!(f, "{imul}"),
-            Instruction::Div(idiv) => write!(f, "{idiv}"),
-            Instruction::Cmp(icmp) => write!(f, "{icmp}"),
-            Instruction::Copy(icopy) => write!(f, "{icopy}"),
-            Instruction::ElemGet(ielemget) => write!(f, "{ielemget}"),
-            Instruction::ElemSet(ielemset) => write!(f, "{ielemset}"),
-            Instruction::XOr(ixor) => write!(f, "{ixor}"),
-            Instruction::Gt(igt) => write!(f, "{igt}"),
-            Instruction::Lt(ilt) => write!(f, "{ilt}"),
-            Instruction::Assign(iassign) => write!(f, "{iassign}"),
-            Instruction::Alloc(ialloc) => write!(f, "{ialloc}"),
-            Instruction::Call(icall) => write!(f, "{icall}"),
-            Instruction::Load(iload) => write!(f, "{iload}"),
-            Instruction::Jump(ijump) => write!(f, "{ijump}"),
-            Instruction::JumpIf(ijumpif) => write!(f, "{ijumpif}"),
-            Instruction::Return(ireturn) => write!(f, "{ireturn}"),
-            Instruction::Phi(iphi) => write!(f, "{iphi}"),
-            Instruction::IfElse(ifelse) => write!(f, "{ifelse}"),
+            Self::NoOp(inoop) => write!(f, "{inoop}"),
+            Self::Add(iadd) => write!(f, "{iadd}"),
+            Self::Sub(isub) => write!(f, "{isub}"),
+            Self::Mul(imul) => write!(f, "{imul}"),
+            Self::Div(idiv) => write!(f, "{idiv}"),
+            Self::Cmp(icmp) => write!(f, "{icmp}"),
+            Self::Copy(icopy) => write!(f, "{icopy}"),
+            Self::ElemGet(ielemget) => write!(f, "{ielemget}"),
+            Self::ElemSet(ielemset) => write!(f, "{ielemset}"),
+            Self::XOr(ixor) => write!(f, "{ixor}"),
+            Self::Gt(igt) => write!(f, "{igt}"),
+            Self::Lt(ilt) => write!(f, "{ilt}"),
+            Self::Assign(iassign) => write!(f, "{iassign}"),
+            Self::Alloc(ialloc) => write!(f, "{ialloc}"),
+            Self::Call(icall) => write!(f, "{icall}"),
+            Self::Load(iload) => write!(f, "{iload}"),
+            Self::Jump(ijump) => write!(f, "{ijump}"),
+            Self::JumpIf(ijumpif) => write!(f, "{ijumpif}"),
+            Self::Return(ireturn) => write!(f, "{ireturn}"),
+            Self::Phi(iphi) => write!(f, "{iphi}"),
+            Self::IfElse(ifelse) => write!(f, "{ifelse}"),
+            Self::Loop(iloop) => write!(f, "{iloop}"),
         }
     }
 }
@@ -645,5 +649,39 @@ impl fmt::Display for IIfElse {
 impl From<IIfElse> for Instruction {
     fn from(i: IIfElse) -> Self {
         Instruction::IfElse(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ILoop {
+    pub cond: Vec<BasicBlock>,
+    pub cond_result: Variable,
+    pub body: Vec<BasicBlock>,
+}
+
+impl fmt::Display for ILoop {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", Paint::blue("@loop"))?;
+        writeln!(f, "  cond:")?;
+        for b in self.cond.iter() {
+            writeln!(f, "    block {}:", short_uuid(&b.label))?;
+            for i in &b.instructions {
+                writeln!(f, "        {}", i)?;
+            }
+        }
+        write!(f, "  body:")?;
+        for b in self.body.iter() {
+            writeln!(f, "    block {}:", short_uuid(&b.label))?;
+            for i in &b.instructions {
+                writeln!(f, "        {}", i)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl From<ILoop> for Instruction {
+    fn from(i: ILoop) -> Self {
+        Instruction::Loop(i)
     }
 }

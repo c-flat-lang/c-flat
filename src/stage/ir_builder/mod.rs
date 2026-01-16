@@ -164,6 +164,7 @@ impl Lowerable for Expr {
                 ctx.get_variable(&ident.lexeme)
             }
             Expr::Struct(_) => todo!("Struct expressions"),
+            Expr::MemberAccess(..) => todo!("Member access expressions"),
             Expr::Array(expr) => expr.lower(assembler, ctx),
             Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
             Expr::ArrayRepeat(expr) => expr.lower(assembler, ctx),
@@ -596,25 +597,22 @@ impl Lowerable for ExprWhile {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let while_block = assembler.create_block("while_loop");
-        let Some(cond) = self.condition.lower(assembler, ctx) else {
-            panic!("Failed to return variable from expr lowering");
+        let mut var = vec![];
+
+        let mut cond_blocks = vec![];
+        let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
+        cond_assembler.create_block("cond");
+        let Some(cond_result) = self.condition.lower(&mut cond_assembler, ctx) else {
+            panic!("Condition should produce a variable");
         };
 
-        let not_cond = assembler.var(Type::Signed(32));
-        assembler.xor(
-            not_cond.clone(),
-            cond,
-            Operand::ConstantInt {
-                value: "1".to_string(),
-                ty: Type::Signed(32),
-            },
-        );
+        var.clear();
+        let mut loop_blocks = vec![];
+        let mut loop_assembler = AssemblerBuilder::new(&mut loop_blocks, &mut var);
+        loop_assembler.create_block("loop_body");
+        let then_block_result = self.body.lower(&mut loop_assembler, ctx);
 
-        assembler.jump_if(not_cond, "while_exit");
-        let body = self.body.lower(assembler, ctx);
-        assembler.jump(while_block);
-        assembler.create_block("while_exit");
-        body
+        assembler.loop_(cond_blocks, cond_result, loop_blocks);
+        None
     }
 }
