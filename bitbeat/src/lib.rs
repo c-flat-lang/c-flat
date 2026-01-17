@@ -602,10 +602,10 @@ impl Machine {
                     self.run_queue.push_back(Rc::clone(&proc_rc));
                 }
                 ProcessState::Halted => {
-                    if let Some(proc) = self.processes.remove(&proc.pid) {
-                        if self.halted.len() < 10 {
-                            self.halted.push(proc);
-                        }
+                    if let Some(proc) = self.processes.remove(&proc.pid)
+                        && self.halted.len() < 10
+                    {
+                        self.halted.push(proc);
                     }
                 }
                 ProcessState::Crashed(msg) => println!("[PID {}] Crashed:\n{msg}", proc.pid),

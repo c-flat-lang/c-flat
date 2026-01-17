@@ -27,7 +27,7 @@ pub struct Struct {
     pub expr: Box<Expr>,
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Visibility {
     Public,
     #[default]

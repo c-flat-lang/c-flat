@@ -86,7 +86,7 @@ impl SymbolTableBuilder {
             name: name.lexeme.clone(),
             kind: SymbolKind::Function,
             ty: return_type.into(),
-            visibility: visibility.clone(),
+            visibility: *visibility,
             params: Some(params.iter().map(|param| (&param.1).into()).collect()),
         });
         self.table.enter_scope(&name.lexeme);

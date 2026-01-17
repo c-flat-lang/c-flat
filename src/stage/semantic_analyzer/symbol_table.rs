@@ -87,7 +87,7 @@ impl SymbolTableBuilder {
             kind: SymbolKind::Function,
             ty: return_type.clone(),
             is_mutable: false,
-            visibility: visibility.clone(),
+            visibility: *visibility,
             params: Some(params.iter().map(|param| param.ty.clone()).collect()),
         });
         self.table.enter_scope(&name.lexeme);
@@ -194,12 +194,13 @@ impl SymbolTableBuilder {
     }
 
     fn walk_expr_identifier(&mut self, token: &Token) {
-        if self.table.get(token.lexeme.as_str()).is_none() {
-            self.errors.push(Box::new(ErrorUndefinedSymbol {
-                found: token.clone(),
-            }));
+        if self.table.get(token.lexeme.as_str()).is_some() {
             return;
-        };
+        }
+
+        self.errors.push(Box::new(ErrorUndefinedSymbol {
+            found: token.clone(),
+        }));
     }
 
     fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) {

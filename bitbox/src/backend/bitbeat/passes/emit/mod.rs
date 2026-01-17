@@ -1,8 +1,8 @@
-mod emit;
+mod emitter;
 mod instruction;
 
 use bitbeat::InstructionBuilder;
-pub use emit::EmitBitbeatPass;
+pub use emitter::EmitBitbeatPass;
 
 #[derive(Debug)]
 struct BitbeatLowerContext<'ctx> {

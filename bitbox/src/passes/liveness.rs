@@ -129,7 +129,7 @@ impl Pass for LivenessAnalysisPass {
                     .iter()
                     .map(|((b, i), v)| (b, i, v.as_slice()))
                     .collect();
-            blocks.sort_by(|a, b| a.0.0.cmp(&b.0.0).then(a.1.cmp(&b.1)));
+            blocks.sort_by(|a, b| a.0.0.cmp(&b.0.0).then(a.1.cmp(b.1)));
 
             for (block, index, vars) in blocks.iter() {
                 eprintln!("{:?}", block);
@@ -233,10 +233,9 @@ impl Pass for LivenessAnalysisPass {
                                         // compare label strings
                                         if let Some(current_label) =
                                             id_to_block.get(&b_id).map(|b| b.label.as_str())
+                                            && label == current_label
                                         {
-                                            if label == current_label {
-                                                temp.insert(v.clone());
-                                            }
+                                            temp.insert(v.clone());
                                         }
                                     }
                                 }
@@ -279,7 +278,7 @@ impl Pass for LivenessAnalysisPass {
                 }
             }
 
-            for (bi, block) in function.blocks.iter().enumerate() {
+            for block in function.blocks.iter() {
                 let mut live_after = live_out.get(&block.id).cloned().unwrap_or_default();
 
                 for (index, instr) in block.instructions.iter().enumerate().rev() {

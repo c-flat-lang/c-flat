@@ -9,7 +9,7 @@ use crate::text::lexer::token::{Token, TokenKind};
 use crate::text::parser::ast;
 
 struct EmitterContext<'ctx> {
-    function_name: String,
+    // function_name: String,
     assembler: ir::builder::AssemblerBuilder<'ctx>,
     variables: HashMap<String, usize>,
 }
@@ -17,7 +17,7 @@ struct EmitterContext<'ctx> {
 impl EmitterContext<'_> {
     fn alloc_variable(&mut self, ty: &Type, token: &Token) -> Variable {
         let name = token.lexeme.clone();
-        let version = self.variables.entry(name.clone()).or_insert(0).clone();
+        let version = *self.variables.entry(name.clone()).or_insert(0);
         self.variables.insert(name.clone(), version + 1);
         Variable {
             name,
@@ -26,16 +26,16 @@ impl EmitterContext<'_> {
         }
     }
 
-    fn get_variable(&self, lexeme: &str, ty: &Type) -> Variable {
-        let Some(version) = self.variables.get(lexeme).copied() else {
-            panic!("No variable named {}", lexeme);
-        };
-        Variable {
-            name: lexeme.to_string(),
-            ty: ty.clone(),
-            version: version - 1,
-        }
-    }
+    // fn get_variable(&self, lexeme: &str, ty: &Type) -> Variable {
+    //     let Some(version) = self.variables.get(lexeme).copied() else {
+    //         panic!("No variable named {}", lexeme);
+    //     };
+    //     Variable {
+    //         name: lexeme.to_string(),
+    //         ty: ty.clone(),
+    //         version: version - 1,
+    //     }
+    // }
 }
 
 #[derive(Debug, Default)]
@@ -114,7 +114,7 @@ impl Emitter {
                 .with_return_type(return_ty);
 
             let mut target = EmitterContext {
-                function_name: func.name.lexeme.clone(),
+                // function_name: func.name.lexeme.clone(),
                 assembler: function.assembler(),
                 variables: HashMap::new(),
             };
@@ -265,7 +265,7 @@ impl Emitter {
                 };
                 let ty = ir::Type::from(ty.lexeme.as_str());
                 let des = target.alloc_variable(&ty, des);
-                if instruction.arguments.len() % 2 != 0 {
+                if !instruction.arguments.len().is_multiple_of(2) {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @phi");
                 }
