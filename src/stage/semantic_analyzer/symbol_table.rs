@@ -15,7 +15,23 @@ impl Default for SymbolTableBuilder {
         let mut table = SymbolTable::default();
         table.enter_scope("global");
         table.push(Symbol {
-            name: "print".to_string(),
+            name: "write_int".to_string(),
+            ty: ast::Type::Void,
+            visibility: ast::Visibility::Public,
+            kind: SymbolKind::Function,
+            is_mutable: false,
+            params: Some(vec![ast::Type::UnsignedNumber(32)]),
+        });
+        table.push(Symbol {
+            name: "writeln".to_string(),
+            ty: ast::Type::Void,
+            visibility: ast::Visibility::Public,
+            kind: SymbolKind::Function,
+            is_mutable: false,
+            params: Some(vec![]),
+        });
+        table.push(Symbol {
+            name: "write_char".to_string(),
             ty: ast::Type::Void,
             visibility: ast::Visibility::Public,
             kind: SymbolKind::Function,

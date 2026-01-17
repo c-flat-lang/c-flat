@@ -12,7 +12,7 @@ fn main() {
         Err(err) => {
             let errors = err.report(&cli_options.file_path, &source);
             eprintln!("{}", errors);
-            return;
+            std::process::exit(1);
         }
     };
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);

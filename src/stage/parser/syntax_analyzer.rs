@@ -12,6 +12,12 @@ pub struct Parser {
 }
 
 impl Parser {
+    fn next_if_token_kind_eq(&mut self, kind: TokenKind) -> Option<Token> {
+        self.lexer.next_if(|token| token.kind == kind)
+    }
+}
+
+impl Parser {
     pub fn new(lexer: Peekable<std::vec::IntoIter<Token>>) -> Self {
         Self { lexer }
     }
@@ -333,7 +339,7 @@ impl Parser {
     }
 
     fn parse_assignment(&mut self) -> Result<ast::Expr> {
-        let expr = self.parse_comparison()?;
+        let expr = self.parse_or()?;
         if !self.peek(TokenKind::Equal) {
             return Ok(expr);
         }
@@ -347,6 +353,34 @@ impl Parser {
             right: Box::new(right_expr),
         };
         Ok(ast::Expr::Assignment(assignment))
+    }
+
+    fn parse_or(&mut self) -> Result<ast::Expr> {
+        let mut left = self.parse_and()?;
+        while let Some(op) = self.next_if_token_kind_eq(TokenKind::Keyword(Keyword::Or)) {
+            let right = Box::new(self.parse_and()?);
+            let binary_expr = ast::ExprBinary {
+                left: Box::new(left),
+                right,
+                op,
+            };
+            left = ast::Expr::Binary(binary_expr);
+        }
+        Ok(left)
+    }
+
+    fn parse_and(&mut self) -> Result<ast::Expr> {
+        let mut left = self.parse_comparison()?;
+        while let Some(op) = self.next_if_token_kind_eq(TokenKind::Keyword(Keyword::And)) {
+            let right = Box::new(self.parse_comparison()?);
+            let binary_expr = ast::ExprBinary {
+                left: Box::new(left),
+                right,
+                op,
+            };
+            left = ast::Expr::Binary(binary_expr);
+        }
+        Ok(left)
     }
 
     fn parse_comparison(&mut self) -> Result<ast::Expr> {

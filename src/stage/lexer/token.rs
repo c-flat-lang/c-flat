@@ -57,6 +57,7 @@ pub enum TokenKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
+    And,
     Const,
     Else,
     Enum,
@@ -66,6 +67,7 @@ pub enum Keyword {
     If,
     Let,
     Mut,
+    Or,
     Pub,
     Return,
     Struct,
@@ -78,22 +80,24 @@ pub enum Keyword {
 impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Keyword::Const => write!(f, "const"),
-            Keyword::Else => write!(f, "else"),
-            Keyword::Enum => write!(f, "enum"),
-            Keyword::False => write!(f, "false"),
-            Keyword::Fn => write!(f, "fn"),
-            Keyword::For => write!(f, "for"),
-            Keyword::If => write!(f, "if"),
-            Keyword::Let => write!(f, "let"),
-            Keyword::Mut => write!(f, "mut"),
-            Keyword::Pub => write!(f, "pub"),
-            Keyword::Return => write!(f, "return"),
-            Keyword::Struct => write!(f, "struct"),
-            Keyword::True => write!(f, "true"),
-            Keyword::Type => write!(f, "type"),
-            Keyword::Use => write!(f, "use"),
-            Keyword::While => write!(f, "while"),
+            Self::And => write!(f, "and"),
+            Self::Const => write!(f, "const"),
+            Self::Else => write!(f, "else"),
+            Self::Enum => write!(f, "enum"),
+            Self::False => write!(f, "false"),
+            Self::Fn => write!(f, "fn"),
+            Self::For => write!(f, "for"),
+            Self::If => write!(f, "if"),
+            Self::Let => write!(f, "let"),
+            Self::Mut => write!(f, "mut"),
+            Self::Or => write!(f, "or"),
+            Self::Pub => write!(f, "pub"),
+            Self::Return => write!(f, "return"),
+            Self::Struct => write!(f, "struct"),
+            Self::True => write!(f, "true"),
+            Self::Type => write!(f, "type"),
+            Self::Use => write!(f, "use"),
+            Self::While => write!(f, "while"),
         }
     }
 }

@@ -1,7 +1,7 @@
 #![allow(unused)]
 use std::{collections::HashMap, path::Path, process::Command};
 
-use crate::{Target, ir::Variable, passes::detect_loops::LoopInfo};
+use crate::{Target, ir::Variable};
 
 pub mod bitbeat;
 pub mod wasm32;
@@ -121,7 +121,6 @@ pub struct Context {
     pub cfg: crate::passes::control_flow_graph::ControlFlowGraph,
     pub liveness: crate::passes::liveness::LivenessAnalysisInfo,
     pub local_function_variables: crate::passes::local_function_variables::LocalFunctionVariables,
-    pub loops: LoopInfo,
     pub output: Output,
 }
 

@@ -2,8 +2,8 @@ use crate::ir::{
     BasicBlock, BlockId, Constant, Function, Import, Instruction, Module, Operand, Type, Variable,
     Visibility,
     instruction::{
-        IAdd, IAlloc, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
-        ILoad, ILoop, ILt, IMul, INoOp, IPhi, IReturn, ISub, IXOr, Label,
+        IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse,
+        IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, IOr, IPhi, IReturn, ISub, IXOr, Label,
     },
 };
 
@@ -166,11 +166,43 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
+    /// `@and <type> : <des>, <lhs>, <rhs>`
+    pub fn and(
+        &mut self,
+        des: Variable,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(IAnd::new(des, lhs, rhs));
+        self
+    }
+
+    /// `@or <type> : <des>, <lhs>, <rhs>`
+    pub fn or(
+        &mut self,
+        des: Variable,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(IOr::new(des, lhs, rhs));
+        self
+    }
+
     /// `@xor <type> : <des>, <lhs>, <rhs>`
-    pub fn xor(&mut self, des: Variable, lhs: impl Into<Operand>, rhs: impl Into<Operand>) {
+    pub fn xor(
+        &mut self,
+        des: Variable,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
         let lhs = lhs.into();
         let rhs = rhs.into();
         self.push_instruction(IXOr::new(des, lhs, rhs));
+        self
     }
 
     /// `@gt <type> : <des>, <lhs>, <rhs>`
@@ -184,6 +216,14 @@ impl<'a> AssemblerBuilder<'a> {
         let lhs = lhs.into();
         let rhs = rhs.into();
         self.push_instruction(IGt::new(des, lhs, rhs));
+        self
+    }
+
+    /// `@gte <type> : <des>, <lhs>, <rhs>`
+    pub fn gte(&mut self, des: Variable, lhs: Variable, rhs: Variable) -> &mut Self {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(IGte::new(des, lhs, rhs));
         self
     }
 

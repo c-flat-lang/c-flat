@@ -6,8 +6,8 @@ use crate::backend::bitbeat::passes::emit::OperandResult;
 
 use crate::ir::Type;
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IJump, IJumpIf, ILoad, ILt, IMul,
-    IReturn, ISub, IXOr,
+    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IJump, IJumpIf, ILoad, ILt,
+    IMul, IOr, IReturn, ISub, IXOr,
 };
 
 impl Lower<BitbeatLowerContext<'_>> for IAdd {
@@ -144,6 +144,28 @@ impl Lower<BitbeatLowerContext<'_>> for IElemSet {
     }
 }
 
+impl Lower<BitbeatLowerContext<'_>> for IAnd {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut BitbeatLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        todo!("And");
+    }
+}
+
+impl Lower<BitbeatLowerContext<'_>> for IOr {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut BitbeatLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        todo!("Or");
+    }
+}
+
 impl Lower<BitbeatLowerContext<'_>> for IXOr {
     type Output = ();
     fn lower(
@@ -213,6 +235,7 @@ impl Lower<BitbeatLowerContext<'_>> for IReturn {
         if target.function_name != "main" {
             target.assembler.send(bitbeat::Reg(0), reg);
         } else {
+            // NOTE: this is just for debugging
             target.assembler.print(reg);
         }
         target.assembler.halt();

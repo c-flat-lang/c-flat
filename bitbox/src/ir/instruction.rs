@@ -27,11 +27,18 @@ pub enum Instruction {
     ElemGet(IElemGet),
     /// `@elemset <type> : <addr>, <index>, <value>`
     ElemSet(IElemSet),
+    /// `@and <type> : <des>, <lhs>, <rhs>`
+    And(IAnd),
+    /// `@or <type> : <des>, <lhs>, <rhs>`
+    Or(IOr),
     /// `@xor <type> : <des>, <lhs>, <rhs>`
     XOr(IXOr),
     /// `@gt <type> : <des>, <lhs>, <rhs>`
     /// `@gt u1 : is_one, n, 1`
     Gt(IGt),
+    /// `@gte <type> : <des>, <lhs>, <rhs>`
+    /// `@gte u1 : is_one, n, 1`
+    Gte(IGte),
     /// `@lt <type> : <des>, <lhs>, <rhs>`
     /// `@lt u1 : is_one, n, 1`
     Lt(ILt),
@@ -76,8 +83,11 @@ impl fmt::Display for Instruction {
             Self::Copy(icopy) => write!(f, "{icopy}"),
             Self::ElemGet(ielemget) => write!(f, "{ielemget}"),
             Self::ElemSet(ielemset) => write!(f, "{ielemset}"),
+            Self::And(iand) => write!(f, "{iand}"),
+            Self::Or(ior) => write!(f, "{ior}"),
             Self::XOr(ixor) => write!(f, "{ixor}"),
             Self::Gt(igt) => write!(f, "{igt}"),
+            Self::Gte(igte) => write!(f, "{igte}"),
             Self::Lt(ilt) => write!(f, "{ilt}"),
             Self::Assign(iassign) => write!(f, "{iassign}"),
             Self::Alloc(ialloc) => write!(f, "{ialloc}"),
@@ -198,6 +208,24 @@ create_binary_instruction!(
     "cmp"
 );
 create_binary_instruction!(
+    "`@and <type> : <des>, <lhs>, <rhs>`
+
+`@and u1 : both_one, n1, n1`
+",
+    IAnd,
+    And,
+    "and"
+);
+create_binary_instruction!(
+    "`@or <type> : <des>, <lhs>, <rhs>`
+
+`@or u1 : one_or_more_is_one, n1, n2`
+",
+    IOr,
+    Or,
+    "or"
+);
+create_binary_instruction!(
     "`@xor <type> : <des>, <lhs>, <rhs>`
 
 `@xor u1 : is_one, n, 1`
@@ -214,6 +242,15 @@ create_binary_instruction!(
     IGt,
     Gt,
     "gt"
+);
+create_binary_instruction!(
+    "`@gte <type> : <des>, <lhs>, <rhs>`
+
+`@gte u1 : is_one, n, 1`
+",
+    IGte,
+    Gte,
+    "gte"
 );
 create_binary_instruction!(
     "`@lt <type> : <des>, <lhs>, <rhs>`

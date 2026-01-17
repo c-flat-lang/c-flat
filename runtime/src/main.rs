@@ -16,7 +16,13 @@ fn main() {
             eprintln!("Failed to read file {}", &args[0]);
             std::process::exit(1);
         };
-        run_wasm(&data).unwrap();
+        match run_wasm(&data) {
+            Ok(()) => (),
+            Err(err) => {
+                eprintln!("{}", err);
+                std::process::exit(1);
+            }
+        }
     } else if file_path.ends_with(".bb") {
         run_bitbeat(std::fs::read_to_string(file_path).unwrap()).unwrap();
     } else {
@@ -48,6 +54,15 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
     let module = Module::new(&engine, wasm_bytes)?;
 
     let mut linker: Linker<WasiCtx> = Linker::new(&engine);
+    linker.func_wrap("core", "write_char", |a: i32| {
+        match String::from_utf8(a.to_le_bytes().to_vec()) {
+            Ok(s) => print!("{}", s),
+            Err(err) => println!("{}", err),
+        }
+    })?;
+    linker.func_wrap("core", "writenl", || {
+        println!("");
+    })?;
     linker.func_wrap("core", "write_i32", |a: i32| {
         print!("{}", a);
     })?;

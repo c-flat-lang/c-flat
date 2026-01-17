@@ -5,8 +5,8 @@ use crate::backend::Lower;
 
 use crate::ir::Type;
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IIfElse, IJump, IJumpIf,
-    ILoad, ILoop, ILt, IReturn, ISub, IXOr,
+    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump,
+    IJumpIf, ILoad, ILoop, ILt, IOr, IReturn, ISub, IXOr,
 };
 
 impl Lower<Wasm32LowerContext<'_>> for IAdd {
@@ -105,12 +105,10 @@ impl Lower<Wasm32LowerContext<'_>> for IAlloc {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.des.lower(ctx, target);
-        self.size.lower(ctx, target)?;
-        target.assembler.i32_mul();
+        // 1. Get heap pointer
+        target.assembler.global_get(0);
 
-        target.assembler.global_get(0); // HACK: probably need to make a HEAP index.
-
+        // 2. Store it as the variable (array base)
         let Some(ptr_idx) = ctx
             .local_function_variables
             .get(&target.function_name)
@@ -121,8 +119,18 @@ impl Lower<Wasm32LowerContext<'_>> for IAlloc {
         };
 
         target.assembler.local_tee(ptr_idx as u32);
+
+        // 3. Compute allocation size: size * element_size
+        self.size.lower(ctx, target)?; // length
+        target.assembler.i32_const(self.des.ty.size()); // element size (e.g. 4)
+        target.assembler.i32_mul(); // total bytes
+
+        // 4. heap_ptr + size
         target.assembler.i32_add();
-        target.assembler.global_set(0); // HACK: probably need to make a HEAP index.
+
+        // 5. Update heap pointer
+        target.assembler.global_set(0);
+
         Ok(())
     }
 }
@@ -141,6 +149,7 @@ impl Lower<Wasm32LowerContext<'_>> for ICall {
             .local_function_variables
             .get_function_id(self.callee.as_str())
         else {
+            // We should have a front end error for this
             panic!("Function {:?} not found", self.callee);
         };
         target.assembler.call(function_id as u32);
@@ -249,12 +258,19 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        let ty = self.addr.ty.clone();
+        let ty = match self.addr.ty.clone() {
+            Type::Array(_, ty) => *ty,
+            ty => ty,
+        };
         self.index.lower(ctx, target);
         target.assembler.i32_const(ty.size());
         target.assembler.i32_mul();
+
+        self.addr.lower(ctx, target);
+        target.assembler.i32_add();
+
         self.value.lower(ctx, target);
-        match ty.clone().into() {
+        match ty.into() {
             ValType::I32 => target.assembler.i32_store(wasm_encoder::MemArg {
                 offset: 0,
                 align: 2,
@@ -266,6 +282,66 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
             ValType::V128 => todo!("@gt v128"),
             ValType::Ref(_) => todo!("@gt ref"),
         };
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IAnd {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target);
+        self.rhs.lower(ctx, target);
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_and(),
+            ValType::I64 => todo!("@gt i64"),
+            ValType::F32 => todo!("@gt f32"),
+            ValType::F64 => todo!("@gt f64"),
+            ValType::V128 => todo!("@gt v128"),
+            ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IOr {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target);
+        self.rhs.lower(ctx, target);
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_or(),
+            ValType::I64 => todo!("@gt i64"),
+            ValType::F32 => todo!("@gt f32"),
+            ValType::F64 => todo!("@gt f64"),
+            ValType::V128 => todo!("@gt v128"),
+            ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
         Ok(())
     }
 }
@@ -311,6 +387,36 @@ impl Lower<Wasm32LowerContext<'_>> for IGt {
         self.rhs.lower(ctx, target);
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_gt_s(),
+            ValType::I64 => todo!("@gt i64"),
+            ValType::F32 => todo!("@gt f32"),
+            ValType::F64 => todo!("@gt f64"),
+            ValType::V128 => todo!("@gt v128"),
+            ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IGte {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target);
+        self.rhs.lower(ctx, target);
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_ge_u(),
             ValType::I64 => todo!("@gt i64"),
             ValType::F32 => todo!("@gt f32"),
             ValType::F64 => todo!("@gt f64"),

@@ -16,7 +16,11 @@ impl Default for LocalFunctionVariables {
     fn default() -> Self {
         Self {
             table: HashMap::new(),
-            functions: vec!["print".to_string()],
+            functions: vec![
+                "write_int".to_string(),
+                "writeln".to_string(),
+                "write_char".to_string(),
+            ],
         }
     }
 }
@@ -99,12 +103,21 @@ fn block_pass(
             crate::ir::Instruction::ElemGet(ielemget) => ctx
                 .local_function_variables
                 .add(function_name, ielemget.des.clone()),
+            crate::ir::Instruction::And(iand) => ctx
+                .local_function_variables
+                .add(function_name, iand.des.clone()),
+            crate::ir::Instruction::Or(ior) => ctx
+                .local_function_variables
+                .add(function_name, ior.des.clone()),
             crate::ir::Instruction::XOr(ixor) => ctx
                 .local_function_variables
                 .add(function_name, ixor.des.clone()),
             crate::ir::Instruction::Gt(igt) => ctx
                 .local_function_variables
                 .add(function_name, igt.des.clone()),
+            crate::ir::Instruction::Gte(igte) => ctx
+                .local_function_variables
+                .add(function_name, igte.des.clone()),
             crate::ir::Instruction::Lt(ilt) => ctx
                 .local_function_variables
                 .add(function_name, ilt.des.clone()),

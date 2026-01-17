@@ -1,6 +1,6 @@
 #![allow(unused)]
 use super::Stage;
-use crate::stage::lexer::token::{Token, TokenKind};
+use crate::stage::lexer::token::{Keyword, Token, TokenKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbeat::Instruction;
@@ -247,6 +247,9 @@ impl Lowerable for ExprBinary {
             TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
             TokenKind::Less => assembler.lt(des.clone(), lhs, rhs),
             TokenKind::EqualEqual => assembler.eq(des.clone(), lhs, rhs),
+            TokenKind::GreaterEqual => assembler.gte(des.clone(), lhs, rhs),
+            TokenKind::Keyword(Keyword::And) => assembler.and(des.clone(), lhs, rhs),
+            TokenKind::Keyword(Keyword::Or) => assembler.or(des.clone(), lhs, rhs),
             op => unimplemented!("Operator not implemented {op:?}"),
         };
         Some(des)
@@ -493,7 +496,10 @@ impl Lowerable for ExprCall {
 
         let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
             symbol.ty.as_bitbox_type()
-        } else if ident.lexeme == "print" {
+        } else if matches!(
+            ident.lexeme.as_str(),
+            "write_int" | "writenl" | "write_char"
+        ) {
             Type::Void
         } else {
             panic!("Symbol not found {}", ident.lexeme);

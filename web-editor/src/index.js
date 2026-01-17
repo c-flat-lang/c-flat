@@ -17,8 +17,17 @@ async function run(buffer) {
         );
         console.log(stringData);
       },
+      // Temporary
       write_i32: (number) => {
         console.log(number);
+      },
+      // Temporary
+      writenl: () => {
+        console.log("");
+      },
+      // Temporary
+      write_char: (char) => {
+        console.log(String.fromCharCode(char));
       },
     },
   };

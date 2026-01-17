@@ -62,6 +62,7 @@ impl<'a> Tokenizer<'a> {
         }
 
         let kind = match lexeme.as_str() {
+            "and" => TokenKind::Keyword(Keyword::And),
             "const" => TokenKind::Keyword(Keyword::Const),
             "else" => TokenKind::Keyword(Keyword::Else),
             "enum" => TokenKind::Keyword(Keyword::Enum),
@@ -71,6 +72,7 @@ impl<'a> Tokenizer<'a> {
             "if" => TokenKind::Keyword(Keyword::If),
             "let" => TokenKind::Keyword(Keyword::Let),
             "mut" => TokenKind::Keyword(Keyword::Mut),
+            "or" => TokenKind::Keyword(Keyword::Or),
             "pub" => TokenKind::Keyword(Keyword::Pub),
             "return" => TokenKind::Keyword(Keyword::Return),
             "struct" => TokenKind::Keyword(Keyword::Struct),

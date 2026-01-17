@@ -1,6 +1,6 @@
 #![allow(unused)]
 use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
-use crate::stage::lexer::token::{Token, TokenKind};
+use crate::stage::lexer::token::{Keyword as Kw, Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, Type};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
@@ -29,7 +29,9 @@ impl Type {
                 Type::SignedNumber(rhs),
             ) if lhs == rhs => Some(Type::Bool),
             (Type::Float(lhs), TokenKind::Plus, Type::Float(rhs)) => Some(Type::Float(*lhs)),
-            (Type::Bool, TokenKind::EqualEqual, Type::Bool) => Some(Type::Bool),
+            (Type::Bool, (EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or)), Type::Bool) => {
+                Some(Type::Bool)
+            }
             //(Type::Custom(name), op, Type::Custom(rhs)) => {
             //    // For operator overloading — check user-defined impls
             //    // e.g., lookup "impl Add for MyType { ... }" in your symbol table maybe
@@ -198,7 +200,10 @@ impl<'st> TypeChecker<'st> {
             panic!("Caller must be an identifier");
         };
 
-        if ident.lexeme == "print" {
+        if matches!(
+            ident.lexeme.as_str(),
+            "write_int" | "writenl" | "write_char"
+        ) {
             return Type::Void;
         }
 
