@@ -8,6 +8,7 @@ pub enum DebugPass {
     LoweredIr,
     EmitWasm32,
     EmitBitbeat,
+    EmitX86_64,
     ControlFlowGraph,
     LivenessAnalysis,
     DetectLoops,

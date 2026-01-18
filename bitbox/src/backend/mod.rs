@@ -60,7 +60,7 @@ impl Output {
     pub fn finish(mut self) -> CompilerResult {
         match self {
             Self::Wasm32(mut module) => CompilerResult::Wasm32(module.finish()),
-            Self::X86_64(..) => CompilerResult::X86_64,
+            Self::X86_64(assembly) => CompilerResult::X86_64(assembly),
             Self::Bitbeat(module) => CompilerResult::Bitbeat(module),
         }
     }
@@ -95,7 +95,7 @@ impl Default for Output {
 #[derive(Debug)]
 pub enum CompilerResult {
     Wasm32(Vec<u8>),
-    X86_64,
+    X86_64(String),
     Bitbeat(bitbeat::bitbeat::Module),
 }
 impl Default for CompilerResult {
@@ -108,8 +108,21 @@ impl CompilerResult {
     pub fn save_to_file(&self, path: &str) {
         match self {
             Self::Wasm32(bytes) => std::fs::write(path, bytes).unwrap(),
-            Self::X86_64 => {
-                eprintln!("save to file is not implemented for X86_64");
+            Self::X86_64(asm) => {
+                // write assembly to file
+                let asm_path = format!("{}.s", path);
+                std::fs::write(&asm_path, asm.as_bytes()).unwrap();
+                // Call gcc
+                Command::new("gcc")
+                    .arg("-no-pie")
+                    .arg(&asm_path)
+                    .arg("runtime.c")
+                    .arg("-o")
+                    .arg(path)
+                    .output()
+                    .unwrap();
+                // Remove assembly file
+                std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
             }
             Self::Bitbeat(module) => module.save_to_file(path),
         }

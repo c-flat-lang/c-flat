@@ -1,6 +1,7 @@
 #[derive(Debug)]
 pub enum Error {
     InvalidInstruction { index: usize, message: String },
+    MissingMainFunction,
 }
 
 impl std::fmt::Display for Error {
@@ -9,6 +10,7 @@ impl std::fmt::Display for Error {
             Error::InvalidInstruction { index, message } => {
                 write!(f, "Invalid instruction at index {}: {}", index, message)
             }
+            Error::MissingMainFunction => write!(f, "Missing main function"),
         }
     }
 }
