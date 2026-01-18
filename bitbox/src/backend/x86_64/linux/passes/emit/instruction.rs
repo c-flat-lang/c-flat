@@ -27,7 +27,17 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
                 Ok(reg)
             }
 
-            _ => unreachable!(),
+            Operand::Variable(var) => {
+                let Some(reg) = target.get_reg_for_variable(&var.name) else {
+                    panic!(
+                        "Variable {:?} not found in {:#?}",
+                        var, target.function_name
+                    );
+                };
+                Ok(reg)
+            }
+
+            _ => unreachable!("{self:?}"),
         }
     }
 }
