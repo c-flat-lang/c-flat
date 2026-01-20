@@ -37,6 +37,7 @@ impl Cli {
             eprintln!("                  options: control-flow-graph");
             eprintln!("                  options: liveness-analysis");
             eprintln!("                  options: detect-loops");
+            eprintln!("                  options: phi-node-elimination");
             eprintln!("    -h, --help    Print this help message");
 
             std::process::exit(0);
@@ -69,6 +70,8 @@ impl Cli {
             debug_mode = Some(DebugMode::LivenessAnalysis);
         } else if args.has_arg("--dump-after=detect-loops") {
             debug_mode = Some(DebugMode::DetectLoops);
+        } else if args.has_arg("--dump-after=phi-node-elimination") {
+            debug_mode = Some(DebugMode::PhiNodeElimination);
         }
 
         let mut target = Target::default();
@@ -103,6 +106,7 @@ pub enum DebugMode {
     SymbolTable,
     Token,
     DetectLoops,
+    PhiNodeElimination,
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
@@ -115,6 +119,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::ControlFlowGraph => Some(bitbox::passes::DebugPass::ControlFlowGraph),
             DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
             DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
+            DebugMode::PhiNodeElimination => Some(bitbox::passes::DebugPass::PhiNodeElimination),
             _ => None,
         }
     }

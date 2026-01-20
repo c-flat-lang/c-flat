@@ -113,14 +113,27 @@ impl CompilerResult {
                 let asm_path = format!("{}.s", path);
                 std::fs::write(&asm_path, asm.as_bytes()).unwrap();
                 // Call gcc
-                Command::new("gcc")
+                let cmd_result = Command::new("gcc")
+                    .arg("-Wall")
+                    .arg("-Wextra")
+                    .arg("-g")
                     .arg("-no-pie")
                     .arg(&asm_path)
                     .arg("runtime.c")
                     .arg("-o")
                     .arg(path)
-                    .output()
-                    .unwrap();
+                    .output();
+                match cmd_result {
+                    Ok(output) => {
+                        if !output.status.success() {
+                            println!("Error: {}", String::from_utf8_lossy(&output.stderr));
+                        }
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                        std::process::exit(1);
+                    }
+                }
                 // Remove assembly file
                 std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
             }

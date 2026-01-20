@@ -74,12 +74,31 @@ impl std::fmt::Display for Location {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Label(pub String);
+
+impl Label {
+    pub fn prepare(&self) -> String {
+        self.0.replace("-", "_")
+    }
+}
+
+impl std::fmt::Display for Label {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.prepare())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
     Mov(Location, Location),
     Pop(Location),
     Push(Location),
-    Label(String),
+    Label(Label),
     Ret,
+    Jnz(Label),
+    Test(Location, Location),
+    Jmp(Label),
+    DefineLabel(Label),
 }
 
 impl std::fmt::Display for Instruction {
@@ -90,6 +109,10 @@ impl std::fmt::Display for Instruction {
             Self::Push(src) => write!(f, "  push {}", src),
             Self::Label(label) => write!(f, "{}:", label),
             Self::Ret => write!(f, "  ret"),
+            Self::Jnz(label) => write!(f, "  jnz {}", label),
+            Self::Test(dst, src) => write!(f, "  test {}, {}", dst, src),
+            Self::Jmp(label) => write!(f, "  jmp {}", label),
+            Self::DefineLabel(label) => write!(f, "{}:", label),
         }
     }
 }
@@ -149,12 +172,37 @@ impl Assembler {
     }
 
     pub fn label(&mut self, name: &str) -> &mut Self {
-        self.instructions.push(Instruction::Label(name.to_string()));
+        self.instructions
+            .push(Instruction::Label(Label(name.to_string())));
         self
     }
 
     pub fn ret(&mut self) -> &mut Self {
         self.instructions.push(Instruction::Ret);
+        self
+    }
+
+    pub fn jnz(&mut self, label: impl Into<String>) -> &mut Self {
+        self.instructions
+            .push(Instruction::Jnz(Label(label.into())));
+        self
+    }
+
+    pub fn test(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        self.instructions
+            .push(Instruction::Test(rhs.into(), lhs.into()));
+        self
+    }
+
+    pub fn jmp(&mut self, label: impl Into<String>) -> &mut Self {
+        self.instructions
+            .push(Instruction::Jmp(Label(label.into())));
+        self
+    }
+
+    pub fn define_label(&mut self, label: impl Into<String>) -> &mut Self {
+        self.instructions
+            .push(Instruction::DefineLabel(Label(label.into())));
         self
     }
 }

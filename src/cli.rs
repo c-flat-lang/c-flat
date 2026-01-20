@@ -112,10 +112,19 @@ impl Cli {
                 "control-flow-graph" => DebugMode::ControlFlowGraph,
                 "liveness-analysis" => DebugMode::LivenessAnalysis,
                 "detect-loops" => DebugMode::DetectLoops,
+                "phi-node-elimination" => DebugMode::PhiNodeElimination,
                 _ => {
                     eprintln!("Unknown debug mode: {}", value);
                     eprintln!(
-                        "lowering-ir, emit-wasm32, emit-bitbeat, control-flow-graph, liveness-analysis, detect-loops"
+                        r#"Options:
+                        lowering-ir,
+                        emit-wasm32,
+                        emit-bitbeat,
+                        control-flow-graph,
+                        liveness-analysis,
+                        detect-loops,
+                        phi-node-elimination
+                        "#
                     );
                     std::process::exit(1);
                 }
@@ -156,6 +165,7 @@ pub enum DebugMode {
     SymbolTable,
     Token,
     DetectLoops,
+    PhiNodeElimination,
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
@@ -168,6 +178,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::ControlFlowGraph => Some(bitbox::passes::DebugPass::ControlFlowGraph),
             DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
             DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
+            DebugMode::PhiNodeElimination => Some(bitbox::passes::DebugPass::PhiNodeElimination),
             _ => None,
         }
     }

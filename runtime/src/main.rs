@@ -8,7 +8,7 @@ fn main() {
     if args.len() != 1 {
         eprintln!(
             "Usage: {} <filename>",
-            std::env::args().next().unwrap_or("No filename")
+            std::env::args().next().unwrap_or("No filename".to_string())
         );
         std::process::exit(1);
     }

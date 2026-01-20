@@ -2,6 +2,7 @@ pub mod control_flow_graph;
 pub mod liveness;
 pub mod local_function_variables;
 pub mod lowering;
+pub mod phi_node_elimination;
 
 #[derive(Debug, Clone, Copy)]
 pub enum DebugPass {
@@ -12,6 +13,7 @@ pub enum DebugPass {
     ControlFlowGraph,
     LivenessAnalysis,
     DetectLoops,
+    PhiNodeElimination,
 }
 
 pub trait Pass {

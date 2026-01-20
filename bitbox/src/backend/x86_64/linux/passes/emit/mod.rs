@@ -108,6 +108,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
         ctx: &mut Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.define_label(&self.label);
         for instruction in self.instructions.iter() {
             instruction.lower(ctx, target)?;
         }
@@ -138,11 +139,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Gt(..) => todo!("gt"),
             ir::Instruction::Gte(..) => todo!("gte"),
             ir::Instruction::Lt(..) => todo!("lt"),
-            ir::Instruction::Jump(_) => todo!("jump"),
-            ir::Instruction::JumpIf(..) => todo!("jumpif"),
+            ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
+            ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),
             ir::Instruction::Mul(..) => todo!("mul"),
-            ir::Instruction::Phi(..) => todo!("phi"),
+            ir::Instruction::Phi(iphi) => {
+                unreachable!("Lowering pass should be used before emit x86_64 pass")
+            }
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(..) => todo!("sub"),
             ir::Instruction::Div(..) => todo!("div"),
