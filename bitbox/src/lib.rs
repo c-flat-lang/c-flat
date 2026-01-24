@@ -1,4 +1,4 @@
-use crate::{backend::CompilerResult, passes::DebugPass};
+use crate::passes::DebugPass;
 
 pub mod backend;
 pub mod error;

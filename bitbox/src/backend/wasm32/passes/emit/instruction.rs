@@ -16,8 +16,8 @@ impl Lower<Wasm32LowerContext<'_>> for IAdd {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_add(),
             ValType::I64 => todo!("@gt i64"),
@@ -46,8 +46,8 @@ impl Lower<Wasm32LowerContext<'_>> for ISub {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_sub(),
             ValType::I64 => todo!("@gt i64"),
@@ -85,7 +85,7 @@ impl Lower<Wasm32LowerContext<'_>> for IAssign {
                         self.des, target.function_name
                     );
                 };
-                self.src.lower(ctx, target);
+                self.src.lower(ctx, target)?;
                 target.assembler.local_set(idx as u32);
             }
             ValType::I64 => todo!("@assign i64"),
@@ -143,7 +143,7 @@ impl Lower<Wasm32LowerContext<'_>> for ICall {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         for operand in self.args.iter() {
-            operand.lower(ctx, target);
+            operand.lower(ctx, target)?;
         }
         let Some(function_id) = ctx
             .local_function_variables
@@ -171,8 +171,8 @@ impl Lower<Wasm32LowerContext<'_>> for ICmp {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_eq(),
             ValType::I64 => todo!("@gt i64"),
@@ -201,7 +201,7 @@ impl Lower<Wasm32LowerContext<'_>> for ICopy {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.src.lower(ctx, target);
+        self.src.lower(ctx, target)?;
         let Some(idx) = ctx
             .local_function_variables
             .get(&target.function_name)
@@ -222,11 +222,11 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.index.lower(ctx, target);
+        self.index.lower(ctx, target)?;
         target.assembler.i32_const(self.des.ty.size());
         target.assembler.i32_mul();
 
-        self.ptr.lower(ctx, target);
+        self.ptr.lower(ctx, target)?;
         target.assembler.i32_add();
 
         match self.des.ty.clone().into() {
@@ -262,14 +262,14 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
             Type::Array(_, ty) => *ty,
             ty => ty,
         };
-        self.index.lower(ctx, target);
+        self.index.lower(ctx, target)?;
         target.assembler.i32_const(ty.size());
         target.assembler.i32_mul();
 
-        self.addr.lower(ctx, target);
+        self.addr.lower(ctx, target)?;
         target.assembler.i32_add();
 
-        self.value.lower(ctx, target);
+        self.value.lower(ctx, target)?;
         match ty.into() {
             ValType::I32 => target.assembler.i32_store(wasm_encoder::MemArg {
                 offset: 0,
@@ -293,8 +293,8 @@ impl Lower<Wasm32LowerContext<'_>> for IAnd {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_and(),
             ValType::I64 => todo!("@gt i64"),
@@ -323,8 +323,8 @@ impl Lower<Wasm32LowerContext<'_>> for IOr {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_or(),
             ValType::I64 => todo!("@gt i64"),
@@ -353,8 +353,8 @@ impl Lower<Wasm32LowerContext<'_>> for IXOr {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_xor(),
             ValType::I64 => todo!("@gt i64"),
@@ -383,8 +383,8 @@ impl Lower<Wasm32LowerContext<'_>> for IGt {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_gt_s(),
             ValType::I64 => todo!("@gt i64"),
@@ -413,8 +413,8 @@ impl Lower<Wasm32LowerContext<'_>> for IGte {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_ge_u(),
             ValType::I64 => todo!("@gt i64"),
@@ -443,8 +443,8 @@ impl Lower<Wasm32LowerContext<'_>> for ILt {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target);
-        self.rhs.lower(ctx, target);
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_lt_s(),
             ValType::I64 => todo!("@gt i64"),
@@ -470,7 +470,7 @@ impl Lower<Wasm32LowerContext<'_>> for IJump {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
+        _ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         let Some(block_id) = target.blocks.get(&self.label).copied() else {
@@ -491,7 +491,7 @@ impl Lower<Wasm32LowerContext<'_>> for IJumpIf {
         let Some(block_id) = target.blocks.get(&self.label).copied() else {
             panic!("Block {:?} not found {:#?}", self.label, target.blocks);
         };
-        self.cond.lower(ctx, target);
+        self.cond.lower(ctx, target)?;
         target.assembler.br_if(block_id);
         Ok(())
     }
@@ -528,7 +528,7 @@ impl Lower<Wasm32LowerContext<'_>> for IReturn {
         match self.ty.clone() {
             Type::Void => todo!("@return void"),
             _ => {
-                self.src.lower(ctx, target);
+                self.src.lower(ctx, target)?;
                 target.assembler.return_();
             }
         }

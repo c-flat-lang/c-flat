@@ -1,6 +1,5 @@
 use super::{BitbeatLowerContext, OperandResult};
 use crate::backend::Lower;
-use crate::ir::instruction::{IAdd, ICmp, IJumpIf, ILoad, IReturn};
 use crate::passes::{DebugPass, Pass};
 
 #[derive(Debug)]
@@ -9,7 +8,7 @@ pub struct EmitBitbeatPass;
 impl Pass for EmitBitbeatPass {
     fn debug(
         &self,
-        module: &crate::ir::Module,
+        _module: &crate::ir::Module,
         ctx: &crate::backend::Context,
         debug_mode: Option<DebugPass>,
     ) -> bool {
@@ -49,7 +48,6 @@ impl Lower<EmitBitbeatPass> for crate::ir::Function {
         function = function.returns(is_returning);
 
         {
-            let mut module = ctx.output.get_mut_bitbeat();
             let mut target = BitbeatLowerContext::new(self.name.clone(), function.instructions());
             if is_returning {
                 target.returns();
@@ -67,7 +65,7 @@ impl Lower<EmitBitbeatPass> for crate::ir::Function {
             }
         }
 
-        let mut module = ctx.output.get_mut_bitbeat();
+        let module = ctx.output.get_mut_bitbeat();
         module.add_function(function);
 
         Ok(())
@@ -133,7 +131,7 @@ impl Lower<BitbeatLowerContext<'_>> for OperandResult {
     type Output = bitbeat::Reg;
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
+        _ctx: &mut crate::backend::Context,
         target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
@@ -172,7 +170,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Variable {
     type Output = bitbeat::Reg;
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
+        _ctx: &mut crate::backend::Context,
         target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         let Some(reg) = target.variables.get(&self.to_string()) else {

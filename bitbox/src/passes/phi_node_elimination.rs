@@ -10,7 +10,7 @@ pub struct PhiNodeEliminationPass;
 impl Pass for PhiNodeEliminationPass {
     fn debug(
         &self,
-        module: &crate::ir::Module,
+        _module: &crate::ir::Module,
         _ctx: &crate::backend::Context,
         debug_mode: Option<DebugPass>,
     ) -> bool {

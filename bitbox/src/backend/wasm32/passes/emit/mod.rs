@@ -1,13 +1,8 @@
-#![allow(unused)]
-
 mod instruction;
 use std::collections::HashMap;
 
 use crate::backend::Lower;
-use crate::ir::instruction::{
-    IAdd, IAlloc, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IIfElse, ILoad, ILt, ISub,
-};
-use crate::ir::{self, BlockId, Module, Type, Visibility};
+use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::{DebugPass, Pass};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
@@ -21,7 +16,7 @@ pub struct EmitWasm32Pass;
 impl Pass for EmitWasm32Pass {
     fn debug(
         &self,
-        module: &crate::ir::Module,
+        _module: &crate::ir::Module,
         ctx: &crate::backend::Context,
         debug_mode: Option<DebugPass>,
     ) -> bool {
@@ -46,7 +41,7 @@ impl Pass for EmitWasm32Pass {
         eprintln!("EmitWasm32Pass");
 
         {
-            let mut module = ctx.output.get_mut_wasm32();
+            let module = ctx.output.get_mut_wasm32();
 
             module.import_section.import(
                 "core",
@@ -310,11 +305,11 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
-            ir::Instruction::Mul(imul) => todo!("@mul"),
+            ir::Instruction::Mul(..) => todo!("@mul"),
             ir::Instruction::Phi(..) => todo!("@phi"),
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
-            ir::Instruction::Div(idiv) => todo!("@div"),
+            ir::Instruction::Div(..) => todo!("@div"),
             ir::Instruction::IfElse(iifelse) => iifelse.lower(ctx, target)?,
             ir::Instruction::Loop(iloop) => iloop.lower(ctx, target)?,
         }

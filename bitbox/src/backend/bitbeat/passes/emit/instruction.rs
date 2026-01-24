@@ -4,7 +4,6 @@ use super::BitbeatLowerContext;
 use crate::backend::Lower;
 use crate::backend::bitbeat::passes::emit::OperandResult;
 
-use crate::ir::Type;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IJump, IJumpIf, ILoad, ILt,
     IMul, IOr, IReturn, ISub, IXOr,
@@ -73,10 +72,10 @@ impl Lower<BitbeatLowerContext<'_>> for IAlloc {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
-        target: &mut BitbeatLowerContext<'_>,
+        _ctx: &mut crate::backend::Context,
+        _target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        Ok(())
+        todo!();
     }
 }
 
@@ -126,10 +125,10 @@ impl Lower<BitbeatLowerContext<'_>> for IElemGet {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
-        target: &mut BitbeatLowerContext<'_>,
+        _ctx: &mut crate::backend::Context,
+        _target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        Ok(())
+        todo!()
     }
 }
 
@@ -137,10 +136,10 @@ impl Lower<BitbeatLowerContext<'_>> for IElemSet {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
-        target: &mut BitbeatLowerContext<'_>,
+        _ctx: &mut crate::backend::Context,
+        _target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        Ok(())
+        todo!()
     }
 }
 
@@ -148,8 +147,8 @@ impl Lower<BitbeatLowerContext<'_>> for IAnd {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
-        target: &mut BitbeatLowerContext<'_>,
+        _ctx: &mut crate::backend::Context,
+        _target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         todo!("And");
     }
@@ -159,8 +158,8 @@ impl Lower<BitbeatLowerContext<'_>> for IOr {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
-        target: &mut BitbeatLowerContext<'_>,
+        _ctx: &mut crate::backend::Context,
+        _target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         todo!("Or");
     }
@@ -185,10 +184,10 @@ impl Lower<BitbeatLowerContext<'_>> for IGt {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
-        target: &mut BitbeatLowerContext<'_>,
+        _ctx: &mut crate::backend::Context,
+        _target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        Ok(())
+        todo!()
     }
 }
 
@@ -247,7 +246,7 @@ impl Lower<BitbeatLowerContext<'_>> for IJump {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
+        _ctx: &mut crate::backend::Context,
         target: &mut BitbeatLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.jump(&self.label);

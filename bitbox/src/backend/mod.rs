@@ -1,7 +1,6 @@
-#![allow(unused)]
-use std::{collections::HashMap, path::Path, process::Command};
+use std::process::Command;
 
-use crate::{Target, ir::Variable};
+use crate::Target;
 
 pub mod bitbeat;
 pub mod wasm32;
@@ -57,7 +56,7 @@ impl Output {
         }
     }
 
-    pub fn finish(mut self) -> CompilerResult {
+    pub fn finish(self) -> CompilerResult {
         match self {
             Self::Wasm32(mut module) => CompilerResult::Wasm32(module.finish()),
             Self::X86_64(assembly) => CompilerResult::X86_64(assembly),

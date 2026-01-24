@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use crate::backend::x86_64::linux::passes::emit::assembler::Assembler;
 use crate::backend::{Context, Lower};
 use crate::ir;
-use crate::ir::instruction::{IAssign, IReturn};
 use crate::passes::DebugPass;
 
 pub struct X86_64LinuxLowerContext<'ctx> {
@@ -40,19 +39,6 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
         };
         self.assembler.free_reg(reg);
     }
-
-    fn free_reg(&mut self, reg: assembler::Reg64) {
-        self.assembler.free_reg(reg);
-        let Some(key) = self
-            .variable_to_reg_map
-            .iter()
-            .find(|(_, r)| **r == reg)
-            .map(|(k, _)| k.clone())
-        else {
-            return;
-        };
-        self.variable_to_reg_map.remove(key.as_str());
-    }
 }
 
 #[derive(Debug)]
@@ -61,7 +47,7 @@ pub struct EmitX86_64LinuxPass;
 impl crate::passes::Pass for EmitX86_64LinuxPass {
     fn debug(
         &self,
-        module: &crate::ir::Module,
+        _module: &crate::ir::Module,
         ctx: &crate::backend::Context,
         debug_mode: Option<DebugPass>,
     ) -> bool {
@@ -80,14 +66,14 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
     ) -> Result<(), crate::error::Error> {
         eprintln!("EmitLLVMIRPass");
 
-        if module.functions.iter().find(|f| f.name == "main").is_none() {
+        if module.functions.iter().any(|f| f.name == "main") {
             return Err(crate::error::Error::MissingMainFunction);
         }
 
         {
             let x86_64 = ctx.output.get_mut_x86_64();
-            x86_64.push_str(&format!(".intel_syntax noprefix\n"));
-            x86_64.push_str(&format!(".globl main\n"));
+            x86_64.push_str(".intel_syntax noprefix\n");
+            x86_64.push_str(".globl main\n");
         }
 
         for function in module.functions.iter() {
@@ -103,7 +89,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
     fn lower(
         &self,
         ctx: &mut crate::backend::Context,
-        backend: &mut EmitX86_64LinuxPass,
+        _backend: &mut EmitX86_64LinuxPass,
     ) -> Result<Self::Output, crate::error::Error> {
         use assembler::Reg64::*;
         let mut target = X86_64LinuxLowerContext::new(&self.name);
@@ -179,7 +165,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),
             ir::Instruction::Mul(..) => todo!("mul"),
-            ir::Instruction::Phi(iphi) => {
+            ir::Instruction::Phi(..) => {
                 unreachable!("Lowering pass should be used before emit x86_64 pass")
             }
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,

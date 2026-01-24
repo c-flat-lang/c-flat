@@ -194,7 +194,9 @@ impl Instruction {
                     variables.push(v.clone());
                 }
             }
-            Instruction::Jump(ijump) => {}
+            Instruction::Jump(..) => {
+                // do nothing
+            }
             Instruction::JumpIf(ijump_if) => {
                 if let Operand::Variable(v) = &ijump_if.cond {
                     variables.push(v.clone());

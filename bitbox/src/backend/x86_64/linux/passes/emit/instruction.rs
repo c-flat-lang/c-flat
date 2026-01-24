@@ -2,7 +2,7 @@ use super::X86_64LinuxLowerContext;
 use super::assembler::Reg64;
 use crate::backend::Lower;
 
-use crate::ir::instruction::{IAssign, IJump, IJumpIf, IPhi, IReturn};
+use crate::ir::instruction::{IAssign, IJump, IJumpIf, IReturn};
 use crate::ir::{Operand, Type};
 
 impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
@@ -70,7 +70,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
+        _ctx: &mut crate::backend::Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         match &self.src {
@@ -107,7 +107,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJump {
     type Output = ();
     fn lower(
         &self,
-        ctx: &mut crate::backend::Context,
+        _ctx: &mut crate::backend::Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.jmp(&self.label);

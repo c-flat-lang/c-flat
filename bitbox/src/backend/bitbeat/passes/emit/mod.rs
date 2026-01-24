@@ -1,7 +1,6 @@
 mod emitter;
 mod instruction;
 
-use bitbeat::InstructionBuilder;
 pub use emitter::EmitBitbeatPass;
 
 #[derive(Debug)]
@@ -42,7 +41,7 @@ impl<'ctx> BitbeatLowerContext<'ctx> {
         bitbeat::Reg(id)
     }
 
-    fn free(&mut self, reg: &bitbeat::Reg) {
+    fn _free(&mut self, reg: &bitbeat::Reg) {
         self.registery[reg.0] = false
     }
 }
