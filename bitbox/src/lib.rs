@@ -86,12 +86,12 @@ impl Compiler {
         }
     }
 
-    pub fn run(&self, module: &mut ir::Module) -> Result<CompilerResult, error::Error> {
+    pub fn run(&self, module: &mut ir::Module) -> Result<(), error::Error> {
         let mut ctx = backend::Context::new(&self.target);
         for mut pass in self.backend.passes() {
             pass.run(module, &mut ctx)?;
             if pass.debug(module, &ctx, self.debug_mode) {
-                return Ok(CompilerResult::default());
+                return Ok(());
             }
         }
 
@@ -99,6 +99,6 @@ impl Compiler {
         let path = self.target.get_new_path(&self.src_path);
         #[cfg(not(feature = "wasm"))]
         compiler_result.save_to_file(&path);
-        Ok(compiler_result)
+        Ok(())
     }
 }

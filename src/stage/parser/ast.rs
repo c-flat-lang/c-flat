@@ -41,17 +41,17 @@ pub struct Function {
     pub name: Token,
     pub params: Vec<Param>,
     pub return_type: Type,
-    pub body: Block,
+    pub body: ExprBlock,
 }
 
 #[derive(Debug, Clone)]
-pub struct Block {
+pub struct ExprBlock {
     pub open_brace: Token,
     pub statements: Vec<Statement>,
     pub close_brace: Token,
 }
 
-impl Block {
+impl ExprBlock {
     pub fn span(&self) -> Span {
         let start = self.open_brace.span.start;
         let end = self.close_brace.span.end;
@@ -157,6 +157,7 @@ pub enum Expr {
     Array(ExprArray),
     ArrayIndex(ExprArrayIndex),
     ArrayRepeat(ExprArrayRepeat),
+    Block(ExprBlock),
 }
 
 impl Expr {
@@ -176,6 +177,7 @@ impl Expr {
             Self::Array(expr) => expr.span(),
             Self::ArrayIndex(expr) => expr.span(),
             Self::ArrayRepeat(expr) => expr.span(),
+            Self::Block(block) => block.span(),
         }
     }
 
@@ -355,7 +357,7 @@ impl ExprBinary {
 pub struct ExprWhile {
     pub while_token: Token,
     pub condition: Box<Expr>,
-    pub body: Block,
+    pub body: ExprBlock,
 }
 
 impl ExprWhile {
@@ -370,9 +372,9 @@ impl ExprWhile {
 pub struct ExprIfElse {
     pub if_token: Token,
     pub condition: Box<Expr>,
-    pub then_branch: Block,
+    pub then_branch: ExprBlock,
     pub else_token: Option<Token>,
-    pub else_branch: Option<Block>,
+    pub else_branch: Option<Box<Expr>>,
     pub ty: Type,
 }
 
@@ -382,7 +384,7 @@ impl ExprIfElse {
         let end = self
             .else_branch
             .as_ref()
-            .map(|b| b.close_brace.span.end)
+            .map(|b| b.span().end)
             .unwrap_or(self.then_branch.close_brace.span.end);
         start..end
     }

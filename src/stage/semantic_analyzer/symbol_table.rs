@@ -115,8 +115,8 @@ impl SymbolTableBuilder {
         todo!("walk_expr_struct");
     }
 
-    fn walk_block(&mut self, block: &ast::Block) {
-        let ast::Block { statements, .. } = block;
+    fn walk_block(&mut self, block: &ast::ExprBlock) {
+        let ast::ExprBlock { statements, .. } = block;
         for stmt in statements {
             self.walk_stmt(stmt);
         }
@@ -151,6 +151,7 @@ impl SymbolTableBuilder {
                 unreachable!("No need to do anything")
             }
             Expr::While(expr) => self.walk_expr_while(expr),
+            Expr::Block(block) => self.walk_block(block),
         }
     }
 
@@ -216,7 +217,7 @@ impl SymbolTableBuilder {
         let Some(else_branch) = else_branch.as_ref() else {
             return;
         };
-        self.walk_block(else_branch);
+        self.walk_expr(else_branch);
     }
 
     fn walk_expr_while(&mut self, expr: &ast::ExprWhile) {

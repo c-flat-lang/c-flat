@@ -164,7 +164,7 @@ impl Assembler {
         debug_assert!(
             self.used_registers.contains(&reg),
             "Double free or freeing unused register: {:?}",
-            reg
+            reg,
         );
 
         self.used_registers.retain(|&r| r != reg);

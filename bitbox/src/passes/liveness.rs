@@ -1,8 +1,10 @@
 use crate::{
     ir::{
-        BlockId, Variable,
+        BasicBlock, BlockId, Instruction, Variable,
         instruction::{
-            IAdd, IAssign, ICall, ICmp, IDiv, IGt, IJumpIf, ILoad, ILt, IMul, IPhi, ISub,
+            IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte,
+            IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, IOr, IPhi, IReturn, ISub,
+            IXOr,
         },
     },
     passes::DebugPass,
@@ -10,59 +12,304 @@ use crate::{
 
 use super::Pass;
 
-impl crate::ir::Instruction {
-    pub fn uses(&self) -> Vec<Variable> {
-        match self {
-            Self::Add(IAdd { lhs, rhs, .. })
-            | Self::Sub(ISub { lhs, rhs, .. })
-            | Self::Mul(IMul { lhs, rhs, .. })
-            | Self::Div(IDiv { lhs, rhs, .. })
-            | Self::Cmp(ICmp { lhs, rhs, .. })
-            | Self::Gt(IGt { lhs, rhs, .. })
-            | Self::Lt(ILt { lhs, rhs, .. }) => {
+trait LivenessAnalysis {
+    fn uses(&self) -> Vec<Variable>;
+    fn defines(&self) -> Vec<Variable>;
+}
+
+macro_rules! liveness_ops {
+    ($struct_name:ident) => {
+        impl LivenessAnalysis for $struct_name {
+            fn uses(&self) -> Vec<Variable> {
                 let mut vars = Vec::new();
-                if let crate::ir::Operand::Variable(v) = lhs {
+                if let crate::ir::Operand::Variable(v) = &self.lhs {
                     vars.push(v.clone());
                 }
-                if let crate::ir::Operand::Variable(v) = rhs {
+                if let crate::ir::Operand::Variable(v) = &self.rhs {
                     vars.push(v.clone());
                 }
                 vars
             }
-            Self::Assign(IAssign { src: op, .. })
-            | Self::Load(ILoad { src: op, .. })
-            | Self::JumpIf(IJumpIf { cond: op, .. }) => {
-                if let crate::ir::Operand::Variable(v) = op {
-                    vec![v.clone()]
-                } else {
-                    vec![]
-                }
+
+            fn defines(&self) -> Vec<Variable> {
+                vec![self.des.clone()]
             }
-            Self::Return(ireturn) => {
-                if let crate::ir::Operand::Variable(v) = &ireturn.src {
-                    vec![v.clone()]
-                } else {
-                    vec![]
-                }
+        }
+    };
+    ($($struct_name:ident),* $(,)?) => {
+        $(liveness_ops!($struct_name);)*
+    };
+}
+
+liveness_ops!(
+    IAdd, ISub, IMul, IDiv, ICmp, IGt, IGte, ILt, IAnd, IOr, IXOr
+);
+
+impl LivenessAnalysis for IAssign {
+    fn uses(&self) -> Vec<Variable> {
+        if let crate::ir::Operand::Variable(v) = &self.src {
+            vec![v.clone()]
+        } else {
+            vec![]
+        }
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![self.des.clone()]
+    }
+}
+
+impl LivenessAnalysis for ILoad {
+    fn uses(&self) -> Vec<Variable> {
+        if let crate::ir::Operand::Variable(v) = &self.src {
+            vec![v.clone()]
+        } else {
+            vec![]
+        }
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![self.des.clone()]
+    }
+}
+
+impl LivenessAnalysis for IJumpIf {
+    fn uses(&self) -> Vec<Variable> {
+        if let crate::ir::Operand::Variable(v) = &self.cond {
+            vec![v.clone()]
+        } else {
+            vec![]
+        }
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
+impl LivenessAnalysis for IJump {
+    fn uses(&self) -> Vec<Variable> {
+        vec![]
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
+impl LivenessAnalysis for ICopy {
+    fn uses(&self) -> Vec<Variable> {
+        if let crate::ir::Operand::Variable(v) = &self.src {
+            vec![v.clone()]
+        } else {
+            vec![]
+        }
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![self.des.clone()]
+    }
+}
+
+impl LivenessAnalysis for IIfElse {
+    fn uses(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        for block in self.cond.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.uses());
             }
-            _ => vec![],
+        }
+
+        for block in self.then_branch.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.uses());
+            }
+        }
+        for block in self.else_branch.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.uses());
+            }
+        }
+        vars
+    }
+    fn defines(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        for block in self.cond.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.defines());
+            }
+        }
+
+        vars.push(self.cond_result.clone());
+
+        for block in self.then_branch.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.defines());
+            }
+        }
+        for block in self.else_branch.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.defines());
+            }
+        }
+        if let Some(v) = self.result.as_ref() {
+            vars.push(v.clone());
+        }
+        vars
+    }
+}
+
+impl LivenessAnalysis for IReturn {
+    fn uses(&self) -> Vec<Variable> {
+        if let crate::ir::Operand::Variable(v) = &self.src {
+            vec![v.clone()]
+        } else {
+            vec![]
+        }
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
+impl LivenessAnalysis for IAlloc {
+    fn uses(&self) -> Vec<Variable> {
+        if let crate::ir::Operand::Variable(v) = &self.size {
+            vec![v.clone()]
+        } else {
+            vec![]
+        }
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![self.des.clone()]
+    }
+}
+
+impl LivenessAnalysis for IElemGet {
+    fn uses(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        if let crate::ir::Operand::Variable(v) = &self.ptr {
+            vars.push(v.clone());
+        }
+        if let crate::ir::Operand::Variable(v) = &self.index {
+            vars.push(v.clone());
+        }
+        vars
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![self.des.clone()]
+    }
+}
+
+impl LivenessAnalysis for IElemSet {
+    fn uses(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        vars.push(self.addr.clone());
+        if let crate::ir::Operand::Variable(v) = &self.index {
+            vars.push(v.clone());
+        }
+        if let crate::ir::Operand::Variable(v) = &self.value {
+            vars.push(v.clone());
+        }
+        vars
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
+impl LivenessAnalysis for IPhi {
+    fn uses(&self) -> Vec<Variable> {
+        unreachable!("Should lower before calling this method")
+    }
+    fn defines(&self) -> Vec<Variable> {
+        unreachable!("Should lower before calling this method")
+    }
+}
+
+impl LivenessAnalysis for ILoop {
+    fn uses(&self) -> Vec<Variable> {
+        todo!("ILOOP LIVE USE")
+    }
+    fn defines(&self) -> Vec<Variable> {
+        todo!("ILOOP LIVE DEFINE")
+    }
+}
+
+impl LivenessAnalysis for ICall {
+    fn uses(&self) -> Vec<Variable> {
+        vec![]
+    }
+    fn defines(&self) -> Vec<Variable> {
+        let Some(v) = self.des.as_ref() else {
+            return vec![];
+        };
+        vec![v.clone()]
+    }
+}
+
+impl LivenessAnalysis for INoOp {
+    fn uses(&self) -> Vec<Variable> {
+        vec![]
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
+impl crate::ir::Instruction {
+    pub fn uses(&self) -> Vec<Variable> {
+        match self {
+            Self::NoOp(i) => i.uses(),
+            Self::Add(i) => i.uses(),
+            Self::Assign(i) => i.uses(),
+            Self::Alloc(i) => i.uses(),
+            Self::Call(i) => i.uses(),
+            Self::Cmp(i) => i.uses(),
+            Self::Copy(i) => i.uses(),
+            Self::ElemGet(i) => i.uses(),
+            Self::ElemSet(i) => i.uses(),
+            Self::And(i) => i.uses(),
+            Self::Or(i) => i.uses(),
+            Self::XOr(i) => i.uses(),
+            Self::Gt(i) => i.uses(),
+            Self::Gte(i) => i.uses(),
+            Self::Lt(i) => i.uses(),
+            Self::Jump(i) => i.uses(),
+            Self::JumpIf(i) => i.uses(),
+            Self::Load(i) => i.uses(),
+            Self::Mul(i) => i.uses(),
+            Self::Phi(i) => i.uses(),
+            Self::Return(i) => i.uses(),
+            Self::Sub(i) => i.uses(),
+            Self::Div(i) => i.uses(),
+            Self::IfElse(i) => i.uses(),
+            Self::Loop(i) => i.uses(),
         }
     }
 
     pub fn defines(&self) -> Vec<Variable> {
         match self {
-            Self::Add(IAdd { des, .. })
-            | Self::Sub(ISub { des, .. })
-            | Self::Mul(IMul { des, .. })
-            | Self::Div(IDiv { des, .. })
-            | Self::Cmp(ICmp { des, .. })
-            | Self::Gt(IGt { des, .. })
-            | Self::Lt(ILt { des, .. })
-            | Self::Assign(IAssign { des, .. })
-            | Self::Load(ILoad { des, .. })
-            | Self::Phi(IPhi { des, .. })
-            | Self::Call(ICall { des: Some(des), .. }) => vec![des.clone()],
-            _ => vec![],
+            Self::NoOp(i) => i.defines(),
+            Self::Add(i) => i.defines(),
+            Self::Assign(i) => i.defines(),
+            Self::Alloc(i) => i.defines(),
+            Self::Call(i) => i.defines(),
+            Self::Cmp(i) => i.defines(),
+            Self::Copy(i) => i.defines(),
+            Self::ElemGet(i) => i.defines(),
+            Self::ElemSet(i) => i.defines(),
+            Self::And(i) => i.defines(),
+            Self::Or(i) => i.defines(),
+            Self::XOr(i) => i.defines(),
+            Self::Gt(i) => i.defines(),
+            Self::Gte(i) => i.defines(),
+            Self::Lt(i) => i.defines(),
+            Self::Jump(i) => i.defines(),
+            Self::JumpIf(i) => i.defines(),
+            Self::Load(i) => i.defines(),
+            Self::Mul(i) => i.defines(),
+            Self::Phi(i) => i.defines(),
+            Self::Return(i) => i.defines(),
+            Self::Sub(i) => i.defines(),
+            Self::Div(i) => i.defines(),
+            Self::IfElse(i) => i.defines(),
+            Self::Loop(i) => i.defines(),
         }
     }
 }
@@ -112,7 +359,7 @@ use std::collections::{HashMap, HashSet};
 impl Pass for LivenessAnalysisPass {
     fn debug(
         &self,
-        _module: &crate::ir::Module,
+        module: &crate::ir::Module,
         ctx: &crate::backend::Context,
         debug_mode: Option<DebugPass>,
     ) -> bool {
@@ -131,10 +378,23 @@ impl Pass for LivenessAnalysisPass {
                     .collect();
             blocks.sort_by(|a, b| a.0.0.cmp(&b.0.0).then(a.1.cmp(b.1)));
 
+            let Some(function) = module.functions.iter().find(|f| &f.name == function_name) else {
+                panic!("Function {} not found", function_name);
+            };
+
+            let ir_block = &function.blocks;
+
+            let mut last_block: Option<&&BlockId> = None;
             for (block, index, vars) in blocks.iter() {
-                eprintln!("{:?}", block);
-                eprintln!("Instruction: {}", index);
+                if last_block.is_none() || last_block.is_some_and(|b| b != block) {
+                    eprintln!("{:?}", block);
+                }
+                eprintln!(
+                    "Instruction: {}, {}",
+                    index, ir_block[block.0].instructions[**index]
+                );
                 eprintln!("Live variables: {:#?}", vars);
+                last_block = Some(block);
             }
         }
 
@@ -149,22 +409,19 @@ impl Pass for LivenessAnalysisPass {
         eprintln!("LivenessAnalysisPass");
 
         for function in &module.functions {
-            let mut label_to_block_id: HashMap<String, crate::ir::BlockId> = HashMap::new();
-            let mut id_to_block: HashMap<crate::ir::BlockId, &crate::ir::BasicBlock> =
-                HashMap::new();
+            let mut label_to_block_id: HashMap<String, BlockId> = HashMap::new();
+            let mut id_to_block: HashMap<BlockId, &BasicBlock> = HashMap::new();
             for block in &function.blocks {
                 label_to_block_id.insert(block.label.clone(), block.id);
                 id_to_block.insert(block.id, block);
             }
 
-            let mut r#gen: HashMap<crate::ir::BlockId, HashSet<crate::ir::Variable>> =
-                HashMap::new();
-            let mut kill: HashMap<crate::ir::BlockId, HashSet<crate::ir::Variable>> =
-                HashMap::new();
+            let mut r#gen: HashMap<BlockId, HashSet<Variable>> = HashMap::new();
+            let mut kill: HashMap<BlockId, HashSet<Variable>> = HashMap::new();
 
             for block in &function.blocks {
-                let mut g: HashSet<crate::ir::Variable> = HashSet::new();
-                let mut k: HashSet<crate::ir::Variable> = HashSet::new();
+                let mut g: HashSet<Variable> = HashSet::new();
+                let mut k: HashSet<Variable> = HashSet::new();
 
                 for instr in &block.instructions {
                     match instr {
@@ -188,10 +445,8 @@ impl Pass for LivenessAnalysisPass {
                 kill.insert(block.id, k);
             }
 
-            let mut live_in: HashMap<crate::ir::BlockId, HashSet<crate::ir::Variable>> =
-                HashMap::new();
-            let mut live_out: HashMap<crate::ir::BlockId, HashSet<crate::ir::Variable>> =
-                HashMap::new();
+            let mut live_in: HashMap<BlockId, HashSet<Variable>> = HashMap::new();
+            let mut live_out: HashMap<BlockId, HashSet<Variable>> = HashMap::new();
 
             for block in &function.blocks {
                 live_in.insert(block.id, HashSet::new());
@@ -212,23 +467,23 @@ impl Pass for LivenessAnalysisPass {
                 for block in &function.blocks {
                     let b_id = block.id;
 
-                    let mut new_live_out: HashSet<crate::ir::Variable> = HashSet::new();
+                    let mut new_live_out: HashSet<Variable> = HashSet::new();
 
                     let succs = out_bound.get(&b_id).cloned().unwrap_or_else(Vec::new);
 
                     for succ in succs {
                         let succ_live_in = live_in.get(&succ).cloned().unwrap_or_default();
-                        let mut temp: HashSet<crate::ir::Variable> = succ_live_in;
+                        let mut temp: HashSet<Variable> = succ_live_in;
 
                         if let Some(succ_block) = id_to_block.get(&succ) {
                             for instr in &succ_block.instructions {
-                                if let crate::ir::Instruction::Phi(iphi) = instr {
+                                if let Instruction::Phi(iphi) = instr {
                                     temp.remove(&iphi.des);
                                 }
                             }
 
                             for instr in &succ_block.instructions {
-                                if let crate::ir::Instruction::Phi(iphi) = instr {
+                                if let Instruction::Phi(iphi) = instr {
                                     for (label, v) in &iphi.branches {
                                         // compare label strings
                                         if let Some(current_label) =
@@ -249,7 +504,7 @@ impl Pass for LivenessAnalysisPass {
                     let block_gen = r#gen.get(&b_id).cloned().unwrap_or_default();
                     let block_kill = kill.get(&b_id).cloned().unwrap_or_default();
 
-                    let mut new_live_in: HashSet<crate::ir::Variable> = HashSet::new();
+                    let mut new_live_in: HashSet<Variable> = HashSet::new();
 
                     // live_out - kill
                     for v in new_live_out.iter().cloned() {
@@ -290,7 +545,7 @@ impl Pass for LivenessAnalysisPass {
                     // );
 
                     // live_before = (live_after - defines) ∪ uses
-                    let mut live_before: HashSet<crate::ir::Variable> = HashSet::new();
+                    let mut live_before: HashSet<Variable> = HashSet::new();
 
                     for v in live_after.iter().cloned() {
                         if !defines.contains(&v) {

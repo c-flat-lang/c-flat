@@ -139,8 +139,8 @@ pub trait Addressable {
 }
 
 use crate::stage::parser::ast::{
-    Block, Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprCall,
-    ExprDecl, ExprIfElse, ExprReturn, ExprWhile, Litral,
+    Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprBlock,
+    ExprCall, ExprDecl, ExprIfElse, ExprReturn, ExprWhile, Litral,
 };
 
 impl Lowerable for Expr {
@@ -169,6 +169,7 @@ impl Lowerable for Expr {
             Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
             Expr::ArrayRepeat(expr) => expr.lower(assembler, ctx),
             Expr::While(expr) => expr.lower(assembler, ctx),
+            Expr::Block(block) => block.lower(assembler, ctx),
         }
     }
 }
@@ -322,7 +323,7 @@ impl Lowerable for ExprIfElse {
     }
 }
 
-impl Lowerable for Block {
+impl Lowerable for ExprBlock {
     fn lower(
         &self,
         assembler: &mut AssemblerBuilder,

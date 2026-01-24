@@ -108,7 +108,7 @@ impl<'st> TypeChecker<'st> {
         todo!()
     }
 
-    fn walk_block(&mut self, block: &mut ast::Block) -> ast::Type {
+    fn walk_block(&mut self, block: &mut ast::ExprBlock) -> ast::Type {
         let mut result = Type::Void;
         for statement in block.statements.iter_mut() {
             result = self.walk_stmt(statement);
@@ -136,6 +136,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
             ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
             ast::Expr::ArrayRepeat(expr) => self.walk_expr_array_repeat(expr),
+            ast::Expr::Block(expr) => self.walk_block(expr),
         }
     }
 
@@ -251,7 +252,7 @@ impl<'st> TypeChecker<'st> {
         }
         let then_branch_type = self.walk_block(&mut expr.then_branch);
         if let Some(else_branch) = expr.else_branch.as_mut() {
-            let else_branch_type = self.walk_block(else_branch);
+            let else_branch_type = self.walk_expr(else_branch);
             if then_branch_type != else_branch_type {
                 self.errors.push(Box::new(ErrorMissMatchedType {
                     span: expr.span(),

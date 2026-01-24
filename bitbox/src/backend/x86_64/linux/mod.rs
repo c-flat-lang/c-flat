@@ -13,7 +13,6 @@ pub struct X86_64LinuxBackend;
 impl Backend for X86_64LinuxBackend {
     fn passes(&self) -> Vec<Box<dyn Pass>> {
         vec![
-            Box::new(LoweringPass),
             Box::new(LocalFunctionVariablesPass),
             Box::new(ControlFlowGraphPass),
             Box::new(LivenessAnalysisPass),

@@ -220,14 +220,14 @@ impl Parser {
         }
     }
 
-    fn parse_block(&mut self) -> Result<ast::Block> {
+    fn parse_block(&mut self) -> Result<ast::ExprBlock> {
         let mut statements = vec![];
         let open_brace = self.consume(TokenKind::LeftBrace)?;
         while self.lexer.peek().is_some() && !self.peek(TokenKind::RightBrace) {
             statements.push(self.parse_statement()?);
         }
         let close_brace = self.consume(TokenKind::RightBrace)?;
-        Ok(ast::Block {
+        Ok(ast::ExprBlock {
             open_brace,
             statements,
             close_brace,
@@ -322,7 +322,13 @@ impl Parser {
         let mut else_token = None;
         let else_branch = if self.peek(TokenKind::Keyword(Keyword::Else)) {
             else_token = Some(self.consume(TokenKind::Keyword(Keyword::Else))?);
-            Some(self.parse_block()?)
+            // check if it's "else if"
+            if self.peek(TokenKind::Keyword(Keyword::If)) {
+                Some(Box::new(self.parse_if_else()?))
+            } else {
+                // else { ... }
+                Some(Box::new(ast::Expr::Block(self.parse_block()?)))
+            }
         } else {
             None
         };

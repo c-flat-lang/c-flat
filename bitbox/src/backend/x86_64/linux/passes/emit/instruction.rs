@@ -52,12 +52,16 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
         let des = if let Some(reg) = target.get_reg_for_variable(&self.des.name) {
             reg
         } else {
-            let des = target.assembler.alloc_reg();
-            target.store_variable_to_reg(&self.des.name, des);
-            des
+            target.assembler.alloc_reg()
         };
+
         let src = self.src.lower(ctx, target)?;
+        // if matches!(self.src, Operand::ConstantInt { .. }) {
+        //     target.free_reg(src, "src, assign");
+        // }
         target.assembler.mov(des, src);
+        target.store_variable_to_reg(&self.des.name, des);
+
         Ok(())
     }
 }
@@ -92,6 +96,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJumpIf {
     ) -> Result<Self::Output, crate::error::Error> {
         let cond = self.cond.lower(ctx, target)?;
         target.assembler.test(cond, cond).jnz(&self.label);
+        // if matches!(self.cond, Operand::ConstantInt { .. }) {
+        //     target.free_reg(cond, "cond, jumpif");
+        // }
         Ok(())
     }
 }

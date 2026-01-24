@@ -30,6 +30,29 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
     fn get_reg_for_variable(&self, name: &str) -> Option<assembler::Reg64> {
         self.variable_to_reg_map.get(name).copied()
     }
+
+    fn free_variable(&mut self, name: &str) {
+        let Some(reg) = self.variable_to_reg_map.remove(name) else {
+            panic!(
+                "COMPILER BUG: Variable {} is not in variable_to_reg_map",
+                name
+            );
+        };
+        self.assembler.free_reg(reg);
+    }
+
+    fn free_reg(&mut self, reg: assembler::Reg64) {
+        self.assembler.free_reg(reg);
+        let Some(key) = self
+            .variable_to_reg_map
+            .iter()
+            .find(|(_, r)| **r == reg)
+            .map(|(k, _)| k.clone())
+        else {
+            return;
+        };
+        self.variable_to_reg_map.remove(key.as_str());
+    }
 }
 
 #[derive(Debug)]
@@ -109,8 +132,21 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.define_label(&self.label);
-        for instruction in self.instructions.iter() {
+
+        for (instr_index, instruction) in self.instructions.iter().enumerate() {
             instruction.lower(ctx, target)?;
+            let variables = instruction.get_variables();
+            for var in variables {
+                let is_alive =
+                    ctx.liveness
+                        .is_live(target.function_name, self.id, instr_index, &var);
+
+                if !is_alive {
+                    continue;
+                }
+
+                target.free_variable(&var.name);
+            }
         }
         Ok(())
     }
