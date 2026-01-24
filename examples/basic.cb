@@ -13,5 +13,4 @@ pub fn main() s32 {
     let x = 123;
     let y: s32 = 321;
     return if false { x } else if false { x } else { y };
-    // return min_s32(x, y);
 }

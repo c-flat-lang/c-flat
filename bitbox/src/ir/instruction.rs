@@ -317,7 +317,7 @@ pub fn color_var(v: &Variable) -> impl fmt::Display + use<'_> {
 
 pub fn color_op(o: &Operand) -> Box<dyn fmt::Display + '_> {
     match o {
-        Operand::ConstantInt { value, .. } => Box::new(Paint::yellow(value)),
+        Operand::ConstantInt(constant) => Box::new(Paint::yellow(&constant.value)),
         Operand::Variable(variable) => Box::new(color_var(variable)),
         Operand::None => Box::new(""),
     }

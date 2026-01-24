@@ -14,12 +14,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
-            Operand::ConstantInt { value, ty } => {
+            Operand::ConstantInt(constant) => {
                 let reg = target.assembler.alloc_reg();
 
-                match ty {
+                match constant.ty {
                     Type::Signed(_) | Type::Unsigned(_) => {
-                        target.assembler.mov(reg, value.parse::<i64>().unwrap());
+                        target.assembler.mov(reg, constant.value);
                     }
                     _ => todo!("non-integer constants not implemented yet"),
                 }

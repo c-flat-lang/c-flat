@@ -5,7 +5,7 @@ use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbeat::Instruction;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
-use bitbox::ir::{Constant, Module, Operand, Type, Variable, Visibility};
+use bitbox::ir::{self, Constant, ConstantInt, Module, Operand, Type, Variable, Visibility};
 
 #[derive(Debug, Default)]
 pub struct IRBuilder {
@@ -201,10 +201,10 @@ impl Lowerable for ExprArray {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         let ty = self.ty.clone().as_bitbox_type();
-        let size = Operand::ConstantInt {
-            value: format!("{}", self.elements.len() * (ty.size() as usize)),
-            ty: Type::Signed(32),
-        };
+        let size = Operand::ConstantInt(ir::ConstantInt::new(
+            (self.elements.len() * (ty.size() as usize)) as i64,
+            Type::Signed(32),
+        ));
         let ptr = assembler.var(ty.clone());
         assembler.alloc(ty.clone(), ptr.clone(), size);
         for (index, element) in self.elements.iter().enumerate() {
@@ -213,10 +213,7 @@ impl Lowerable for ExprArray {
             };
             assembler.elemset(
                 ptr.clone(),
-                Operand::ConstantInt {
-                    value: format!("{index}"),
-                    ty: Type::Signed(32),
-                },
+                Operand::ConstantInt(ConstantInt::new(index as i64, Type::Signed(32))),
                 value,
             );
         }
@@ -574,10 +571,10 @@ impl Lowerable for ExprArrayRepeat {
         let ast::Type::Array(count, ty) = self.ty.clone() else {
             panic!("Expected array type but got {}", self.ty);
         };
-        let size = Operand::ConstantInt {
-            value: format!("{}", count * ty.size()),
-            ty: Type::Signed(32),
-        };
+        let size = Operand::from(ConstantInt::new(
+            (count * ty.size()) as i64,
+            Type::Signed(32),
+        ));
         let ptr = assembler.var(ty.clone().as_bitbox_type());
         assembler.alloc(ty.clone().as_bitbox_type(), ptr.clone(), size);
         for index in 0..count {
@@ -586,10 +583,7 @@ impl Lowerable for ExprArrayRepeat {
             };
             assembler.elemset(
                 ptr.clone(),
-                Operand::ConstantInt {
-                    value: format!("{index}"),
-                    ty: Type::Signed(32),
-                },
+                Operand::from(ConstantInt::new(index as i64, Type::Signed(32))),
                 value,
             );
         }

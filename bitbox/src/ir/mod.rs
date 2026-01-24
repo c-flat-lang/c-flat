@@ -88,8 +88,42 @@ impl std::fmt::Display for Variable {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ConstantInt {
+    pub value: i64,
+    pub ty: Type,
+}
+
+impl ConstantInt {
+    pub fn new(value: i64, ty: Type) -> Self {
+        Self { value, ty }
+    }
+}
+
+impl From<(&str, Type)> for ConstantInt {
+    fn from((value, ty): (&str, Type)) -> Self {
+        let value = value.replace("_", "");
+        if let Some(stripped) = value.strip_prefix("0x") {
+            return ConstantInt {
+                value: i64::from_str_radix(stripped, 16).unwrap(),
+                ty,
+            };
+        }
+        ConstantInt {
+            value: value.parse().unwrap(),
+            ty,
+        }
+    }
+}
+
+impl std::fmt::Display for ConstantInt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Operand {
-    ConstantInt { value: String, ty: Type },
+    ConstantInt(ConstantInt),
     Variable(Variable),
     None,
 }
@@ -97,37 +131,37 @@ pub enum Operand {
 impl Operand {
     pub fn const_bool(value: bool) -> Self {
         if value {
-            Operand::ConstantInt {
-                value: "1".to_string(),
+            Operand::ConstantInt(ConstantInt {
+                value: 1,
                 ty: Type::Unsigned(32),
-            }
+            })
         } else {
-            Operand::ConstantInt {
-                value: "0".to_string(),
+            Operand::ConstantInt(ConstantInt {
+                value: 0,
                 ty: Type::Unsigned(32),
-            }
+            })
         }
     }
 
     pub fn const_unsigned(value: impl Into<String>, bits: u8) -> Self {
-        Operand::ConstantInt {
-            value: value.into(),
-            ty: Type::Unsigned(bits),
-        }
+        Operand::ConstantInt(ConstantInt::from((
+            value.into().as_str(),
+            Type::Unsigned(bits),
+        )))
     }
 
     pub fn const_signed(value: impl Into<String>, bits: u8) -> Self {
-        Operand::ConstantInt {
-            value: value.into(),
-            ty: Type::Signed(bits),
-        }
+        Operand::ConstantInt(ConstantInt::from((
+            value.into().as_str(),
+            Type::Signed(bits),
+        )))
     }
 
     pub fn const_float(value: impl Into<String>, bits: u8) -> Self {
-        Operand::ConstantInt {
-            value: value.into(),
-            ty: Type::Float(bits),
-        }
+        Operand::ConstantInt(ConstantInt::from((
+            value.into().as_str(),
+            Type::Float(bits),
+        )))
     }
 
     pub fn is_variable(&self) -> bool {
@@ -147,14 +181,26 @@ impl From<Variable> for Operand {
 
 impl From<&Variable> for Operand {
     fn from(variable: &Variable) -> Self {
-        Operand::Variable(variable.clone())
+        Operand::from(variable.clone())
+    }
+}
+
+impl From<ConstantInt> for Operand {
+    fn from(constant: ConstantInt) -> Self {
+        Operand::ConstantInt(constant)
+    }
+}
+
+impl From<&ConstantInt> for Operand {
+    fn from(constant: &ConstantInt) -> Self {
+        Operand::from(constant.clone())
     }
 }
 
 impl std::fmt::Display for Operand {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Operand::ConstantInt { value, .. } => write!(f, "{}", value),
+            Operand::ConstantInt(constant) => write!(f, "{}", constant),
             Operand::Variable(variable) => write!(f, "{}", variable),
             Operand::None => write!(f, ""),
         }

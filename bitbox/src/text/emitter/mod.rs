@@ -332,10 +332,9 @@ impl Emitter {
 
                 Operand::from(var)
             }
-            TokenKind::Number => Operand::ConstantInt {
-                value: token.lexeme.clone(),
-                ty: ty.clone(),
-            },
+            TokenKind::Number => {
+                Operand::from(ir::ConstantInt::from((token.lexeme.as_str(), ty.clone())))
+            }
             _ => unreachable!(),
         }
     }
