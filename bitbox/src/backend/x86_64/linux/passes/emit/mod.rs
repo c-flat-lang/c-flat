@@ -66,7 +66,7 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
     ) -> Result<(), crate::error::Error> {
         eprintln!("EmitLLVMIRPass");
 
-        if module.functions.iter().any(|f| f.name == "main") {
+        if !module.functions.iter().any(|f| f.name == "main") {
             return Err(crate::error::Error::MissingMainFunction);
         }
 
