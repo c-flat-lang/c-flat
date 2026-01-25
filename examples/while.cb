@@ -1,8 +1,9 @@
 pub fn main() s32 {
     // let mut array: [2; s32] = [ 0; 2 ];
     let mut i: s32 = 0;
-    while i < 2_000_000 {
-        // write_i32(i);
+    while i < 2_0 {
+        write_int(i);
+        write_char(10);
         i = i + 1;
     }
     return i;

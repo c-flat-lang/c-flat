@@ -1,5 +1,9 @@
 #include <stdio.h>
 
-void write_i32(int x) {
-    printf("%d\n", x);
+void write_int(int x) {
+    printf("%d", x);
+}
+
+void write_char(char x) {
+    printf("%c", x);
 }

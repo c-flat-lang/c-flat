@@ -3,7 +3,7 @@ use super::assembler::Reg;
 use crate::backend::Lower;
 
 use crate::backend::x86_64::linux::passes::emit::assembler::{Reg8, Reg64};
-use crate::ir::instruction::{IAdd, IAssign, IJump, IJumpIf, ILt, IReturn};
+use crate::ir::instruction::{IAdd, IAssign, ICall, IJump, IJumpIf, ILt, IReturn};
 use crate::ir::{Operand, Type};
 
 impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
@@ -140,6 +140,48 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAdd {
         let rhs = self.rhs.lower(ctx, target)?;
         target.assembler.add(lhs, rhs);
         target.store_variable_to_reg(&self.des.name, lhs);
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let mut args = Vec::new();
+        for arg in &self.args {
+            let value = arg.lower(ctx, target)?;
+            args.push(value);
+        }
+        let used_regs = target.assembler.caller_preserved_regs();
+        for reg in used_regs.iter().rev() {
+            target.assembler.push(*reg);
+        }
+
+        for (i, arg) in args.iter().enumerate().rev() {
+            let Some(reg) = target.assembler.arg_regs::<Reg64>(i) else {
+                // At some point we will need to deal with this.
+                panic!("Too many arguments");
+            };
+
+            target.assembler.mov(reg, *arg);
+        }
+
+        target.assembler.call(&self.callee);
+
+        if let Some(variable) = &self.des {
+            let reg = target.assembler.alloc_reg::<Reg64>();
+            target.assembler.mov(reg, Reg64::Rax);
+            target.store_variable_to_reg(&variable.name, reg);
+        }
+
+        for reg in used_regs {
+            target.assembler.pop(reg);
+        }
+
         Ok(())
     }
 }
