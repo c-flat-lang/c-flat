@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{
     ir::{
         BasicBlock, BlockId, Function, Instruction, Operand,
-        instruction::{IIfElse, IJump, IJumpIf, IPhi},
+        instruction::{IIfElse, IJump, IJumpIf, ILoop, IPhi},
     },
     passes::DebugPass,
 };
@@ -41,10 +41,14 @@ impl Pass for LoweringPass {
 
                 let mut j = 0;
                 while j < block.instructions.len() {
-                    if let Instruction::IfElse(iifelse) = block.instructions[j].clone() {
-                        lower_if_else(func, i, j, iifelse);
-
-                        break;
+                    match block.instructions[j].clone() {
+                        Instruction::IfElse(iifelse) => {
+                            lower_if_else(func, i, j, iifelse);
+                        }
+                        Instruction::Loop(iloop) => {
+                            lower_loop(func, i, j, iloop);
+                        }
+                        _ => (),
                     }
 
                     j += 1;
@@ -58,6 +62,89 @@ impl Pass for LoweringPass {
     }
 }
 
+fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop: ILoop) {
+    let ILoop {
+        cond,
+        cond_result,
+        body,
+    } = iloop;
+
+    let mut block = func.blocks[block_index].clone();
+    let after_loop = block.instructions.split_off(instr_index + 1);
+
+    debug_assert!(matches!(
+        block.instructions.pop(),
+        Some(Instruction::Loop(_))
+    ));
+
+    let start_label = format!("start_loop_{}", Uuid::new_v4());
+    let body_label = format!("body_loop_{}", Uuid::new_v4());
+    let exit_label = format!("exit_loop_{}", Uuid::new_v4());
+
+    // Jump from current block into loop
+    block
+        .instructions
+        .push(IJump::new(start_label.clone()).into());
+
+    // --- start_loop block (condition evaluation) ---
+    let mut start_block = BasicBlock {
+        id: BlockId(0),
+        label: start_label.clone(),
+        instructions: vec![],
+    };
+
+    for mut cb in cond.clone() {
+        for inst in cb.instructions {
+            start_block.instructions.push(inst);
+        }
+    }
+
+    start_block
+        .instructions
+        .push(IJumpIf::new(Operand::Variable(cond_result.clone()), body_label.clone()).into());
+    start_block
+        .instructions
+        .push(IJump::new(exit_label.clone()).into());
+
+    // --- body blocks ---
+    let mut body_blocks = body.clone();
+    for bb in &mut body_blocks {
+        bb.label = body_label.clone();
+
+        let ends_in_ret_or_jump = bb.instructions.last().map(|inst| {
+            matches!(
+                inst,
+                Instruction::Return(..) | Instruction::Jump(..) | Instruction::JumpIf(..)
+            )
+        });
+
+        if ends_in_ret_or_jump != Some(true) {
+            bb.instructions.push(IJump::new(start_label.clone()).into());
+        }
+    }
+
+    // --- exit block ---
+    let exit_block = BasicBlock {
+        id: BlockId(0),
+        label: exit_label.clone(),
+        instructions: after_loop,
+    };
+
+    // Rebuild function blocks
+    func.blocks[block_index] = block;
+    let mut tail = func.blocks.split_off(block_index + 1);
+
+    func.blocks.push(start_block);
+    func.blocks.extend(body_blocks);
+    func.blocks.push(exit_block);
+    func.blocks.append(&mut tail);
+
+    // Fix IDs
+    for (idx, b) in func.blocks.iter_mut().enumerate() {
+        b.id = BlockId(idx);
+    }
+}
+
 fn lower_if_else(func: &mut Function, block_index: usize, instr_index: usize, iifelse: IIfElse) {
     let IIfElse {
         cond,
@@ -66,9 +153,13 @@ fn lower_if_else(func: &mut Function, block_index: usize, instr_index: usize, ii
         else_branch,
         result,
     } = iifelse;
+
     let mut block = func.blocks[block_index].clone();
     let after_if = block.instructions.split_off(instr_index + 1);
-    block.instructions.pop(); // remove the IfElse itself
+    debug_assert!(matches!(
+        block.instructions.pop(),
+        Some(Instruction::IfElse(_))
+    ));
 
     let cond_label = format!("cond_{}", Uuid::new_v4());
     let then_label = format!("then_{}", Uuid::new_v4());

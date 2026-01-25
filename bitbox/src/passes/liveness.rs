@@ -224,10 +224,36 @@ impl LivenessAnalysis for IPhi {
 
 impl LivenessAnalysis for ILoop {
     fn uses(&self) -> Vec<Variable> {
-        todo!("ILOOP LIVE USE")
+        let mut vars = vec![];
+        for block in self.cond.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.uses());
+            }
+        }
+
+        for block in self.body.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.uses());
+            }
+        }
+        vars
     }
     fn defines(&self) -> Vec<Variable> {
-        todo!("ILOOP LIVE DEFINE")
+        let mut vars = vec![];
+        for block in self.cond.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.defines());
+            }
+        }
+
+        vars.push(self.cond_result.clone());
+
+        for block in self.body.iter() {
+            for instruction in block.instructions.iter() {
+                vars.extend(instruction.defines());
+            }
+        }
+        vars
     }
 }
 
