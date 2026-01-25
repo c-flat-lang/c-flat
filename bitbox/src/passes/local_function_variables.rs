@@ -140,6 +140,10 @@ fn block_pass(
                 for block in iloop.cond.iter() {
                     block_pass(function_name, block, ctx);
                 }
+
+                ctx.local_function_variables
+                    .add(function_name, iloop.cond_result.clone());
+
                 for block in iloop.body.iter() {
                     block_pass(function_name, block, ctx);
                 }

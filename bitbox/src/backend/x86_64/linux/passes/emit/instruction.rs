@@ -16,7 +16,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
             Operand::ConstantInt(constant) => {
-                let reg = target.assembler.alloc_reg();
+                let reg = target.assembler.alloc_reg::<Reg64>();
 
                 match constant.ty {
                     Type::Signed(_) | Type::Unsigned(_) => {
@@ -25,14 +25,14 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
                     _ => todo!("non-integer constants not implemented yet"),
                 }
 
-                Ok(reg)
+                Ok(reg.into())
             }
 
             Operand::Variable(var) => {
                 let Some(reg) = target.get_reg_for_variable(&var.name) else {
                     panic!(
-                        "Variable {:?} not found in {:#?}",
-                        var, target.function_name
+                        "Variable {:?} not found in {:#?}\n{:#?}",
+                        var, target.function_name, target.variable_to_reg_map
                     );
                 };
                 Ok(reg)
@@ -53,7 +53,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
         let des = if let Some(reg) = target.get_reg_for_variable(&self.des.name) {
             reg
         } else {
-            target.assembler.alloc_reg()
+            target.assembler.alloc_reg::<Reg64>().into()
         };
 
         let src = self.src.lower(ctx, target)?;
@@ -114,13 +114,16 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
     type Output = ();
     fn lower(
         &self,
-        _ctx: &mut crate::backend::Context,
+        ctx: &mut crate::backend::Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        let lhs = self.lhs.lower(_ctx, target)?;
-        let rhs = self.rhs.lower(_ctx, target)?;
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
         target.assembler.cmp(lhs, rhs);
-        target.assembler.setl(Reg8::Al);
+        let flag = target.assembler.alloc_reg::<Reg8>();
+        target.assembler.setl(flag);
+        target.assembler.movezx(lhs, flag);
+        target.store_variable_to_reg(&self.des.name, flag.into());
         Ok(())
     }
 }

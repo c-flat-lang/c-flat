@@ -81,19 +81,17 @@ fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop
     let body_label = format!("body_loop_{}", Uuid::new_v4());
     let exit_label = format!("exit_loop_{}", Uuid::new_v4());
 
-    // Jump from current block into loop
     block
         .instructions
         .push(IJump::new(start_label.clone()).into());
 
-    // --- start_loop block (condition evaluation) ---
     let mut start_block = BasicBlock {
         id: BlockId(0),
         label: start_label.clone(),
         instructions: vec![],
     };
 
-    for mut cb in cond.clone() {
+    for cb in cond.clone() {
         for inst in cb.instructions {
             start_block.instructions.push(inst);
         }
@@ -106,7 +104,6 @@ fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop
         .instructions
         .push(IJump::new(exit_label.clone()).into());
 
-    // --- body blocks ---
     let mut body_blocks = body.clone();
     for bb in &mut body_blocks {
         bb.label = body_label.clone();
@@ -123,14 +120,12 @@ fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop
         }
     }
 
-    // --- exit block ---
     let exit_block = BasicBlock {
         id: BlockId(0),
         label: exit_label.clone(),
         instructions: after_loop,
     };
 
-    // Rebuild function blocks
     func.blocks[block_index] = block;
     let mut tail = func.blocks.split_off(block_index + 1);
 
@@ -139,7 +134,6 @@ fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop
     func.blocks.push(exit_block);
     func.blocks.append(&mut tail);
 
-    // Fix IDs
     for (idx, b) in func.blocks.iter_mut().enumerate() {
         b.id = BlockId(idx);
     }

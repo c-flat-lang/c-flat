@@ -81,7 +81,7 @@ impl Lower<Wasm32LowerContext<'_>> for IAssign {
                 let variables = ctx.local_function_variables.get(&target.function_name);
                 let Some(idx) = variables.iter().position(|v| v.name == self.des.name) else {
                     panic!(
-                        "Variable {:?} not found in {:?}",
+                        "@assign des variable {:?} not found in {:?}",
                         self.des, target.function_name
                     );
                 };
