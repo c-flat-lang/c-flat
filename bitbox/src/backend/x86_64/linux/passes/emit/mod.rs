@@ -10,7 +10,7 @@ use crate::passes::DebugPass;
 pub struct X86_64LinuxLowerContext<'ctx> {
     pub function_name: &'ctx str,
     pub assembler: Assembler,
-    variable_to_reg_map: HashMap<String, assembler::Reg64>,
+    variable_to_reg_map: HashMap<String, assembler::Reg>,
 }
 
 impl<'ctx> X86_64LinuxLowerContext<'ctx> {
@@ -22,11 +22,11 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
         }
     }
 
-    fn store_variable_to_reg(&mut self, name: impl Into<String>, des: assembler::Reg64) {
+    fn store_variable_to_reg(&mut self, name: impl Into<String>, des: assembler::Reg) {
         self.variable_to_reg_map.insert(name.into(), des);
     }
 
-    fn get_reg_for_variable(&self, name: &str) -> Option<assembler::Reg64> {
+    fn get_reg_for_variable(&self, name: &str) -> Option<assembler::Reg> {
         self.variable_to_reg_map.get(name).copied()
     }
 
@@ -160,7 +160,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::XOr(..) => todo!("xor"),
             ir::Instruction::Gt(..) => todo!("gt"),
             ir::Instruction::Gte(..) => todo!("gte"),
-            ir::Instruction::Lt(..) => todo!("lt"),
+            ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),

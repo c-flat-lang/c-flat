@@ -1,3 +1,23 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PhysReg {
+    Rax,
+    Rbx,
+    Rcx,
+    Rdx,
+    Rsi,
+    Rdi,
+    Rbp,
+    Rsp,
+    R8,
+    R9,
+    R10,
+    R11,
+    R12,
+    R13,
+    R14,
+    R15,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Reg64 {
     Rax,
@@ -18,41 +38,340 @@ pub enum Reg64 {
     R15,
 }
 
+impl From<PhysReg> for Reg64 {
+    fn from(value: PhysReg) -> Self {
+        match value {
+            PhysReg::Rax => Self::Rax,
+            PhysReg::Rbx => Self::Rbx,
+            PhysReg::Rcx => Self::Rcx,
+            PhysReg::Rdx => Self::Rdx,
+            PhysReg::Rsi => Self::Rsi,
+            PhysReg::Rdi => Self::Rdi,
+            PhysReg::Rbp => Self::Rbp,
+            PhysReg::Rsp => Self::Rsp,
+            PhysReg::R8 => Self::R8,
+            PhysReg::R9 => Self::R9,
+            PhysReg::R10 => Self::R10,
+            PhysReg::R11 => Self::R11,
+            PhysReg::R12 => Self::R12,
+            PhysReg::R13 => Self::R13,
+            PhysReg::R14 => Self::R14,
+            PhysReg::R15 => Self::R15,
+        }
+    }
+}
+
 impl std::fmt::Display for Reg64 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let reg = match self {
-            Reg64::Rax => "rax",
-            Reg64::Rbx => "rbx",
-            Reg64::Rcx => "rcx",
-            Reg64::Rdx => "rdx",
-            Reg64::Rsi => "rsi",
-            Reg64::Rdi => "rdi",
-            Reg64::Rbp => "rbp",
-            Reg64::Rsp => "rsp",
-            Reg64::R8 => "r8",
-            Reg64::R9 => "r9",
-            Reg64::R10 => "r10",
-            Reg64::R11 => "r11",
-            Reg64::R12 => "r12",
-            Reg64::R13 => "r13",
-            Reg64::R14 => "r14",
-            Reg64::R15 => "r15",
+            Self::Rax => "rax",
+            Self::Rbx => "rbx",
+            Self::Rcx => "rcx",
+            Self::Rdx => "rdx",
+            Self::Rsi => "rsi",
+            Self::Rdi => "rdi",
+            Self::Rbp => "rbp",
+            Self::Rsp => "rsp",
+            Self::R8 => "r8",
+            Self::R9 => "r9",
+            Self::R10 => "r10",
+            Self::R11 => "r11",
+            Self::R12 => "r12",
+            Self::R13 => "r13",
+            Self::R14 => "r14",
+            Self::R15 => "r15",
         };
         write!(f, "{}", reg)
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reg32 {
+    Eax,
+    Ebx,
+    Ecx,
+    Edx,
+    Esi,
+    Edi,
+    Ebp,
+    Esp,
+    R8d,
+    R9d,
+    R10d,
+    R11d,
+    R12d,
+    R13d,
+    R14d,
+    R15d,
+}
+
+impl From<PhysReg> for Reg32 {
+    fn from(value: PhysReg) -> Self {
+        match value {
+            PhysReg::Rax => Self::Eax,
+            PhysReg::Rbx => Self::Ebx,
+            PhysReg::Rcx => Self::Ecx,
+            PhysReg::Rdx => Self::Edx,
+            PhysReg::Rsi => Self::Esi,
+            PhysReg::Rdi => Self::Edi,
+            PhysReg::Rbp => Self::Ebp,
+            PhysReg::Rsp => Self::Esp,
+            PhysReg::R8 => Self::R8d,
+            PhysReg::R9 => Self::R9d,
+            PhysReg::R10 => Self::R10d,
+            PhysReg::R11 => Self::R11d,
+            PhysReg::R12 => Self::R12d,
+            PhysReg::R13 => Self::R13d,
+            PhysReg::R14 => Self::R14d,
+            PhysReg::R15 => Self::R15d,
+        }
+    }
+}
+
+impl std::fmt::Display for Reg32 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reg = match self {
+            Self::Eax => "eax",
+            Self::Ebx => "ebx",
+            Self::Ecx => "ecx",
+            Self::Edx => "edx",
+            Self::Esi => "esi",
+            Self::Edi => "edi",
+            Self::Ebp => "ebp",
+            Self::Esp => "esp",
+            Self::R8d => "r8d",
+            Self::R9d => "r9d",
+            Self::R10d => "r10d",
+            Self::R11d => "r11d",
+            Self::R12d => "r12d",
+            Self::R13d => "r13d",
+            Self::R14d => "r14d",
+            Self::R15d => "r15d",
+        };
+        write!(f, "{}", reg)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reg16 {
+    Ax,
+}
+
+impl From<PhysReg> for Reg16 {
+    fn from(value: PhysReg) -> Self {
+        match value {
+            PhysReg::Rax => Self::Ax,
+            PhysReg::Rbx => todo!(),
+            PhysReg::Rcx => todo!(),
+            PhysReg::Rdx => todo!(),
+            PhysReg::Rsi => todo!(),
+            PhysReg::Rdi => todo!(),
+            PhysReg::Rbp => todo!(),
+            PhysReg::Rsp => todo!(),
+            PhysReg::R8 => todo!(),
+            PhysReg::R9 => todo!(),
+            PhysReg::R10 => todo!(),
+            PhysReg::R11 => todo!(),
+            PhysReg::R12 => todo!(),
+            PhysReg::R13 => todo!(),
+            PhysReg::R14 => todo!(),
+            PhysReg::R15 => todo!(),
+        }
+    }
+}
+
+impl std::fmt::Display for Reg16 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reg = match self {
+            Self::Ax => "ax",
+        };
+        write!(f, "{}", reg)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reg8 {
+    Al,
+}
+
+impl From<PhysReg> for Reg8 {
+    fn from(value: PhysReg) -> Self {
+        match value {
+            PhysReg::Rax => Self::Al,
+            PhysReg::Rbx => todo!(),
+            PhysReg::Rcx => todo!(),
+            PhysReg::Rdx => todo!(),
+            PhysReg::Rsi => todo!(),
+            PhysReg::Rdi => todo!(),
+            PhysReg::Rbp => todo!(),
+            PhysReg::Rsp => todo!(),
+            PhysReg::R8 => todo!(),
+            PhysReg::R9 => todo!(),
+            PhysReg::R10 => todo!(),
+            PhysReg::R11 => todo!(),
+            PhysReg::R12 => todo!(),
+            PhysReg::R13 => todo!(),
+            PhysReg::R14 => todo!(),
+            PhysReg::R15 => todo!(),
+        }
+    }
+}
+
+impl std::fmt::Display for Reg8 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let reg = match self {
+            Self::Al => "al",
+        };
+        write!(f, "{}", reg)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reg {
+    Reg64(Reg64),
+    Reg32(Reg32),
+    Reg16(Reg16),
+    Reg8(Reg8),
+}
+
+impl From<PhysReg> for Reg {
+    fn from(value: PhysReg) -> Self {
+        match value {
+            PhysReg::Rax => Reg::Reg64(Reg64::Rax),
+            PhysReg::Rbx => Reg::Reg64(Reg64::Rbx),
+            PhysReg::Rcx => Reg::Reg64(Reg64::Rcx),
+            PhysReg::Rdx => Reg::Reg64(Reg64::Rdx),
+            PhysReg::Rsi => Reg::Reg64(Reg64::Rsi),
+            PhysReg::Rdi => Reg::Reg64(Reg64::Rdi),
+            PhysReg::Rbp => Reg::Reg64(Reg64::Rbp),
+            PhysReg::Rsp => Reg::Reg64(Reg64::Rsp),
+            PhysReg::R8 => Reg::Reg64(Reg64::R8),
+            PhysReg::R9 => Reg::Reg64(Reg64::R9),
+            PhysReg::R10 => Reg::Reg64(Reg64::R10),
+            PhysReg::R11 => Reg::Reg64(Reg64::R11),
+            PhysReg::R12 => Reg::Reg64(Reg64::R12),
+            PhysReg::R13 => Reg::Reg64(Reg64::R13),
+            PhysReg::R14 => Reg::Reg64(Reg64::R14),
+            PhysReg::R15 => Reg::Reg64(Reg64::R15),
+        }
+    }
+}
+
+impl Reg {
+    pub fn phys(self) -> PhysReg {
+        match self {
+            Reg::Reg64(r) => match r {
+                Reg64::Rax => PhysReg::Rax,
+                Reg64::Rbx => PhysReg::Rbx,
+                Reg64::Rcx => PhysReg::Rcx,
+                Reg64::Rdx => PhysReg::Rdx,
+                Reg64::Rsi => PhysReg::Rsi,
+                Reg64::Rdi => PhysReg::Rdi,
+                Reg64::Rbp => PhysReg::Rbp,
+                Reg64::Rsp => PhysReg::Rsp,
+                Reg64::R8 => PhysReg::R8,
+                Reg64::R9 => PhysReg::R9,
+                Reg64::R10 => PhysReg::R10,
+                Reg64::R11 => PhysReg::R11,
+                Reg64::R12 => PhysReg::R12,
+                Reg64::R13 => PhysReg::R13,
+                Reg64::R14 => PhysReg::R14,
+                Reg64::R15 => PhysReg::R15,
+            },
+            Reg::Reg32(r) => match r {
+                Reg32::Eax => PhysReg::Rax,
+                Reg32::Ebx => PhysReg::Rbx,
+                Reg32::Ecx => PhysReg::Rcx,
+                Reg32::Edx => PhysReg::Rdx,
+                Reg32::Esi => PhysReg::Rsi,
+                Reg32::Edi => PhysReg::Rdi,
+                Reg32::Ebp => PhysReg::Rbp,
+                Reg32::Esp => PhysReg::Rsp,
+                Reg32::R8d => PhysReg::R8,
+                Reg32::R9d => PhysReg::R9,
+                Reg32::R10d => PhysReg::R10,
+                Reg32::R11d => PhysReg::R11,
+                Reg32::R12d => PhysReg::R12,
+                Reg32::R13d => PhysReg::R13,
+                Reg32::R14d => PhysReg::R14,
+                Reg32::R15d => PhysReg::R15,
+            },
+            Reg::Reg16(Reg16::Ax) => PhysReg::Rax,
+            Reg::Reg8(Reg8::Al) => PhysReg::Rax,
+        }
+    }
+}
+
+impl std::fmt::Display for Reg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Reg::Reg64(reg) => write!(f, "{}", reg),
+            Reg::Reg32(reg) => write!(f, "{}", reg),
+            Reg::Reg16(reg) => write!(f, "{}", reg),
+            Reg::Reg8(reg) => write!(f, "{}", reg),
+        }
+    }
+}
+
+impl From<Reg64> for Reg {
+    fn from(reg: Reg64) -> Self {
+        Reg::Reg64(reg)
+    }
+}
+
+impl From<Reg32> for Reg {
+    fn from(reg: Reg32) -> Self {
+        Reg::Reg32(reg)
+    }
+}
+
+impl From<Reg16> for Reg {
+    fn from(reg: Reg16) -> Self {
+        Reg::Reg16(reg)
+    }
+}
+
+impl From<Reg8> for Reg {
+    fn from(reg: Reg8) -> Self {
+        Reg::Reg8(reg)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Location {
-    Reg(Reg64),
+    Reg(Reg),
     Mem(i32),
     Stack(i32),
     Imm(i64),
 }
 
+impl From<Reg> for Location {
+    fn from(reg: Reg) -> Self {
+        Location::Reg(reg)
+    }
+}
+
 impl From<Reg64> for Location {
-    fn from(value: Reg64) -> Self {
-        Location::Reg(value)
+    fn from(reg: Reg64) -> Self {
+        Location::Reg(Reg::from(reg))
+    }
+}
+
+impl From<Reg32> for Location {
+    fn from(reg: Reg32) -> Self {
+        Location::Reg(Reg::from(reg))
+    }
+}
+
+impl From<Reg16> for Location {
+    fn from(reg: Reg16) -> Self {
+        Location::Reg(Reg::from(reg))
+    }
+}
+
+impl From<Reg8> for Location {
+    fn from(reg: Reg8) -> Self {
+        Location::Reg(Reg::from(reg))
     }
 }
 
@@ -99,6 +418,9 @@ pub enum Instruction {
     Test(Location, Location),
     Jmp(Label),
     DefineLabel(Label),
+    Cmp(Location, Location),
+    Setl(Location),
+    Movezx(Location, Location),
 }
 
 impl std::fmt::Display for Instruction {
@@ -113,14 +435,17 @@ impl std::fmt::Display for Instruction {
             Self::Test(dst, src) => write!(f, "  test {}, {}", dst, src),
             Self::Jmp(label) => write!(f, "  jmp {}", label),
             Self::DefineLabel(label) => write!(f, "{}:", label),
+            Self::Cmp(dst, src) => write!(f, "  cmp {}, {}", dst, src),
+            Self::Setl(dst) => write!(f, "  setl {}", dst),
+            Self::Movezx(dst, src) => write!(f, "  movzx {}, {}", dst, src),
         }
     }
 }
 
 pub struct Assembler {
     instructions: Vec<Instruction>,
-    free_registers: Vec<Reg64>,
-    used_registers: Vec<Reg64>,
+    free_registers: Vec<PhysReg>,
+    used_registers: Vec<PhysReg>,
 }
 
 impl std::fmt::Display for Assembler {
@@ -137,16 +462,16 @@ impl Default for Assembler {
         Self {
             instructions: Vec::new(),
             free_registers: vec![
-                Reg64::Rax,
-                Reg64::Rbx,
-                Reg64::Rcx,
-                Reg64::Rdx,
-                Reg64::Rsi,
-                Reg64::Rdi,
-                Reg64::R8,
-                Reg64::R9,
-                Reg64::R10,
-                Reg64::R11,
+                PhysReg::Rax,
+                PhysReg::Rbx,
+                PhysReg::Rcx,
+                PhysReg::Rdx,
+                PhysReg::Rsi,
+                PhysReg::Rdi,
+                PhysReg::R8,
+                PhysReg::R9,
+                PhysReg::R10,
+                PhysReg::R11,
             ],
             used_registers: Vec::new(),
         }
@@ -154,21 +479,25 @@ impl Default for Assembler {
 }
 
 impl Assembler {
-    pub fn alloc_reg(&mut self) -> Reg64 {
+    pub fn alloc_reg<T>(&mut self) -> T
+    where
+        T: From<PhysReg>,
+    {
         let reg = self.free_registers.pop().expect("Out of registers");
         self.used_registers.push(reg);
-        reg
+        reg.into()
     }
 
-    pub fn free_reg(&mut self, reg: Reg64) {
+    pub fn free_reg(&mut self, reg: impl Into<Reg>) {
+        let phys = reg.into().phys();
         debug_assert!(
-            self.used_registers.contains(&reg),
+            self.used_registers.contains(&phys),
             "Double free or freeing unused register: {:?}",
-            reg,
+            phys,
         );
 
-        self.used_registers.retain(|&r| r != reg);
-        self.free_registers.push(reg);
+        self.used_registers.retain(|&r| r != phys);
+        self.free_registers.push(phys);
     }
 
     pub fn label(&mut self, name: &str) -> &mut Self {
@@ -205,14 +534,32 @@ impl Assembler {
             .push(Instruction::DefineLabel(Label(label.into())));
         self
     }
-}
 
-// Instruction API
-impl Assembler {
     pub fn mov(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let lhs = lhs.into();
         debug_assert!(!matches!(lhs, Location::Imm(_)));
         self.instructions.push(Instruction::Mov(lhs, rhs.into()));
+        self
+    }
+
+    pub fn movezx(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        let lhs = lhs.into();
+        debug_assert!(!matches!(lhs, Location::Imm(_)));
+        self.instructions.push(Instruction::Movezx(lhs, rhs.into()));
+        self
+    }
+
+    pub fn cmp(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        let lhs = lhs.into();
+        debug_assert!(!matches!(lhs, Location::Imm(_)));
+        self.instructions.push(Instruction::Cmp(lhs, rhs.into()));
+        self
+    }
+
+    pub fn setl(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        debug_assert!(!matches!(src, Location::Imm(_)));
+        self.instructions.push(Instruction::Setl(src));
         self
     }
 

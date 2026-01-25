@@ -1,12 +1,13 @@
 use super::X86_64LinuxLowerContext;
-use super::assembler::Reg64;
+use super::assembler::Reg;
 use crate::backend::Lower;
 
-use crate::ir::instruction::{IAssign, IJump, IJumpIf, IReturn};
+use crate::backend::x86_64::linux::passes::emit::assembler::{Reg8, Reg64};
+use crate::ir::instruction::{IAssign, IJump, IJumpIf, ILt, IReturn};
 use crate::ir::{Operand, Type};
 
 impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
-    type Output = Reg64;
+    type Output = Reg;
 
     fn lower(
         &self,
@@ -56,9 +57,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
         };
 
         let src = self.src.lower(ctx, target)?;
-        // if matches!(self.src, Operand::ConstantInt { .. }) {
-        //     target.free_reg(src, "src, assign");
-        // }
         target.assembler.mov(des, src);
         target.store_variable_to_reg(&self.des.name, des);
 
@@ -96,9 +94,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJumpIf {
     ) -> Result<Self::Output, crate::error::Error> {
         let cond = self.cond.lower(ctx, target)?;
         target.assembler.test(cond, cond).jnz(&self.label);
-        // if matches!(self.cond, Operand::ConstantInt { .. }) {
-        //     target.free_reg(cond, "cond, jumpif");
-        // }
         Ok(())
     }
 }
@@ -111,6 +106,21 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJump {
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.jmp(&self.label);
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
+    type Output = ();
+    fn lower(
+        &self,
+        _ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let lhs = self.lhs.lower(_ctx, target)?;
+        let rhs = self.rhs.lower(_ctx, target)?;
+        target.assembler.cmp(lhs, rhs);
+        target.assembler.setl(Reg8::Al);
         Ok(())
     }
 }
