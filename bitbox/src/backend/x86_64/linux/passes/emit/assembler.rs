@@ -499,35 +499,37 @@ impl std::fmt::Display for Label {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
+    Add(Location, Location),
+    Cmp(Location, Location),
+    DefineLabel(Label),
+    Jmp(Label),
+    Jnz(Label),
+    Label(Label),
     Mov(Location, Location),
+    Movezx(Location, Location),
     Pop(Location),
     Push(Location),
-    Label(Label),
     Ret,
-    Jnz(Label),
-    Test(Location, Location),
-    Jmp(Label),
-    DefineLabel(Label),
-    Cmp(Location, Location),
     Setl(Location),
-    Movezx(Location, Location),
+    Test(Location, Location),
 }
 
 impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Add(lhs, rhs) => write!(f, "  add {}, {}", lhs, rhs),
+            Self::Cmp(lhs, rhs) => write!(f, "  cmp {}, {}", lhs, rhs),
+            Self::DefineLabel(label) => write!(f, "{}:", label),
+            Self::Jmp(label) => write!(f, "  jmp {}", label),
+            Self::Jnz(label) => write!(f, "  jnz {}", label),
+            Self::Label(label) => write!(f, "{}:", label),
             Self::Mov(dst, src) => write!(f, "  mov {}, {}", dst, src),
+            Self::Movezx(dst, src) => write!(f, "  movzx {}, {}", dst, src),
             Self::Pop(dst) => write!(f, "  pop {}", dst),
             Self::Push(src) => write!(f, "  push {}", src),
-            Self::Label(label) => write!(f, "{}:", label),
             Self::Ret => write!(f, "  ret"),
-            Self::Jnz(label) => write!(f, "  jnz {}", label),
-            Self::Test(dst, src) => write!(f, "  test {}, {}", dst, src),
-            Self::Jmp(label) => write!(f, "  jmp {}", label),
-            Self::DefineLabel(label) => write!(f, "{}:", label),
-            Self::Cmp(dst, src) => write!(f, "  cmp {}, {}", dst, src),
             Self::Setl(dst) => write!(f, "  setl {}", dst),
-            Self::Movezx(dst, src) => write!(f, "  movzx {}, {}", dst, src),
+            Self::Test(dst, src) => write!(f, "  test {}, {}", dst, src),
         }
     }
 }
@@ -664,6 +666,13 @@ impl Assembler {
         let dst = dst.into();
         debug_assert!(!matches!(dst, Location::Imm(_)));
         self.instructions.push(Instruction::Pop(dst));
+        self
+    }
+
+    pub fn add(&mut self, lhs: Reg, rhs: Reg) -> &mut Self {
+        let lhs = lhs.into();
+        debug_assert!(!matches!(lhs, Location::Imm(_)));
+        self.instructions.push(Instruction::Add(lhs, rhs.into()));
         self
     }
 }

@@ -22,8 +22,8 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
         }
     }
 
-    fn store_variable_to_reg(&mut self, name: impl Into<String>, des: assembler::Reg) {
-        self.variable_to_reg_map.insert(name.into(), des);
+    fn store_variable_to_reg(&mut self, name: impl Into<String>, des: impl Into<assembler::Reg>) {
+        self.variable_to_reg_map.insert(name.into(), des.into());
     }
 
     fn get_reg_for_variable(&self, name: &str) -> Option<assembler::Reg> {
@@ -147,7 +147,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
             ir::Instruction::NoOp(..) => todo!(),
-            ir::Instruction::Add(..) => todo!("add"),
+            ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
             ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
             ir::Instruction::Alloc(..) => todo!("alloc"),
             ir::Instruction::Call(..) => todo!("call"),
