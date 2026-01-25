@@ -435,6 +435,12 @@ pub enum Location {
     Imm(i64),
 }
 
+impl From<PhysReg> for Location {
+    fn from(reg: PhysReg) -> Self {
+        Location::Reg(Reg::from(reg))
+    }
+}
+
 impl From<Reg> for Location {
     fn from(reg: Reg) -> Self {
         Location::Reg(reg)
@@ -500,6 +506,7 @@ impl std::fmt::Display for Label {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
     Add(Location, Location),
+    Call(String),
     Cmp(Location, Location),
     DefineLabel(Label),
     Jmp(Label),
@@ -518,6 +525,7 @@ impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Add(lhs, rhs) => write!(f, "  add {}, {}", lhs, rhs),
+            Self::Call(name) => write!(f, "  call {}", name),
             Self::Cmp(lhs, rhs) => write!(f, "  cmp {}, {}", lhs, rhs),
             Self::DefineLabel(label) => write!(f, "{}:", label),
             Self::Jmp(label) => write!(f, "  jmp {}", label),
@@ -534,6 +542,16 @@ impl std::fmt::Display for Instruction {
     }
 }
 
+/// caller must preserve, rax, rdi, rsi, rdx, rcx, r8, r9
+/// callee must preserve, rbx, rbp, r12–r15
+/// | Argument | Register |
+/// | -------- | -------- |
+/// | 1st      | `rdi`    |
+/// | 2nd      | `rsi`    |
+/// | 3rd      | `rdx`    |
+/// | 4th      | `rcx`    |
+/// | 5th      | `r8`     |
+/// | 6th      | `r9`     |
 pub struct Assembler {
     instructions: Vec<Instruction>,
     free_registers: Vec<PhysReg>,
@@ -571,6 +589,70 @@ impl Default for Assembler {
 }
 
 impl Assembler {
+    /// callee must preserve, rbx, rbp, r12–r15
+    pub fn callee_preserved_regs(&self) -> Vec<PhysReg> {
+        self.used_registers
+            .iter()
+            .filter(|&r| {
+                [
+                    PhysReg::Rbx,
+                    PhysReg::Rbp,
+                    PhysReg::R12,
+                    PhysReg::R13,
+                    PhysReg::R14,
+                    PhysReg::R15,
+                ]
+                .contains(r)
+            })
+            .copied()
+            .collect::<Vec<PhysReg>>()
+    }
+
+    /// caller must preserve, rax, rdi, rsi, rdx, rcx, r8, r9
+    pub fn caller_preserved_regs(&self) -> Vec<PhysReg> {
+        self.used_registers
+            .iter()
+            .filter(|&r| {
+                [
+                    PhysReg::Rax,
+                    PhysReg::Rdi,
+                    PhysReg::Rsi,
+                    PhysReg::Rdx,
+                    PhysReg::Rcx,
+                    PhysReg::R8,
+                    PhysReg::R9,
+                ]
+                .contains(r)
+            })
+            .copied()
+            .collect::<Vec<PhysReg>>()
+    }
+
+    pub fn used_regs(&self) -> &[PhysReg] {
+        &self.used_registers
+    }
+
+    pub fn arg_regs<T>(&self, index: usize) -> Option<T>
+    where
+        T: From<PhysReg>,
+    {
+        if index >= 6 {
+            return None;
+        }
+
+        Some(
+            [
+                PhysReg::Rdi,
+                PhysReg::Rsi,
+                PhysReg::Rdx,
+                PhysReg::Rcx,
+                PhysReg::R8,
+                PhysReg::R9,
+            ][index]
+                .into(),
+        )
+    }
+
     pub fn alloc_reg<T>(&mut self) -> T
     where
         T: From<PhysReg>,
@@ -673,6 +755,11 @@ impl Assembler {
         let lhs = lhs.into();
         debug_assert!(!matches!(lhs, Location::Imm(_)));
         self.instructions.push(Instruction::Add(lhs, rhs.into()));
+        self
+    }
+
+    pub fn call(&mut self, name: impl Into<String>) -> &mut Self {
+        self.instructions.push(Instruction::Call(name.into()));
         self
     }
 }

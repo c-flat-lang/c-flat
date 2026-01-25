@@ -34,6 +34,7 @@ impl Pass for LoweringPass {
         module: &mut crate::ir::Module,
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
+        eprintln!("{:?}Pass", DebugPass::LoweredIr);
         for func in &mut module.functions {
             let mut i = 0;
             while i < func.blocks.len() {

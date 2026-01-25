@@ -150,7 +150,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
             ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
             ir::Instruction::Alloc(..) => todo!("alloc"),
-            ir::Instruction::Call(..) => todo!("call"),
+            ir::Instruction::Call(icall) => icall.lower(ctx, target)?,
             ir::Instruction::Cmp(..) => todo!("cmp"),
             ir::Instruction::Copy(..) => todo!("copy"),
             ir::Instruction::ElemGet(..) => todo!("elemget"),
@@ -165,14 +165,14 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),
             ir::Instruction::Mul(..) => todo!("mul"),
-            ir::Instruction::Phi(..) => {
-                unreachable!("Lowering pass should be used before emit x86_64 pass")
-            }
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(..) => todo!("sub"),
             ir::Instruction::Div(..) => todo!("div"),
-            ir::Instruction::Loop(..) | ir::Instruction::IfElse(..) => {
-                unreachable!("Lowering pass should be used before llvm pass")
+            ir::Instruction::Phi(..) | ir::Instruction::Loop(..) | ir::Instruction::IfElse(..) => {
+                unreachable!(
+                    "Lowering pass should be used before x86_64 emit pass {:?}",
+                    self
+                )
             }
         }
         Ok(())

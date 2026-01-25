@@ -28,7 +28,7 @@ impl Pass for PhiNodeEliminationPass {
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
         for function in module.functions.iter_mut() {
-            // IDK that i need this pass.  I think the issue is in instructions for x86_64.
+            eprintln!("{:?}Pass", DebugPass::PhiNodeElimination);
             let mut nodes = Vec::new();
             let mut label_to_block_id: HashMap<String, usize> = HashMap::new();
 
@@ -44,19 +44,6 @@ impl Pass for PhiNodeEliminationPass {
             for (block_id, ip, _) in nodes {
                 function.blocks[block_id].instructions.remove(ip);
             }
-
-            // for (block_id, ip, phi) in nodes {
-            //     eprintln!("des: {:#?}", phi.des);
-            //     for nodes in phi.branches.iter() {
-            //         let (label, node) = nodes;
-            //         let target_block_id = label_to_block_id[label];
-            //         println!(
-            //             "block {target_block_id} [{label}]:\n{:?}",
-            //             function.blocks[target_block_id].instructions[ip]
-            //         );
-            //         eprintln!("node: {:#?}", node);
-            //     }
-            // }
         }
         Ok(())
     }
