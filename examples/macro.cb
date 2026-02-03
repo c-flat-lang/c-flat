@@ -1,0 +1,10 @@
+// This Example does not compile.
+// Just experimenting with syntax.
+use std::ArrayList;
+use core::macro::{TokenStream, Token};
+
+proc_macro println(tokens: TokenStream) TokenStream {
+    let output = ArrayList(Token).new();
+    println(tokens);
+    return tokens;
+}

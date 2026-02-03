@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 bitbeat = { version = "0.1.0", path = "../bitbeat" }
 report = { version = "0.1.0", path = "../report" }
-uuid = { version = "1.18.1", features = ["v4"] }
+uuid = { version = "1.18.1", features = ["v4"], optional = true }
 wasm-encoder = "0.244.0"
 # used for colored output for ir dump
 yansi = "1.0.1"
@@ -21,7 +21,8 @@ pretty_assertions = "1.4.1"
 
 [features]
 default = []
-wasm = ["wasm-bindgen", "uuid/js"]
+wasm = ["wasm-bindgen", "uuid", "uuid/js"]
+uuids = ["uuid"]
 
 [lib]
 name = "bitbox"

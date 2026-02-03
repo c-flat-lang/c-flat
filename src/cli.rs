@@ -1,33 +1,12 @@
 use bitbox::Target;
+
 #[cfg(not(feature = "wasm"))]
 use std::str::FromStr;
+
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
-trait HasArg {
-    fn has_arg(&self, expected: &str) -> bool;
-    fn has_prefix(&self, expected: &str) -> bool;
-}
-
-impl HasArg for Vec<String> {
-    fn has_arg(&self, expected: &str) -> bool {
-        self.iter().any(|arg| arg == expected)
-    }
-    fn has_prefix(&self, expected: &str) -> bool {
-        self.iter().any(|arg| arg.starts_with(expected))
-    }
-}
-
-#[cfg(feature = "wasm")]
-#[wasm_bindgen]
-#[derive(Debug, Clone)]
-pub struct Cli {
-    debug_mode: Option<DebugMode>,
-    target: Target,
-    file_path: String,
-}
-
-#[cfg(not(feature = "wasm"))]
+#[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
@@ -63,123 +42,157 @@ impl Cli {
 
     #[cfg(not(feature = "wasm"))]
     pub fn parse() -> Self {
-        let args = std::env::args().skip(1).collect::<Vec<_>>();
+        let mut args: Vec<String> = std::env::args().skip(1).collect();
 
-        if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-            eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
-            eprintln!("  Options:");
-            eprintln!("    -t            Print tokens");
-            eprintln!("    -a            Print AST");
-            eprintln!("    -s            Print symbol table");
-            eprintln!("    -ir           Print IR");
-            eprintln!("    --target      Target triple");
-            eprintln!("    --dump-after  Print debug info after pass");
-            eprintln!("                  options: lowering-ir");
-            eprintln!("                  options: emit-wasm32");
-            eprintln!("                  options: emit-bitbeat");
-            eprintln!("                  options: control-flow-graph");
-            eprintln!("                  options: liveness-analysis");
-            eprintln!("                  options: detect-loops");
-            eprintln!("    -h, --help    Print this help message");
-
+        if args.iter().any(|a| a == "-h" || a == "--help") {
+            print_help();
             std::process::exit(0);
         }
 
-        let Some(file_path) = args.last() else {
-            eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
+        let file_path = args.pop().unwrap_or_else(|| {
+            print_help();
             std::process::exit(1);
-        };
+        });
 
         let mut debug_mode = None;
-        if args.has_arg("-t") {
-            debug_mode = Some(DebugMode::Token);
-        } else if args.has_arg("-a") {
-            debug_mode = Some(DebugMode::Ast);
-        } else if args.has_arg("-s") {
-            debug_mode = Some(DebugMode::SymbolTable);
-        } else if args.has_arg("-ir") {
-            debug_mode = Some(DebugMode::Ir);
-        } else if args.has_prefix("--dump-after=") {
-            let value = args
-                .iter()
-                .find(|arg| arg.starts_with("--dump-after="))
-                .unwrap();
-            let mode = match value.strip_prefix("--dump-after=").unwrap() {
-                "lowering-ir" => DebugMode::LoweredIr,
-                "emit-wasm32" => DebugMode::EmitWasm32,
-                "emit-bitbeat" => DebugMode::EmitBitbeat,
-                "emit-x86-64" => DebugMode::EmitX86_64,
-                "control-flow-graph" => DebugMode::ControlFlowGraph,
-                "liveness-analysis" => DebugMode::LivenessAnalysis,
-                "detect-loops" => DebugMode::DetectLoops,
-                "phi-node-elimination" => DebugMode::PhiNodeElimination,
-                _ => {
-                    eprintln!("Unknown debug mode: {}", value);
-                    eprintln!(
-                        r#"Options:
-                        lowering-ir,
-                        emit-wasm32,
-                        emit-bitbeat,
-                        control-flow-graph,
-                        liveness-analysis,
-                        detect-loops,
-                        phi-node-elimination
-                        "#
-                    );
-                    std::process::exit(1);
-                }
-            };
-            debug_mode = Some(mode);
-        }
-
         let mut target = Target::default();
-        if let Some(arg) = args.iter().find(|arg| arg.starts_with("--target")) {
-            let value = arg.strip_prefix("--target=").unwrap();
-            target = match Target::from_str(value) {
-                Ok(target) => target,
-                Err(err) => {
+
+        let i = 0;
+        while i < args.len() {
+            let arg = &args[i];
+
+            if let Some(mode) = DebugMode::from_flag(arg) {
+                debug_mode = Some(mode);
+                args.remove(i);
+                continue;
+            }
+
+            if let Some(value) = arg.strip_prefix("--dump-after=") {
+                debug_mode = Some(DebugMode::from_dump_after(value));
+                args.remove(i);
+                continue;
+            }
+
+            if let Some(value) = arg.strip_prefix("--target=") {
+                target = Target::from_str(value).unwrap_or_else(|err| {
                     eprintln!("{} '{}'", err, value);
                     std::process::exit(1);
-                }
-            };
+                });
+                args.remove(i);
+                continue;
+            }
+
+            unknown_arg(arg);
         }
+
         Self {
             debug_mode,
             target,
-            file_path: file_path.to_string(),
+            file_path,
         }
     }
+}
+
+fn print_help() {
+    let bin = std::env::args().next().unwrap();
+    eprintln!("Usage: {bin} <filename>");
+    eprintln!("Options:");
+    eprintln!("  -t            Print tokens");
+    eprintln!("  -a            Print AST");
+    eprintln!("  -s            Print symbol table");
+    eprintln!("  -ir           Print IR");
+    eprintln!("  --target=TRIPLE");
+    eprintln!("  --dump-after=PASS");
+    eprintln!("    lowering-ir");
+    eprintln!("    emit-x86-64");
+    eprintln!("    emit-wasm32");
+    eprintln!("    emit-bitbeat");
+    eprintln!("    control-flow-graph");
+    eprintln!("    liveness-analysis");
+    eprintln!("    detect-loops");
+    eprintln!("    phi-node-elimination");
+    eprintln!("    local-function-variables");
+    eprintln!("  -h, --help    Print this help message");
+}
+
+fn unknown_arg(arg: &str) -> ! {
+    eprintln!("Unknown argument: {arg}");
+    eprintln!("Run with --help to see valid options.");
+    std::process::exit(1);
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Debug, Clone, Copy)]
 pub enum DebugMode {
-    Ast,
-    ControlFlowGraph,
-    EmitBitbeat,
-    EmitWasm32,
-    EmitX86_64,
-    Ir,
-    LivenessAnalysis,
-    LoweredIr,
-    SymbolTable,
     Token,
+    Ast,
+    SymbolTable,
+    Ir,
+    LoweredIr,
+    EmitWasm32,
+    EmitBitbeat,
+    EmitX86_64,
+    ControlFlowGraph,
+    LivenessAnalysis,
     DetectLoops,
     PhiNodeElimination,
+    LocalFunctionVariables,
+}
+
+impl DebugMode {
+    fn from_flag(flag: &str) -> Option<Self> {
+        Some(match flag {
+            "-t" => Self::Token,
+            "-a" => Self::Ast,
+            "-s" => Self::SymbolTable,
+            "-ir" => Self::Ir,
+            _ => return None,
+        })
+    }
+
+    fn from_dump_after(value: &str) -> Self {
+        match value {
+            "lowering-ir" => Self::LoweredIr,
+            "emit-wasm32" => Self::EmitWasm32,
+            "emit-bitbeat" => Self::EmitBitbeat,
+            "emit-x86-64" => Self::EmitX86_64,
+            "control-flow-graph" => Self::ControlFlowGraph,
+            "liveness-analysis" => Self::LivenessAnalysis,
+            "detect-loops" => Self::DetectLoops,
+            "phi-node-elimination" => Self::PhiNodeElimination,
+            "local-function-variables" => Self::LocalFunctionVariables,
+            _ => {
+                eprintln!("Unknown debug mode: {value}");
+                eprintln!("Options:");
+                eprintln!("   lowering-ir");
+                eprintln!("   emit-wasm32");
+                eprintln!("   emit-bitbeat");
+                eprintln!("   emit-x86-64");
+                eprintln!("   control-flow-graph");
+                eprintln!("   liveness-analysis");
+                eprintln!("   detect-loops");
+                eprintln!("   phi-node-elimination");
+                eprintln!("   local-function-variables");
+                std::process::exit(1);
+            }
+        }
+    }
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
-    fn from(value: DebugMode) -> Option<bitbox::passes::DebugPass> {
-        match value {
-            DebugMode::LoweredIr => Some(bitbox::passes::DebugPass::LoweredIr),
-            DebugMode::EmitWasm32 => Some(bitbox::passes::DebugPass::EmitWasm32),
-            DebugMode::EmitBitbeat => Some(bitbox::passes::DebugPass::EmitBitbeat),
-            DebugMode::EmitX86_64 => Some(bitbox::passes::DebugPass::EmitX86_64),
-            DebugMode::ControlFlowGraph => Some(bitbox::passes::DebugPass::ControlFlowGraph),
-            DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
-            DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
-            DebugMode::PhiNodeElimination => Some(bitbox::passes::DebugPass::PhiNodeElimination),
-            _ => None,
-        }
+    fn from(mode: DebugMode) -> Self {
+        use bitbox::passes::DebugPass::*;
+        Some(match mode {
+            DebugMode::LoweredIr => LoweredIr,
+            DebugMode::EmitWasm32 => EmitWasm32,
+            DebugMode::EmitBitbeat => EmitBitbeat,
+            DebugMode::EmitX86_64 => EmitX86_64,
+            DebugMode::ControlFlowGraph => ControlFlowGraph,
+            DebugMode::LivenessAnalysis => LivenessAnalysis,
+            DebugMode::DetectLoops => DetectLoops,
+            DebugMode::PhiNodeElimination => PhiNodeElimination,
+            DebugMode::LocalFunctionVariables => LocalFunctionVariables,
+            _ => return None,
+        })
     }
 }

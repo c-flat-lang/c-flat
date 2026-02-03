@@ -13,6 +13,7 @@ pub struct Lexer;
 impl Stage<&str, Vec<Token>> for Lexer {
     fn run(&mut self, input: &str) -> Vec<Token> {
         let tokenizer = tokenizer::Tokenizer::new(input);
+        eprintln!("Tokenizer");
         tokenizer.collect()
     }
 }

@@ -42,10 +42,8 @@ impl IRBuilder {
             .with_params(
                 params
                     .iter()
-                    .map(|param| Variable {
-                        name: param.name.lexeme.clone(),
-                        ty: param.ty.as_bitbox_type(),
-                        version: 0,
+                    .map(|param| {
+                        Variable::new(param.name.lexeme.clone(), param.ty.as_bitbox_type())
                     })
                     .collect(),
             )
@@ -58,7 +56,7 @@ impl IRBuilder {
         }
 
         let mut assembler = function_builder.assembler();
-        assembler.create_block("entry");
+        assembler.create_block(&format!("entry_{}", name.lexeme));
 
         body.lower(&mut assembler, &mut ctx);
 
@@ -69,6 +67,7 @@ impl IRBuilder {
 
 impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
     fn run(&mut self, (symbol_table, ast): (SymbolTable, Vec<Item>)) -> Result<Module> {
+        eprintln!("IR Code Generation");
         self.symbol_table = symbol_table;
         let mut mb = ModuleBuilder::default();
         for item in ast {
@@ -281,14 +280,27 @@ impl Lowerable for ExprIfElse {
 
         let mut cond_blocks = vec![];
         let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
+
+        #[cfg(not(feature = "uuids"))]
+        let counter = assembler.counter();
+
+        #[cfg(not(feature = "uuids"))]
+        cond_assembler.with_counter(counter);
+
         cond_assembler.create_block("cond");
         let Some(cond_result) = condition.lower(&mut cond_assembler, ctx) else {
             panic!("Condition should produce a variable");
         };
 
+        #[cfg(not(feature = "uuids"))]
+        let counter = cond_assembler.counter();
+
         var.clear();
         let mut then_blocks = vec![];
         let mut then_assembler = AssemblerBuilder::new(&mut then_blocks, &mut var);
+        #[cfg(not(feature = "uuids"))]
+        then_assembler.with_counter(counter);
+
         then_assembler.create_block("then_branch");
         let then_block_result = then_branch.lower(&mut then_assembler, ctx);
 
@@ -296,16 +308,28 @@ impl Lowerable for ExprIfElse {
             then_assembler.assign(result, then_block_result);
         }
 
+        #[cfg(not(feature = "uuids"))]
+        let counter = then_assembler.counter();
+
         let mut else_blocks = vec![];
         if let Some(else_branch) = else_branch {
             var.clear();
             let mut else_assembler = AssemblerBuilder::new(&mut else_blocks, &mut var);
+
+            #[cfg(not(feature = "uuids"))]
+            else_assembler.with_counter(counter);
+
             else_assembler.create_block("else_branch");
             let else_block_result = else_branch.lower(&mut else_assembler, ctx);
 
             if let Some(else_block_result) = else_block_result {
                 else_assembler.assign(result.clone().unwrap(), else_block_result);
             }
+            #[cfg(not(feature = "uuids"))]
+            assembler.with_counter(else_assembler.counter());
+        } else {
+            #[cfg(not(feature = "uuids"))]
+            assembler.with_counter(counter);
         }
 
         assembler.if_else(
@@ -499,6 +523,21 @@ impl Lowerable for ExprCall {
             "write_int" | "writenl" | "write_char"
         ) {
             Type::Void
+        // // --- RAYLIB ----
+        // } else if matches!(
+        //     ident.lexeme.as_str(),
+        //     "initWindow"
+        //         | "setTargetFPS"
+        //         | "beginDrawing"
+        //         | "clearBackground"
+        //         | "drawText"
+        //         | "endDrawing"
+        //         | "closeWindow"
+        // ) {
+        //     Type::Void
+        // } else if matches!(ident.lexeme.as_str(), "windowShouldClose") {
+        //     Type::Unsigned(32)
+        // // ------------
         } else {
             panic!("Symbol not found {}", ident.lexeme);
         };
@@ -600,18 +639,35 @@ impl Lowerable for ExprWhile {
     ) -> Option<Variable> {
         let mut var = vec![];
 
+        #[cfg(not(feature = "uuids"))]
+        let counter = assembler.counter();
+
         let mut cond_blocks = vec![];
         let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
+
+        #[cfg(not(feature = "uuids"))]
+        cond_assembler.with_counter(counter);
+
         cond_assembler.create_block("cond");
         let Some(cond_result) = self.condition.lower(&mut cond_assembler, ctx) else {
             panic!("Condition should produce a variable");
         };
 
+        #[cfg(not(feature = "uuids"))]
+        let counter = cond_assembler.counter();
+
         var.clear();
         let mut loop_blocks = vec![];
         let mut loop_assembler = AssemblerBuilder::new(&mut loop_blocks, &mut var);
+
+        #[cfg(not(feature = "uuids"))]
+        loop_assembler.with_counter(counter);
+
         loop_assembler.create_block("loop_body");
         let then_block_result = self.body.lower(&mut loop_assembler, ctx);
+
+        #[cfg(not(feature = "uuids"))]
+        assembler.with_counter(loop_assembler.counter());
 
         assembler.loop_(cond_blocks, cond_result, loop_blocks);
         None

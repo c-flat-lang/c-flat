@@ -3,11 +3,15 @@ use std::str::FromStr;
 
 trait HasArg {
     fn has_arg(&self, expected: &str) -> bool;
+    fn has_prefix(&self, expected: &str) -> bool;
 }
 
 impl HasArg for Vec<String> {
     fn has_arg(&self, expected: &str) -> bool {
         self.iter().any(|arg| arg == expected)
+    }
+    fn has_prefix(&self, expected: &str) -> bool {
+        self.iter().any(|arg| arg.starts_with(expected))
     }
 }
 
@@ -31,13 +35,16 @@ impl Cli {
             eprintln!("    -ir           Print IR");
             eprintln!("    --target      Target triple");
             eprintln!("    --dump-after  Print debug info after pass");
+            eprintln!("    --dump-after  Print debug info after pass");
             eprintln!("                  options: lowering-ir");
+            eprintln!("                  options: emit-x86_64-linux");
             eprintln!("                  options: emit-wasm32");
             eprintln!("                  options: emit-bitbeat");
             eprintln!("                  options: control-flow-graph");
             eprintln!("                  options: liveness-analysis");
             eprintln!("                  options: detect-loops");
             eprintln!("                  options: phi-node-elimination");
+            eprintln!("                  options: local-function-variables");
             eprintln!("    -h, --help    Print this help message");
 
             std::process::exit(0);
@@ -58,20 +65,40 @@ impl Cli {
             debug_mode = Some(DebugMode::SymbolTable);
         } else if args.has_arg("-ir") {
             debug_mode = Some(DebugMode::Ir);
-        } else if args.has_arg("--dump-after=lowering-ir") {
-            debug_mode = Some(DebugMode::LoweredIr);
-        } else if args.has_arg("--dump-after=emit-wasm32") {
-            debug_mode = Some(DebugMode::EmitWasm32);
-        } else if args.has_arg("--dump-after=emit-bitbeat") {
-            debug_mode = Some(DebugMode::EmitBitbeat);
-        } else if args.has_arg("--dump-after=control-flow-graph") {
-            debug_mode = Some(DebugMode::ControlFlowGraph);
-        } else if args.has_arg("--dump-after=liveness-analysis") {
-            debug_mode = Some(DebugMode::LivenessAnalysis);
-        } else if args.has_arg("--dump-after=detect-loops") {
-            debug_mode = Some(DebugMode::DetectLoops);
-        } else if args.has_arg("--dump-after=phi-node-elimination") {
-            debug_mode = Some(DebugMode::PhiNodeElimination);
+        } else if args.has_prefix("--dump-after=") {
+            let value = args
+                .iter()
+                .find(|arg| arg.starts_with("--dump-after="))
+                .unwrap();
+            let mode = match value.strip_prefix("--dump-after=").unwrap() {
+                "lowering-ir" => DebugMode::LoweredIr,
+                "emit-wasm32" => DebugMode::EmitWasm32,
+                "emit-bitbeat" => DebugMode::EmitBitbeat,
+                "emit-x86-64" => DebugMode::EmitX86_64,
+                "control-flow-graph" => DebugMode::ControlFlowGraph,
+                "liveness-analysis" => DebugMode::LivenessAnalysis,
+                "detect-loops" => DebugMode::DetectLoops,
+                "phi-node-elimination" => DebugMode::PhiNodeElimination,
+                "local-function-variables" => DebugMode::LocalFunctionVariables,
+                _ => {
+                    eprintln!("Unknown debug mode: {}", value);
+                    eprintln!(
+                        r#"Options:
+                        lowering-ir,
+                        emit-wasm32,
+                        emit-bitbeat,
+                        emit-x86-64,
+                        control-flow-graph,
+                        liveness-analysis,
+                        detect-loops,
+                        phi-node-elimination
+                        local-function-variables
+                        "#
+                    );
+                    std::process::exit(1);
+                }
+            };
+            debug_mode = Some(mode);
         }
 
         let mut target = Target::default();
@@ -97,16 +124,17 @@ impl Cli {
 pub enum DebugMode {
     Ast,
     ControlFlowGraph,
+    DetectLoops,
     EmitBitbeat,
     EmitWasm32,
     EmitX86_64,
     Ir,
     LivenessAnalysis,
+    LocalFunctionVariables,
     LoweredIr,
+    PhiNodeElimination,
     SymbolTable,
     Token,
-    DetectLoops,
-    PhiNodeElimination,
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
@@ -120,6 +148,9 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
             DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
             DebugMode::PhiNodeElimination => Some(bitbox::passes::DebugPass::PhiNodeElimination),
+            DebugMode::LocalFunctionVariables => {
+                Some(bitbox::passes::DebugPass::LocalFunctionVariables)
+            }
             _ => None,
         }
     }

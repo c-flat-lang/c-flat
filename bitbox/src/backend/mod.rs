@@ -113,6 +113,7 @@ impl CompilerResult {
                 std::fs::write(&asm_path, asm.as_bytes()).unwrap();
                 // Call gcc
                 let cmd_result = Command::new("gcc")
+                    // .arg("-static")
                     .arg("-Wall")
                     .arg("-Wextra")
                     .arg("-g")
@@ -121,6 +122,15 @@ impl CompilerResult {
                     .arg("runtime.c")
                     .arg("-o")
                     .arg(path)
+                    //---RAYLIB---
+                    // .arg("-L/opt/raylib/release/libs/linux")
+                    // .arg("-lraylib")
+                    // .arg("-lm")
+                    // .arg("-lpthread")
+                    // .arg("-ldl")
+                    // .arg("-lrt")
+                    // .arg("-lX11")
+                    //------------
                     .output();
                 match cmd_result {
                     Ok(output) => {
@@ -134,7 +144,7 @@ impl CompilerResult {
                     }
                 }
                 // Remove assembly file
-                std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
+                // std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
             }
             Self::Bitbeat(module) => module.save_to_file(path),
         }

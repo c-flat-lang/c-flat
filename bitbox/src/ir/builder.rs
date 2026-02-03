@@ -48,6 +48,8 @@ pub struct AssemblerBuilder<'a> {
     blocks: &'a mut Vec<BasicBlock>,
     current_block: Option<BlockId>,
     variables: &'a mut Vec<Variable>,
+    #[cfg(not(feature = "uuids"))]
+    counter: usize,
 }
 
 impl<'a> AssemblerBuilder<'a> {
@@ -56,7 +58,19 @@ impl<'a> AssemblerBuilder<'a> {
             blocks,
             current_block: None,
             variables,
+            #[cfg(not(feature = "uuids"))]
+            counter: 0,
         }
+    }
+    #[cfg(not(feature = "uuids"))]
+    pub fn with_counter(&mut self, counter: usize) -> &mut Self {
+        self.counter = counter;
+        self
+    }
+
+    #[cfg(not(feature = "uuids"))]
+    pub fn counter(&self) -> usize {
+        self.counter
     }
 
     fn push_instruction(&mut self, instruction: impl Into<Instruction>) {
@@ -80,8 +94,18 @@ impl<'a> AssemblerBuilder<'a> {
     }
 
     /// returns a new temporary variable
+    #[cfg(feature = "uuids")]
     pub fn var(&mut self, ty: Type) -> Variable {
-        let var = Variable::new(format!("{}", uuid::Uuid::new_v4()), ty);
+        let var = Variable::new(format!("{}", uuid::Uuid::new_v4()), ty).temp();
+        self.variables.push(var.clone());
+        var
+    }
+
+    /// returns a new temporary variable
+    #[cfg(not(feature = "uuids"))]
+    pub fn var(&mut self, ty: Type) -> Variable {
+        let var = Variable::new(format!("tmp.{}", self.counter), ty).temp();
+        self.counter += 1;
         self.variables.push(var.clone());
         var
     }
