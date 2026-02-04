@@ -78,7 +78,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
             Operand::Variable(src_var) if self.des.temporary && src_var.ty.is_ptr() => {
                 asm.alloc().alias_variable(&self.des, &src_var);
             }
-            Operand::Variable(src_var) if self.des.temporary => {
+            Operand::Variable(_) if self.des.temporary => {
                 let src_loc = self.src.lower(ctx, target)?;
                 let mut asm = target
                     .assembler
@@ -338,11 +338,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
                     8 => asm.arg_regs::<Reg64>(i).expect("Too many arguments").into(),
                     _ => unreachable!("invalid stack size"),
                 },
-                Location::MemIndexed(_) => {
-                    // materialize the address into a temp reg first
-                    let temp = asm.materialize_address(arg);
-                    temp
-                }
+
+                // materialize the address into a temp reg first
+                Location::MemIndexed(_) | Location::Address(_) => asm.materialize_address(arg),
                 Location::Imm(_) => {
                     // immediate value, just use Reg64 as destination
                     asm.arg_regs::<Reg64>(i).expect("Too many arguments").into()
@@ -420,10 +418,11 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
             .emit(super::assembler::FunctionSection::Body);
 
         let base = asm.materialize_address(&base_ptr);
+        let index = asm.materialize_value(&index);
+        let value = asm.materialize_value(&value);
+        let element_size = self.addr.ty.element_size();
 
-        let index = asm.materialize_address(&index);
-
-        asm.store_indexed(base, index, self.addr.ty.size(), value);
+        asm.store_indexed(base, index, element_size, value);
 
         Ok(())
     }
@@ -449,7 +448,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
         let mut asm = target
             .assembler
             .emit(super::assembler::FunctionSection::Body);
-        let index_reg = asm.materialize_address(&index);
+        let index_reg = asm.materialize_value(&index);
 
         // Materialize base address
         let base = asm.materialize_address(base_ptr);

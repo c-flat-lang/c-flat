@@ -1,25 +1,17 @@
-// fn max_s32(x: s32, y: s32) s32 {
-//     if x > y {
-//         return x;
-//     }
-//     return y;
-//     // return if x > y { x } else { y };
-// }
+fn max_s32(x: s32, y: s32) s32 {
+    return if x > y { x } else { y };
+}
 
 fn min_s32(x: s32, y: s32) s32 {
-    // if x < y {
-    //     return x;
-    // }
-    // return y;
     return if x < y { x } else { y };
 }
 
 pub fn main() s32 {
     let x = 123;
     let y: s32 = 205;
-    return min_s32(y, x);
-    // let result =  min_s32(x, y);
-    // write_int(result);
-    // write_char(10);
-    // return 0;
+    // return min_s32(y, x);
+    let result =  min_s32(x, y);
+    write_int(result);
+    write_char(10);
+    return 0;
 }

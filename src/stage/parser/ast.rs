@@ -113,11 +113,11 @@ impl Type {
     pub(crate) fn size(&self) -> usize {
         match self {
             Type::Bool => 1,
-            Type::UnsignedNumber(bytes) => *bytes as usize,
-            Type::SignedNumber(bytes) => *bytes as usize,
-            Type::Float(bytes) => *bytes as usize,
+            Type::UnsignedNumber(bytes) | Type::SignedNumber(bytes) | Type::Float(bytes) => {
+                (*bytes as usize) / 8
+            }
             Type::Array(count, ty) => count * ty.size(),
-            Type::Pointer(_) => 32,
+            Type::Pointer(_) => 64,
             Type::Struct(_) => todo!("Size of struct"),
             Type::Enum(_) => todo!("Size of enum"),
             Type::Void => 0,

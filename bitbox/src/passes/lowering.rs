@@ -66,26 +66,33 @@ impl Pass for LoweringPass {
         eprintln!("{:?}Pass", DebugPass::LoweredIr);
         let mut var_creator = LabelCreator::default();
         for func in &mut module.functions {
-            let mut i = 0;
-            while i < func.blocks.len() {
-                let block = func.blocks[i].clone();
+            loop {
+                let mut changed = false;
 
-                let mut j = 0;
-                while j < block.instructions.len() {
-                    match block.instructions[j].clone() {
-                        Instruction::IfElse(iifelse) => {
-                            lower_if_else(&mut var_creator, func, i, j, iifelse);
+                for i in 0..func.blocks.len() {
+                    for j in 0..func.blocks[i].instructions.len() {
+                        match func.blocks[i].instructions[j].clone() {
+                            Instruction::IfElse(iifelse) => {
+                                lower_if_else(&mut var_creator, func, i, j, iifelse);
+                                changed = true;
+                                break;
+                            }
+                            Instruction::Loop(iloop) => {
+                                lower_loop(&mut var_creator, func, i, j, iloop);
+                                changed = true;
+                                break;
+                            }
+                            _ => {}
                         }
-                        Instruction::Loop(iloop) => {
-                            lower_loop(&mut var_creator, func, i, j, iloop);
-                        }
-                        _ => (),
                     }
-
-                    j += 1;
+                    if changed {
+                        break;
+                    }
                 }
 
-                i += 1;
+                if !changed {
+                    break;
+                }
             }
         }
 

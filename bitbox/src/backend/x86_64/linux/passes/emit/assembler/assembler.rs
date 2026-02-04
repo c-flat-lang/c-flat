@@ -51,6 +51,13 @@ pub struct MemIndexed {
     scale: i32,
 }
 
+impl MemIndexed {
+    pub fn new(base: Reg, index: Reg, scale: i32) -> Self {
+        debug_assert!([1, 2, 4, 8].contains(&scale));
+        Self { base, index, scale }
+    }
+}
+
 impl std::fmt::Display for MemIndexed {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[{} + {} * {}]", self.base, self.index, self.scale)
@@ -59,11 +66,12 @@ impl std::fmt::Display for MemIndexed {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Location {
-    Temp(Reg),
-    Reg(Reg),
-    MemIndexed(MemIndexed),
-    Stack(Stack),
+    Address(Stack),
     Imm(i64),
+    MemIndexed(MemIndexed),
+    Reg(Reg),
+    Stack(Stack),
+    Temp(Reg),
 }
 
 impl Location {
@@ -87,29 +95,36 @@ impl Location {
         matches!(self, Location::Imm(_))
     }
 
-    pub fn map_reg(&mut self, f: impl FnOnce(Reg) -> Reg) {
+    pub fn map_reg(&self, f: impl FnOnce(Reg) -> Reg) -> Self {
         match self {
-            Self::Reg(reg) => *self = Location::Reg(f(*reg)),
-            Self::Temp(reg) => *self = Location::Temp(f(*reg)),
-            _ => {}
+            Self::Reg(reg) => Location::Reg(f(*reg)),
+            _ => self.clone(),
         }
     }
-    pub fn map_stack(&mut self, f: impl FnOnce(&Stack) -> Stack) {
+
+    pub fn map_temp(&self, f: impl FnOnce(Reg) -> Reg) -> Self {
         match self {
-            Self::Stack(stack) => *self = Location::Stack(f(&stack)),
-            _ => {}
+            Self::Temp(reg) => Self::Temp(f(*reg)),
+            _ => self.clone(),
         }
     }
-    pub fn map_imm(&mut self, f: impl FnOnce(i64) -> i64) {
+
+    pub fn map_stack(&mut self, f: impl FnOnce(&Stack) -> Stack) -> Self {
         match self {
-            Self::Imm(imm) => *self = Location::Imm(f(*imm)),
-            _ => {}
+            Self::Stack(stack) => Location::Stack(f(&stack)),
+            _ => self.clone(),
         }
     }
-    pub fn map_mem_indexed(&mut self, f: impl FnOnce(&MemIndexed) -> MemIndexed) {
+    pub fn map_imm(&self, f: impl FnOnce(i64) -> i64) -> Self {
         match self {
-            Self::MemIndexed(mem_indexed) => *self = Location::MemIndexed(f(mem_indexed)),
-            _ => {}
+            Self::Imm(imm) => Location::Imm(f(*imm)),
+            _ => self.clone(),
+        }
+    }
+    pub fn map_mem_indexed(&self, f: impl FnOnce(&MemIndexed) -> MemIndexed) -> Self {
+        match self {
+            Self::MemIndexed(mem_indexed) => Location::MemIndexed(f(mem_indexed)),
+            _ => self.clone(),
         }
     }
 }
@@ -167,6 +182,7 @@ impl std::fmt::Display for Location {
         match self {
             Location::Temp(reg) => write!(f, "{}", reg),
             Location::Reg(reg) => write!(f, "{}", reg),
+            Location::Address(stack) => write!(f, "{}", stack),
             Location::MemIndexed(mem_indexed) => write!(f, "{}", mem_indexed),
             Location::Stack(stack) => write!(f, "{}", stack),
             Location::Imm(val) => write!(f, "{}", val),
@@ -216,7 +232,7 @@ pub enum Instruction {
     DefineLabel(Label),
     Jmp(Label),
     Jnz(Label),
-    Lea(Location, Stack),
+    Lea(Location, Location),
     Mov(Location, Location),
     Movezx(Location, Location),
     Pop(Location),
@@ -348,25 +364,67 @@ impl<'a> EmitCtx<'a> {
 
     pub fn materialize_address(&mut self, loc: &Location) -> Reg {
         match loc {
-            Location::Reg(r) => r.clone(),
-            Location::Temp(r) => r.clone(),
-            Location::Stack(off) => {
-                let reg = self.alloc().alloc_reg::<Reg64>();
-                self.lea(reg, off.clone());
-                reg.into()
+            Location::Address(slot) => {
+                let r = self.alloc().alloc_reg::<Reg64>();
+                self.lea(r, Location::Address(slot.clone()));
+                r.into()
             }
-            _ => todo!("materialize_address: {loc:#?}"),
+
+            Location::Stack(slot) => {
+                let r = self.alloc().alloc_reg::<Reg64>();
+                self.lea(r, Location::Stack(slot.clone()));
+                r.into()
+            }
+
+            Location::MemIndexed(mem) => {
+                let r = self.alloc().alloc_reg::<Reg64>();
+                self.lea(r, Location::MemIndexed(mem.clone()));
+                r.into()
+            }
+
+            l => {
+                panic!("materialize_address called on non-addressable value {l:?}");
+            }
         }
     }
 
-    pub fn store_indexed(&mut self, base: Reg, index: Reg, scale: i32, value: Location) {
-        debug_assert!(!matches!(
-            value,
-            Location::Stack(_) | Location::MemIndexed(_)
-        ));
+    pub fn materialize_value(&mut self, loc: &Location) -> Reg {
+        match loc {
+            Location::Reg(r) | Location::Temp(r) => r.clone(),
+
+            Location::Imm(imm) => {
+                let r = self.alloc().alloc_reg::<Reg64>();
+                self.mov(r, Location::Imm(imm.clone()));
+                r.into()
+            }
+
+            Location::Stack(slot) => {
+                let r = self.alloc().alloc_reg::<Reg64>();
+                self.mov(r, Location::Stack(slot.clone()));
+                r.into()
+            }
+
+            Location::MemIndexed(mem) => {
+                let r = self.alloc().alloc_reg::<Reg64>();
+                self.mov(r, Location::MemIndexed(mem.clone()));
+                r.into()
+            }
+
+            Location::Address(_) => {
+                panic!("materialize_value called on an address");
+            }
+        }
+    }
+
+    pub fn store_indexed(&mut self, base: Reg, index: Reg, scale: i32, value: Reg) {
+        debug_assert!(
+            [1, 2, 4, 8].contains(&scale),
+            "store_indexed: scale must be 1, 2, 4, or 8"
+        );
+
         self.emit(Instruction::Mov(
             Location::MemIndexed(MemIndexed { base, index, scale }),
-            value,
+            value.into(),
         ));
     }
 
@@ -375,12 +433,25 @@ impl<'a> EmitCtx<'a> {
 
         self.emit(Instruction::Mov(
             out,
-            Location::MemIndexed(MemIndexed { base, index, scale }),
+            Location::MemIndexed(MemIndexed::new(base, index, scale)),
         ));
     }
 
     fn prepare_binary_operands(&mut self, dst: Location, src: Location) -> PreparedOperands {
-        debug_assert!(!matches!(dst, Location::Imm(_)));
+        debug_assert!(
+            !matches!(dst, Location::Imm(_)),
+            "prepare_binary_operands, dst is imm"
+        );
+
+        debug_assert!(
+            !matches!(dst, Location::Address(_)),
+            "prepare_binary_operands: dst is Address"
+        );
+
+        debug_assert!(
+            !matches!(src, Location::Address(_)),
+            "prepare_binary_operands: src is Address"
+        );
 
         // Case 1: mem ← mem into mem ← temp-reg
         if let (Location::Stack(lhs), Location::Stack(rhs)) = (&dst, &src) {
@@ -455,7 +526,7 @@ impl<'a> EmitCtx<'a> {
 
     // ------------------
 
-    pub fn lea(&mut self, dst: impl Into<Location>, offset: impl Into<Stack>) -> &mut Self {
+    pub fn lea(&mut self, dst: impl Into<Location>, offset: impl Into<Location>) -> &mut Self {
         let dst = dst.into();
         self.emit(Instruction::Lea(dst, offset.into()));
         self

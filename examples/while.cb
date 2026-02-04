@@ -4,6 +4,7 @@ pub fn main() s32 {
     while i < array.len {
         let value = array[i];
         write_int(value);
+        write_char(32);
         write_int(i);
         write_char(10);
         i = i + 1;

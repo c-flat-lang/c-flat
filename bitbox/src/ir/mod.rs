@@ -98,8 +98,19 @@ impl Type {
             Type::Unsigned(bits) => *bits as i32 / 8,
             Type::Signed(bits) => *bits as i32 / 8,
             Type::Float(bits) => *bits as i32 / 8,
-            Type::Pointer(ty) => ty.size(),
+            Type::Pointer(..) => 64,
             Type::Array(size, ty) => ty.size() * (*size as i32),
+            Type::Void => 0,
+        }
+    }
+
+    pub fn element_size(&self) -> i32 {
+        match self {
+            Type::Unsigned(bits) => *bits as i32 / 8,
+            Type::Signed(bits) => *bits as i32 / 8,
+            Type::Float(bits) => *bits as i32 / 8,
+            Type::Pointer(..) => 64,
+            Type::Array(_, ty) => ty.element_size(),
             Type::Void => 0,
         }
     }

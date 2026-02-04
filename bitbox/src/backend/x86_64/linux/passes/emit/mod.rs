@@ -122,11 +122,12 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
         }
 
         let mut pro = target.assembler.emit(assembler::FunctionSection::Prolog);
-        let offset = pro.alloc().stack_memory_offset as i64;
+        let mut offset = pro.alloc().stack_memory_offset as i64;
+        offset = (offset + 15) & !15;
         pro.sub(Rsp, offset);
 
         let mut epi = target.assembler.emit(assembler::FunctionSection::Epilog);
-        epi.define_label(&format!("exit_{}", self.name))
+        epi.define_label(format!("exit_{}", self.name))
             .add(Rsp, offset)
             .mov(Rsp, Rbp)
             .pop(Rbp)
