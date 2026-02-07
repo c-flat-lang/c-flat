@@ -5,6 +5,9 @@ pub fn main() s32 {
         array[i] = i;
         i = i + 1;
     }
+
+    i = 0
+
     while i < array.len {
         write_int(array[i]);
         write_char(10);

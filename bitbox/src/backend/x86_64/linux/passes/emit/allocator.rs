@@ -7,21 +7,23 @@ use crate::{
 
 use super::assembler::Location;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Allocation {
     pub location: Location,
     pub references: usize,
+    pub ty: Type,
 }
 
 #[derive(Debug)]
 pub struct Allocator {
     // TODO: remove public
-    pub variable_to_allocations: HashMap<Variable, usize>,
-    pub allocations: HashMap<usize, Allocation>,
-    pub next_alloc_id: usize,
+    pub(crate) variable_to_allocations: HashMap<Variable, usize>,
+    pub(crate) reg_to_alloc_id: HashMap<PhysReg, usize>,
+    pub(crate) allocations: HashMap<usize, Allocation>,
+    pub(crate) next_alloc_id: usize,
 
-    pub free_registers: Vec<PhysReg>,
-    pub used_registers: Vec<PhysReg>,
+    pub(crate) free_registers: Vec<PhysReg>,
+    pub(crate) used_registers: Vec<PhysReg>,
     pub(crate) stack_memory_offset: i32,
 }
 
@@ -29,6 +31,7 @@ impl Default for Allocator {
     fn default() -> Self {
         Self {
             variable_to_allocations: HashMap::default(),
+            reg_to_alloc_id: HashMap::default(),
             allocations: HashMap::default(),
             next_alloc_id: usize::default(),
             free_registers: vec![
@@ -42,6 +45,10 @@ impl Default for Allocator {
                 PhysReg::R9,
                 PhysReg::R10,
                 PhysReg::R11,
+                PhysReg::R12,
+                PhysReg::R13,
+                PhysReg::R14,
+                PhysReg::R15,
             ],
             used_registers: Vec::default(),
             stack_memory_offset: i32::default(),
@@ -50,52 +57,50 @@ impl Default for Allocator {
 }
 
 impl Allocator {
-    pub fn alloc_reg<T>(&mut self) -> T
+    pub fn alloc_reg<T>(&mut self) -> Option<T>
     where
         T: From<PhysReg>,
     {
         let Some(reg) = self.free_registers.pop() else {
-            panic!(
-                "Out of registers\nUsed registers: {:#?}\nFree registers: {:#?}",
-                self.used_registers, self.free_registers
-            );
+            return None;
         };
+
         self.used_registers.push(reg);
-        reg.into()
+        Some(reg.into())
     }
 
     pub fn free_reg(&mut self, reg: impl Into<Reg>) {
         let phys = reg.into().as_phys();
-        debug_assert!(
-            self.used_registers.contains(&phys),
-            "Double free or freeing unused register: {:?}, {:#?}",
-            phys,
-            self
-        );
+        // debug_assert!(
+        //     self.used_registers.contains(&phys),
+        //     "Double free or freeing unused register: {:?}, {:#?}",
+        //     phys,
+        //     self
+        // );
 
         self.used_registers.retain(|&r| r != phys);
         self.free_registers.push(phys);
     }
 
-    pub fn alloc_temp_reg<T>(&mut self) -> Location
-    where
-        T: From<PhysReg>,
-        Reg: From<T>,
-    {
-        Location::Temp(Reg::from(self.alloc_reg::<T>()))
-    }
-
     pub fn store_variable(&mut self, var: &Variable, loc: impl Into<Location>) {
         let location = loc.into();
-        debug_assert!(!matches!(location, Location::Temp(_)));
-
+        debug_assert!(
+            !matches!(location, Location::Temp(_)),
+            "can not store a temp reg"
+        );
         let alloc_id = self.next_alloc_id;
         self.next_alloc_id += 1;
+
+        if let Location::Reg(reg) = &location {
+            self.reg_to_alloc_id.insert(reg.as_phys(), alloc_id);
+        }
+
         self.allocations.insert(
             alloc_id,
             Allocation {
                 location,
                 references: 1,
+                ty: var.ty.clone(),
             },
         );
         self.variable_to_allocations.insert(var.clone(), alloc_id);
@@ -147,6 +152,7 @@ impl Allocator {
 
         if let Some(reg) = freed_reg {
             self.free_reg(reg);
+            self.reg_to_alloc_id.remove(&reg.as_phys());
         }
     }
 

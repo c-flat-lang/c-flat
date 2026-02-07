@@ -1,9 +1,6 @@
-use crate::{
-    backend::x86_64::linux::passes::emit::{allocator::Allocator, assembler::RegKind},
-    ir::Type,
-};
+use crate::{backend::x86_64::linux::passes::emit::allocator::Allocator, ir::Type};
 
-use super::register::{PhysReg, Reg, Reg8, Reg16, Reg32, Reg64};
+use super::register::{PhysReg, Reg, Reg8, Reg16, Reg32, Reg64, RegKind};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Stack {
@@ -226,19 +223,23 @@ impl From<&str> for Label {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Instruction {
     Add(Location, Location),
+    And(Location, Location),
     Call(String),
     Cmp(Location, Location),
     Comment(String),
     DefineLabel(Label),
     Jmp(Label),
     Jnz(Label),
+    Jz(Label),
     Lea(Location, Location),
     Mov(Location, Location),
     Movezx(Location, Location),
     Pop(Location),
     Push(Location),
     Ret,
+    Sete(Location),
     Setg(Location),
+    Setge(Location),
     Setl(Location),
     Sub(Location, Location),
     Test(Location, Location),
@@ -248,19 +249,23 @@ impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Add(lhs, rhs) => write!(f, "  add {lhs}, {rhs}"),
+            Self::And(lhs, rhs) => write!(f, "  and {lhs}, {rhs}"),
             Self::Call(name) => write!(f, "  call {name}"),
             Self::Cmp(lhs, rhs) => write!(f, "  cmp {lhs}, {rhs}"),
             Self::Comment(comment) => write!(f, "  # {comment}"),
             Self::DefineLabel(label) => write!(f, "{label}:"),
             Self::Jmp(label) => write!(f, "  jmp {label}"),
             Self::Jnz(label) => write!(f, "  jnz {label}"),
+            Self::Jz(label) => write!(f, "  jz {label}"),
             Self::Lea(dst, src) => write!(f, "  lea {dst}, {src}"),
             Self::Mov(dst, src) => write!(f, "  mov {dst}, {src}"),
             Self::Movezx(dst, src) => write!(f, "  movzx {dst}, {src}"),
             Self::Pop(dst) => write!(f, "  pop {dst}"),
             Self::Push(src) => write!(f, "  push {src}"),
             Self::Ret => write!(f, "  ret"),
+            Self::Sete(dst) => write!(f, "  sete {dst}"),
             Self::Setg(dst) => write!(f, "  setg {dst}"),
+            Self::Setge(dst) => write!(f, "  setge {dst}"),
             Self::Setl(dst) => write!(f, "  setl {dst}"),
             Self::Sub(lhs, rhs) => write!(f, "  sub {lhs}, {rhs}"),
             Self::Test(dst, src) => write!(f, "  test {dst}, {src}"),
@@ -280,25 +285,159 @@ pub enum FunctionSection {
     Epilog,
 }
 
-pub struct EmitCtx<'a> {
-    asm: &'a mut Assembler,
-    section: FunctionSection,
+/// caller must preserve, rax, rdi, rsi, rdx, rcx, r8, r9
+/// callee must preserve, rbx, rbp, r12–r15
+/// | Argument | Register |
+/// | -------- | -------- |
+/// | 1st      | `rdi`    |
+/// | 2nd      | `rsi`    |
+/// | 3rd      | `rdx`    |
+/// | 4th      | `rcx`    |
+/// | 5th      | `r8`     |
+/// | 6th      | `r9`     |
+#[derive(Debug)]
+pub struct Assembler {
+    prolog: Vec<Instruction>,
+    instructions: Vec<Instruction>,
+    epilog: Vec<Instruction>,
+    current_section: FunctionSection,
+    pub(crate) alloc: Allocator,
+    /// changes as we push and pop stack
+    pub(crate) stack_offset: i64,
+    pub debug: bool,
 }
 
-impl<'a> EmitCtx<'a> {
-    pub fn new(asm: &'a mut Assembler, section: FunctionSection) -> Self {
-        Self { asm, section }
+impl std::fmt::Display for Assembler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for i in &self.prolog {
+            if self.debug && matches!(i, Instruction::Comment(_)) {
+                continue;
+            }
+            writeln!(f, "{}", i)?;
+        }
+
+        for i in &self.instructions {
+            if self.debug && matches!(i, Instruction::Comment(_)) {
+                continue;
+            }
+            writeln!(f, "{}", i)?;
+        }
+
+        for i in &self.epilog {
+            if self.debug && matches!(i, Instruction::Comment(_)) {
+                continue;
+            }
+            writeln!(f, "{}", i)?;
+        }
+        Ok(())
+    }
+}
+
+impl Default for Assembler {
+    fn default() -> Self {
+        Self {
+            prolog: Vec::new(),
+            instructions: Vec::new(),
+            epilog: Vec::new(),
+            current_section: FunctionSection::Prolog,
+            stack_offset: 0,
+            alloc: Allocator::default(),
+            debug: true,
+        }
+    }
+}
+
+impl Assembler {
+    pub fn alloc_reg<T>(&mut self) -> T
+    where
+        T: From<PhysReg>,
+    {
+        if let Some(reg) = self.alloc.alloc_reg::<T>() {
+            return reg.into();
+        }
+
+        let phys = self.spill_one();
+
+        // Now we have a free physical register → wrap it
+        self.alloc.used_registers.push(phys); // re-use it immediately
+
+        T::from(phys)
     }
 
-    pub(crate) fn alloc(&mut self) -> &mut Allocator {
-        &mut self.asm.alloc
+    pub fn alloc_temp_reg<T>(&mut self) -> Location
+    where
+        T: From<PhysReg>,
+        Reg: From<T>,
+    {
+        if let Some(reg) = self.alloc.alloc_reg::<T>() {
+            return Location::Temp(Reg::from(reg));
+        }
+
+        let phys = self.spill_one();
+        self.alloc.used_registers.push(phys);
+
+        Location::Temp(Reg::from(T::from(phys)))
     }
 
-    pub fn emit(&mut self, inst: Instruction) {
-        self.asm.push_to(self.section, inst);
+    fn spill_one(&mut self) -> PhysReg {
+        debug_assert!(
+            self.alloc
+                .used_registers
+                .iter()
+                .any(|r| self.alloc.reg_to_alloc_id.contains_key(r)),
+            "spill_one called but only temps are live"
+        );
+        // Pick a spillable register (variable-backed only)
+        let (&phys, &alloc_id) = self
+            .alloc
+            .reg_to_alloc_id
+            .iter()
+            .next()
+            .expect("Out of registers — nothing spillable");
+
+        // ---- Phase 1: extract info (immutable borrow only) ----
+        let ty = self.alloc.allocations[&alloc_id].ty.clone();
+
+        // ---- Phase 2: perform mutations ----
+        let slot = self.alloc.alloc_stack(&ty, 1);
+
+        self.mov(
+            Location::Stack(slot.clone()),
+            Location::Reg(Reg::from(phys)),
+        );
+
+        // ---- Phase 3: update allocation ----
+        let alloc = self
+            .alloc
+            .allocations
+            .get_mut(&alloc_id)
+            .expect("alloc_id missing");
+
+        alloc.location = Location::Stack(slot);
+
+        // Remove reg ownership
+        self.alloc.reg_to_alloc_id.remove(&phys);
+
+        // IMPORTANT:
+        // - phys is still "used"
+        // - caller immediately reuses it
+        // - do NOT touch free_registers or used_registers
+
+        phys
     }
 
-    // ---------------------------------
+    pub fn set_section(&mut self, section: FunctionSection) {
+        self.current_section = section;
+    }
+
+    fn push_to(&mut self, section: FunctionSection, inst: Instruction) {
+        match section {
+            FunctionSection::Prolog => self.prolog.push(inst),
+            FunctionSection::Body => self.instructions.push(inst),
+            FunctionSection::Epilog => self.epilog.push(inst),
+        }
+    }
+
     /// callee must preserve, rbx, rbp, r12–r15
     pub fn callee_preserved_regs(&self, alloc: &Allocator) -> Vec<PhysReg> {
         alloc
@@ -321,8 +460,7 @@ impl<'a> EmitCtx<'a> {
 
     /// caller must preserve, rax, rdi, rsi, rdx, rcx, r8, r9
     pub fn caller_preserved_regs(&self) -> Vec<PhysReg> {
-        self.asm
-            .alloc
+        self.alloc
             .used_registers
             .iter()
             .filter(|&r| {
@@ -365,19 +503,19 @@ impl<'a> EmitCtx<'a> {
     pub fn materialize_address(&mut self, loc: &Location) -> Reg {
         match loc {
             Location::Address(slot) => {
-                let r = self.alloc().alloc_reg::<Reg64>();
+                let r = self.alloc_reg::<Reg64>();
                 self.lea(r, Location::Address(slot.clone()));
                 r.into()
             }
 
             Location::Stack(slot) => {
-                let r = self.alloc().alloc_reg::<Reg64>();
+                let r = self.alloc_reg::<Reg64>();
                 self.lea(r, Location::Stack(slot.clone()));
                 r.into()
             }
 
             Location::MemIndexed(mem) => {
-                let r = self.alloc().alloc_reg::<Reg64>();
+                let r = self.alloc_reg::<Reg64>();
                 self.lea(r, Location::MemIndexed(mem.clone()));
                 r.into()
             }
@@ -393,19 +531,19 @@ impl<'a> EmitCtx<'a> {
             Location::Reg(r) | Location::Temp(r) => r.clone(),
 
             Location::Imm(imm) => {
-                let r = self.alloc().alloc_reg::<Reg64>();
+                let r = self.alloc_reg::<Reg64>();
                 self.mov(r, Location::Imm(imm.clone()));
                 r.into()
             }
 
             Location::Stack(slot) => {
-                let r = self.alloc().alloc_reg::<Reg64>();
+                let r = self.alloc_reg::<Reg64>();
                 self.mov(r, Location::Stack(slot.clone()));
                 r.into()
             }
 
             Location::MemIndexed(mem) => {
-                let r = self.alloc().alloc_reg::<Reg64>();
+                let r = self.alloc_reg::<Reg64>();
                 self.mov(r, Location::MemIndexed(mem.clone()));
                 r.into()
             }
@@ -422,19 +560,25 @@ impl<'a> EmitCtx<'a> {
             "store_indexed: scale must be 1, 2, 4, or 8"
         );
 
-        self.emit(Instruction::Mov(
-            Location::MemIndexed(MemIndexed { base, index, scale }),
-            value.into(),
-        ));
+        self.push_to(
+            self.current_section,
+            Instruction::Mov(
+                Location::MemIndexed(MemIndexed { base, index, scale }),
+                value.into(),
+            ),
+        );
     }
 
     pub fn load_indexed(&mut self, base: Reg, index: Reg, scale: i32, out: Location) {
         debug_assert!(!matches!(out, Location::Stack(_) | Location::MemIndexed(_)));
 
-        self.emit(Instruction::Mov(
-            out,
-            Location::MemIndexed(MemIndexed::new(base, index, scale)),
-        ));
+        self.push_to(
+            self.current_section,
+            Instruction::Mov(
+                out,
+                Location::MemIndexed(MemIndexed::new(base, index, scale)),
+            ),
+        );
     }
 
     fn prepare_binary_operands(&mut self, dst: Location, src: Location) -> PreparedOperands {
@@ -456,15 +600,18 @@ impl<'a> EmitCtx<'a> {
         // Case 1: mem ← mem into mem ← temp-reg
         if let (Location::Stack(lhs), Location::Stack(rhs)) = (&dst, &src) {
             let temp: Location = match rhs.access_size {
-                1 => self.asm.alloc.alloc_temp_reg::<Reg8>(),
-                2 => self.asm.alloc.alloc_temp_reg::<Reg16>(),
-                4 => self.asm.alloc.alloc_temp_reg::<Reg32>(),
-                8 => self.asm.alloc.alloc_temp_reg::<Reg64>(),
+                1 => self.alloc_temp_reg::<Reg8>(),
+                2 => self.alloc_temp_reg::<Reg16>(),
+                4 => self.alloc_temp_reg::<Reg32>(),
+                8 => self.alloc_temp_reg::<Reg64>(),
                 _ => unreachable!(),
             };
 
             // load → operate → store
-            self.emit(Instruction::Mov(temp.clone(), Location::Stack(rhs.clone())));
+            self.push_to(
+                self.current_section,
+                Instruction::Mov(temp.clone(), Location::Stack(rhs.clone())),
+            );
 
             return PreparedOperands {
                 dst: Location::Stack(lhs.clone()),
@@ -528,36 +675,44 @@ impl<'a> EmitCtx<'a> {
 
     pub fn lea(&mut self, dst: impl Into<Location>, offset: impl Into<Location>) -> &mut Self {
         let dst = dst.into();
-        self.emit(Instruction::Lea(dst, offset.into()));
+        self.push_to(self.current_section, Instruction::Lea(dst, offset.into()));
         self
     }
 
     pub fn ret(&mut self) -> &mut Self {
-        self.emit(Instruction::Ret);
-        self
-    }
-
-    pub fn jnz(&mut self, label: impl Into<String>) -> &mut Self {
-        self.emit(Instruction::Jnz(Label(label.into())));
+        self.push_to(self.current_section, Instruction::Ret);
         self
     }
 
     pub fn test(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
         if let Location::Temp(r) = src {
-            self.asm.alloc.free_reg(r);
+            self.alloc.free_reg(r);
         }
-        self.emit(Instruction::Test(dst, src));
+        self.push_to(self.current_section, Instruction::Test(dst, src));
         self
     }
 
     pub fn jmp(&mut self, label: impl Into<String>) -> &mut Self {
-        self.emit(Instruction::Jmp(Label(label.into())));
+        self.push_to(self.current_section, Instruction::Jmp(Label(label.into())));
+        self
+    }
+
+    pub fn jz(&mut self, label: impl Into<String>) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Jz(Label(label.into())));
+        self
+    }
+
+    pub fn jnz(&mut self, label: impl Into<String>) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Jnz(Label(label.into())));
         self
     }
 
     pub fn define_label(&mut self, label: impl Into<String>) -> &mut Self {
-        self.emit(Instruction::DefineLabel(Label(label.into())));
+        self.push_to(
+            self.current_section,
+            Instruction::DefineLabel(Label(label.into())),
+        );
         self
     }
 
@@ -565,10 +720,13 @@ impl<'a> EmitCtx<'a> {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(dst.into(), src.into());
 
         if let Location::Temp(r) = src {
-            self.asm.alloc.free_reg(r);
+            self.alloc.free_reg(r);
         }
 
-        self.emit(Instruction::Mov(dst.clone(), src.clone()));
+        self.push_to(
+            self.current_section,
+            Instruction::Mov(dst.clone(), src.clone()),
+        );
 
         self
     }
@@ -576,147 +734,107 @@ impl<'a> EmitCtx<'a> {
     pub fn movezx(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let lhs = lhs.into();
         debug_assert!(!matches!(lhs, Location::Imm(_)));
-        self.emit(Instruction::Movezx(lhs, rhs.into()));
+        self.push_to(self.current_section, Instruction::Movezx(lhs, rhs.into()));
         self
     }
 
     pub fn cmp(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
         if let Location::Temp(r) = src {
-            self.asm.alloc.free_reg(r);
+            self.alloc.free_reg(r);
         }
-        self.emit(Instruction::Cmp(dst, src));
+        self.push_to(self.current_section, Instruction::Cmp(dst, src));
         self
     }
 
     pub fn comment(&mut self, comment: impl Into<String>) -> &mut Self {
-        self.emit(Instruction::Comment(comment.into()));
+        self.push_to(self.current_section, Instruction::Comment(comment.into()));
+        self
+    }
+
+    pub fn setge(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        debug_assert!(!matches!(src, Location::Imm(_)));
+        self.push_to(self.current_section, Instruction::Setge(src));
         self
     }
 
     pub fn setg(&mut self, src: impl Into<Location>) -> &mut Self {
         let src = src.into();
         debug_assert!(!matches!(src, Location::Imm(_)));
-        self.emit(Instruction::Setg(src));
+        self.push_to(self.current_section, Instruction::Setg(src));
         self
     }
 
     pub fn setl(&mut self, src: impl Into<Location>) -> &mut Self {
         let src = src.into();
         debug_assert!(!matches!(src, Location::Imm(_)));
-        self.emit(Instruction::Setl(src));
+        self.push_to(self.current_section, Instruction::Setl(src));
+        self
+    }
+
+    pub fn sete(&mut self, src: Location) -> &mut Self {
+        let src = src.into();
+        debug_assert!(!matches!(src, Location::Imm(_)));
+        self.push_to(self.current_section, Instruction::Sete(src));
+        self
+    }
+
+    pub fn and(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
+        if let Location::Temp(r) = src {
+            self.alloc.free_reg(r);
+        }
+        self.push_to(self.current_section, Instruction::And(dst, src));
         self
     }
 
     pub fn push(&mut self, src: impl Into<Location>) -> &mut Self {
         let src = src.into();
         debug_assert!(!matches!(src, Location::Imm(_)));
-        self.asm.stack_offset += 8;
-        self.emit(Instruction::Push(src));
+        self.stack_offset += 8;
+        self.push_to(self.current_section, Instruction::Push(src));
         self
     }
 
     pub fn pop(&mut self, dst: impl Into<Location>) -> &mut Self {
         let dst = dst.into();
         debug_assert!(!matches!(dst, Location::Imm(_)));
-        self.asm.stack_offset -= 8;
-        self.emit(Instruction::Pop(dst));
+        self.stack_offset -= 8;
+        self.push_to(self.current_section, Instruction::Pop(dst));
         self
     }
 
     pub fn add(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
         if let Location::Temp(r) = src {
-            self.asm.alloc.free_reg(r);
+            self.alloc.free_reg(r);
         }
-        self.emit(Instruction::Add(dst, src));
+        self.push_to(self.current_section, Instruction::Add(dst, src));
         self
     }
 
     pub fn sub(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
         if let Location::Temp(r) = src {
-            self.asm.alloc.free_reg(r);
+            self.alloc.free_reg(r);
         }
-        self.emit(Instruction::Sub(dst, src));
+        self.push_to(self.current_section, Instruction::Sub(dst, src));
         self
     }
 
     pub fn call(&mut self, name: impl Into<String>) -> &mut Self {
-        let misalignment = (self.asm.stack_offset + 8) % 16;
+        let misalignment = (self.stack_offset + 8) % 16;
         let pad = 16 - misalignment;
         if misalignment != 0 {
             self.sub(Reg64::Rsp, pad);
         }
 
-        self.emit(Instruction::Call(name.into()));
+        self.push_to(self.current_section, Instruction::Call(name.into()));
 
         if misalignment != 0 {
             self.add(Reg64::Rsp, pad);
         }
         self
-    }
-}
-
-/// caller must preserve, rax, rdi, rsi, rdx, rcx, r8, r9
-/// callee must preserve, rbx, rbp, r12–r15
-/// | Argument | Register |
-/// | -------- | -------- |
-/// | 1st      | `rdi`    |
-/// | 2nd      | `rsi`    |
-/// | 3rd      | `rdx`    |
-/// | 4th      | `rcx`    |
-/// | 5th      | `r8`     |
-/// | 6th      | `r9`     |
-#[derive(Debug)]
-pub struct Assembler {
-    prolog: Vec<Instruction>,
-    instructions: Vec<Instruction>,
-    epilog: Vec<Instruction>,
-    pub(crate) alloc: Allocator,
-    /// changes as we push and pop stack
-    pub(crate) stack_offset: i64,
-}
-
-impl std::fmt::Display for Assembler {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for i in &self.prolog {
-            writeln!(f, "{}", i)?;
-        }
-
-        for i in &self.instructions {
-            writeln!(f, "{}", i)?;
-        }
-
-        for i in &self.epilog {
-            writeln!(f, "{}", i)?;
-        }
-        Ok(())
-    }
-}
-
-impl Default for Assembler {
-    fn default() -> Self {
-        Self {
-            prolog: Vec::new(),
-            instructions: Vec::new(),
-            epilog: Vec::new(),
-            stack_offset: 0,
-            alloc: Allocator::default(),
-        }
-    }
-}
-
-impl Assembler {
-    pub fn emit(&mut self, section: FunctionSection) -> EmitCtx<'_> {
-        EmitCtx::new(self, section)
-    }
-
-    fn push_to(&mut self, section: FunctionSection, inst: Instruction) {
-        match section {
-            FunctionSection::Prolog => self.prolog.push(inst),
-            FunctionSection::Body => self.instructions.push(inst),
-            FunctionSection::Epilog => self.epilog.push(inst),
-        }
     }
 }

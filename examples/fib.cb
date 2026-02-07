@@ -7,5 +7,7 @@ fn fib(n: s32, a: s32, b: s32) s32 {
 
 pub fn main() s32 {
   let value = fib(55, 0, 1);
-  return value;
+  write_int(value);
+  write_char(10);
+  return 0;
 }

@@ -59,7 +59,7 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
         module: &mut ir::Module,
         ctx: &mut Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("EmitLLVMIRPass");
+        eprintln!("{:?}", EmitX86_64LinuxPass);
 
         if !module.functions.iter().any(|f| f.name == "main") {
             return Err(crate::error::Error::MissingMainFunction);
@@ -90,44 +90,65 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
         use assembler::Reg64::*;
         let mut target = X86_64LinuxLowerContext::new(&self.name);
 
-        let mut pro = target.assembler.emit(assembler::FunctionSection::Prolog);
-        pro.comment(format!("Defining Function {}", self.name))
+        target
+            .assembler
+            .set_section(assembler::FunctionSection::Prolog);
+        target
+            .assembler
+            .comment(format!("Defining Function {}", self.name))
             .define_label(&self.name)
             .push(Rbp)
             .mov(Rbp, Rsp);
-        let mut asm = target.assembler.emit(assembler::FunctionSection::Body);
+        target
+            .assembler
+            .set_section(assembler::FunctionSection::Body);
         // Args
-        asm.comment("-- args --");
+        target.assembler.comment("-- args --");
         for (index, arg) in self.params.iter().enumerate() {
             let arg_size = Stack::access_size(&arg.ty);
             let Some(reg): Option<Reg> = (match arg_size {
-                1 => asm.arg_regs::<Reg8>(index).map(Reg8::into),
-                2 => asm.arg_regs::<Reg16>(index).map(Reg16::into),
-                4 => asm.arg_regs::<Reg32>(index).map(Reg32::into),
-                8 => asm.arg_regs::<Reg64>(index).map(Reg64::into),
+                1 => target.assembler.arg_regs::<Reg8>(index).map(Reg8::into),
+                2 => target.assembler.arg_regs::<Reg16>(index).map(Reg16::into),
+                4 => target.assembler.arg_regs::<Reg32>(index).map(Reg32::into),
+                8 => target.assembler.arg_regs::<Reg64>(index).map(Reg64::into),
 
                 _ => unreachable!(),
             }) else {
                 panic!("Too many arguments in function {}", self.name);
             };
-            let arg_stack_memory = asm.alloc().alloc_stack(&arg.ty, 1);
-            asm.comment(format!("arg {}: {}", index, arg.name));
-            asm.mov(arg_stack_memory.clone(), reg);
-            asm.alloc().store_variable(&arg, arg_stack_memory);
+            let arg_stack_memory = target.assembler.alloc.alloc_stack(&arg.ty, 1);
+            target
+                .assembler
+                .comment(format!("arg {}: {}", index, arg.name));
+            target.assembler.mov(arg_stack_memory.clone(), reg);
+            target
+                .assembler
+                .alloc
+                .store_variable(&arg, arg_stack_memory);
         }
+
+        target
+            .assembler
+            .set_section(assembler::FunctionSection::Body);
 
         for block in self.blocks.iter() {
             target.block_id = block.id;
             block.lower(ctx, &mut target)?;
         }
 
-        let mut pro = target.assembler.emit(assembler::FunctionSection::Prolog);
-        let mut offset = pro.alloc().stack_memory_offset as i64;
+        target
+            .assembler
+            .set_section(assembler::FunctionSection::Prolog);
+        let mut offset = target.assembler.alloc.stack_memory_offset as i64;
         offset = (offset + 15) & !15;
-        pro.sub(Rsp, offset);
+        target.assembler.sub(Rsp, offset);
 
-        let mut epi = target.assembler.emit(assembler::FunctionSection::Epilog);
-        epi.define_label(format!("exit_{}", self.name))
+        target
+            .assembler
+            .set_section(assembler::FunctionSection::Epilog);
+        target
+            .assembler
+            .define_label(format!("exit_{}", self.name))
             .add(Rsp, offset)
             .mov(Rsp, Rbp)
             .pop(Rbp)
@@ -169,17 +190,16 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
         ctx: &mut Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        let mut asm = target.assembler.emit(assembler::FunctionSection::Body);
-        asm.define_label(&self.label);
+        target.assembler.define_label(&self.label);
 
         for (instr_index, instruction) in self.instructions.iter().enumerate() {
-            let mut asm = target.assembler.emit(assembler::FunctionSection::Body);
-            asm.comment(strip_ansi(&format!("{instruction}")));
+            target
+                .assembler
+                .comment(strip_ansi(&format!("{instruction}")));
             target.instr_index = instr_index;
             instruction.lower(ctx, target)?;
 
-            let mut asm = target.assembler.emit(assembler::FunctionSection::Body);
-            let variables = asm.alloc().allocated_variables();
+            let variables = target.assembler.alloc.allocated_variables();
 
             let instr_index = instr_index + 1;
             for var in variables {
@@ -191,7 +211,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
                     continue;
                 }
 
-                asm.alloc().free_variable(&var);
+                target.assembler.alloc.free_variable(&var);
             }
         }
         Ok(())
@@ -208,16 +228,16 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
         match self {
             ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
             ir::Instruction::Alloc(ialloc) => ialloc.lower(ctx, target)?,
-            ir::Instruction::And(..) => todo!("and"),
+            ir::Instruction::And(iand) => iand.lower(ctx, target)?,
             ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
             ir::Instruction::Call(icall) => icall.lower(ctx, target)?,
-            ir::Instruction::Cmp(..) => todo!("cmp"),
+            ir::Instruction::Cmp(icmp) => icmp.lower(ctx, target)?,
             ir::Instruction::Copy(..) => todo!("copy"),
             ir::Instruction::Div(..) => todo!("div"),
             ir::Instruction::ElemGet(ielemget) => ielemget.lower(ctx, target)?,
             ir::Instruction::ElemSet(ielemset) => ielemset.lower(ctx, target)?,
             ir::Instruction::Gt(igt) => igt.lower(ctx, target)?,
-            ir::Instruction::Gte(..) => todo!("gte"),
+            ir::Instruction::Gte(igte) => igte.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),
@@ -232,7 +252,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
                 )
             }
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
-            ir::Instruction::Sub(..) => todo!("sub"),
+            ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             ir::Instruction::XOr(..) => todo!("xor"),
         }
         Ok(())

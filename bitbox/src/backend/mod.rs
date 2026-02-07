@@ -113,7 +113,7 @@ impl CompilerResult {
                 std::fs::write(&asm_path, asm.as_bytes()).unwrap();
                 // Call gcc
                 let cmd_result = Command::new("gcc")
-                    // .arg("-static")
+                    .arg("-static")
                     .arg("-Wall")
                     .arg("-Wextra")
                     .arg("-g")
