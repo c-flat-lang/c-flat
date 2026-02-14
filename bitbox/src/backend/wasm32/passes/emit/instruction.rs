@@ -6,7 +6,7 @@ use crate::backend::Lower;
 use crate::ir::Type;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump,
-    IJumpIf, ILoad, ILoop, ILt, IOr, IReturn, ISub, IXOr,
+    IJumpIf, ILoad, ILoop, ILt, IMul, IOr, IReturn, ISub, IXOr,
 };
 
 impl Lower<Wasm32LowerContext<'_>> for IAdd {
@@ -50,6 +50,36 @@ impl Lower<Wasm32LowerContext<'_>> for ISub {
         self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_sub(),
+            ValType::I64 => todo!("@gt i64"),
+            ValType::F32 => todo!("@gt f32"),
+            ValType::F64 => todo!("@gt f64"),
+            ValType::V128 => todo!("@gt v128"),
+            ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IMul {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_mul(),
             ValType::I64 => todo!("@gt i64"),
             ValType::F32 => todo!("@gt f32"),
             ValType::F64 => todo!("@gt f64"),
