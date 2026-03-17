@@ -22,7 +22,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
         target.assembler.comment("lowering operand");
         match self {
             Operand::ConstantInt(constant) => {
-                let reg = target.assembler.alloc_temp_reg::<Reg64>();
+                let reg = target.assembler.alloc.vreg::<Reg64>();
 
                 match constant.ty {
                     Type::Signed(_) | Type::Unsigned(_) => {
@@ -31,7 +31,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
                     _ => todo!("non-integer constants not implemented yet"),
                 }
 
-                Ok(reg)
+                Ok(reg.into())
             }
 
             Operand::Variable(variable) => {
@@ -79,7 +79,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
                 {
                     des
                 } else {
-                    target.assembler.alloc_reg::<Reg64>().into()
+                    target.assembler.alloc.vreg::<Reg64>().into()
                 };
 
                 target.assembler.mov(des.clone(), src_loc);
@@ -92,30 +92,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
                     } else if !self.des.temporary {
                         target.assembler.alloc.alloc_stack(&self.des.ty, 1).into()
                     } else {
-                        target.assembler.alloc_reg::<Reg64>().into()
+                        target.assembler.alloc.vreg::<Reg64>().into()
                     };
                 let src_loc: Location = self.src.lower(ctx, target)?;
 
-                if let Location::Temp(temp) = src_loc {
-                    target.assembler.alloc.free_reg(temp);
-                }
                 target.assembler.mov(des_reg.clone(), src_loc);
                 target.assembler.alloc.store_variable(&self.des, des_reg);
             }
         }
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IAssign {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -148,19 +133,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
         target
             .assembler
             .jmp(&format!("exit_{}", target.function_name));
-
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IReturn {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -178,22 +150,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJumpIf {
             .assembler
             .test(cond.clone(), cond.clone())
             .jnz(&self.label);
-        if let Location::Temp(temp) = cond {
-            target.assembler.alloc.free_reg(temp);
-        }
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IJumpIf {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -208,18 +165,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJump {
         target.assembler.comment("lowering jump if");
         target.assembler.jmp(&self.label);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IJump {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -236,32 +181,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGt {
         let rhs = self.rhs.lower(ctx, target)?;
 
         target.assembler.cmp(lhs.clone(), rhs.clone());
-        if let Location::Temp(temp) = rhs {
-            target.assembler.alloc.free_reg(temp);
-        }
-        if let Location::Temp(temp) = lhs {
-            target.assembler.alloc.free_reg(temp);
-        }
-        let flag = target.assembler.alloc_reg::<Reg8>();
+        let flag = target.assembler.alloc.vreg::<Reg8>();
 
-        target.assembler.setg(flag);
-        let out = target.assembler.alloc_reg::<Reg64>();
-        target.assembler.movezx(out, flag);
-        target.assembler.alloc.free_reg(flag);
+        target.assembler.setg(flag.clone());
+        let out = target.assembler.alloc.vreg::<Reg64>();
+        target.assembler.movezx(out.clone(), flag.clone());
         target.assembler.alloc.store_variable(&self.des, out);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IGt {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -278,32 +204,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGte {
         let rhs = self.rhs.lower(ctx, target)?;
 
         target.assembler.cmp(lhs.clone(), rhs.clone());
-        if let Location::Temp(temp) = rhs {
-            target.assembler.alloc.free_reg(temp);
-        }
-        if let Location::Temp(temp) = lhs {
-            target.assembler.alloc.free_reg(temp);
-        }
-        let flag = target.assembler.alloc_reg::<Reg8>();
+        let flag = target.assembler.alloc.vreg::<Reg8>();
 
-        target.assembler.setge(flag);
-        let out = target.assembler.alloc_reg::<Reg64>();
-        target.assembler.movezx(out, flag);
-        target.assembler.alloc.free_reg(flag);
+        target.assembler.setge(flag.clone());
+        let out = target.assembler.alloc.vreg::<Reg64>();
+        target.assembler.movezx(out.clone(), flag.clone());
         target.assembler.alloc.store_variable(&self.des, out);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IGte {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -320,32 +227,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
         let rhs = self.rhs.lower(ctx, target)?;
 
         target.assembler.cmp(lhs.clone(), rhs.clone());
-        if let Location::Temp(temp) = rhs {
-            target.assembler.alloc.free_reg(temp);
-        }
-        if let Location::Temp(temp) = lhs {
-            target.assembler.alloc.free_reg(temp);
-        }
-        let flag = target.assembler.alloc_reg::<Reg8>();
+        let flag = target.assembler.alloc.vreg::<Reg8>();
 
-        target.assembler.setl(flag);
-        let out = target.assembler.alloc_reg::<Reg64>();
-        target.assembler.movezx(out, flag);
-        target.assembler.alloc.free_reg(flag);
+        target.assembler.setl(flag.clone());
+        let out = target.assembler.alloc.vreg::<Reg64>();
+        target.assembler.movezx(out.clone(), flag.clone());
         target.assembler.alloc.store_variable(&self.des, out);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "ILt {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -362,23 +250,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAdd {
         let rhs = self.rhs.lower(ctx, target)?;
 
         target.assembler.add(lhs.clone(), rhs.clone());
-        if let Location::Temp(temp) = rhs {
-            target.assembler.alloc.free_reg(temp);
-        }
         target.assembler.alloc.store_variable(&self.des, lhs);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IAdd {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -395,23 +268,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ISub {
         let rhs = self.rhs.lower(ctx, target)?;
 
         target.assembler.sub(lhs.clone(), rhs.clone());
-        if let Location::Temp(temp) = rhs {
-            target.assembler.alloc.free_reg(temp);
-        }
         target.assembler.alloc.store_variable(&self.des, lhs);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "ISub {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -436,7 +294,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
 
         for (i, arg) in args.iter().enumerate().rev() {
             let reg = match arg {
-                Location::Temp(_) | Location::Reg(_) => target
+                Location::Reg(_) => target
                     .assembler
                     .arg_regs::<Reg64>(i)
                     .expect("Too many arguments")
@@ -481,27 +339,14 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         target.assembler.call(&self.callee);
 
         if let Some(variable) = &self.des {
-            let reg = target.assembler.alloc_reg::<Reg64>();
-            target.assembler.mov(reg, Reg64::Rax);
+            let reg = target.assembler.alloc.vreg::<Reg64>();
+            target.assembler.mov(reg.clone(), Reg64::Rax);
             target.assembler.alloc.store_variable(&variable, reg);
         }
 
         for reg in used_regs {
             target.assembler.pop(reg);
         }
-
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "ICall {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
 
         Ok(())
     }
@@ -526,18 +371,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAlloc {
 
         target.assembler.alloc.store_variable(&self.des, mem_loc);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IAlloc {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -570,22 +403,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
 
         target
             .assembler
-            .store_indexed(base, index, element_size, value);
-        target.assembler.alloc.free_reg(base);
-        target.assembler.alloc.free_reg(index);
+            .store_indexed(base.clone(), index.clone(), element_size, value);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IElemSet {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -606,33 +425,17 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
 
         let base = target.assembler.materialize_address(base_ptr);
 
-        let out = target.assembler.alloc_reg::<Reg64>();
+        let out = target.assembler.alloc.vreg::<Reg64>();
 
-        target
-            .assembler
-            .load_indexed(base, index_reg, self.des.ty.size(), out.clone().into());
-
-        target.assembler.alloc.free_reg(base);
-        target.assembler.alloc.free_reg(index_reg);
-
-        if let Location::Temp(temp) = index {
-            target.assembler.alloc.free_reg(temp);
-        }
+        target.assembler.load_indexed(
+            base.clone(),
+            index_reg.clone(),
+            self.des.ty.size(),
+            out.clone().into(),
+        );
 
         target.assembler.alloc.store_variable(&self.des, out);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IElemGet {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -650,25 +453,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICmp {
         let rhs = self.rhs.lower(ctx, target)?;
 
         target.assembler.cmp(lhs.clone(), rhs.clone());
-        let flag_reg = target.assembler.alloc_reg::<Reg8>();
-        target.assembler.sete(flag_reg.into());
-        let out = target.assembler.alloc_reg::<Reg64>();
+        let flag_reg = target.assembler.alloc.vreg::<Reg8>();
+        target.assembler.sete(flag_reg.clone().into());
+        let out = target.assembler.alloc.vreg::<Reg64>();
         target.assembler.movezx(out.clone(), flag_reg.clone());
-        target.assembler.alloc.free_reg(flag_reg);
         target.assembler.alloc.store_variable(&self.des, out);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "ICmp {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }
@@ -724,7 +514,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        let out = target.assembler.alloc_reg::<Reg64>();
+        let out = target.assembler.alloc.vreg::<Reg64>();
 
         let false_lbl = &format!(
             "and_false_{}_{}_{}",
@@ -751,18 +541,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
 
         target.assembler.alloc.store_variable(&self.des, out);
 
-        debug_assert!(
-            target
-                .assembler
-                .alloc
-                .used_registers
-                .iter()
-                .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-            "IAnd {}:{}:{} Temp register leaked across instruction boundary",
-            file!(),
-            line!(),
-            column!()
-        );
         Ok(())
     }
 }

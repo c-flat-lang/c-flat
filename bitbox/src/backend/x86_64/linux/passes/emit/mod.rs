@@ -1,8 +1,9 @@
-mod allocator;
-mod assembler;
+pub mod allocator;
+pub mod assembler;
 pub mod error;
 mod instruction;
 
+use crate::backend::x86_64::linux;
 use crate::backend::x86_64::linux::passes::emit::assembler::{
     Assembler, Reg, Reg8, Reg16, Reg32, Reg64, Stack,
 };
@@ -68,8 +69,8 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
         {
             // TODO: It would be nice to not have to use strings here
             let x86_64 = ctx.output.get_mut_x86_64();
-            x86_64.push_str(".intel_syntax noprefix\n");
-            x86_64.push_str(".globl main\n");
+            x86_64.push_directive(".intel_syntax noprefix");
+            x86_64.push_directive(".globl main");
         }
 
         for function in module.functions.iter() {
@@ -155,8 +156,16 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
             .ret()
             .comment(format!("--- End of Function {} ---", self.name));
 
-        let x86_64 = ctx.output.get_mut_x86_64();
-        x86_64.push_str(target.assembler.to_string().as_str());
+        let module = ctx.output.get_mut_x86_64();
+
+        let func = linux::Function {
+            name: self.name.clone(),
+            prolog: target.assembler.prolog,
+            instructions: target.assembler.instructions,
+            epilog: target.assembler.epilog,
+        };
+        module.push_function(func);
+
         Ok(())
     }
 }

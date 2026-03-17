@@ -68,14 +68,9 @@ pub enum Location {
     MemIndexed(MemIndexed),
     Reg(Reg),
     Stack(Stack),
-    Temp(Reg),
 }
 
 impl Location {
-    pub fn is_temp(&self) -> bool {
-        matches!(self, Location::Temp(_))
-    }
-
     pub fn is_reg(&self) -> bool {
         matches!(self, Location::Reg(_))
     }
@@ -95,13 +90,6 @@ impl Location {
     pub fn map_reg(&self, f: impl FnOnce(Reg) -> Reg) -> Self {
         match self {
             Self::Reg(reg) => Location::Reg(f(*reg)),
-            _ => self.clone(),
-        }
-    }
-
-    pub fn map_temp(&self, f: impl FnOnce(Reg) -> Reg) -> Self {
-        match self {
-            Self::Temp(reg) => Self::Temp(f(*reg)),
             _ => self.clone(),
         }
     }
@@ -177,7 +165,6 @@ impl From<i64> for Location {
 impl std::fmt::Display for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Location::Temp(reg) => write!(f, "{}", reg),
             Location::Reg(reg) => write!(f, "{}", reg),
             Location::Address(stack) => write!(f, "{}", stack),
             Location::MemIndexed(mem_indexed) => write!(f, "{}", mem_indexed),
@@ -297,9 +284,9 @@ pub enum FunctionSection {
 /// | 6th      | `r9`     |
 #[derive(Debug)]
 pub struct Assembler {
-    prolog: Vec<Instruction>,
-    instructions: Vec<Instruction>,
-    epilog: Vec<Instruction>,
+    pub prolog: Vec<Instruction>,
+    pub instructions: Vec<Instruction>,
+    pub epilog: Vec<Instruction>,
     current_section: FunctionSection,
     pub(crate) alloc: Allocator,
     /// changes as we push and pop stack
@@ -348,84 +335,6 @@ impl Default for Assembler {
 }
 
 impl Assembler {
-    pub fn alloc_reg<T>(&mut self) -> T
-    where
-        T: From<PhysReg>,
-    {
-        if let Some(reg) = self.alloc.alloc_reg::<T>() {
-            return reg.into();
-        }
-
-        let phys = self.spill_one();
-
-        // Now we have a free physical register → wrap it
-        self.alloc.used_registers.push(phys); // re-use it immediately
-
-        T::from(phys)
-    }
-
-    pub fn alloc_temp_reg<T>(&mut self) -> Location
-    where
-        T: From<PhysReg>,
-        Reg: From<T>,
-    {
-        if let Some(reg) = self.alloc.alloc_reg::<T>() {
-            return Location::Temp(Reg::from(reg));
-        }
-
-        let phys = self.spill_one();
-        self.alloc.used_registers.push(phys);
-
-        Location::Temp(Reg::from(T::from(phys)))
-    }
-
-    fn spill_one(&mut self) -> PhysReg {
-        debug_assert!(
-            self.alloc
-                .used_registers
-                .iter()
-                .any(|r| self.alloc.reg_to_alloc_id.contains_key(r)),
-            "spill_one called but only temps are live"
-        );
-        // Pick a spillable register (variable-backed only)
-        let (&phys, &alloc_id) = self
-            .alloc
-            .reg_to_alloc_id
-            .iter()
-            .next()
-            .expect("Out of registers — nothing spillable");
-
-        // ---- Phase 1: extract info (immutable borrow only) ----
-        let ty = self.alloc.allocations[&alloc_id].ty.clone();
-
-        // ---- Phase 2: perform mutations ----
-        let slot = self.alloc.alloc_stack(&ty, 1);
-
-        self.mov(
-            Location::Stack(slot.clone()),
-            Location::Reg(Reg::from(phys)),
-        );
-
-        // ---- Phase 3: update allocation ----
-        let alloc = self
-            .alloc
-            .allocations
-            .get_mut(&alloc_id)
-            .expect("alloc_id missing");
-
-        alloc.location = Location::Stack(slot);
-
-        // Remove reg ownership
-        self.alloc.reg_to_alloc_id.remove(&phys);
-
-        // IMPORTANT:
-        // - phys is still "used"
-        // - caller immediately reuses it
-        // - do NOT touch free_registers or used_registers
-
-        phys
-    }
-
     pub fn set_section(&mut self, section: FunctionSection) {
         self.current_section = section;
     }
@@ -503,19 +412,19 @@ impl Assembler {
     pub fn materialize_address(&mut self, loc: &Location) -> Reg {
         match loc {
             Location::Address(slot) => {
-                let r = self.alloc_reg::<Reg64>();
+                let r = self.alloc.vreg::<Reg64>();
                 self.lea(r, Location::Address(slot.clone()));
                 r.into()
             }
 
             Location::Stack(slot) => {
-                let r = self.alloc_reg::<Reg64>();
+                let r = self.alloc.vreg::<Reg64>();
                 self.lea(r, Location::Stack(slot.clone()));
                 r.into()
             }
 
             Location::MemIndexed(mem) => {
-                let r = self.alloc_reg::<Reg64>();
+                let r = self.alloc.vreg::<Reg64>();
                 self.lea(r, Location::MemIndexed(mem.clone()));
                 r.into()
             }
@@ -528,22 +437,22 @@ impl Assembler {
 
     pub fn materialize_value(&mut self, loc: &Location) -> Reg {
         match loc {
-            Location::Reg(r) | Location::Temp(r) => r.clone(),
+            Location::Reg(r) => *r,
 
             Location::Imm(imm) => {
-                let r = self.alloc_reg::<Reg64>();
+                let r = self.alloc.vreg::<Reg64>();
                 self.mov(r, Location::Imm(imm.clone()));
                 r.into()
             }
 
             Location::Stack(slot) => {
-                let r = self.alloc_reg::<Reg64>();
+                let r = self.alloc.vreg::<Reg64>();
                 self.mov(r, Location::Stack(slot.clone()));
                 r.into()
             }
 
             Location::MemIndexed(mem) => {
-                let r = self.alloc_reg::<Reg64>();
+                let r = self.alloc.vreg::<Reg64>();
                 self.mov(r, Location::MemIndexed(mem.clone()));
                 r.into()
             }
@@ -600,12 +509,13 @@ impl Assembler {
         // Case 1: mem ← mem into mem ← temp-reg
         if let (Location::Stack(lhs), Location::Stack(rhs)) = (&dst, &src) {
             let temp: Location = match rhs.access_size {
-                1 => self.alloc_temp_reg::<Reg8>(),
-                2 => self.alloc_temp_reg::<Reg16>(),
-                4 => self.alloc_temp_reg::<Reg32>(),
-                8 => self.alloc_temp_reg::<Reg64>(),
+                1 => self.alloc.vreg::<Reg8>(),
+                2 => self.alloc.vreg::<Reg16>(),
+                4 => self.alloc.vreg::<Reg32>(),
+                8 => self.alloc.vreg::<Reg64>(),
                 _ => unreachable!(),
-            };
+            }
+            .into();
 
             // load → operate → store
             self.push_to(
@@ -620,17 +530,14 @@ impl Assembler {
         }
 
         // Case 2: reg ← reg width fixup
-        if let (
-            Location::Reg(dst_reg) | Location::Temp(dst_reg),
-            Location::Reg(src_reg) | Location::Temp(src_reg),
-        ) = (&dst, &src)
-        {
+        if let (Location::Reg(dst_reg), Location::Reg(src_reg)) = (&dst, &src) {
             let fixed_src = match dst_reg.kind() {
-                RegKind::Reg8 => src_reg.as_reg8().into(),
-                RegKind::Reg16 => src_reg.as_reg16().into(),
-                RegKind::Reg32 => src_reg.as_reg32().into(),
-                RegKind::Reg64 => src_reg.as_reg64().into(),
-            };
+                RegKind::Reg8 => src_reg.cast_to::<Reg8>(),
+                RegKind::Reg16 => src_reg.cast_to::<Reg16>(),
+                RegKind::Reg32 => src_reg.cast_to::<Reg32>(),
+                RegKind::Reg64 => src_reg.cast_to::<Reg64>(),
+            }
+            .into();
 
             return PreparedOperands {
                 dst,
@@ -639,27 +546,29 @@ impl Assembler {
         }
 
         // Case 3: mem ← reg (or reg ← mem) width fixup
-        if let (Location::Stack(stack), Location::Reg(reg) | Location::Temp(reg)) = (&dst, &src) {
+        if let (Location::Stack(stack), Location::Reg(reg)) = (&dst, &src) {
             let fixed = match stack.access_size {
-                1 => reg.as_reg8().into(),
-                2 => reg.as_reg16().into(),
-                4 => reg.as_reg32().into(),
-                8 => reg.as_reg64().into(),
+                1 => reg.cast_to::<Reg8>(),
+                2 => reg.cast_to::<Reg16>(),
+                4 => reg.cast_to::<Reg32>(),
+                8 => reg.cast_to::<Reg64>(),
                 _ => unreachable!(),
-            };
+            }
+            .into();
 
             return PreparedOperands { dst, src: fixed };
         }
 
         // Case 4: reg ← mem width fixup
-        if let (Location::Reg(reg) | Location::Temp(reg), Location::Stack(stack)) = (&dst, &src) {
+        if let (Location::Reg(reg), Location::Stack(stack)) = (&dst, &src) {
             let fixed_dst: Location = match stack.access_size {
-                1 => reg.as_reg8().into(),
-                2 => reg.as_reg16().into(),
-                4 => reg.as_reg32().into(),
-                8 => reg.as_reg64().into(),
+                1 => reg.cast_to::<Reg8>(),
+                2 => reg.cast_to::<Reg16>(),
+                4 => reg.cast_to::<Reg32>(),
+                8 => reg.cast_to::<Reg64>(),
                 _ => unreachable!(),
-            };
+            }
+            .into();
 
             return PreparedOperands {
                 dst: fixed_dst,
@@ -671,7 +580,7 @@ impl Assembler {
         PreparedOperands { dst, src }
     }
 
-    // ------------------
+    // -----------------------------------------------------
 
     pub fn lea(&mut self, dst: impl Into<Location>, offset: impl Into<Location>) -> &mut Self {
         let dst = dst.into();
@@ -686,9 +595,6 @@ impl Assembler {
 
     pub fn test(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
-        if let Location::Temp(r) = src {
-            self.alloc.free_reg(r);
-        }
         self.push_to(self.current_section, Instruction::Test(dst, src));
         self
     }
@@ -718,15 +624,7 @@ impl Assembler {
 
     pub fn mov(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(dst.into(), src.into());
-
-        if let Location::Temp(r) = src {
-            self.alloc.free_reg(r);
-        }
-
-        self.push_to(
-            self.current_section,
-            Instruction::Mov(dst.clone(), src.clone()),
-        );
+        self.push_to(self.current_section, Instruction::Mov(dst, src));
 
         self
     }
@@ -740,9 +638,6 @@ impl Assembler {
 
     pub fn cmp(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
-        if let Location::Temp(r) = src {
-            self.alloc.free_reg(r);
-        }
         self.push_to(self.current_section, Instruction::Cmp(dst, src));
         self
     }
@@ -782,9 +677,6 @@ impl Assembler {
 
     pub fn and(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
-        if let Location::Temp(r) = src {
-            self.alloc.free_reg(r);
-        }
         self.push_to(self.current_section, Instruction::And(dst, src));
         self
     }
@@ -807,18 +699,12 @@ impl Assembler {
 
     pub fn add(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
-        if let Location::Temp(r) = src {
-            self.alloc.free_reg(r);
-        }
         self.push_to(self.current_section, Instruction::Add(dst, src));
         self
     }
 
     pub fn sub(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
-        if let Location::Temp(r) = src {
-            self.alloc.free_reg(r);
-        }
         self.push_to(self.current_section, Instruction::Sub(dst, src));
         self
     }

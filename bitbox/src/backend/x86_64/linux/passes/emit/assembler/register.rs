@@ -1,3 +1,49 @@
+pub trait CastableReg {
+    const KIND: RegKind;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct VReg {
+    pub id: usize,
+    pub kind: RegKind,
+}
+
+impl VReg {
+    pub fn as_reg64(self) -> Self {
+        Self {
+            id: self.id,
+            kind: RegKind::Reg64,
+        }
+    }
+
+    pub fn as_reg32(self) -> Self {
+        Self {
+            id: self.id,
+            kind: RegKind::Reg32,
+        }
+    }
+
+    pub fn as_reg16(self) -> Self {
+        Self {
+            id: self.id,
+            kind: RegKind::Reg16,
+        }
+    }
+
+    pub fn as_reg8(self) -> Self {
+        Self {
+            id: self.id,
+            kind: RegKind::Reg8,
+        }
+    }
+}
+
+impl std::fmt::Display for VReg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "vreg({} : {:?})", self.id, self.kind)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RegKind {
     Reg8,
@@ -49,7 +95,7 @@ impl From<Reg64> for PhysReg {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Reg64 {
     Rax,
     Rbx,
@@ -67,6 +113,10 @@ pub enum Reg64 {
     R13,
     R14,
     R15,
+}
+
+impl CastableReg for Reg64 {
+    const KIND: RegKind = RegKind::Reg64;
 }
 
 impl From<PhysReg> for Reg64 {
@@ -185,7 +235,7 @@ impl std::fmt::Display for Reg64 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Reg32 {
     Eax,
     Ebx,
@@ -203,6 +253,10 @@ pub enum Reg32 {
     R13d,
     R14d,
     R15d,
+}
+
+impl CastableReg for Reg32 {
+    const KIND: RegKind = RegKind::Reg64;
 }
 
 impl From<PhysReg> for Reg32 {
@@ -321,7 +375,7 @@ impl std::fmt::Display for Reg32 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Reg16 {
     Ax,
     Bx,
@@ -339,6 +393,10 @@ pub enum Reg16 {
     R13w,
     R14w,
     R15w,
+}
+
+impl CastableReg for Reg16 {
+    const KIND: RegKind = RegKind::Reg16;
 }
 
 impl From<PhysReg> for Reg16 {
@@ -457,7 +515,7 @@ impl std::fmt::Display for Reg16 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Reg8 {
     Al,
     Bl,
@@ -475,6 +533,10 @@ pub enum Reg8 {
     R13b,
     R14b,
     R15b,
+}
+
+impl CastableReg for Reg8 {
+    const KIND: RegKind = RegKind::Reg8;
 }
 
 impl From<PhysReg> for Reg8 {
@@ -593,12 +655,13 @@ impl std::fmt::Display for Reg8 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Reg {
     Reg64(Reg64),
     Reg32(Reg32),
     Reg16(Reg16),
     Reg8(Reg8),
+    VReg(VReg),
 }
 
 impl From<PhysReg> for Reg {
@@ -625,6 +688,30 @@ impl From<PhysReg> for Reg {
 }
 
 impl Reg {
+    pub fn cast_to<T>(self) -> Self
+    where
+        T: CastableReg,
+    {
+        match T::KIND {
+            RegKind::Reg64 => match self {
+                Reg::VReg(reg) => reg.as_reg64().into(),
+                _ => self.as_reg64().into(),
+            },
+            RegKind::Reg32 => match self {
+                Reg::VReg(reg) => reg.as_reg32().into(),
+                _ => self.as_reg32().into(),
+            },
+            RegKind::Reg16 => match self {
+                Reg::VReg(reg) => reg.as_reg16().into(),
+                _ => self.as_reg16().into(),
+            },
+            RegKind::Reg8 => match self {
+                Reg::VReg(reg) => reg.as_reg8().into(),
+                _ => self.as_reg8().into(),
+            },
+        }
+    }
+
     pub fn as_phys(self) -> PhysReg {
         let reg64 = self.as_reg64();
         PhysReg::from(reg64)
@@ -636,6 +723,10 @@ impl Reg {
             Reg::Reg32(reg) => Reg64::from(reg),
             Reg::Reg16(reg) => Reg64::from(reg),
             Reg::Reg8(reg) => Reg64::from(reg),
+            Reg::VReg(reg) => unreachable!(
+                "{} is a virtual register and can not be used as a physical register",
+                reg
+            ),
         }
     }
 
@@ -645,6 +736,10 @@ impl Reg {
             Reg::Reg32(reg) => reg,
             Reg::Reg16(reg) => Reg32::from(reg),
             Reg::Reg8(reg) => Reg32::from(reg),
+            Reg::VReg(reg) => unreachable!(
+                "{} is a virtual register and can not be used as a physical register",
+                reg
+            ),
         }
     }
 
@@ -654,6 +749,10 @@ impl Reg {
             Reg::Reg32(reg) => Reg16::from(reg),
             Reg::Reg16(reg) => reg,
             Reg::Reg8(reg) => Reg16::from(reg),
+            Reg::VReg(reg) => unreachable!(
+                "{} is a virtual register and can not be used as a physical register",
+                reg
+            ),
         }
     }
 
@@ -663,6 +762,10 @@ impl Reg {
             Reg::Reg32(reg) => Reg8::from(reg),
             Reg::Reg16(reg) => Reg8::from(reg),
             Reg::Reg8(reg) => reg,
+            Reg::VReg(reg) => unreachable!(
+                "{} is a virtual register and can not be used as a physical register",
+                reg
+            ),
         }
     }
 
@@ -672,6 +775,7 @@ impl Reg {
             Reg::Reg32(_) => RegKind::Reg32,
             Reg::Reg16(_) => RegKind::Reg16,
             Reg::Reg8(_) => RegKind::Reg8,
+            Reg::VReg(reg) => reg.kind,
         }
     }
 }
@@ -683,6 +787,7 @@ impl std::fmt::Display for Reg {
             Reg::Reg32(reg) => write!(f, "{}", reg),
             Reg::Reg16(reg) => write!(f, "{}", reg),
             Reg::Reg8(reg) => write!(f, "{}", reg),
+            Reg::VReg(reg) => write!(f, "{}", reg),
         }
     }
 }
@@ -708,5 +813,11 @@ impl From<Reg16> for Reg {
 impl From<Reg8> for Reg {
     fn from(reg: Reg8) -> Self {
         Reg::Reg8(reg)
+    }
+}
+
+impl From<VReg> for Reg {
+    fn from(reg: VReg) -> Self {
+        Reg::VReg(reg)
     }
 }
