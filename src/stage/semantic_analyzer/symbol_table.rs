@@ -10,10 +10,41 @@ pub struct SymbolTableBuilder {
     errors: Vec<Box<dyn Report>>,
 }
 
+// fn create_symbol(name: &str, return_type: ast::Type, args: Vec<ast::Type>) -> Symbol {
+//     Symbol {
+//         name: name.to_string(),
+//         ty: return_type,
+//         visibility: ast::Visibility::Public,
+//         kind: SymbolKind::Function,
+//         is_mutable: false,
+//         params: Some(args),
+//     }
+// }
+
 impl Default for SymbolTableBuilder {
     fn default() -> Self {
         let mut table = SymbolTable::default();
         table.enter_scope("global");
+        // ------RAYLIB--------
+        // use ast::Type::*;
+        // table.push(create_symbol(
+        //     "initWindow",
+        //     Void,
+        //     vec![UnsignedNumber(32), UnsignedNumber(32)],
+        // ));
+        // table.push(create_symbol(
+        //     "setTargetFPS",
+        //     Void,
+        //     vec![UnsignedNumber(32)],
+        // ));
+        // table.push(create_symbol("windowShouldClose", Bool, vec![]));
+        // table.push(create_symbol("beginDrawing", Void, vec![]));
+        // table.push(create_symbol("clearBackground", Void, vec![]));
+        // // table.push(create_symbol("DrawText", Void, vec![String, UnsignedNumber(32), UnsignedNumber(32), UnsignedNumber(32)]));
+        // table.push(create_symbol("endDrawing", Void, vec![]));
+        // table.push(create_symbol("closeWindow", Void, vec![]));
+        // ----------------------
+
         table.push(Symbol {
             name: "write_int".to_string(),
             ty: ast::Type::Void,

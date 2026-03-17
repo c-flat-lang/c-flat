@@ -1,6 +1,9 @@
-use crate::ir::{
-    Variable,
-    instruction::{ICall, IIfElse},
+use crate::{
+    ir::{
+        Variable,
+        instruction::{ICall, IIfElse},
+    },
+    passes::DebugPass,
 };
 
 use super::Pass;
@@ -17,6 +20,16 @@ impl Default for LocalFunctionVariables {
         Self {
             table: HashMap::new(),
             functions: vec![
+                // ------RAYLIB--------
+                // "initWindow".to_string(),
+                // "setTargetFPS".to_string(),
+                // "windowShouldClose".to_string(),
+                // "beginDrawing".to_string(),
+                // "clearBackground".to_string(),
+                // "drawText".to_string(),
+                // "endDrawing".to_string(),
+                // "closeWindow".to_string(),
+                // --------------------
                 "write_int".to_string(),
                 "writeln".to_string(),
                 "write_char".to_string(),
@@ -50,12 +63,33 @@ impl LocalFunctionVariables {
     pub fn get_function_id(&self, as_str: &str) -> Option<usize> {
         self.functions.iter().position(|f| f == as_str)
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Vec<Variable>)> {
+        self.table.iter()
+    }
 }
 
 #[derive(Debug)]
 pub struct LocalFunctionVariablesPass;
 
 impl Pass for LocalFunctionVariablesPass {
+    fn debug(
+        &self,
+        _module: &crate::ir::Module,
+        _ctx: &crate::backend::Context,
+        debug_mode: Option<DebugPass>,
+    ) -> bool {
+        if !matches!(debug_mode, Some(DebugPass::LocalFunctionVariables)) {
+            return false;
+        }
+        for (function_name, variables) in _ctx.local_function_variables.iter() {
+            eprintln!("{}:", function_name);
+            for variable in variables {
+                eprintln!("  {} : {}", variable.name, variable.ty);
+            }
+        }
+        true
+    }
     fn run(
         &mut self,
         module: &mut crate::ir::Module,

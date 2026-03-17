@@ -8,6 +8,7 @@ pub struct Parser {}
 
 impl Stage<Vec<Token>, Result<Vec<ast::Item>>> for Parser {
     fn run(&mut self, input: Vec<Token>) -> Result<Vec<ast::Item>> {
+        eprintln!("Parser");
         syntax_analyzer::Parser::new(input.into_iter().peekable()).parse()
     }
 }

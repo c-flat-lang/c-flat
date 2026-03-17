@@ -6,6 +6,66 @@ use yansi::Paint;
 
 pub type Span = std::ops::Range<usize>;
 
+#[macro_export]
+macro_rules! ty {
+    // signed integers: i 1, i 32, i 64, etc
+    (i $bits:literal) => {
+        crate::ir::Type::Signed($bits)
+    };
+
+    // unsigned integers: u 1, u 32, u 64, etc
+    (u $bits:literal) => {
+        crate::ir::Type::Unsigned($bits)
+    };
+
+    // floats: f 32, f 64
+    (f $bits:literal) => {
+        crate::ir::Type::Float($bits)
+    };
+
+    // pointer: *T
+    (* $inner:tt) => {
+        crate::ir::Type::Pointer(Box::new(ty!($inner)))
+    };
+
+    // array: [N x T]
+    ([ $len:literal x $elem:tt ]) => {
+        crate::ir::Type::Array($len, Box::new(ty!($elem)))
+    };
+
+    // void
+    (void) => {
+        crate::ir::Type::Void
+    };
+}
+
+#[macro_export]
+macro_rules! var {
+    ($name:literal : $ty:tt) => {
+        crate::ir::Variable::new($name.to_string(), ty!($ty))
+    };
+}
+
+#[macro_export]
+macro_rules! tmp {
+    ($asm:expr, $ty:tt) => {
+        $asm.var(ty!($ty))
+    };
+}
+
+#[macro_export]
+macro_rules! op {
+    ($value:literal : $ty:tt) => {
+        crate::ir::Operand::ConstantInt(crate::ir::ConstantInt {
+            value: $value,
+            ty: ty!($ty),
+        })
+    };
+    ($var:expr) => {
+        crate::ir::Operand::Variable($var)
+    };
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Symbol {
     Label { name: String, index: usize },
@@ -38,10 +98,25 @@ impl Type {
             Type::Unsigned(bits) => *bits as i32 / 8,
             Type::Signed(bits) => *bits as i32 / 8,
             Type::Float(bits) => *bits as i32 / 8,
-            Type::Pointer(ty) => ty.size(),
+            Type::Pointer(..) => 64,
             Type::Array(size, ty) => ty.size() * (*size as i32),
             Type::Void => 0,
         }
+    }
+
+    pub fn element_size(&self) -> i32 {
+        match self {
+            Type::Unsigned(bits) => *bits as i32 / 8,
+            Type::Signed(bits) => *bits as i32 / 8,
+            Type::Float(bits) => *bits as i32 / 8,
+            Type::Pointer(..) => 64,
+            Type::Array(_, ty) => ty.element_size(),
+            Type::Void => 0,
+        }
+    }
+
+    pub fn is_ptr(&self) -> bool {
+        matches!(self, Type::Pointer(_))
     }
 }
 
@@ -63,6 +138,7 @@ pub struct Variable {
     pub name: String,
     pub ty: Type,
     pub version: usize,
+    pub temporary: bool,
 }
 
 impl Variable {
@@ -71,8 +147,20 @@ impl Variable {
             name: name.into(),
             ty,
             version: 0,
+            temporary: false,
         }
     }
+
+    pub fn versioned_to(mut self, version: usize) -> Self {
+        self.version = version;
+        self
+    }
+
+    pub fn temp(mut self) -> Self {
+        self.temporary = true;
+        self
+    }
+
     pub fn new_version(&self) -> Self {
         Self {
             version: self.version + 1,

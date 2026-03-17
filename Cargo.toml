@@ -21,6 +21,7 @@ members = ["bitbeat", "bitbox", "report", "runtime"]
 [features]
 default = []
 wasm = ["wasm-bindgen", "js-sys", "bitbox/wasm"]
+uuids = ["bitbox/uuids"]
 
 [lib]
 name = "cflat"

@@ -11,7 +11,9 @@ pub struct SemanticAnalyzer {}
 
 impl Stage<&mut Vec<Item>, Result<SymbolTable>> for SemanticAnalyzer {
     fn run(&mut self, input: &mut Vec<Item>) -> Result<SymbolTable> {
+        eprintln!("SemanticAnalyzer");
         let mut symbol_table = symbol_table::SymbolTableBuilder::default().build(input)?;
+        eprintln!("TypeChecker");
         type_check::TypeChecker::new(&mut symbol_table).check(input)?;
         Ok(symbol_table)
     }

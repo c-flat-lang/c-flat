@@ -208,6 +208,27 @@ impl<'st> TypeChecker<'st> {
             return Type::Void;
         }
 
+        // // --- RAYLIB ----
+        //
+        // if matches!(
+        //     ident.lexeme.as_str(),
+        //     "initWindow"
+        //         | "setTargetFPS"
+        //         | "beginDrawing"
+        //         | "clearBackground"
+        //         | "drawText"
+        //         | "endDrawing"
+        //         | "closeWindow"
+        // ) {
+        //     return Type::Void;
+        // }
+        //
+        // if matches!(ident.lexeme.as_str(), "windowShouldClose") {
+        //     return Type::Bool;
+        // }
+        //
+        // // ------------
+
         let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()) else {
             // self.errors
             //     .push(format!("Undefined function: {}", ident.lexeme));

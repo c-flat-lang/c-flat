@@ -25,7 +25,6 @@ pub enum Target {
 
 impl Target {
     pub fn backend(&self) -> Box<dyn backend::Backend> {
-        eprintln!("Target: {}", self);
         match self {
             Target::Wasm32 => Box::new(backend::wasm32::Wasm32Backend),
             Target::X86_64Linux => Box::new(backend::x86_64::linux::X86_64LinuxBackend),
@@ -70,10 +69,10 @@ impl std::fmt::Display for Target {
 }
 
 pub struct Compiler {
-    target: Target,
-    src_path: String,
-    backend: Box<dyn backend::Backend>,
-    debug_mode: Option<DebugPass>,
+    pub(crate) target: Target,
+    pub(crate) src_path: String,
+    pub(crate) backend: Box<dyn backend::Backend>,
+    pub(crate) debug_mode: Option<DebugPass>,
 }
 
 impl Compiler {

@@ -6,13 +6,14 @@ pub mod phi_node_elimination;
 
 #[derive(Debug, Clone, Copy)]
 pub enum DebugPass {
-    LoweredIr,
-    EmitWasm32,
-    EmitBitbeat,
-    EmitX86_64,
     ControlFlowGraph,
-    LivenessAnalysis,
     DetectLoops,
+    EmitBitbeat,
+    EmitWasm32,
+    EmitX86_64,
+    LivenessAnalysis,
+    LocalFunctionVariables,
+    LoweredIr,
     PhiNodeElimination,
 }
 

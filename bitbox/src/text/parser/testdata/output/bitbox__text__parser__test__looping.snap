@@ -37,12 +37,12 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "start",
-                                        span: 55..60,
+                                        span: 54..59,
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "0",
-                                        span: 62..63,
+                                        span: 61..62,
                                     },
                                 ],
                             },
@@ -52,7 +52,7 @@ Ok(
                                     Token {
                                         kind: Label,
                                         lexeme: "loop",
-                                        span: 74..79,
+                                        span: 73..78,
                                     },
                                 ],
                             },
@@ -62,7 +62,7 @@ Ok(
                         label: Token {
                             kind: LabelDefinition,
                             lexeme: "loop",
-                            span: 83..89,
+                            span: 82..88,
                         },
                         instructions: [
                             Instruction {
@@ -71,32 +71,32 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 99..101,
+                                        span: 98..100,
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 104..110,
+                                        span: 103..109,
                                     },
                                     Token {
                                         kind: Label,
                                         lexeme: "entry",
-                                        span: 114..120,
+                                        span: 113..119,
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "start",
-                                        span: 122..127,
+                                        span: 121..126,
                                     },
                                     Token {
                                         kind: Label,
                                         lexeme: "loop",
-                                        span: 131..136,
+                                        span: 130..135,
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "next",
-                                        span: 138..142,
+                                        span: 137..141,
                                     },
                                 ],
                             },
@@ -105,7 +105,7 @@ Ok(
                                 arguments: [
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "u1",
+                                        lexeme: "u8",
                                         span: 154..156,
                                     },
                                     Token {
@@ -115,13 +115,13 @@ Ok(
                                     },
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "n1",
-                                        span: 171..173,
+                                        lexeme: "result",
+                                        span: 171..177,
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "10",
-                                        span: 175..177,
+                                        span: 179..181,
                                     },
                                 ],
                             },
@@ -131,22 +131,22 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 187..189,
+                                        span: 191..193,
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "next",
-                                        span: 192..196,
+                                        span: 196..200,
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 198..204,
+                                        span: 202..208,
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "1",
-                                        span: 206..207,
+                                        span: 210..211,
                                     },
                                 ],
                             },
@@ -156,12 +156,12 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "is_running",
-                                        span: 221..231,
+                                        span: 225..235,
                                     },
                                     Token {
                                         kind: Label,
                                         lexeme: "exit",
-                                        span: 233..238,
+                                        span: 237..242,
                                     },
                                 ],
                             },
@@ -171,7 +171,7 @@ Ok(
                                     Token {
                                         kind: Label,
                                         lexeme: "loop",
-                                        span: 249..254,
+                                        span: 253..258,
                                     },
                                 ],
                             },
@@ -181,7 +181,7 @@ Ok(
                         label: Token {
                             kind: LabelDefinition,
                             lexeme: "exit",
-                            span: 258..264,
+                            span: 262..268,
                         },
                         instructions: [
                             Instruction {
@@ -190,12 +190,12 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 274..276,
+                                        span: 278..280,
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 279..285,
+                                        span: 283..289,
                                     },
                                 ],
                             },

@@ -215,10 +215,14 @@ impl LivenessAnalysis for IElemSet {
 
 impl LivenessAnalysis for IPhi {
     fn uses(&self) -> Vec<Variable> {
-        unreachable!("Should lower before calling this method")
+        let mut vars = vec![];
+        for (_, v) in self.branches.iter() {
+            vars.push(v.clone());
+        }
+        vars
     }
     fn defines(&self) -> Vec<Variable> {
-        unreachable!("Should lower before calling this method")
+        vec![self.des.clone()]
     }
 }
 
@@ -259,8 +263,15 @@ impl LivenessAnalysis for ILoop {
 
 impl LivenessAnalysis for ICall {
     fn uses(&self) -> Vec<Variable> {
-        vec![]
+        let mut vars = vec![];
+        for arg in self.args.iter() {
+            if let crate::ir::Operand::Variable(v) = arg {
+                vars.push(v.clone());
+            }
+        }
+        vars
     }
+
     fn defines(&self) -> Vec<Variable> {
         let Some(v) = self.des.as_ref() else {
             return vec![];
@@ -344,7 +355,7 @@ pub type InstructionIndex = usize;
 
 #[derive(Debug, Default)]
 pub struct LivenessAnalysisInfo {
-    table: HashMap<String, HashMap<(BlockId, InstructionIndex), Vec<Variable>>>,
+    pub(crate) table: HashMap<String, HashMap<(BlockId, InstructionIndex), Vec<Variable>>>,
 }
 
 impl LivenessAnalysisInfo {
@@ -363,6 +374,37 @@ impl LivenessAnalysisInfo {
             .push(variable);
     }
 
+    pub fn is_live_after(
+        &self,
+        function_name: &str,
+        block: BlockId,
+        instr_index: usize,
+        var: &Variable,
+    ) -> bool {
+        let Some(block_table) = self.table.get(function_name) else {
+            return false;
+        };
+
+        // If the variable appears at any recorded point that is:
+        //  - in the same block and at an instruction index >= instr_index, OR
+        //  - in some other block (we conservatively assume it could be reachable),
+        // then treat it as live-after.
+        for ((b, i), vars) in block_table.iter() {
+            if b == &block {
+                if i >= &instr_index && vars.contains(var) {
+                    return true;
+                }
+            } else {
+                // Conservative: variable appears later in another block.
+                if vars.contains(var) {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
     pub fn is_live(
         &self,
         function_name: &str,
@@ -375,27 +417,9 @@ impl LivenessAnalysisInfo {
             .and_then(|block_table| block_table.get(&(block, instr_index)))
             .is_some_and(|vars| vars.contains(var))
     }
-}
 
-#[derive(Debug)]
-pub struct LivenessAnalysisPass;
-
-use std::collections::{HashMap, HashSet};
-
-impl Pass for LivenessAnalysisPass {
-    fn debug(
-        &self,
-        module: &crate::ir::Module,
-        ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        if !matches!(debug_mode, Some(DebugPass::LivenessAnalysis)) {
-            return false;
-        }
-
-        eprintln!("{:?}", DebugPass::LivenessAnalysis);
-
-        for (function_name, block_table) in &ctx.liveness.table {
+    pub fn print(&self, module: &crate::ir::Module) {
+        for (function_name, block_table) in &self.table {
             eprintln!("Function: {}", function_name);
             let mut blocks: Vec<(&crate::ir::BlockId, &usize, &[crate::ir::Variable])> =
                 block_table
@@ -419,10 +443,36 @@ impl Pass for LivenessAnalysisPass {
                     "Instruction: {}, {}",
                     index, ir_block[block.0].instructions[**index]
                 );
-                eprintln!("Live variables: {:#?}", vars);
+                eprintln!(
+                    "Live variables: {}",
+                    vars.iter()
+                        .map(|v| format!("{}, ", v.name))
+                        .collect::<String>()
+                );
                 last_block = Some(block);
             }
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct LivenessAnalysisPass;
+
+use std::collections::{HashMap, HashSet};
+
+impl Pass for LivenessAnalysisPass {
+    fn debug(
+        &self,
+        module: &crate::ir::Module,
+        ctx: &crate::backend::Context,
+        debug_mode: Option<DebugPass>,
+    ) -> bool {
+        if !matches!(debug_mode, Some(DebugPass::LivenessAnalysis)) {
+            return false;
+        }
+
+        eprintln!("{:?}", DebugPass::LivenessAnalysis);
+        ctx.liveness.print(module);
 
         true
     }
@@ -494,27 +544,27 @@ impl Pass for LivenessAnalysisPass {
                     let b_id = block.id;
 
                     let mut new_live_out: HashSet<Variable> = HashSet::new();
-
                     let succs = out_bound.get(&b_id).cloned().unwrap_or_else(Vec::new);
 
                     for succ in succs {
                         let succ_live_in = live_in.get(&succ).cloned().unwrap_or_default();
-                        let mut temp: HashSet<Variable> = succ_live_in;
+                        let mut temp = succ_live_in;
 
                         if let Some(succ_block) = id_to_block.get(&succ) {
+                            // remove phi defs
                             for instr in &succ_block.instructions {
                                 if let Instruction::Phi(iphi) = instr {
                                     temp.remove(&iphi.des);
                                 }
                             }
 
+                            // add phi uses for this edge
                             for instr in &succ_block.instructions {
                                 if let Instruction::Phi(iphi) = instr {
                                     for (label, v) in &iphi.branches {
-                                        // compare label strings
-                                        if let Some(current_label) =
+                                        if let Some(cur_label) =
                                             id_to_block.get(&b_id).map(|b| b.label.as_str())
-                                            && label == current_label
+                                            && label == cur_label
                                         {
                                             temp.insert(v.clone());
                                         }
@@ -526,30 +576,19 @@ impl Pass for LivenessAnalysisPass {
                         new_live_out.extend(temp);
                     }
 
-                    // live_in = r#gen ∪ (live_out - kill)
-                    let block_gen = r#gen.get(&b_id).cloned().unwrap_or_default();
-                    let block_kill = kill.get(&b_id).cloned().unwrap_or_default();
-
-                    let mut new_live_in: HashSet<Variable> = HashSet::new();
-
-                    // live_out - kill
-                    for v in new_live_out.iter().cloned() {
-                        if !block_kill.contains(&v) {
-                            new_live_in.insert(v);
+                    // ✅ instruction-level computation ONLY
+                    let mut new_live_in = new_live_out.clone();
+                    for instr in block.instructions.iter().rev() {
+                        for d in instr.defines() {
+                            new_live_in.remove(&d);
+                        }
+                        for u in instr.uses() {
+                            new_live_in.insert(u);
                         }
                     }
 
-                    new_live_in.extend(block_gen.iter().cloned());
-
-                    // check changes
-                    let in_changed = match live_in.get(&b_id) {
-                        Some(old) => &new_live_in != old,
-                        None => true,
-                    };
-                    let out_changed = match live_out.get(&b_id) {
-                        Some(old) => &new_live_out != old,
-                        None => true,
-                    };
+                    let in_changed = live_in.get(&b_id).map_or(true, |old| *old != new_live_in);
+                    let out_changed = live_out.get(&b_id).map_or(true, |old| *old != new_live_out);
 
                     if in_changed || out_changed {
                         changed = true;
@@ -565,10 +604,6 @@ impl Pass for LivenessAnalysisPass {
                 for (index, instr) in block.instructions.iter().enumerate().rev() {
                     let uses = instr.uses();
                     let defines = instr.defines();
-                    // eprintln!(
-                    //     "{bi} {index} {defines:?} {:?}",
-                    //     ctx.cfg.out_bound.get(&BlockId(block.id.0 + 1))
-                    // );
 
                     // live_before = (live_after - defines) ∪ uses
                     let mut live_before: HashSet<Variable> = HashSet::new();

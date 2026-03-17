@@ -123,6 +123,35 @@ impl<'a> Tokenizer<'a> {
         while self.next_char_if(|value| value != '\n').is_some() {}
         self.next()
     }
+
+    fn parse_hex_number(&mut self, value: char) -> Option<Token> {
+        let mut value = String::from(value);
+        value.push(self.next_char().unwrap());
+        while let Some(c) = self.next_char_if(|value| value.is_ascii_hexdigit() || value == '_') {
+            if c == '_' {
+                continue;
+            }
+            value.push(c);
+        }
+        let number = i64::from_str_radix(&value[2..], 16).unwrap();
+        value = number.to_string();
+        Some(self.spanned(TokenKind::Number, value))
+    }
+
+    fn parse_bin_number(&mut self, value: char) -> Option<Token> {
+        let mut value = String::from(value);
+        value.push(self.next_char().unwrap());
+        while let Some(c) = self.next_char_if(|value| value == '0' || value == '1' || value == '_')
+        {
+            if c == '_' {
+                continue;
+            }
+            value.push(c);
+        }
+        let number = i64::from_str_radix(&value[2..], 2).unwrap();
+        value = number.to_string();
+        Some(self.spanned(TokenKind::Number, value))
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -131,6 +160,8 @@ impl<'a> Iterator for Tokenizer<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let c = self.next_char()?;
         match c {
+            '0' if self.peek_char('x') || self.peek_char('X') => self.parse_hex_number(c),
+            '0' if self.peek_char('b') || self.peek_char('B') => self.parse_bin_number(c),
             '0'..='9' => Some(self.parse_number(c)),
             value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
             value if value.is_ascii_whitespace() => self.skip_char(),

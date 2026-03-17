@@ -1,3 +1,4 @@
+#[cfg(feature = "uuids")]
 use uuid::Uuid;
 
 use crate::{
@@ -9,6 +10,34 @@ use crate::{
 };
 
 use super::Pass;
+
+struct LabelCreator {
+    #[cfg(not(feature = "uuids"))]
+    counter: u32,
+}
+
+impl Default for LabelCreator {
+    fn default() -> Self {
+        Self {
+            #[cfg(not(feature = "uuids"))]
+            counter: 0,
+        }
+    }
+}
+
+impl LabelCreator {
+    #[cfg(not(feature = "uuids"))]
+    fn gen_name(&mut self) -> String {
+        let counter = self.counter;
+        self.counter += 1;
+        return format!("{}", counter);
+    }
+
+    #[cfg(feature = "uuids")]
+    fn gen_name(&mut self) -> String {
+        return format!("{}", Uuid::new_v4());
+    }
+}
 
 #[derive(Debug)]
 pub struct LoweringPass;
@@ -35,27 +64,35 @@ impl Pass for LoweringPass {
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
         eprintln!("{:?}Pass", DebugPass::LoweredIr);
+        let mut var_creator = LabelCreator::default();
         for func in &mut module.functions {
-            let mut i = 0;
-            while i < func.blocks.len() {
-                let block = func.blocks[i].clone();
+            loop {
+                let mut changed = false;
 
-                let mut j = 0;
-                while j < block.instructions.len() {
-                    match block.instructions[j].clone() {
-                        Instruction::IfElse(iifelse) => {
-                            lower_if_else(func, i, j, iifelse);
+                for i in 0..func.blocks.len() {
+                    for j in 0..func.blocks[i].instructions.len() {
+                        match func.blocks[i].instructions[j].clone() {
+                            Instruction::IfElse(iifelse) => {
+                                lower_if_else(&mut var_creator, func, i, j, iifelse);
+                                changed = true;
+                                break;
+                            }
+                            Instruction::Loop(iloop) => {
+                                lower_loop(&mut var_creator, func, i, j, iloop);
+                                changed = true;
+                                break;
+                            }
+                            _ => {}
                         }
-                        Instruction::Loop(iloop) => {
-                            lower_loop(func, i, j, iloop);
-                        }
-                        _ => (),
                     }
-
-                    j += 1;
+                    if changed {
+                        break;
+                    }
                 }
 
-                i += 1;
+                if !changed {
+                    break;
+                }
             }
         }
 
@@ -63,7 +100,13 @@ impl Pass for LoweringPass {
     }
 }
 
-fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop: ILoop) {
+fn lower_loop(
+    vc: &mut LabelCreator,
+    func: &mut Function,
+    block_index: usize,
+    instr_index: usize,
+    iloop: ILoop,
+) {
     let ILoop {
         cond,
         cond_result,
@@ -78,9 +121,9 @@ fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop
         Some(Instruction::Loop(_))
     ));
 
-    let start_label = format!("start_loop_{}", Uuid::new_v4());
-    let body_label = format!("body_loop_{}", Uuid::new_v4());
-    let exit_label = format!("exit_loop_{}", Uuid::new_v4());
+    let start_label = format!("start_loop_{}", vc.gen_name());
+    let body_label = format!("body_loop_{}", vc.gen_name());
+    let exit_label = format!("exit_loop_{}", vc.gen_name());
 
     block
         .instructions
@@ -140,7 +183,13 @@ fn lower_loop(func: &mut Function, block_index: usize, instr_index: usize, iloop
     }
 }
 
-fn lower_if_else(func: &mut Function, block_index: usize, instr_index: usize, iifelse: IIfElse) {
+fn lower_if_else(
+    vc: &mut LabelCreator,
+    func: &mut Function,
+    block_index: usize,
+    instr_index: usize,
+    iifelse: IIfElse,
+) {
     let IIfElse {
         cond,
         cond_result,
@@ -156,10 +205,10 @@ fn lower_if_else(func: &mut Function, block_index: usize, instr_index: usize, ii
         Some(Instruction::IfElse(_))
     ));
 
-    let cond_label = format!("cond_{}", Uuid::new_v4());
-    let then_label = format!("then_{}", Uuid::new_v4());
-    let else_label = format!("else_{}", Uuid::new_v4());
-    let merge_label = format!("merge_{}", Uuid::new_v4());
+    let cond_label = format!("cond_{}", vc.gen_name());
+    let then_label = format!("then_{}", vc.gen_name());
+    let else_label = format!("else_{}", vc.gen_name());
+    let merge_label = format!("merge_{}", vc.gen_name());
 
     for mut cb in cond.clone() {
         cb.label = cond_label.clone();

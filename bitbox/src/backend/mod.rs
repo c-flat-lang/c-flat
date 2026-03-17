@@ -10,7 +10,7 @@ pub mod x86_64;
 pub enum Output {
     Wasm32(Box<wasm32::passes::emit::Wasm32Module>),
     Bitbeat(bitbeat::bitbeat::Module),
-    X86_64(String),
+    X86_64(x86_64::linux::Module),
 }
 
 impl Output {
@@ -42,14 +42,14 @@ impl Output {
         }
     }
 
-    pub fn get_x86_64(&self) -> &str {
+    pub fn get_x86_64(&self) -> &x86_64::linux::Module {
         match &self {
             Self::X86_64(module) => module,
             v => panic!("Not wasm32 but {:?}", v),
         }
     }
 
-    pub fn get_mut_x86_64(&mut self) -> &mut String {
+    pub fn get_mut_x86_64(&mut self) -> &mut x86_64::linux::Module {
         match self {
             Self::X86_64(module) => module,
             v => panic!("Not wasm32 but {:?}", v),
@@ -59,7 +59,7 @@ impl Output {
     pub fn finish(self) -> CompilerResult {
         match self {
             Self::Wasm32(mut module) => CompilerResult::Wasm32(module.finish()),
-            Self::X86_64(assembly) => CompilerResult::X86_64(assembly),
+            Self::X86_64(assembly) => CompilerResult::X86_64(assembly.to_string()),
             Self::Bitbeat(module) => CompilerResult::Bitbeat(module),
         }
     }
@@ -77,7 +77,7 @@ impl Output {
     }
 
     fn new_x86_64() -> Output {
-        Self::X86_64(String::new())
+        Self::X86_64(x86_64::linux::Module::default())
     }
 
     fn new_bitbeat() -> Output {
@@ -113,6 +113,7 @@ impl CompilerResult {
                 std::fs::write(&asm_path, asm.as_bytes()).unwrap();
                 // Call gcc
                 let cmd_result = Command::new("gcc")
+                    .arg("-static")
                     .arg("-Wall")
                     .arg("-Wextra")
                     .arg("-g")
@@ -121,6 +122,15 @@ impl CompilerResult {
                     .arg("runtime.c")
                     .arg("-o")
                     .arg(path)
+                    //---RAYLIB---
+                    // .arg("-L/opt/raylib/release/libs/linux")
+                    // .arg("-lraylib")
+                    // .arg("-lm")
+                    // .arg("-lpthread")
+                    // .arg("-ldl")
+                    // .arg("-lrt")
+                    // .arg("-lX11")
+                    //------------
                     .output();
                 match cmd_result {
                     Ok(output) => {
@@ -134,7 +144,7 @@ impl CompilerResult {
                     }
                 }
                 // Remove assembly file
-                std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
+                // std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
             }
             Self::Bitbeat(module) => module.save_to_file(path),
         }

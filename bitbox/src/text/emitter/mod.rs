@@ -19,11 +19,7 @@ impl EmitterContext<'_> {
         let name = token.lexeme.clone();
         let version = *self.variables.entry(name.clone()).or_insert(0);
         self.variables.insert(name.clone(), version + 1);
-        Variable {
-            name,
-            ty: ty.clone(),
-            version,
-        }
+        Variable::new(name, ty.clone()).versioned_to(version)
     }
 
     // fn get_variable(&self, lexeme: &str, ty: &Type) -> Variable {

@@ -305,7 +305,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
-            ir::Instruction::Mul(..) => todo!("@mul"),
+            ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
             ir::Instruction::Phi(..) => todo!("@phi"),
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
