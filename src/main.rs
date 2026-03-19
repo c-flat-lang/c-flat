@@ -16,14 +16,24 @@ fn main() {
         }
     };
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
-    if let Err(error) = bitbox::Compiler::new(
+    let compiler = bitbox::Compiler::new(
         &cli_options.file_path,
         cli_options.target,
         compiler_debug_mode,
-    )
-    .run(&mut module)
-    {
-        eprintln!("{}", error);
-        std::process::exit(1);
+    );
+
+    match compiler.run(&mut module) {
+        Ok(Some(path)) if cli_options.run => match runtime::run(path.as_str()) {
+            Ok(()) => {}
+            Err(err) => {
+                eprintln!("{}", err);
+                std::process::exit(1);
+            }
+        },
+        Err(err) => {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
+        _ => {}
     }
 }

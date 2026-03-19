@@ -11,3 +11,11 @@ anyhow = "1.0.98"
 bitbeat = { path = "../bitbeat" }
 ron = "0.11.0"
 serde = { version = "1.0.228", features = ["derive", "rc"] }
+
+[[bin]]
+name = "runtime"
+path = "src/main.rs"
+
+[lib]
+name = "runtime"
+path = "src/lib.rs"

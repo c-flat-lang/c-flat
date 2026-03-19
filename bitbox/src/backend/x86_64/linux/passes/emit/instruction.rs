@@ -26,7 +26,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
 
                 match constant.ty {
                     Type::Signed(_) | Type::Unsigned(_) => {
-                        target.assembler.mov(reg.clone(), constant.value);
+                        target.assembler.mov(reg, constant.value);
                     }
                     _ => todo!("non-integer constants not implemented yet"),
                 }
@@ -35,20 +35,20 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
             }
 
             Operand::Variable(variable) => {
-                let Some(location) = target.assembler.alloc.get_variable_location(&variable) else {
+                let Some(location) = target.assembler.alloc.get_variable_location(variable) else {
                     return Err(crate::error::Error::X86_64AssemblyError(
                         Error::UndefinedVariable {
-                            variable: variable.clone(),
-                            function_name: target.function_name.to_string(),
+                            variable: Box::new(variable.clone()),
+                            function_name: Box::new(target.function_name.to_string()),
                             block_id: target.block_id,
                             instruction_index: target.instr_index,
-                            note: format!(
+                            note: Box::new(format!(
                                 "{}:{}:{} operand variable not found\n{:#?}",
                                 file!(),
                                 line!(),
                                 column!(),
                                 target.assembler
-                            ),
+                            )),
                         },
                     ));
                 };
@@ -71,7 +71,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
         match &self.src {
             // TODO: Check if old source drops reference to variable location.
             Operand::Variable(src_var) if self.des.temporary && src_var.ty.is_ptr() => {
-                target.assembler.alloc.alias_variable(&self.des, &src_var);
+                target.assembler.alloc.alias_variable(&self.des, src_var);
             }
             Operand::Variable(_) if self.des.temporary => {
                 let src_loc = self.src.lower(ctx, target)?;
@@ -117,7 +117,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
         match &self.src {
             Operand::ConstantInt { .. } => todo!("ret const"),
             Operand::Variable(var) => {
-                let Some(reg) = target.assembler.alloc.get_variable_location(&var) else {
+                let Some(reg) = target.assembler.alloc.get_variable_location(var) else {
                     panic!("Variable {:?} not found", var);
                 };
                 match Stack::access_size(&var.ty) {
@@ -132,7 +132,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
         }
         target
             .assembler
-            .jmp(&format!("exit_{}", target.function_name));
+            .jmp(format!("exit_{}", target.function_name));
         Ok(())
     }
 }
@@ -180,12 +180,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGt {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        target.assembler.cmp(lhs.clone(), rhs.clone());
+        target.assembler.cmp(lhs, rhs);
         let flag = target.assembler.alloc.vreg::<Reg8>();
 
-        target.assembler.setg(flag.clone());
+        target.assembler.setg(flag);
         let out = target.assembler.alloc.vreg::<Reg64>();
-        target.assembler.movezx(out.clone(), flag.clone());
+        target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
@@ -203,12 +203,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGte {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        target.assembler.cmp(lhs.clone(), rhs.clone());
+        target.assembler.cmp(lhs, rhs);
         let flag = target.assembler.alloc.vreg::<Reg8>();
 
-        target.assembler.setge(flag.clone());
+        target.assembler.setge(flag);
         let out = target.assembler.alloc.vreg::<Reg64>();
-        target.assembler.movezx(out.clone(), flag.clone());
+        target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
@@ -229,9 +229,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
         target.assembler.cmp(lhs.clone(), rhs.clone());
         let flag = target.assembler.alloc.vreg::<Reg8>();
 
-        target.assembler.setl(flag.clone());
+        target.assembler.setl(flag);
         let out = target.assembler.alloc.vreg::<Reg64>();
-        target.assembler.movezx(out.clone(), flag.clone());
+        target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
@@ -340,8 +340,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
 
         if let Some(variable) = &self.des {
             let reg = target.assembler.alloc.vreg::<Reg64>();
-            target.assembler.mov(reg.clone(), Reg64::Rax);
-            target.assembler.alloc.store_variable(&variable, reg);
+            target.assembler.mov(reg, Reg64::Rax);
+            target.assembler.alloc.store_variable(variable, reg);
         }
 
         for reg in used_regs {
@@ -388,10 +388,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
             .assembler
             .alloc
             .get_variable_location(&self.addr)
-            .expect(&format!(
-                "elemset base variable not found {}\n",
-                self.addr.name
-            ));
+            .unwrap_or_else(|| panic!("elemset base variable not found {}\n", self.addr.name));
 
         let index = self.index.lower(ctx, target)?;
         let value = self.value.lower(ctx, target)?;
@@ -403,7 +400,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
 
         target
             .assembler
-            .store_indexed(base.clone(), index.clone(), element_size, value);
+            .store_indexed(base, index, element_size, value);
 
         Ok(())
     }
@@ -427,12 +424,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
 
         let out = target.assembler.alloc.vreg::<Reg64>();
 
-        target.assembler.load_indexed(
-            base.clone(),
-            index_reg.clone(),
-            self.des.ty.size(),
-            out.clone().into(),
-        );
+        target
+            .assembler
+            .load_indexed(base, index_reg, self.des.ty.size(), out.into());
 
         target.assembler.alloc.store_variable(&self.des, out);
 
@@ -454,9 +448,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICmp {
 
         target.assembler.cmp(lhs.clone(), rhs.clone());
         let flag_reg = target.assembler.alloc.vreg::<Reg8>();
-        target.assembler.sete(flag_reg.clone().into());
+        target.assembler.sete(flag_reg);
         let out = target.assembler.alloc.vreg::<Reg64>();
-        target.assembler.movezx(out.clone(), flag_reg.clone());
+        target.assembler.movezx(out, flag_reg);
         target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
@@ -531,11 +525,11 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
         target.assembler.test(rhs.clone(), rhs);
         target.assembler.jz(false_lbl);
 
-        target.assembler.mov(out.clone(), 1);
+        target.assembler.mov(out, 1);
         target.assembler.jmp(done_lbl);
 
         target.assembler.define_label(false_lbl);
-        target.assembler.mov(out.clone(), 0);
+        target.assembler.mov(out, 0);
 
         target.assembler.define_label(done_lbl);
 

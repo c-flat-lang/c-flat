@@ -11,18 +11,10 @@ use crate::{
 
 use super::Pass;
 
+#[derive(Default)]
 struct LabelCreator {
     #[cfg(not(feature = "uuids"))]
     counter: u32,
-}
-
-impl Default for LabelCreator {
-    fn default() -> Self {
-        Self {
-            #[cfg(not(feature = "uuids"))]
-            counter: 0,
-        }
-    }
 }
 
 impl LabelCreator {
@@ -30,7 +22,7 @@ impl LabelCreator {
     fn gen_name(&mut self) -> String {
         let counter = self.counter;
         self.counter += 1;
-        return format!("{}", counter);
+        format!("{}", counter)
     }
 
     #[cfg(feature = "uuids")]

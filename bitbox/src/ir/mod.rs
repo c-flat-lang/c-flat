@@ -10,39 +10,39 @@ pub type Span = std::ops::Range<usize>;
 macro_rules! ty {
     // signed integers: i 1, i 32, i 64, etc
     (i $bits:literal) => {
-        crate::ir::Type::Signed($bits)
+        $crate::ir::Type::Signed($bits)
     };
 
     // unsigned integers: u 1, u 32, u 64, etc
     (u $bits:literal) => {
-        crate::ir::Type::Unsigned($bits)
+        $crate::ir::Type::Unsigned($bits)
     };
 
     // floats: f 32, f 64
     (f $bits:literal) => {
-        crate::ir::Type::Float($bits)
+        $crate::ir::Type::Float($bits)
     };
 
     // pointer: *T
     (* $inner:tt) => {
-        crate::ir::Type::Pointer(Box::new(ty!($inner)))
+        $crate::ir::Type::Pointer(Box::new(ty!($inner)))
     };
 
     // array: [N x T]
     ([ $len:literal x $elem:tt ]) => {
-        crate::ir::Type::Array($len, Box::new(ty!($elem)))
+        $crate::ir::Type::Array($len, Box::new(ty!($elem)))
     };
 
     // void
     (void) => {
-        crate::ir::Type::Void
+        $crate::ir::Type::Void
     };
 }
 
 #[macro_export]
 macro_rules! var {
     ($name:literal : $ty:tt) => {
-        crate::ir::Variable::new($name.to_string(), ty!($ty))
+        $crate::ir::Variable::new($name.to_string(), ty!($ty))
     };
 }
 
@@ -56,13 +56,13 @@ macro_rules! tmp {
 #[macro_export]
 macro_rules! op {
     ($value:literal : $ty:tt) => {
-        crate::ir::Operand::ConstantInt(crate::ir::ConstantInt {
+        $crate::ir::Operand::ConstantInt($crate::ir::ConstantInt {
             value: $value,
             ty: ty!($ty),
         })
     };
     ($var:expr) => {
-        crate::ir::Operand::Variable($var)
+        $crate::ir::Operand::Variable($var)
     };
 }
 

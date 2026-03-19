@@ -6,12 +6,37 @@ use std::str::FromStr;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
+trait HasArg {
+    fn has_arg(&self, expected: &str) -> bool;
+    fn has_prefix(&self, expected: &str) -> bool;
+}
+
+impl HasArg for Vec<String> {
+    fn has_arg(&self, expected: &str) -> bool {
+        self.iter().any(|arg| arg == expected)
+    }
+    fn has_prefix(&self, expected: &str) -> bool {
+        self.iter().any(|arg| arg.starts_with(expected))
+    }
+}
+
+#[cfg(feature = "wasm")]
+#[wasm_bindgen]
+#[derive(Debug, Clone)]
+pub struct Cli {
+    debug_mode: Option<DebugMode>,
+    target: Target,
+    file_path: String,
+    run: bool,
+}
+
+#[cfg(not(feature = "wasm"))]
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
     pub target: Target,
     pub file_path: String,
+    pub run: bool,
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
@@ -22,6 +47,7 @@ impl Cli {
             target,
             file_path,
             debug_mode,
+            run: false,
         }
     }
 
@@ -54,7 +80,55 @@ impl Cli {
             std::process::exit(1);
         });
 
+        let mut run = false;
+
+        if args.has_arg("run") {
+            run = true;
+        }
+
         let mut debug_mode = None;
+
+        if args.has_arg("-t") {
+            debug_mode = Some(DebugMode::Token);
+        } else if args.has_arg("-a") {
+            debug_mode = Some(DebugMode::Ast);
+        } else if args.has_arg("-s") {
+            debug_mode = Some(DebugMode::SymbolTable);
+        } else if args.has_arg("-ir") {
+            debug_mode = Some(DebugMode::Ir);
+        } else if args.has_prefix("--dump-after=") {
+            let value = args
+                .iter()
+                .find(|arg| arg.starts_with("--dump-after="))
+                .unwrap();
+            let mode = match value.strip_prefix("--dump-after=").unwrap() {
+                "lowering-ir" => DebugMode::LoweredIr,
+                "emit-wasm32" => DebugMode::EmitWasm32,
+                "emit-bitbeat" => DebugMode::EmitBitbeat,
+                "emit-x86-64" => DebugMode::EmitX86_64,
+                "control-flow-graph" => DebugMode::ControlFlowGraph,
+                "liveness-analysis" => DebugMode::LivenessAnalysis,
+                "detect-loops" => DebugMode::DetectLoops,
+                "phi-node-elimination" => DebugMode::PhiNodeElimination,
+                _ => {
+                    eprintln!("Unknown debug mode: {}", value);
+                    eprintln!(
+                        r#"Options:
+                        lowering-ir,
+                        emit-wasm32,
+                        emit-bitbeat,
+                        control-flow-graph,
+                        liveness-analysis,
+                        detect-loops,
+                        phi-node-elimination
+                        "#
+                    );
+                    std::process::exit(1);
+                }
+            };
+            debug_mode = Some(mode);
+        }
+
         let mut target = Target::default();
 
         let i = 0;
@@ -63,6 +137,12 @@ impl Cli {
 
             if let Some(mode) = DebugMode::from_flag(arg) {
                 debug_mode = Some(mode);
+                args.remove(i);
+                continue;
+            }
+
+            if arg.starts_with("run") {
+                run = true;
                 args.remove(i);
                 continue;
             }
@@ -89,6 +169,7 @@ impl Cli {
             debug_mode,
             target,
             file_path,
+            run,
         }
     }
 }

@@ -9,6 +9,7 @@ bitbox = { version = "0.1.0", path = "bitbox" }
 wasm-bindgen = {version = "0.2.105", optional = true}
 js-sys = {version = "0.3.82", optional = true}
 report = { version = "0.1.0", path = "report" }
+runtime = { version = "0.1.0", path = "runtime" }
 
 
 [dev-dependencies]

@@ -3,11 +3,11 @@ use crate::ir::Variable;
 #[derive(Debug)]
 pub enum Error {
     UndefinedVariable {
-        variable: Variable,
-        function_name: String,
+        variable: Box<Variable>,
+        function_name: Box<String>,
         block_id: crate::ir::BlockId,
         instruction_index: usize,
-        note: String,
+        note: Box<String>,
     },
 }
 

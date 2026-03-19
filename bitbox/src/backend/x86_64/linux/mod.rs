@@ -52,7 +52,7 @@ impl Module {
 impl std::fmt::Display for Module {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for directive in &self.directives {
-            write!(f, "{directive}\n")?;
+            writeln!(f, "{directive}")?;
         }
         for func in &self.functions {
             write!(f, "{func}")?;

@@ -21,7 +21,6 @@ impl crate::passes::Pass for VirtRegRewritePass {
                 eprintln!("{i}");
             }
         }
-        std::process::exit(0);
         Ok(())
     }
 }

@@ -587,8 +587,8 @@ impl Pass for LivenessAnalysisPass {
                         }
                     }
 
-                    let in_changed = live_in.get(&b_id).map_or(true, |old| *old != new_live_in);
-                    let out_changed = live_out.get(&b_id).map_or(true, |old| *old != new_live_out);
+                    let in_changed = live_in.get(&b_id).is_none_or(|old| *old != new_live_in);
+                    let out_changed = live_out.get(&b_id).is_none_or(|old| *old != new_live_out);
 
                     if in_changed || out_changed {
                         changed = true;

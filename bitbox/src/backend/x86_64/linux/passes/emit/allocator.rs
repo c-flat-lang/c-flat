@@ -114,16 +114,14 @@ impl Allocator {
             .variable_to_allocations
             .get(src)
             .expect("Expected variable to be allocated");
-        self.allocations
-            .get_mut(alloc_id)
-            .map(|alloc| alloc.references += 1);
+        if let Some(alloc) = self.allocations.get_mut(alloc_id) {
+            alloc.references += 1
+        }
         self.variable_to_allocations.insert(dst.clone(), *alloc_id);
     }
 
     pub fn get_variable_location(&self, var: &Variable) -> Option<Location> {
-        let Some(alloc_id) = self.variable_to_allocations.get(var) else {
-            return None;
-        };
+        let alloc_id = self.variable_to_allocations.get(var)?;
 
         self.allocations
             .get(alloc_id)
@@ -166,7 +164,7 @@ impl Allocator {
     }
 
     pub fn alloc_stack(&mut self, ty: &Type, count: i32) -> Stack {
-        let elem_size = Stack::access_size(&ty);
+        let elem_size = Stack::access_size(ty);
         let alloc_size = match &ty {
             Type::Array(len, _) => elem_size * (*len as i32),
             _ => elem_size * count,

@@ -121,11 +121,8 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
             target
                 .assembler
                 .comment(format!("arg {}: {}", index, arg.name));
-            target.assembler.mov(arg_stack_memory.clone(), reg);
-            target
-                .assembler
-                .alloc
-                .store_variable(&arg, arg_stack_memory);
+            target.assembler.mov(arg_stack_memory, reg);
+            target.assembler.alloc.store_variable(arg, arg_stack_memory);
         }
 
         target
@@ -179,7 +176,7 @@ fn strip_ansi(s: &str) -> String {
             // skip ESC [
             chars.next();
             // skip until 'm'
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if c == 'm' {
                     break;
                 }
