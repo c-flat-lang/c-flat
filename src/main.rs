@@ -23,13 +23,33 @@ fn main() {
     );
 
     match compiler.run(&mut module) {
-        Ok(Some(path)) if cli_options.run => match runtime::run(path.as_str()) {
-            Ok(()) => {}
-            Err(err) => {
-                eprintln!("{}", err);
-                std::process::exit(1);
+        Ok(Some(path)) if cli_options.run => {
+            eprintln!("{: >30} {}", "Running", path);
+            match cli_options.target {
+                cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path.as_str())
+                {
+                    Ok(()) => {}
+                    Err(err) => {
+                        eprintln!("{}", err);
+                        std::process::exit(1);
+                    }
+                },
+                cflat::Target::X86_64Linux => {
+                    let cmd_result = std::process::Command::new(path.as_str()).output();
+                    match cmd_result {
+                        Ok(output) => {
+                            if !output.status.success() {
+                                println!("{}", String::from_utf8_lossy(&output.stderr));
+                            }
+                        }
+                        Err(e) => {
+                            println!("{}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                }
             }
-        },
+        }
         Err(err) => {
             eprintln!("{}", err);
             std::process::exit(1);

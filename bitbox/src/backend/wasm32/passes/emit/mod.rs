@@ -38,7 +38,7 @@ impl Pass for EmitWasm32Pass {
         module: &mut Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("EmitWasm32Pass");
+        eprintln!("{: >30}", "EmitWasm32Pass");
 
         {
             let module = ctx.output.get_mut_wasm32();

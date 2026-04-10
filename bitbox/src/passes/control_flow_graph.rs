@@ -54,7 +54,7 @@ impl Pass for ControlFlowGraphPass {
             return false;
         }
 
-        eprintln!("{:?}", DebugPass::ControlFlowGraph);
+        eprintln!("{: >30?}", DebugPass::ControlFlowGraph);
 
         let formater = |data: &HashMap<String, Table>, kind: &str| {
             let mut data = data
@@ -90,7 +90,7 @@ impl Pass for ControlFlowGraphPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("ControlFlowGraphPass");
+        eprintln!("{: >30}", "ControlFlowGraphPass");
         for function in module.functions.iter() {
             let mut name_to_block_id = std::collections::HashMap::new();
 

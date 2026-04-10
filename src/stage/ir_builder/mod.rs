@@ -67,7 +67,7 @@ impl IRBuilder {
 
 impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
     fn run(&mut self, (symbol_table, ast): (SymbolTable, Vec<Item>)) -> Result<Module> {
-        eprintln!("IR Code Generation");
+        eprintln!("{: >30}", "IR Code Generation");
         self.symbol_table = symbol_table;
         let mut mb = ModuleBuilder::default();
         for item in ast {

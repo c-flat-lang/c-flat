@@ -95,7 +95,7 @@ impl Pass for LocalFunctionVariablesPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("LocalFunctionVariablesPass");
+        eprintln!("{: >30}", "LocalFunctionVariablesPass");
         for function in module.functions.iter() {
             for parameter in function.params.iter() {
                 ctx.local_function_variables

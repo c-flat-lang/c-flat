@@ -55,7 +55,7 @@ impl Pass for LoweringPass {
         module: &mut crate::ir::Module,
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{:?}Pass", DebugPass::LoweredIr);
+        eprintln!("{: >30?}Pass", DebugPass::LoweredIr);
         let mut var_creator = LabelCreator::default();
         for func in &mut module.functions {
             loop {

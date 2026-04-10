@@ -27,7 +27,7 @@ impl Pass for PhiNodeEliminationPass {
         module: &mut crate::ir::Module,
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{:?}Pass", DebugPass::PhiNodeElimination);
+        eprintln!("{: >30?}Pass", DebugPass::PhiNodeElimination);
         for function in module.functions.iter_mut() {
             let mut nodes = Vec::new();
             let mut label_to_block_id: HashMap<String, usize> = HashMap::new();

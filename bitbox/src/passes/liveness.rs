@@ -471,7 +471,7 @@ impl Pass for LivenessAnalysisPass {
             return false;
         }
 
-        eprintln!("{:?}", DebugPass::LivenessAnalysis);
+        eprintln!("{: >30?}", DebugPass::LivenessAnalysis);
         ctx.liveness.print(module);
 
         true
@@ -482,7 +482,7 @@ impl Pass for LivenessAnalysisPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("LivenessAnalysisPass");
+        eprintln!("{: >30}", "LivenessAnalysisPass");
 
         for function in &module.functions {
             let mut label_to_block_id: HashMap<String, BlockId> = HashMap::new();
