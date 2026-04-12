@@ -1,5 +1,120 @@
 #![allow(unused)]
+use bitbox::text::semantic_analyzer::Symbol;
+
 use crate::stage::lexer::token::{Span, Token};
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub enum Type {
+    Bool,
+    UnsignedNumber(u8),
+    SignedNumber(u8),
+    Float(u8),
+    Array(usize, Box<Self>),
+    Pointer(Box<Self>),
+    Struct(StructType),
+    Enum(String),
+    #[default]
+    Void,
+}
+
+impl Type {
+    pub fn as_bitbox_type(&self) -> bitbox::ir::Type {
+        match self {
+            Self::Bool => bitbox::ir::Type::Unsigned(32),
+            Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
+            Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
+            Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
+            Self::Array(size, ty) => {
+                bitbox::ir::Type::Array(*size, Box::new(ty.clone().as_bitbox_type()))
+            }
+            Self::Pointer(_) => todo!(),
+            Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
+                name: struct_type.name.clone(),
+                fields: struct_type
+                    .fields
+                    .iter()
+                    .map(|(name, ty)| (name.clone(), ty.as_bitbox_type()))
+                    .collect(),
+                packed: struct_type.packed,
+            }),
+            Self::Enum(_) => todo!(),
+            Self::Void => bitbox::ir::Type::Void,
+        }
+    }
+
+    pub(crate) fn size(&self) -> usize {
+        match self {
+            Type::Bool => 1,
+            Type::UnsignedNumber(bytes) | Type::SignedNumber(bytes) | Type::Float(bytes) => {
+                (*bytes as usize) / 8
+            }
+            Type::Array(count, ty) => count * ty.size(),
+            Type::Pointer(_) => 64,
+            Type::Struct(_) => todo!("Size of struct"),
+            Type::Enum(_) => todo!("Size of enum"),
+            Type::Void => 0,
+        }
+    }
+}
+
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Type::Bool => write!(f, "bool"),
+            Type::UnsignedNumber(n) => write!(f, "u{}", n),
+            Type::SignedNumber(n) => write!(f, "s{}", n),
+            Type::Float(n) => write!(f, "f{}", n),
+            Type::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
+            Type::Pointer(ty) => write!(f, "*{}", ty),
+            Type::Struct(symbol) => write!(f, "{}", symbol.name),
+            Type::Enum(name) => write!(f, "{}", name),
+            Type::Void => write!(f, "void"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StructType {
+    pub name: String,
+    pub fields: Vec<(String, Type)>,
+    pub packed: bool,
+}
+
+impl StructType {
+    pub fn size(&self) -> usize {
+        // TODO: alignment is needed
+        // s32 -> 4 padding of 4
+        // 264 -> 8
+        // but
+        // s32 -> 4
+        // s32 -> 4
+        // no padding is needed?
+        // 264 -> 8
+        // but
+        // s32 -> 4
+        // 264 -> 8
+        // s32 -> 4
+        // padding is needed cause of the order
+        let mut size = 0;
+        for (_, ty) in &self.fields {
+            size += ty.size();
+        }
+        size
+    }
+}
+
+impl std::fmt::Display for StructType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum Visibility {
+    Public,
+    #[default]
+    Private,
+}
 
 #[derive(Debug)]
 pub enum Item {
@@ -15,8 +130,24 @@ pub struct Use {
 }
 
 #[derive(Debug, Clone)]
-pub enum TypeDef {
-    Struct(Struct),
+pub struct Field {
+    pub visibility: Visibility,
+    pub name: Token,
+    pub colon: Token,
+    pub ty: Type,
+    pub default_expr: Option<Box<Expr>>,
+}
+
+impl Field {
+    pub fn span(&self) -> Span {
+        let start = self.name.span.clone();
+        let end = self
+            .default_expr
+            .as_ref()
+            .map(|d| d.span().end)
+            .unwrap_or(start.end);
+        start.start..end
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -24,14 +155,13 @@ pub struct Struct {
     pub visibility: Visibility,
     pub type_token: Token,
     pub name: Token,
-    pub expr: Box<Expr>,
+    pub struct_token: Token,
+    pub fields: Vec<Field>,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum Visibility {
-    Public,
-    #[default]
-    Private,
+#[derive(Debug, Clone)]
+pub enum TypeDef {
+    Struct(Struct),
 }
 
 #[derive(Debug)]
@@ -77,68 +207,6 @@ impl Statement {
 pub struct Param {
     pub name: Token,
     pub ty: Type,
-}
-
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub enum Type {
-    Bool,
-    UnsignedNumber(u8),
-    SignedNumber(u8),
-    Float(u8),
-    Array(usize, Box<Self>),
-    Pointer(Box<Self>),
-    Struct(String),
-    Enum(String),
-    #[default]
-    Void,
-}
-
-impl Type {
-    pub fn as_bitbox_type(&self) -> bitbox::ir::Type {
-        match self {
-            Self::Bool => bitbox::ir::Type::Unsigned(32),
-            Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
-            Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
-            Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
-            Self::Array(size, ty) => {
-                bitbox::ir::Type::Array(*size, Box::new(ty.clone().as_bitbox_type()))
-            }
-            Self::Pointer(_) => todo!(),
-            Self::Struct(_) => todo!(),
-            Self::Enum(_) => todo!(),
-            Self::Void => bitbox::ir::Type::Void,
-        }
-    }
-
-    pub(crate) fn size(&self) -> usize {
-        match self {
-            Type::Bool => 1,
-            Type::UnsignedNumber(bytes) | Type::SignedNumber(bytes) | Type::Float(bytes) => {
-                (*bytes as usize) / 8
-            }
-            Type::Array(count, ty) => count * ty.size(),
-            Type::Pointer(_) => 64,
-            Type::Struct(_) => todo!("Size of struct"),
-            Type::Enum(_) => todo!("Size of enum"),
-            Type::Void => 0,
-        }
-    }
-}
-
-impl std::fmt::Display for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Type::Bool => write!(f, "bool"),
-            Type::UnsignedNumber(n) => write!(f, "u{}", n),
-            Type::SignedNumber(n) => write!(f, "s{}", n),
-            Type::Float(n) => write!(f, "f{}", n),
-            Type::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
-            Type::Pointer(ty) => write!(f, "*{}", ty),
-            Type::Struct(name) => write!(f, "{}", name),
-            Type::Enum(name) => write!(f, "{}", name),
-            Type::Void => write!(f, "void"),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -252,41 +320,34 @@ impl ExprReturn {
 }
 
 #[derive(Debug, Clone)]
-pub struct ExprStruct {
-    pub struct_token: Token,
-    pub fields: Vec<Field>,
+pub struct InitField {
+    pub dot: Token,
+    pub name: Token,
+    pub equal: Token,
+    pub expr: Box<Expr>,
 }
 
-impl ExprStruct {
+impl InitField {
     pub fn span(&self) -> Span {
-        let start = self.struct_token.span.clone();
-        let end = self
-            .fields
-            .last()
-            .map(|f| f.span().end)
-            .unwrap_or(start.end);
-        start.start..end
+        let start = self.dot.span.start;
+        let end = self.expr.span().end;
+        start..end
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Field {
-    pub visibility: Visibility,
+pub struct ExprStruct {
     pub name: Token,
-    pub colon: Token,
-    pub ty: Type,
-    pub default_expr: Option<Box<Expr>>,
+    pub open_brace: Token,
+    pub init_fields: Vec<InitField>,
+    pub close_brace: Token,
 }
 
-impl Field {
+impl ExprStruct {
     pub fn span(&self) -> Span {
-        let start = self.name.span.clone();
-        let end = self
-            .default_expr
-            .as_ref()
-            .map(|d| d.span().end)
-            .unwrap_or(start.end);
-        start.start..end
+        let start = self.name.span.start;
+        let end = self.close_brace.span.end;
+        start..end
     }
 }
 

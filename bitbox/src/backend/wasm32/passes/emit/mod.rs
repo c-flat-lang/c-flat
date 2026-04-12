@@ -169,6 +169,7 @@ impl From<ir::Type> for ValType {
             ir::Type::Float(33..=64) => ValType::F64,
             ir::Type::Pointer(_) => ValType::I32,
             ir::Type::Array(_, _) => ValType::I32,
+            ir::Type::Struct(_) => ValType::I32,
             ir::Type::Void => unreachable!("Void is not a valid type"),
             _ => panic!("Unsupported type: {}", value),
         }

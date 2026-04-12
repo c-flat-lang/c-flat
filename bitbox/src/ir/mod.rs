@@ -88,6 +88,7 @@ pub enum Type {
     Float(u8),
     Pointer(Box<Type>),
     Array(usize, Box<Type>),
+    Struct(StructType),
     #[default]
     Void,
 }
@@ -100,6 +101,7 @@ impl Type {
             Type::Float(bits) => *bits as i32 / 8,
             Type::Pointer(..) => 64,
             Type::Array(size, ty) => ty.size() * (*size as i32),
+            Type::Struct(s) => s.size(),
             Type::Void => 0,
         }
     }
@@ -111,6 +113,7 @@ impl Type {
             Type::Float(bits) => *bits as i32 / 8,
             Type::Pointer(..) => 64,
             Type::Array(_, ty) => ty.element_size(),
+            Type::Struct(s) => s.size(),
             Type::Void => 0,
         }
     }
@@ -128,8 +131,45 @@ impl std::fmt::Display for Type {
             Type::Float(bytes) => write!(f, "f{}", bytes),
             Type::Pointer(ty) => write!(f, "*{}", ty),
             Type::Array(size, ty) => write!(f, "[{} x {}]", size, ty),
+            Type::Struct(s) => write!(f, "{}", s),
             Type::Void => write!(f, "void"),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct StructType {
+    pub name: String,
+    pub fields: Vec<(String, Type)>,
+    pub packed: bool,
+}
+
+impl StructType {
+    pub fn size(&self) -> i32 {
+        // TODO: alignment is needed
+        // s32 -> 4 padding of 4
+        // 264 -> 8
+        // but
+        // s32 -> 4
+        // s32 -> 4
+        // no padding is needed?
+        // 264 -> 8
+        // but
+        // s32 -> 4
+        // 264 -> 8
+        // s32 -> 4
+        // padding is needed cause of the order
+        let mut size = 0;
+        for (_, ty) in &self.fields {
+            size += ty.size();
+        }
+        size as i32
+    }
+}
+
+impl std::fmt::Display for StructType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 

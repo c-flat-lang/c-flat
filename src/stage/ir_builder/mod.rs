@@ -5,7 +5,15 @@ use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbeat::Instruction;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
-use bitbox::ir::{self, Constant, ConstantInt, Module, Operand, Type, Variable, Visibility};
+use bitbox::ir::{
+    self, Constant, ConstantInt, Module, Operand, StructType, Type, Variable, Visibility,
+};
+
+use crate::stage::parser::ast::{
+    Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprBlock,
+    ExprCall, ExprDecl, ExprIfElse, ExprMemberAccess, ExprReturn, ExprStruct, ExprWhile, Litral,
+    Struct,
+};
 
 #[derive(Debug, Default)]
 pub struct IRBuilder {
@@ -63,6 +71,10 @@ impl IRBuilder {
         self.symbol_table.exit_scope();
         mb.function(function_builder.build());
     }
+
+    fn build_use(&mut self, use_: ast::Use) {
+        todo!("{:#?}", use_)
+    }
 }
 
 impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
@@ -73,8 +85,8 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
         for item in ast {
             match item {
                 Item::Function(function) => self.build_function(function, &mut mb),
-                Item::Type(_) => todo!("type def"),
-                Item::Use(_) => todo!("use"),
+                Item::Type(_) => {}
+                Item::Use(u) => self.build_use(u),
             }
         }
         Ok(mb.build())
@@ -137,11 +149,6 @@ pub trait Addressable {
     ) -> Option<AddressableVar>;
 }
 
-use crate::stage::parser::ast::{
-    Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprBlock,
-    ExprCall, ExprDecl, ExprIfElse, ExprReturn, ExprWhile, Litral,
-};
-
 impl Lowerable for Expr {
     fn lower(
         &self,
@@ -162,8 +169,8 @@ impl Lowerable for Expr {
                 };
                 ctx.get_variable(&ident.lexeme)
             }
-            Expr::Struct(_) => todo!("Struct expressions"),
-            Expr::MemberAccess(..) => todo!("Member access expressions"),
+            Expr::Struct(expr) => expr.lower(assembler, ctx),
+            Expr::MemberAccess(expr) => expr.lower(assembler, ctx),
             Expr::Array(expr) => expr.lower(assembler, ctx),
             Expr::ArrayIndex(expr) => expr.lower(assembler, ctx),
             Expr::ArrayRepeat(expr) => expr.lower(assembler, ctx),
@@ -190,6 +197,66 @@ impl Addressable for Expr {
             Expr::ArrayIndex(expr) => expr.lower_to_address(assembler, ctx),
             _ => unreachable!(),
         }
+    }
+}
+
+impl Lowerable for ExprStruct {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let Some(symbol) = ctx.symbol_table.get(&self.name.lexeme) else {
+            panic!("Symbol not found {}", self.name.lexeme);
+        };
+        let ty = symbol.ty.clone().as_bitbox_type();
+
+        let ptr = assembler.var(ty.clone());
+
+        let size = Operand::ConstantInt(ir::ConstantInt::new(ty.size() as i64, Type::Signed(32)));
+
+        assembler.alloc(ty.clone(), ptr.clone(), size);
+
+        for (index, field) in self.init_fields.iter().enumerate() {
+            let Some(value) = field.expr.lower(assembler, ctx) else {
+                panic!("Failed to return variable from expr lowering in Struct field");
+            };
+            assembler.elemset(
+                ptr.clone(),
+                Operand::ConstantInt(ConstantInt::new(index as i64, Type::Signed(32))),
+                value,
+            );
+        }
+        Some(ptr)
+    }
+}
+
+impl Lowerable for ExprMemberAccess {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let Some(ptr) = self.base.lower(assembler, ctx) else {
+            panic!("Failed to return variable from expr lowering in MemberAccess");
+        };
+        let Type::Struct(StructType { fields, .. }) = &ptr.ty else {
+            panic!("Expected struct type");
+        };
+        let Some((idx, (_, field_ty))) = fields
+            .iter()
+            .enumerate()
+            .find(|(_, (name, _))| name == &self.member.lexeme)
+        else {
+            panic!("Field not found {}", self.member.lexeme);
+        };
+
+        let des = assembler.var(field_ty.clone());
+        let index = Operand::ConstantInt(ConstantInt::new(idx as i64, Type::Signed(32)));
+
+        assembler.elemget(des.clone(), ptr, index);
+
+        Some(des)
     }
 }
 

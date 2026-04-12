@@ -1,7 +1,7 @@
 #![allow(unused)]
 use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
 use crate::stage::lexer::token::{Keyword as Kw, Token, TokenKind};
-use crate::stage::parser::ast::{self, Expr, Type};
+use crate::stage::parser::ast::{self, Expr, StructType, Type};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
 impl Type {
@@ -101,11 +101,21 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_type_def(&mut self, type_def: &mut ast::TypeDef) -> ast::Type {
-        todo!()
+        match type_def {
+            ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
+        }
     }
 
-    fn walk_struct(&mut self, struct_def: &mut ast::Struct) -> ast::Type {
-        todo!()
+    fn walk_struct_def(&mut self, struct_def: &mut ast::Struct) -> ast::Type {
+        Type::Struct(StructType {
+            name: struct_def.name.lexeme.clone(),
+            fields: struct_def
+                .fields
+                .iter()
+                .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
+                .collect(),
+            packed: false,
+        })
     }
 
     fn walk_block(&mut self, block: &mut ast::ExprBlock) -> ast::Type {
@@ -148,7 +158,10 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_struct(&mut self, expr: &ast::ExprStruct) -> ast::Type {
-        todo!()
+        let Some(symbol) = self.symbol_table.get(&expr.name.lexeme) else {
+            unreachable!("Should never get here, should fail in semantic analyzer");
+        };
+        symbol.ty.clone()
     }
 
     fn walk_expr_assignment(&mut self, expr: &mut ast::ExprAssignment) -> ast::Type {
@@ -370,6 +383,27 @@ impl<'st> TypeChecker<'st> {
                 };
                 *expr = ast::Expr::Litral(ast::Litral::Integer(token));
                 Type::SignedNumber(32)
+            }
+            Type::Struct(struct_def) => {
+                let Some(symbol) = self.symbol_table.get(struct_def.name.as_str()) else {
+                    panic!(
+                        "Could not find struct `{}` in symbol table",
+                        struct_def.name
+                    );
+                };
+                let Some(members) = &symbol.fields else {
+                    panic!(
+                        "Could not find fields for struct `{}` in symbol table",
+                        struct_def.name
+                    );
+                };
+
+                let Some(ty) = members.get(member_access.member.lexeme.as_str()) else {
+                    unimplemented!(
+                        "I also do not think this is a reachable state. Hope I never see this."
+                    );
+                };
+                ty.clone()
             }
             _ => unimplemented!("Handle member access for non array types"),
         }

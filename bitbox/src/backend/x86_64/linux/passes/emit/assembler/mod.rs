@@ -25,6 +25,7 @@ impl Stack {
             Type::Unsigned(bits) | Type::Signed(bits) | Type::Float(bits) => *bits as i32 / 8,
             Type::Pointer(_) => 8,
             Type::Array(_, elem) => Self::access_size(elem),
+            Type::Struct(_) => todo!("Size of struct"),
             Type::Void => 0,
         }
     }

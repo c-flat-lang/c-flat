@@ -113,25 +113,18 @@ impl Parser {
             }));
         }
 
-        let expr_struct = self.parse_struct()?;
-        Ok(ast::TypeDef::Struct(ast::Struct {
-            visibility,
-            type_token,
-            name,
-            expr: Box::new(expr_struct),
-        }))
-    }
-
-    fn parse_struct(&mut self) -> Result<ast::Expr> {
         let struct_token = self.consume(TokenKind::Keyword(Keyword::Struct))?;
         self.consume(TokenKind::LeftBrace)?;
         let fields = self.parse_fields()?;
         self.consume(TokenKind::RightBrace)?;
-        let expr_struct = ast::ExprStruct {
+
+        Ok(ast::TypeDef::Struct(ast::Struct {
+            visibility,
+            type_token,
+            name,
             struct_token,
             fields,
-        };
-        Ok(ast::Expr::Struct(expr_struct))
+        }))
     }
 
     fn parse_fields(&mut self) -> Result<Vec<ast::Field>> {
@@ -512,7 +505,12 @@ impl Parser {
             TokenKind::Float => Ok(ast::Expr::Litral(ast::Litral::Float(token))),
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
-            TokenKind::Identifier => Ok(ast::Expr::Identifier(token)),
+            TokenKind::Identifier => {
+                if self.peek(TokenKind::LeftBrace) {
+                    return self.parse_struct_instantiation(token);
+                }
+                Ok(ast::Expr::Identifier(token))
+            }
             TokenKind::Keyword(Keyword::True) => {
                 Ok(ast::Expr::Litral(ast::Litral::BoolTrue(token)))
             }
@@ -525,6 +523,39 @@ impl Parser {
                 expected: TokenKind::Number,
             })),
         }
+    }
+
+    fn parse_struct_init_fields(&mut self) -> Result<Vec<ast::InitField>> {
+        let mut fields = vec![];
+        while self.lexer.peek().is_some() && !self.peek(TokenKind::RightBrace) {
+            let dot = self.consume(TokenKind::Dot)?;
+            let name = self.consume(TokenKind::Identifier)?;
+            let equal = self.consume(TokenKind::Equal)?;
+            fields.push(ast::InitField {
+                dot,
+                name,
+                equal,
+                expr: Box::new(self.parse_expr()?),
+            });
+            if self.peek(TokenKind::Comma) {
+                self.consume(TokenKind::Comma)?;
+            }
+        }
+        Ok(fields)
+    }
+
+    fn parse_struct_instantiation(&mut self, name: Token) -> Result<ast::Expr> {
+        let open_brace = self.consume(TokenKind::LeftBrace)?;
+
+        let init_fields = self.parse_struct_init_fields()?;
+
+        let close_brace = self.consume(TokenKind::RightBrace)?;
+        Ok(ast::Expr::Struct(ast::ExprStruct {
+            name,
+            open_brace,
+            init_fields,
+            close_brace,
+        }))
     }
 
     fn parse_array_literal(&mut self, open_bracket: Token) -> Result<ast::Expr> {

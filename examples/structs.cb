@@ -1,0 +1,8 @@
+type Foo struct {
+  value: s32 = 10,
+}
+
+pub fn main() s32 {
+  let foo = Foo { };
+  return foo.value;
+}

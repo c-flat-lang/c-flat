@@ -52,6 +52,7 @@ impl Default for SymbolTableBuilder {
             kind: SymbolKind::Function,
             is_mutable: false,
             params: Some(vec![ast::Type::UnsignedNumber(32)]),
+            ..Default::default()
         });
         table.push(Symbol {
             name: "writeln".to_string(),
@@ -60,6 +61,7 @@ impl Default for SymbolTableBuilder {
             kind: SymbolKind::Function,
             is_mutable: false,
             params: Some(vec![]),
+            ..Default::default()
         });
         table.push(Symbol {
             name: "write_char".to_string(),
@@ -68,6 +70,7 @@ impl Default for SymbolTableBuilder {
             kind: SymbolKind::Function,
             is_mutable: false,
             params: Some(vec![ast::Type::UnsignedNumber(32)]),
+            ..Default::default()
         });
         table.exit_scope();
 
@@ -120,6 +123,7 @@ impl SymbolTableBuilder {
             is_mutable: false,
             visibility: *visibility,
             params: Some(params.iter().map(|param| param.ty.clone()).collect()),
+            ..Default::default()
         });
         self.table.enter_scope(&name.lexeme);
 
@@ -130,7 +134,7 @@ impl SymbolTableBuilder {
                 ty: param.ty.clone(),
                 is_mutable: false,
                 visibility: ast::Visibility::Private,
-                params: None,
+                ..Default::default()
             });
         }
 
@@ -138,11 +142,41 @@ impl SymbolTableBuilder {
         self.table.exit_scope();
     }
 
-    fn walk_type_def(&mut self, _: &ast::TypeDef) {
-        todo!()
+    fn walk_type_def(&mut self, type_def: &ast::TypeDef) {
+        match type_def {
+            ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
+        }
     }
 
-    fn walk_struct(&mut self, _: &ast::ExprStruct) {
+    fn walk_struct_def(&mut self, struct_def: &ast::Struct) {
+        self.table.push(Symbol {
+            name: struct_def.name.lexeme.clone(),
+            kind: SymbolKind::Struct,
+            ty: ast::Type::Struct(ast::StructType {
+                name: struct_def.name.lexeme.clone(),
+                fields: struct_def
+                    .fields
+                    .iter()
+                    .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
+                    .collect(),
+                packed: false,
+            }),
+            is_mutable: false,
+            visibility: struct_def.visibility,
+            fields: Some(
+                struct_def
+                    .fields
+                    .iter()
+                    .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .collect(),
+            ),
+            ..Default::default()
+        });
+    }
+
+    fn walk_struct_expr(&mut self, _: &ast::ExprStruct) {
         todo!("walk_expr_struct");
     }
 
@@ -163,7 +197,7 @@ impl SymbolTableBuilder {
             ast::Expr::Return(ast::ExprReturn {
                 expr: Some(expr), ..
             }) => self.walk_expr(expr),
-            ast::Expr::Struct(expr) => self.walk_struct(expr),
+            ast::Expr::Struct(expr) => self.walk_struct_expr(expr),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
@@ -200,7 +234,7 @@ impl SymbolTableBuilder {
             ty,
             is_mutable: true,
             visibility: ast::Visibility::Private,
-            params: None,
+            ..Default::default()
         };
 
         self.table.push(symbol);
@@ -272,6 +306,7 @@ pub enum SymbolKind {
     Variable,
     Function,
     Parameter,
+    Struct,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -282,6 +317,8 @@ pub struct Symbol {
     pub is_mutable: bool,
     pub visibility: ast::Visibility,
     pub params: Option<Vec<ast::Type>>,
+    // Turn HashMap into Vec to maintain order, also add default values Option<Expression> to each field
+    pub fields: Option<HashMap<String, ast::Type>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -420,7 +457,7 @@ mod tests {
             kind,
             ty,
             is_mutable,
-            params: None,
+            ..Default::default()
         }
     }
 
@@ -516,6 +553,7 @@ mod tests {
                     ast::Type::SignedNumber(32),
                     ast::Type::SignedNumber(32)
                 ]),
+                ..Default::default()
             })
         );
     }
@@ -532,6 +570,7 @@ mod tests {
             is_mutable: false,
             visibility: ast::Visibility::Public,
             params: Some(vec![ast::Type::Bool]),
+            ..Default::default()
         };
 
         table.push(func_symbol.clone());
@@ -543,6 +582,7 @@ mod tests {
             is_mutable: false,
             visibility: ast::Visibility::Public,
             params: Some(vec![ast::Type::Bool]),
+            ..Default::default()
         };
 
         table.push(func_symbol1.clone());
