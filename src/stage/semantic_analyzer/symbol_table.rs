@@ -167,7 +167,13 @@ impl SymbolTableBuilder {
                 struct_def
                     .fields
                     .iter()
-                    .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
+                    .map(|field| {
+                        (
+                            field.name.lexeme.clone(),
+                            field.ty.clone(),
+                            field.default_expr.clone(),
+                        )
+                    })
                     .collect::<Vec<_>>()
                     .into_iter()
                     .collect(),
@@ -317,8 +323,7 @@ pub struct Symbol {
     pub is_mutable: bool,
     pub visibility: ast::Visibility,
     pub params: Option<Vec<ast::Type>>,
-    // Turn HashMap into Vec to maintain order, also add default values Option<Expression> to each field
-    pub fields: Option<HashMap<String, ast::Type>>,
+    pub fields: Option<Vec<(String, ast::Type, Option<Box<ast::Expr>>)>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]

@@ -96,43 +96,43 @@ pub enum Type {
 impl Type {
     pub fn size(&self) -> i32 {
         match self {
-            Type::Unsigned(bits) => *bits as i32 / 8,
-            Type::Signed(bits) => *bits as i32 / 8,
-            Type::Float(bits) => *bits as i32 / 8,
-            Type::Pointer(..) => 64,
-            Type::Array(size, ty) => ty.size() * (*size as i32),
-            Type::Struct(s) => s.size(),
-            Type::Void => 0,
+            Self::Unsigned(bits) => *bits as i32 / 8,
+            Self::Signed(bits) => *bits as i32 / 8,
+            Self::Float(bits) => *bits as i32 / 8,
+            Self::Pointer(..) => 64,
+            Self::Array(size, ty) => ty.size() * (*size as i32),
+            Self::Struct(s) => s.size(),
+            Self::Void => 0,
         }
     }
 
     pub fn element_size(&self) -> i32 {
         match self {
-            Type::Unsigned(bits) => *bits as i32 / 8,
-            Type::Signed(bits) => *bits as i32 / 8,
-            Type::Float(bits) => *bits as i32 / 8,
-            Type::Pointer(..) => 64,
-            Type::Array(_, ty) => ty.element_size(),
-            Type::Struct(s) => s.size(),
-            Type::Void => 0,
+            Self::Unsigned(bits) => *bits as i32 / 8,
+            Self::Signed(bits) => *bits as i32 / 8,
+            Self::Float(bits) => *bits as i32 / 8,
+            Self::Pointer(..) => 64,
+            Self::Array(_, ty) => ty.element_size(),
+            Self::Struct(s) => s.size(),
+            Self::Void => 0,
         }
     }
 
     pub fn is_ptr(&self) -> bool {
-        matches!(self, Type::Pointer(_))
+        matches!(self, Self::Pointer(_))
     }
 }
 
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Type::Unsigned(bytes) => write!(f, "u{}", bytes),
-            Type::Signed(bytes) => write!(f, "s{}", bytes),
-            Type::Float(bytes) => write!(f, "f{}", bytes),
-            Type::Pointer(ty) => write!(f, "*{}", ty),
-            Type::Array(size, ty) => write!(f, "[{} x {}]", size, ty),
-            Type::Struct(s) => write!(f, "{}", s),
-            Type::Void => write!(f, "void"),
+            Self::Unsigned(bytes) => write!(f, "u{}", bytes),
+            Self::Signed(bytes) => write!(f, "s{}", bytes),
+            Self::Float(bytes) => write!(f, "f{}", bytes),
+            Self::Pointer(ty) => write!(f, "*{}", ty),
+            Self::Array(size, ty) => write!(f, "[{} x {}]", size, ty),
+            Self::Struct(s) => write!(f, "{}", s),
+            Self::Void => write!(f, "void"),
         }
     }
 }
@@ -159,11 +159,10 @@ impl StructType {
         // 264 -> 8
         // s32 -> 4
         // padding is needed cause of the order
-        let mut size = 0;
-        for (_, ty) in &self.fields {
-            size += ty.size();
-        }
-        size as i32
+        self.fields.iter().fold(
+            0,
+            |acc, (_, ty)| if acc > ty.size() { acc } else { ty.size() },
+        )
     }
 }
 

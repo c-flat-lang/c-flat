@@ -152,7 +152,7 @@ impl Lower<Wasm32LowerContext<'_>> for IAlloc {
 
         // 3. Compute allocation size: size * element_size
         self.size.lower(ctx, target)?; // length
-        target.assembler.i32_const(self.des.ty.size()); // element size (e.g. 4)
+        target.assembler.i32_const(self.des.ty.size()); // element size
         target.assembler.i32_mul(); // total bytes
 
         // 4. heap_ptr + size

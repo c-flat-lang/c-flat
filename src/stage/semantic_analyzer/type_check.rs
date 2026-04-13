@@ -398,7 +398,10 @@ impl<'st> TypeChecker<'st> {
                     );
                 };
 
-                let Some(ty) = members.get(member_access.member.lexeme.as_str()) else {
+                let Some((_, ty, _)) = members
+                    .iter()
+                    .find(|(name, ..)| name == member_access.member.lexeme.as_str())
+                else {
                     unimplemented!(
                         "I also do not think this is a reachable state. Hope I never see this."
                     );

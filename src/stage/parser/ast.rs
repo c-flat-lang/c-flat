@@ -174,7 +174,7 @@ pub struct Function {
     pub body: ExprBlock,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprBlock {
     pub open_brace: Token,
     pub statements: Vec<Statement>,
@@ -189,7 +189,7 @@ impl ExprBlock {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Statement {
     pub expr: Box<Expr>,
     pub delem: Option<Token>,
@@ -209,7 +209,7 @@ pub struct Param {
     pub ty: Type,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
     Return(ExprReturn),
     Struct(ExprStruct),
@@ -254,7 +254,7 @@ impl Expr {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprArray {
     pub open_bracket: Token,
     pub elements: Vec<Expr>,
@@ -270,7 +270,7 @@ impl ExprArray {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprArrayIndex {
     pub expr: Box<Expr>,
     pub open_bracket: Token,
@@ -287,7 +287,7 @@ impl ExprArrayIndex {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprArrayRepeat {
     pub open_bracket: Token,
     pub count: Box<Expr>,
@@ -305,7 +305,7 @@ impl ExprArrayRepeat {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprReturn {
     pub return_token: Token,
     pub expr: Option<Box<Expr>>,
@@ -319,7 +319,7 @@ impl ExprReturn {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InitField {
     pub dot: Token,
     pub name: Token,
@@ -335,7 +335,7 @@ impl InitField {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprStruct {
     pub name: Token,
     pub open_brace: Token,
@@ -351,7 +351,7 @@ impl ExprStruct {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprDecl {
     pub let_token: Token,
     pub mutable: bool,
@@ -368,7 +368,7 @@ impl ExprDecl {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprAssignment {
     pub left: Box<Expr>,
     pub equal: Token,
@@ -383,7 +383,7 @@ impl ExprAssignment {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprCall {
     pub caller: Box<Expr>,
     pub left_paren: Token,
@@ -399,7 +399,7 @@ impl ExprCall {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprBinary {
     pub left: Box<Expr>,
     pub op: Token,
@@ -414,7 +414,7 @@ impl ExprBinary {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprWhile {
     pub while_token: Token,
     pub condition: Box<Expr>,
@@ -429,7 +429,7 @@ impl ExprWhile {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprIfElse {
     pub if_token: Token,
     pub condition: Box<Expr>,
@@ -451,7 +451,7 @@ impl ExprIfElse {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprMemberAccess {
     pub base: Box<Expr>,
     pub dot: Token,
@@ -466,7 +466,7 @@ impl ExprMemberAccess {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Litral {
     String(Token),
     Integer(Token),

@@ -206,27 +206,52 @@ impl Lowerable for ExprStruct {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let Some(symbol) = ctx.symbol_table.get(&self.name.lexeme) else {
+        let Some(symbol) = ctx.symbol_table.get(&self.name.lexeme).cloned() else {
             panic!("Symbol not found {}", self.name.lexeme);
         };
+
+        let Some(fields) = symbol.fields.as_ref() else {
+            panic!("Symbol not found {}", self.name.lexeme);
+        };
+
         let ty = symbol.ty.clone().as_bitbox_type();
 
         let ptr = assembler.var(ty.clone());
 
-        let size = Operand::ConstantInt(ir::ConstantInt::new(ty.size() as i64, Type::Signed(32)));
+        let size = Operand::ConstantInt(ir::ConstantInt::new(
+            (ty.size() * fields.len() as i32) as i64,
+            Type::Signed(32),
+        ));
 
-        assembler.alloc(ty.clone(), ptr.clone(), size);
+        assembler.alloc(Type::Signed(32), ptr.clone(), size);
 
-        for (index, field) in self.init_fields.iter().enumerate() {
-            let Some(value) = field.expr.lower(assembler, ctx) else {
-                panic!("Failed to return variable from expr lowering in Struct field");
-            };
+        for (index, (name, field_ty, default)) in fields.iter().enumerate() {
+            let value = self
+                .init_fields
+                .iter()
+                .find_map(|init_field| {
+                    if init_field.name.lexeme == *name {
+                        init_field.expr.lower(assembler, ctx)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or_else(|| {
+                    let Some(default) = default else {
+                        panic!("Failed to return variable from expr lowering in Struct field");
+                    };
+                    default
+                        .lower(assembler, ctx)
+                        .expect("Failed to return variable from expr lowering in Struct field")
+                });
+
             assembler.elemset(
                 ptr.clone(),
                 Operand::ConstantInt(ConstantInt::new(index as i64, Type::Signed(32))),
                 value,
             );
         }
+
         Some(ptr)
     }
 }
