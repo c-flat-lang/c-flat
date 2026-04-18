@@ -62,7 +62,7 @@ impl<'st> TypeChecker<'st> {
     }
 
     pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
-        let mut resolver = TypeResolver::new(&mut self.symbol_table);
+        let mut resolver = TypeResolver::new(self.symbol_table);
         resolver.walk_items(ast)?;
 
         for item in ast.iter_mut() {
@@ -433,15 +433,15 @@ impl<'st> TypeChecker<'st> {
                     );
                 };
 
-                let Some((_, ty, _)) = members
+                let Some(field) = members
                     .iter()
-                    .find(|(name, ..)| name == member_access.member.lexeme.as_str())
+                    .find(|field| field.name == member_access.member.lexeme.as_str())
                 else {
                     unimplemented!(
                         "I also do not think this is a reachable state. Hope I never see this."
                     );
                 };
-                ty.clone()
+                field.ty.clone()
             }
             _ => unimplemented!("Handle member access for non array types"),
         }

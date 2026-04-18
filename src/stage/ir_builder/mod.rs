@@ -225,19 +225,19 @@ impl Lowerable for ExprStruct {
 
         assembler.alloc(Type::Signed(32), ptr.clone(), size);
 
-        for (index, (name, field_ty, default)) in fields.iter().enumerate() {
+        for (index, symbol_field) in fields.iter().enumerate() {
             let value = self
                 .init_fields
                 .iter()
                 .find_map(|init_field| {
-                    if init_field.name.lexeme == *name {
+                    if init_field.name.lexeme == *symbol_field.name {
                         init_field.expr.lower(assembler, ctx)
                     } else {
                         None
                     }
                 })
                 .unwrap_or_else(|| {
-                    let Some(default) = default else {
+                    let Some(default) = &symbol_field.default_value else {
                         panic!("Failed to return variable from expr lowering in Struct field");
                     };
                     default

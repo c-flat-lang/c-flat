@@ -22,7 +22,7 @@ pub type ArrayList struct (T) {
         allocator.deallocate(self.data);
     }
 
-    pub fn capacity(*self) u32 {
+    pub fn capacity(*self: Self) u32 {
         return self.data.len;
     }
 

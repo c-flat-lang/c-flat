@@ -83,7 +83,7 @@ impl<'st> TypeResolver<'st> {
             Expr::Assignment(expr_assignment) => self.walk_expr_assignment(expr_assignment),
             Expr::Litral(litral) => {}
             Expr::Call(expr_call) => self.walk_expr_call(expr_call),
-            Expr::Binary(expr_binary) => todo!("Binary"),
+            Expr::Binary(expr_binary) => self.walk_expr_binary(expr_binary),
             Expr::While(expr_while) => todo!("While"),
             Expr::Identifier(token) => {}
             Expr::IfElse(expr_if_else) => todo!("IfElse"),
@@ -122,6 +122,11 @@ impl<'st> TypeResolver<'st> {
         for arg in expr_call.args.iter_mut() {
             self.walk_expr(arg);
         }
+    }
+
+    fn walk_expr_binary(&mut self, expr_binary: &mut ast::ExprBinary) {
+        self.walk_expr(&mut expr_binary.left);
+        self.walk_expr(&mut expr_binary.right);
     }
 
     fn walk_expr_member_access(&mut self, expr_member_access: &mut ast::ExprMemberAccess) {
@@ -187,9 +192,9 @@ impl<'st> TypeResolver<'st> {
             }
             Type::Enum(_) => todo!("Enum"),
             Type::Name(name) => {
-                let Some(symbol) = self.symbol_table.get(&name) else {
+                let Some(symbol) = self.symbol_table.get(name) else {
                     self.errors.push(Box::new(ErrorMissMatchedType {
-                        span: span,
+                        span,
                         found,
                         expected: Type::Name(name.clone()),
                         #[cfg(feature = "debug")]

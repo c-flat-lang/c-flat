@@ -167,12 +167,10 @@ impl SymbolTableBuilder {
                 struct_def
                     .fields
                     .iter()
-                    .map(|field| {
-                        (
-                            field.name.lexeme.clone(),
-                            field.ty.clone(),
-                            field.default_expr.clone(),
-                        )
+                    .map(|field| SymbolField {
+                        name: field.name.lexeme.clone(),
+                        ty: field.ty.clone(),
+                        default_value: field.default_expr.clone(),
                     })
                     .collect::<Vec<_>>()
                     .into_iter()
@@ -348,6 +346,13 @@ pub enum SymbolKind {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct SymbolField {
+    pub name: String,
+    pub ty: ast::Type,
+    pub default_value: Option<Box<ast::Expr>>,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Symbol {
     pub name: String,
     pub kind: SymbolKind,
@@ -355,7 +360,7 @@ pub struct Symbol {
     pub is_mutable: bool,
     pub visibility: ast::Visibility,
     pub params: Option<Vec<ast::Type>>,
-    pub fields: Option<Vec<(String, ast::Type, Option<Box<ast::Expr>>)>>,
+    pub fields: Option<Vec<SymbolField>>,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -471,11 +476,10 @@ impl SymbolTable {
         name: &str,
         mut f: impl FnMut(&mut Symbol),
     ) {
-        if let Some(scope) = self.scopes.get_mut(&scope_path)
+        if let Some(scope) = self.scopes.get_mut(scope_path)
             && let Some(symbol) = scope.get_mut(name)
         {
             f(symbol);
-            return;
         }
     }
 
