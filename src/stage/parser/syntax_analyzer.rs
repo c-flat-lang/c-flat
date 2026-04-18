@@ -353,6 +353,8 @@ impl Parser {
             equal,
             right: Box::new(right_expr),
         };
+
+        self.consume(TokenKind::Semicolon)?;
         Ok(ast::Expr::Assignment(assignment))
     }
 
@@ -577,7 +579,6 @@ impl Parser {
             let semicolon = self.consume(TokenKind::Semicolon)?;
             let count = self.parse_expr()?; // must be compile-time integer
             let close_bracket = self.consume(TokenKind::RightBracket)?;
-            self.consume(TokenKind::Semicolon)?;
 
             return Ok(ast::Expr::ArrayRepeat(ast::ExprArrayRepeat {
                 open_bracket,
@@ -590,6 +591,9 @@ impl Parser {
         }
 
         let mut elements = vec![first];
+        if self.peek(TokenKind::Comma) {
+            self.consume(TokenKind::Comma)?;
+        }
 
         while !self.peek(TokenKind::RightBracket) {
             elements.push(self.parse_expr()?);

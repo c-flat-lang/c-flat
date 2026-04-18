@@ -1,7 +1,7 @@
-use crate::error::{ErrorMissMatchedType, ErrorUndefinedSymbol, Errors, Report, Result};
-use crate::stage::lexer::token::{Span, Token};
+use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
+use crate::stage::lexer::token::Token;
 
-use crate::stage::parser::ast::{self, Expr, Type};
+use crate::stage::parser::ast::{self, Expr};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -233,8 +233,7 @@ impl SymbolTableBuilder {
     }
 
     fn walk_expr_declare(&mut self, expr: &ast::ExprDecl) {
-        let mut ty = expr.ty.as_ref().map_or(ast::Type::Void, |ty| ty.clone());
-        self.walk_type(&mut ty, expr.span());
+        let ty = expr.ty.as_ref().map_or(ast::Type::Void, |ty| ty.clone());
         let symbol = Symbol {
             name: expr.ident.lexeme.clone(),
             kind: SymbolKind::Variable,
@@ -306,37 +305,37 @@ impl SymbolTableBuilder {
         self.walk_expr(base);
     }
 
-    fn walk_type(&mut self, ty: &mut Type, span: Span) {
-        let found = ty.clone();
-        match ty {
-            Type::Bool
-            | Type::UnsignedNumber(_)
-            | Type::SignedNumber(_)
-            | Type::Float(_)
-            | Type::Void => {}
-            Type::Array(_, ty) => self.walk_type(ty, span),
-            Type::Pointer(ty) => self.walk_type(ty, span),
-            Type::Struct(struct_type) => {
-                for (_, ty) in struct_type.fields.iter_mut() {
-                    self.walk_type(ty, span.clone());
-                }
-            }
-            Type::Enum(_) => todo!("Enum"),
-            Type::Name(name) => {
-                let Some(symbol) = self.table.get(&name) else {
-                    self.errors.push(Box::new(ErrorMissMatchedType {
-                        span: span,
-                        found,
-                        expected: Type::Name(name.clone()),
-                        #[cfg(feature = "debug")]
-                        compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-                    }));
-                    return;
-                };
-                *ty = symbol.ty.clone();
-            }
-        }
-    }
+    // fn walk_type(&mut self, ty: &mut Type, span: Span) {
+    //     let found = ty.clone();
+    //     match ty {
+    //         Type::Bool
+    //         | Type::UnsignedNumber(_)
+    //         | Type::SignedNumber(_)
+    //         | Type::Float(_)
+    //         | Type::Void => {}
+    //         Type::Array(_, ty) => self.walk_type(ty, span),
+    //         Type::Pointer(ty) => self.walk_type(ty, span),
+    //         Type::Struct(struct_type) => {
+    //             for (_, ty) in struct_type.fields.iter_mut() {
+    //                 self.walk_type(ty, span.clone());
+    //             }
+    //         }
+    //         Type::Enum(_) => todo!("Enum"),
+    //         Type::Name(name) => {
+    //             let Some(symbol) = self.table.get(&name) else {
+    //                 self.errors.push(Box::new(ErrorMissMatchedType {
+    //                     span: span,
+    //                     found,
+    //                     expected: Type::Name(name.clone()),
+    //                     #[cfg(feature = "debug")]
+    //                     compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
+    //                 }));
+    //                 return;
+    //             };
+    //             *ty = symbol.ty.clone();
+    //         }
+    //     }
+    // }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -466,6 +465,20 @@ impl SymbolTable {
         }
     }
 
+    pub fn get_mut_from_full_scope_path(
+        &mut self,
+        scope_path: &ScopePath,
+        name: &str,
+        mut f: impl FnMut(&mut Symbol),
+    ) {
+        if let Some(scope) = self.scopes.get_mut(&scope_path)
+            && let Some(symbol) = scope.get_mut(name)
+        {
+            f(symbol);
+            return;
+        }
+    }
+
     fn push(&mut self, symbol: Symbol) {
         let scope_name = self.get_full_scope_name();
         self.scopes.entry(scope_name).or_default().insert(symbol);
@@ -473,6 +486,27 @@ impl SymbolTable {
 
     pub fn extend(&mut self, other: SymbolTable) {
         self.scopes.extend(other.scopes);
+    }
+
+    /// Returns an iterator over **all** symbols in the table, including the full scope path
+    /// where each symbol was declared.
+    pub fn iter_all(&self) -> impl Iterator<Item = (ScopePath, &Symbol)> {
+        self.scopes.iter().flat_map(|(scope_path, scope)| {
+            scope
+                .symbols
+                .values()
+                .map(move |symbol| (scope_path.clone(), symbol))
+        })
+    }
+
+    /// Mutable version - returns (ScopePath, &mut Symbol)
+    pub fn iter_all_mut(&mut self) -> impl Iterator<Item = (ScopePath, &mut Symbol)> {
+        self.scopes.iter_mut().flat_map(|(scope_path, scope)| {
+            scope
+                .symbols
+                .values_mut()
+                .map(move |symbol| (scope_path.clone(), symbol))
+        })
     }
 }
 

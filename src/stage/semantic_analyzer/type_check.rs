@@ -123,14 +123,26 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_block(&mut self, block: &mut ast::ExprBlock) -> ast::Type {
-        let mut result = Type::Void;
+        let mut result: Vec<ast::Type> = vec![];
         for statement in block.statements.iter_mut() {
-            result = self.walk_stmt(statement);
+            let return_type = self.walk_stmt(statement);
+            if return_type != Type::Void {
+                result.push(return_type);
+            }
         }
         result
+            .iter()
+            .all(|x| matches!(result.first(), Some(y) if x == y))
+            .then_some(result.first().cloned())
+            .flatten()
+            .unwrap_or(Type::Void)
     }
 
     fn walk_stmt(&mut self, stmt: &mut ast::Statement) -> ast::Type {
+        let ast::Expr::Return(_) = *stmt.expr else {
+            self.walk_expr(&mut stmt.expr);
+            return Type::Void;
+        };
         self.walk_expr(&mut stmt.expr)
     }
 
@@ -161,7 +173,10 @@ impl<'st> TypeChecker<'st> {
         self.walk_expr(expr)
     }
 
-    fn walk_expr_struct(&mut self, expr: &ast::ExprStruct) -> ast::Type {
+    fn walk_expr_struct(&mut self, expr: &mut ast::ExprStruct) -> ast::Type {
+        for field in expr.init_fields.iter_mut() {
+            self.walk_expr(&mut field.expr);
+        }
         let Some(symbol) = self.symbol_table.get(&expr.name.lexeme) else {
             unreachable!("Should never get here, should fail in semantic analyzer");
         };

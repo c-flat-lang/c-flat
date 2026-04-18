@@ -1,17 +1,22 @@
-type Data struct {
-  id: s32,
-  date: s32,
+type List struct {
+  data: [2; s32],
+}
+
+fn init_list() List {
+  let list: List = List { .data = [0; 2] };
+  return list;
+}
+
+fn set_list(list: List, index: s32, value: s32) void {
+  list.data[index] = value;
 }
 
 pub fn main() s32 {
-  let data_array: [2; Data] = [ Data { .id = 123, .date = 1700000000 }; 2];
-  write_int(data_array[0].id);
-  write_char(10); // '\n'
-  write_int(data_array[0].date);
-  write_char(10); // '\n'
-  write_int(data_array[1].id);
-  write_char(10); // '\n'
-  write_int(data_array[1].date);
-  write_char(10); // '\n'
+  let list: List = init_list();
+  write_int(list.data[0]);
+  write_char(10);
+  set_list(list, 0, 1);
+  write_int(list.data[0]);
+  write_char(10);
   return 0;
 }

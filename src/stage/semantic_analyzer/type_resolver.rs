@@ -19,6 +19,21 @@ impl<'st> TypeResolver<'st> {
     }
 
     pub fn walk_items(mut self, items: &mut [ast::Item]) -> Result<()> {
+        let mut symbols: Vec<_> = self
+            .symbol_table
+            .iter_all()
+            .map(|(path, symbol)| (path, symbol.name.clone(), symbol.ty.clone()))
+            .collect();
+
+        for (_, _, ty) in symbols.iter_mut() {
+            self.walk_type(ty, Span::default());
+        }
+
+        for (path, name, ty) in symbols {
+            self.symbol_table
+                .get_mut_from_full_scope_path(&path, &name, |symbol| symbol.ty = ty.clone());
+        }
+
         for item in items.iter_mut() {
             self.walk_item(item);
         }
@@ -41,6 +56,10 @@ impl<'st> TypeResolver<'st> {
     fn walk_function(&mut self, function: &mut ast::Function) {
         // FIX: span is incorrect
         self.walk_type(&mut function.return_type, function.fn_token.span.clone());
+        for param in function.params.iter_mut() {
+            let span = param.name.span.clone();
+            self.walk_type(&mut param.ty, span);
+        }
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
@@ -61,7 +80,7 @@ impl<'st> TypeResolver<'st> {
             Expr::Return(expr_return) => self.walk_expr_return(expr_return),
             Expr::Struct(expr_struct) => self.walk_expr_struct(expr_struct),
             Expr::Declare(expr_decl) => self.walk_expr_declare(expr_decl),
-            Expr::Assignment(expr_assignment) => todo!("Assignment"),
+            Expr::Assignment(expr_assignment) => self.walk_expr_assignment(expr_assignment),
             Expr::Litral(litral) => {}
             Expr::Call(expr_call) => self.walk_expr_call(expr_call),
             Expr::Binary(expr_binary) => todo!("Binary"),
@@ -71,7 +90,7 @@ impl<'st> TypeResolver<'st> {
             Expr::MemberAccess(expr_member_access) => {
                 self.walk_expr_member_access(expr_member_access)
             }
-            Expr::Array(expr_array) => todo!("Array"),
+            Expr::Array(expr_array) => self.walk_expr_array(expr_array),
             Expr::ArrayIndex(expr_array_index) => self.walk_expr_array_index(expr_array_index),
             Expr::ArrayRepeat(expr_array_repeat) => self.walk_expr_array_repeat(expr_array_repeat),
             Expr::Block(expr_block) => todo!("Block"),
@@ -87,6 +106,11 @@ impl<'st> TypeResolver<'st> {
         self.walk_type(ty, span);
     }
 
+    fn walk_expr_assignment(&mut self, expr_assignment: &mut ast::ExprAssignment) {
+        self.walk_expr(&mut expr_assignment.left);
+        self.walk_expr(&mut expr_assignment.right);
+    }
+
     fn walk_expr_struct(&mut self, expr_struct: &mut ast::ExprStruct) {
         for field in expr_struct.init_fields.iter_mut() {
             self.walk_expr(&mut field.expr);
@@ -94,6 +118,7 @@ impl<'st> TypeResolver<'st> {
     }
 
     fn walk_expr_call(&mut self, expr_call: &mut ast::ExprCall) {
+        self.walk_expr(&mut expr_call.caller);
         for arg in expr_call.args.iter_mut() {
             self.walk_expr(arg);
         }
@@ -101,6 +126,14 @@ impl<'st> TypeResolver<'st> {
 
     fn walk_expr_member_access(&mut self, expr_member_access: &mut ast::ExprMemberAccess) {
         self.walk_expr(&mut expr_member_access.base);
+    }
+
+    fn walk_expr_array(&mut self, expr_array: &mut ast::ExprArray) {
+        let span = expr_array.span().clone();
+        self.walk_type(&mut expr_array.ty, span);
+        for expr in expr_array.elements.iter_mut() {
+            self.walk_expr(expr);
+        }
     }
 
     fn walk_expr_array_index(&mut self, expr_array_index: &mut ast::ExprArrayIndex) {

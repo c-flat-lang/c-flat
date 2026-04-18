@@ -4,7 +4,7 @@
 pub type Option enum (T) {
     Some(T),
     None,
-};
+}
 
 
 pub type ArrayList struct (T) {
@@ -23,7 +23,7 @@ pub type ArrayList struct (T) {
     }
 
     pub fn capacity(*self) u32 {
-        return data.len;
+        return self.data.len;
     }
 
     pub fn push(*self, value: T) void {
@@ -74,7 +74,7 @@ pub type ArrayList struct (T) {
             end: self.len,
         };
     }
-};
+}
 
 pub fn main() void {
     let array: ArrayList(i32) = ArrayList(i32).new();
