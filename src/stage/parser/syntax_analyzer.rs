@@ -114,9 +114,9 @@ impl Parser {
         }
 
         let struct_token = self.consume(TokenKind::Keyword(Keyword::Struct))?;
-        self.consume(TokenKind::LeftBrace)?;
+        let open_brace = self.consume(TokenKind::LeftBrace)?;
         let fields = self.parse_fields()?;
-        self.consume(TokenKind::RightBrace)?;
+        let close_brace = self.consume(TokenKind::RightBrace)?;
 
         Ok(ast::TypeDef::Struct(ast::Struct {
             visibility,
@@ -124,6 +124,8 @@ impl Parser {
             name,
             struct_token,
             fields,
+            open_brace,
+            close_brace,
         }))
     }
 
@@ -575,6 +577,7 @@ impl Parser {
             let semicolon = self.consume(TokenKind::Semicolon)?;
             let count = self.parse_expr()?; // must be compile-time integer
             let close_bracket = self.consume(TokenKind::RightBracket)?;
+            self.consume(TokenKind::Semicolon)?;
 
             return Ok(ast::Expr::ArrayRepeat(ast::ExprArrayRepeat {
                 open_bracket,
@@ -628,6 +631,9 @@ fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type> {
         _ => (),
     }
     let Some((prefix, number)) = parse_type(&token.lexeme) else {
+        if token.kind == TokenKind::Identifier {
+            return Ok(ast::Type::Name(token.lexeme.clone()));
+        }
         return Err(Box::new(ErrorExpectedType {
             found: token.clone(),
         }));

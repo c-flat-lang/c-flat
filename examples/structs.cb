@@ -1,9 +1,17 @@
-type Foo struct {
-  baz: s32,
-  bar: s32 = 10,
+type Data struct {
+  id: s32,
+  date: s32,
 }
 
 pub fn main() s32 {
-  let foo = Foo { .baz = 200 };
-  return foo.bar;
+  let data_array: [2; Data] = [ Data { .id = 123, .date = 1700000000 }; 2];
+  write_int(data_array[0].id);
+  write_char(10); // '\n'
+  write_int(data_array[0].date);
+  write_char(10); // '\n'
+  write_int(data_array[1].id);
+  write_char(10); // '\n'
+  write_int(data_array[1].date);
+  write_char(10); // '\n'
+  return 0;
 }

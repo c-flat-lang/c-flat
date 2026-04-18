@@ -1,4 +1,5 @@
 #![allow(unused)]
+use super::type_resolver::TypeResolver;
 use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
 use crate::stage::lexer::token::{Keyword as Kw, Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, StructType, Type};
@@ -49,7 +50,6 @@ impl Type {
 
 pub struct TypeChecker<'st> {
     symbol_table: &'st mut SymbolTable,
-    current_type: Option<Type>,
     errors: Vec<Box<dyn Report>>,
 }
 
@@ -57,12 +57,14 @@ impl<'st> TypeChecker<'st> {
     pub fn new(symbol_table: &'st mut SymbolTable) -> Self {
         Self {
             symbol_table,
-            current_type: None,
             errors: Vec::new(),
         }
     }
 
     pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
+        let mut resolver = TypeResolver::new(&mut self.symbol_table);
+        resolver.walk_items(ast)?;
+
         for item in ast.iter_mut() {
             self.walk_item(item);
         }
@@ -95,6 +97,8 @@ impl<'st> TypeChecker<'st> {
                 span: function.fn_token.span.clone(),
                 found: calulated_return_type,
                 expected: function.return_type.clone(),
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         function.return_type.clone()
@@ -172,6 +176,8 @@ impl<'st> TypeChecker<'st> {
                 span: expr.right.span(),
                 found: rhs,
                 expected: lhs.clone(),
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         lhs
@@ -186,6 +192,8 @@ impl<'st> TypeChecker<'st> {
                 span: expr.span(),
                 found: value_type.clone(),
                 expected: ty.clone(),
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
@@ -282,6 +290,8 @@ impl<'st> TypeChecker<'st> {
                 span: expr.condition.span(),
                 found: condition,
                 expected: Type::Bool,
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         let then_branch_type = self.walk_block(&mut expr.then_branch);
@@ -292,6 +302,8 @@ impl<'st> TypeChecker<'st> {
                     span: expr.span(),
                     found: then_branch_type.clone(),
                     expected: else_branch_type.clone(),
+                    #[cfg(feature = "debug")]
+                    compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
                 }));
             }
             expr.ty = then_branch_type.clone();
@@ -309,6 +321,8 @@ impl<'st> TypeChecker<'st> {
                     span: element.span(),
                     found: ty.clone(),
                     expected: other,
+                    #[cfg(feature = "debug")]
+                    compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
                 }));
             }
         }
@@ -325,6 +339,8 @@ impl<'st> TypeChecker<'st> {
                 found: index_type.clone(),
                 // HACK: usize
                 expected: Type::SignedNumber(32),
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
 
@@ -345,6 +361,8 @@ impl<'st> TypeChecker<'st> {
                 span: count.span(),
                 found: count_type.clone(),
                 expected: Type::SignedNumber(32),
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
             return value_type;
         };
@@ -364,6 +382,8 @@ impl<'st> TypeChecker<'st> {
                 span: expr.condition.span(),
                 found: condition,
                 expected: Type::Bool,
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         self.walk_block(&mut expr.body)

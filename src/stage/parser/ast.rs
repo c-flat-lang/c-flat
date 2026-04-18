@@ -13,6 +13,7 @@ pub enum Type {
     Pointer(Box<Self>),
     Struct(StructType),
     Enum(String),
+    Name(String),
     #[default]
     Void,
 }
@@ -37,7 +38,8 @@ impl Type {
                     .collect(),
                 packed: struct_type.packed,
             }),
-            Self::Enum(_) => todo!(),
+            Self::Enum(name) => todo!("{name}"),
+            Self::Name(_) => unreachable!("Bro you screwed up"),
             Self::Void => bitbox::ir::Type::Void,
         }
     }
@@ -50,8 +52,15 @@ impl Type {
             }
             Type::Array(count, ty) => count * ty.size(),
             Type::Pointer(_) => 64,
-            Type::Struct(_) => todo!("Size of struct"),
+            Type::Struct(struct_type) => {
+                let mut size = 0;
+                for (_, ty) in &struct_type.fields {
+                    size += ty.size();
+                }
+                size
+            }
             Type::Enum(_) => todo!("Size of enum"),
+            Type::Name(..) => unreachable!("Bro you screwed up"),
             Type::Void => 0,
         }
     }
@@ -68,6 +77,7 @@ impl std::fmt::Display for Type {
             Type::Pointer(ty) => write!(f, "*{}", ty),
             Type::Struct(symbol) => write!(f, "{}", symbol.name),
             Type::Enum(name) => write!(f, "{}", name),
+            Type::Name(name) => write!(f, "{}", name),
             Type::Void => write!(f, "void"),
         }
     }
@@ -157,6 +167,16 @@ pub struct Struct {
     pub name: Token,
     pub struct_token: Token,
     pub fields: Vec<Field>,
+    pub open_brace: Token,
+    pub close_brace: Token,
+}
+
+impl Struct {
+    pub fn span(&self) -> Span {
+        let start = self.type_token.span.start;
+        let end = self.close_brace.span.end;
+        start..end
+    }
 }
 
 #[derive(Debug, Clone)]

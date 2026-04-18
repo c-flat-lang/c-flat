@@ -1,5 +1,6 @@
 pub mod symbol_table;
 pub mod type_check;
+mod type_resolver;
 
 use super::Stage;
 use crate::error::Result;

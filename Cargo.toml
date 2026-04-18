@@ -20,6 +20,7 @@ pretty_assertions = "1.4.0"
 members = ["bitbeat", "bitbox", "report", "runtime"]
 
 [features]
+debug = []
 default = []
 wasm = ["wasm-bindgen", "js-sys", "bitbox/wasm"]
 uuids = ["bitbox/uuids"]

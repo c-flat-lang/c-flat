@@ -1,7 +1,7 @@
-use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
-use crate::stage::lexer::token::Token;
+use crate::error::{ErrorMissMatchedType, ErrorUndefinedSymbol, Errors, Report, Result};
+use crate::stage::lexer::token::{Span, Token};
 
-use crate::stage::parser::ast::{self, Expr};
+use crate::stage::parser::ast::{self, Expr, Type};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -233,7 +233,8 @@ impl SymbolTableBuilder {
     }
 
     fn walk_expr_declare(&mut self, expr: &ast::ExprDecl) {
-        let ty = expr.ty.as_ref().map_or(ast::Type::Void, |ty| ty.clone());
+        let mut ty = expr.ty.as_ref().map_or(ast::Type::Void, |ty| ty.clone());
+        self.walk_type(&mut ty, expr.span());
         let symbol = Symbol {
             name: expr.ident.lexeme.clone(),
             kind: SymbolKind::Variable,
@@ -303,6 +304,38 @@ impl SymbolTableBuilder {
         let ast::ExprMemberAccess { base, .. } = expr;
 
         self.walk_expr(base);
+    }
+
+    fn walk_type(&mut self, ty: &mut Type, span: Span) {
+        let found = ty.clone();
+        match ty {
+            Type::Bool
+            | Type::UnsignedNumber(_)
+            | Type::SignedNumber(_)
+            | Type::Float(_)
+            | Type::Void => {}
+            Type::Array(_, ty) => self.walk_type(ty, span),
+            Type::Pointer(ty) => self.walk_type(ty, span),
+            Type::Struct(struct_type) => {
+                for (_, ty) in struct_type.fields.iter_mut() {
+                    self.walk_type(ty, span.clone());
+                }
+            }
+            Type::Enum(_) => todo!("Enum"),
+            Type::Name(name) => {
+                let Some(symbol) = self.table.get(&name) else {
+                    self.errors.push(Box::new(ErrorMissMatchedType {
+                        span: span,
+                        found,
+                        expected: Type::Name(name.clone()),
+                        #[cfg(feature = "debug")]
+                        compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
+                    }));
+                    return;
+                };
+                *ty = symbol.ty.clone();
+            }
+        }
     }
 }
 

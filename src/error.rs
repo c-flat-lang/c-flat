@@ -8,17 +8,29 @@ pub struct ErrorMissMatchedType {
     pub span: Span,
     pub found: Type,
     pub expected: Type,
+    #[cfg(feature = "debug")]
+    pub compiler_line: String,
 }
 
 impl Report for ErrorMissMatchedType {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.span)
-            .with_message("mismatched type")
-            .with_note(format!(
+        let mut report =
+            ReportBuilder::new(filename, src, &self.span).with_message("mismatched type");
+        #[cfg(not(feature = "debug"))]
+        {
+            report = report.with_note(format!(
                 "expected `{}`, found `{}`",
                 self.expected, self.found
-            ))
-            .build()
+            ));
+        }
+        #[cfg(feature = "debug")]
+        {
+            report = report.with_note(format!(
+                "expected `{}`, found `{}`\n{}",
+                self.expected, self.found, self.compiler_line
+            ));
+        }
+        report.build()
     }
 }
 
