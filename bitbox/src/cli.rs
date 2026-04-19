@@ -36,15 +36,15 @@ impl Cli {
             eprintln!("    --target      Target triple");
             eprintln!("    --dump-after  Print debug info after pass");
             eprintln!("    --dump-after  Print debug info after pass");
-            eprintln!("                  options: lowering-ir");
-            eprintln!("                  options: emit-x86_64-linux");
-            eprintln!("                  options: emit-wasm32");
-            eprintln!("                  options: emit-bitbeat");
-            eprintln!("                  options: control-flow-graph");
-            eprintln!("                  options: liveness-analysis");
-            eprintln!("                  options: detect-loops");
-            eprintln!("                  options: phi-node-elimination");
-            eprintln!("                  options: local-function-variables");
+            eprintln!("                  options:");
+            eprintln!("                    lowering-ir");
+            eprintln!("                    emit");
+            eprintln!("                    control-flow-graph");
+            eprintln!("                    liveness-analysis");
+            eprintln!("                    detect-loops");
+            eprintln!("                    phi-node-elimination");
+            eprintln!("                    local-function-variables");
+            eprintln!("                    structuring-ir");
             eprintln!("    -h, --help    Print this help message");
 
             std::process::exit(0);
@@ -72,27 +72,25 @@ impl Cli {
                 .unwrap();
             let mode = match value.strip_prefix("--dump-after=").unwrap() {
                 "lowering-ir" => DebugMode::LoweredIr,
-                "emit-wasm32" => DebugMode::EmitWasm32,
-                "emit-bitbeat" => DebugMode::EmitBitbeat,
-                "emit-x86-64" => DebugMode::EmitX86_64,
+                "emit" => DebugMode::Emit,
                 "control-flow-graph" => DebugMode::ControlFlowGraph,
                 "liveness-analysis" => DebugMode::LivenessAnalysis,
                 "detect-loops" => DebugMode::DetectLoops,
                 "phi-node-elimination" => DebugMode::PhiNodeElimination,
                 "local-function-variables" => DebugMode::LocalFunctionVariables,
+                "structuring-ir" => DebugMode::StructuredIr,
                 _ => {
                     eprintln!("Unknown debug mode: {}", value);
                     eprintln!(
                         r#"Options:
                         lowering-ir,
-                        emit-wasm32,
-                        emit-bitbeat,
-                        emit-x86-64,
+                        emit,
                         control-flow-graph,
                         liveness-analysis,
                         detect-loops,
                         phi-node-elimination
                         local-function-variables
+                        structuring-ir
                         "#
                     );
                     std::process::exit(1);
@@ -125,9 +123,7 @@ pub enum DebugMode {
     Ast,
     ControlFlowGraph,
     DetectLoops,
-    EmitBitbeat,
-    EmitWasm32,
-    EmitX86_64,
+    Emit,
     Ir,
     LivenessAnalysis,
     LocalFunctionVariables,
@@ -135,15 +131,14 @@ pub enum DebugMode {
     PhiNodeElimination,
     SymbolTable,
     Token,
+    StructuredIr,
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
     fn from(value: DebugMode) -> Option<bitbox::passes::DebugPass> {
         match value {
             DebugMode::LoweredIr => Some(bitbox::passes::DebugPass::LoweredIr),
-            DebugMode::EmitWasm32 => Some(bitbox::passes::DebugPass::EmitWasm32),
-            DebugMode::EmitBitbeat => Some(bitbox::passes::DebugPass::EmitBitbeat),
-            DebugMode::EmitX86_64 => Some(bitbox::passes::DebugPass::EmitX86_64),
+            DebugMode::Emit => Some(bitbox::passes::DebugPass::Emit),
             DebugMode::ControlFlowGraph => Some(bitbox::passes::DebugPass::ControlFlowGraph),
             DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
             DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
@@ -151,6 +146,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::LocalFunctionVariables => {
                 Some(bitbox::passes::DebugPass::LocalFunctionVariables)
             }
+            DebugMode::StructuredIr => Some(bitbox::passes::DebugPass::StructuredIr),
             _ => None,
         }
     }

@@ -8,18 +8,12 @@ use super::Pass;
 pub struct PhiNodeEliminationPass;
 
 impl Pass for PhiNodeEliminationPass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        _ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        if !matches!(debug_mode, Some(DebugPass::PhiNodeElimination)) {
-            return false;
-        }
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::PhiNodeElimination
+    }
 
-        eprintln!("--- Phi Node Elimination Pass ---");
-        true
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {
+        todo!()
     }
 
     fn run(
@@ -27,7 +21,6 @@ impl Pass for PhiNodeEliminationPass {
         module: &mut crate::ir::Module,
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{: >30?}Pass", DebugPass::PhiNodeElimination);
         for function in module.functions.iter_mut() {
             let mut nodes = Vec::new();
             let mut label_to_block_id: HashMap<String, usize> = HashMap::new();

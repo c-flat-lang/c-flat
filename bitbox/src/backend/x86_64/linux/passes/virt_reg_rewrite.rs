@@ -1,13 +1,12 @@
 pub struct VirtRegRewritePass;
 
 impl crate::passes::Pass for VirtRegRewritePass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        _ctx: &crate::backend::Context,
-        _debug_mode: Option<crate::passes::DebugPass>,
-    ) -> bool {
-        false
+    fn debug_pass(&self) -> crate::passes::DebugPass {
+        crate::passes::DebugPass::VirtRegRewrite
+    }
+
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {
+        todo!()
     }
 
     fn run(

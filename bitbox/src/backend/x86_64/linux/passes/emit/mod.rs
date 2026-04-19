@@ -41,18 +41,12 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
 pub struct EmitX86_64LinuxPass;
 
 impl crate::passes::Pass for EmitX86_64LinuxPass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        let Some(DebugPass::EmitX86_64): Option<DebugPass> = debug_mode else {
-            return false;
-        };
-        eprintln!("--- Dump x86_64 ---");
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::Emit
+    }
+
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
         eprintln!("{}", ctx.output.get_x86_64());
-        true
     }
 
     fn run(
@@ -60,8 +54,6 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
         module: &mut ir::Module,
         ctx: &mut Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{:?}", EmitX86_64LinuxPass);
-
         if !module.functions.iter().any(|f| f.name == "main") {
             return Err(crate::error::Error::MissingMainFunction);
         }

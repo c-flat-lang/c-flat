@@ -123,27 +123,27 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_block(&mut self, block: &mut ast::ExprBlock) -> ast::Type {
-        let mut result: Vec<ast::Type> = vec![];
-        for statement in block.statements.iter_mut() {
-            let return_type = self.walk_stmt(statement);
-            if return_type != Type::Void {
-                result.push(return_type);
+        let mut last_type = Type::Void;
+
+        let last_index = block.statements.len() - 1;
+        for (i, statement) in block.statements.iter_mut().enumerate() {
+            if i != last_index {
+                self.walk_expr(&mut statement.expr);
+                continue;
+            }
+
+            let ty = self.walk_expr(&mut statement.expr);
+
+            if let ast::Expr::Return(expr) = &*statement.expr {
+                last_type = ty;
+            } else if statement.delem.is_some() {
+                last_type = Type::Void;
+            } else {
+                last_type = ty;
             }
         }
-        result
-            .iter()
-            .all(|x| matches!(result.first(), Some(y) if x == y))
-            .then_some(result.first().cloned())
-            .flatten()
-            .unwrap_or(Type::Void)
-    }
 
-    fn walk_stmt(&mut self, stmt: &mut ast::Statement) -> ast::Type {
-        let ast::Expr::Return(_) = *stmt.expr else {
-            self.walk_expr(&mut stmt.expr);
-            return Type::Void;
-        };
-        self.walk_expr(&mut stmt.expr)
+        last_type
     }
 
     fn walk_expr(&mut self, expr: &mut ast::Expr) -> ast::Type {
@@ -322,8 +322,9 @@ impl<'st> TypeChecker<'st> {
                 }));
             }
             expr.ty = then_branch_type.clone();
+            return then_branch_type;
         }
-        then_branch_type
+        Type::Void
     }
 
     fn walk_expr_array(&mut self, expr: &mut ast::ExprArray) -> Type {
@@ -467,11 +468,11 @@ mod tests {
             crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::default()
                 .build(&mut ast)
                 .unwrap();
-        eprintln!("{:#?}", symbol_table);
         let type_checker = TypeChecker::new(&mut symbol_table);
         if let Err(errors) = type_checker.check(&mut ast) {
             eprintln!("{}", errors.report("type_check.cb", src));
             assert!(false);
         }
+        assert!(true);
     }
 }

@@ -84,16 +84,16 @@ impl<'st> TypeResolver<'st> {
             Expr::Litral(litral) => {}
             Expr::Call(expr_call) => self.walk_expr_call(expr_call),
             Expr::Binary(expr_binary) => self.walk_expr_binary(expr_binary),
-            Expr::While(expr_while) => todo!("While"),
+            Expr::While(expr_while) => self.walk_expr_while(expr_while),
             Expr::Identifier(token) => {}
-            Expr::IfElse(expr_if_else) => todo!("IfElse"),
+            Expr::IfElse(expr_if_else) => self.walk_expr_if_else(expr_if_else),
             Expr::MemberAccess(expr_member_access) => {
                 self.walk_expr_member_access(expr_member_access)
             }
             Expr::Array(expr_array) => self.walk_expr_array(expr_array),
             Expr::ArrayIndex(expr_array_index) => self.walk_expr_array_index(expr_array_index),
             Expr::ArrayRepeat(expr_array_repeat) => self.walk_expr_array_repeat(expr_array_repeat),
-            Expr::Block(expr_block) => todo!("Block"),
+            Expr::Block(expr_block) => self.walk_expr_block(expr_block),
         }
     }
 
@@ -129,6 +129,23 @@ impl<'st> TypeResolver<'st> {
         self.walk_expr(&mut expr_binary.right);
     }
 
+    fn walk_expr_while(&mut self, expr_while: &mut ast::ExprWhile) {
+        self.walk_expr(&mut expr_while.condition);
+        for stmt in expr_while.body.statements.iter_mut() {
+            self.walk_stmt(stmt);
+        }
+    }
+
+    fn walk_expr_if_else(&mut self, expr_if_else: &mut ast::ExprIfElse) {
+        self.walk_expr(&mut expr_if_else.condition);
+        for stmt in expr_if_else.then_branch.statements.iter_mut() {
+            self.walk_stmt(stmt);
+        }
+        if let Some(else_branch) = &mut expr_if_else.else_branch {
+            self.walk_expr(else_branch);
+        }
+    }
+
     fn walk_expr_member_access(&mut self, expr_member_access: &mut ast::ExprMemberAccess) {
         self.walk_expr(&mut expr_member_access.base);
     }
@@ -153,6 +170,12 @@ impl<'st> TypeResolver<'st> {
         self.walk_expr(&mut expr_array_repeat.value);
         let span = expr_array_repeat.span().clone();
         self.walk_type(&mut expr_array_repeat.ty, span);
+    }
+
+    fn walk_expr_block(&mut self, block: &mut ast::ExprBlock) {
+        for statement in block.statements.iter_mut() {
+            self.walk_stmt(statement);
+        }
     }
 
     fn walk_expr_return(&mut self, expr_return: &mut ast::ExprReturn) {

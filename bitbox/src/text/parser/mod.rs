@@ -189,6 +189,7 @@ impl Parser {
 
         let arguments = match inst {
             token::Instruction::Add => self.parse_add()?,
+            token::Instruction::Assign => self.parse_assign()?,
             token::Instruction::Alloc => self.parse_alloc()?,
             token::Instruction::Call => self.parse_call()?,
             token::Instruction::Cmp => self.parse_cmp()?,
@@ -286,6 +287,16 @@ impl Parser {
         let rhs = self.next()?;
         self.consume(TokenKind::Delimiter)?;
         Ok(vec![ty, des, lhs, rhs])
+    }
+
+    fn parse_assign(&mut self) -> Result<Vec<Token>> {
+        let ty = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Colon)?;
+        let des = self.consume(TokenKind::Identifier)?;
+        self.consume(TokenKind::Comma)?;
+        let src = self.next()?;
+        self.consume(TokenKind::Delimiter)?;
+        Ok(vec![ty, des, src])
     }
 
     fn parse_phi(&mut self) -> Result<Vec<Token>> {

@@ -461,20 +461,13 @@ pub struct LivenessAnalysisPass;
 use std::collections::{HashMap, HashSet};
 
 impl Pass for LivenessAnalysisPass {
-    fn debug(
-        &self,
-        module: &crate::ir::Module,
-        ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        if !matches!(debug_mode, Some(DebugPass::LivenessAnalysis)) {
-            return false;
-        }
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::LivenessAnalysis
+    }
 
+    fn debug(&self, module: &crate::ir::Module, ctx: &crate::backend::Context) {
         eprintln!("{: >30?}", DebugPass::LivenessAnalysis);
         ctx.liveness.print(module);
-
-        true
     }
 
     fn run(
@@ -482,8 +475,6 @@ impl Pass for LivenessAnalysisPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{: >30}", "LivenessAnalysisPass");
-
         for function in &module.functions {
             let mut label_to_block_id: HashMap<String, BlockId> = HashMap::new();
             let mut id_to_block: HashMap<BlockId, &BasicBlock> = HashMap::new();

@@ -147,6 +147,16 @@ impl Emitter {
                 let des = target.alloc_variable(&ty, des);
                 target.assembler.add(des, lhs, rhs);
             }
+            super::lexer::token::Instruction::Assign => {
+                let [ty, des, src] = instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @assign");
+                };
+                let ty = ir::Type::from(ty.lexeme.as_str());
+                let des = target.alloc_variable(&ty, des);
+                let src = self.token_to_operand(src, &ty);
+                target.assembler.assign(des, src);
+            }
             super::lexer::token::Instruction::Alloc => {
                 let [ty, des, size] = instruction.arguments.as_slice() else {
                     // NOTE: If this happens then the parser is broken.
@@ -169,8 +179,21 @@ impl Emitter {
                     .enumerate()
                     .map(|(idx, token)| {
                         let Some(function) = self.functions.get(&name.lexeme) else {
-                            // NOTE: If this happens then the parser is broken.
-                            panic!("No function named {} for @call", name.lexeme);
+                            let Some(symbol) = self.symbol_table.get(&name.lexeme) else {
+                                // NOTE: If this happens then the parser is broken.
+                                panic!("No function named {} for @call", name.lexeme);
+                            };
+
+                            return symbol
+                                .params
+                                .as_ref()
+                                .map(|params| {
+                                    let Some(ty) = params.get(idx) else {
+                                        panic!("Invalid index {} for @call @ {}", name.lexeme, idx);
+                                    };
+                                    self.token_to_operand(token, ty)
+                                })
+                                .unwrap();
                         };
                         let Some(ty) = function.get_param_type(idx) else {
                             panic!("Invalid index {} for @call", name.lexeme);
@@ -321,7 +344,10 @@ impl Emitter {
 
                 if &symbol.ty != ty {
                     // NOTE: If this happens then the parser is broken.
-                    panic!("Type mismatch for variable: {}", token.lexeme);
+                    panic!(
+                        "Type mismatch for variable: {} {} != {}",
+                        token.lexeme, symbol.ty, ty
+                    );
                 }
 
                 let var = Variable::new(symbol.name.clone(), symbol.ty.clone());

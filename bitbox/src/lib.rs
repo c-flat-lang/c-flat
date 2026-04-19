@@ -88,10 +88,7 @@ impl Compiler {
     pub fn run(&self, module: &mut ir::Module) -> Result<Option<String>, error::Error> {
         let mut ctx = backend::Context::new(&self.target);
         for mut pass in self.backend.passes() {
-            pass.run(module, &mut ctx)?;
-            if pass.debug(module, &ctx, self.debug_mode) {
-                return Ok(None);
-            }
+            pass.execute(module, &mut ctx, self.debug_mode)?;
         }
 
         let compiler_result = ctx.output.finish();

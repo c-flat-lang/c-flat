@@ -35,19 +35,12 @@ impl LabelCreator {
 pub struct LoweringPass;
 
 impl Pass for LoweringPass {
-    fn debug(
-        &self,
-        module: &crate::ir::Module,
-        _ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        if !matches!(debug_mode, Some(DebugPass::LoweredIr)) {
-            return false;
-        }
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::LoweredIr
+    }
 
-        eprintln!("--- Dumping LoweringPass ---");
+    fn debug(&self, module: &crate::ir::Module, _ctx: &crate::backend::Context) {
         eprintln!("{}", module);
-        true
     }
 
     fn run(
@@ -55,7 +48,6 @@ impl Pass for LoweringPass {
         module: &mut crate::ir::Module,
         _ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{: >30?}Pass", DebugPass::LoweredIr);
         let mut var_creator = LabelCreator::default();
         for func in &mut module.functions {
             loop {

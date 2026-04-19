@@ -422,7 +422,7 @@ impl fmt::Display for ICall {
         if let Some(dest) = &self.des {
             return write!(
                 f,
-                "{} {:<5} : {}, {}({})",
+                "{} {:<5} : {} {}({})",
                 Paint::blue("@call"),
                 Paint::yellow(&dest.ty),
                 color_var(dest),
@@ -495,7 +495,7 @@ impl fmt::Display for IReturn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {:<5}, {}",
+            "{} {:<5} : {}",
             Paint::blue("@ret"),
             Paint::yellow(&self.ty),
             color_op(&self.src),

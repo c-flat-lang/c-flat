@@ -103,9 +103,7 @@ impl Cli {
                 .unwrap();
             let mode = match value.strip_prefix("--dump-after=").unwrap() {
                 "lowering-ir" => DebugMode::LoweredIr,
-                "emit-wasm32" => DebugMode::EmitWasm32,
-                "emit-bitbeat" => DebugMode::EmitBitbeat,
-                "emit-x86-64" => DebugMode::EmitX86_64,
+                "emit" => DebugMode::Emit,
                 "control-flow-graph" => DebugMode::ControlFlowGraph,
                 "liveness-analysis" => DebugMode::LivenessAnalysis,
                 "detect-loops" => DebugMode::DetectLoops,
@@ -115,12 +113,12 @@ impl Cli {
                     eprintln!(
                         r#"Options:
                         lowering-ir,
-                        emit-wasm32,
-                        emit-bitbeat,
+                        emit,
                         control-flow-graph,
                         liveness-analysis,
                         detect-loops,
                         phi-node-elimination
+                        structuring-ir
                         "#
                     );
                     std::process::exit(1);
@@ -185,9 +183,7 @@ fn print_help() {
     eprintln!("  --target=TRIPLE");
     eprintln!("  --dump-after=PASS");
     eprintln!("    lowering-ir");
-    eprintln!("    emit-x86-64");
-    eprintln!("    emit-wasm32");
-    eprintln!("    emit-bitbeat");
+    eprintln!("    emit");
     eprintln!("    control-flow-graph");
     eprintln!("    liveness-analysis");
     eprintln!("    detect-loops");
@@ -210,9 +206,7 @@ pub enum DebugMode {
     SymbolTable,
     Ir,
     LoweredIr,
-    EmitWasm32,
-    EmitBitbeat,
-    EmitX86_64,
+    Emit,
     ControlFlowGraph,
     LivenessAnalysis,
     DetectLoops,
@@ -234,9 +228,7 @@ impl DebugMode {
     fn from_dump_after(value: &str) -> Self {
         match value {
             "lowering-ir" => Self::LoweredIr,
-            "emit-wasm32" => Self::EmitWasm32,
-            "emit-bitbeat" => Self::EmitBitbeat,
-            "emit-x86-64" => Self::EmitX86_64,
+            "emit" => Self::Emit,
             "control-flow-graph" => Self::ControlFlowGraph,
             "liveness-analysis" => Self::LivenessAnalysis,
             "detect-loops" => Self::DetectLoops,
@@ -246,9 +238,7 @@ impl DebugMode {
                 eprintln!("Unknown debug mode: {value}");
                 eprintln!("Options:");
                 eprintln!("   lowering-ir");
-                eprintln!("   emit-wasm32");
-                eprintln!("   emit-bitbeat");
-                eprintln!("   emit-x86-64");
+                eprintln!("   emit");
                 eprintln!("   control-flow-graph");
                 eprintln!("   liveness-analysis");
                 eprintln!("   detect-loops");
@@ -265,9 +255,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
         use bitbox::passes::DebugPass::*;
         Some(match mode {
             DebugMode::LoweredIr => LoweredIr,
-            DebugMode::EmitWasm32 => EmitWasm32,
-            DebugMode::EmitBitbeat => EmitBitbeat,
-            DebugMode::EmitX86_64 => EmitX86_64,
+            DebugMode::Emit => Emit,
             DebugMode::ControlFlowGraph => ControlFlowGraph,
             DebugMode::LivenessAnalysis => LivenessAnalysis,
             DebugMode::DetectLoops => DetectLoops,

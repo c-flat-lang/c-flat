@@ -6,21 +6,15 @@ use crate::passes::{DebugPass, Pass};
 pub struct EmitBitbeatPass;
 
 impl Pass for EmitBitbeatPass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        let Some(DebugPass::EmitBitbeat) = debug_mode else {
-            return false;
-        };
-        eprintln!("--- Dump Bitbeat ---");
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::Emit
+    }
+
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
         let module = ctx.output.get_bitbeat();
         let data = ron::ser::to_string_pretty(module, ron::ser::PrettyConfig::default())
             .expect("Failed to serialize module");
         eprintln!("{}", data);
-        true
     }
 
     fn run(
@@ -28,7 +22,6 @@ impl Pass for EmitBitbeatPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("EmitBitbeatPass");
         for function in module.functions.iter() {
             function.lower(ctx, &mut *self)?;
         }

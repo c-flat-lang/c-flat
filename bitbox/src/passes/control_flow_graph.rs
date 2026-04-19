@@ -44,18 +44,11 @@ impl ControlFlowGraph {
 pub struct ControlFlowGraphPass;
 
 impl Pass for ControlFlowGraphPass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        if !matches!(debug_mode, Some(DebugPass::ControlFlowGraph)) {
-            return false;
-        }
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::ControlFlowGraph
+    }
 
-        eprintln!("{: >30?}", DebugPass::ControlFlowGraph);
-
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
         let formater = |data: &HashMap<String, Table>, kind: &str| {
             let mut data = data
                 .iter()
@@ -81,8 +74,6 @@ impl Pass for ControlFlowGraphPass {
 
         formater(&ctx.cfg.in_bound, "IN BOUND");
         formater(&ctx.cfg.out_bound, "OUT BOUND");
-
-        true
     }
 
     fn run(
@@ -90,7 +81,6 @@ impl Pass for ControlFlowGraphPass {
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{: >30}", "ControlFlowGraphPass");
         for function in module.functions.iter() {
             let mut name_to_block_id = std::collections::HashMap::new();
 

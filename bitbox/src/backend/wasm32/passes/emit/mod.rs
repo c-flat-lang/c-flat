@@ -14,23 +14,17 @@ use wasm_encoder::{
 pub struct EmitWasm32Pass;
 
 impl Pass for EmitWasm32Pass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        let Some(DebugPass::EmitWasm32) = debug_mode else {
-            return false;
-        };
-        eprintln!("--- Dump Wasm32 ---");
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::Emit
+    }
+
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
         let mut wasm_module = ctx.output.get_wasm32().clone();
         let bytes = wasm_module.finish();
         match wasmprinter::print_bytes(&bytes) {
             Ok(wat) => eprintln!("{wat}"),
             Err(err) => eprintln!("{err}"),
         }
-        true
     }
 
     fn run(
@@ -38,8 +32,6 @@ impl Pass for EmitWasm32Pass {
         module: &mut Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{: >30}", "EmitWasm32Pass");
-
         {
             let module = ctx.output.get_mut_wasm32();
 
@@ -252,6 +244,9 @@ impl Lower<EmitWasm32Pass> for ir::Function {
             let mut instructions = f.instructions();
 
             let mut target = Wasm32LowerContext::new(self.name.to_string(), &mut instructions);
+            for (index, block) in self.blocks.iter().enumerate() {
+                target.blocks.insert(block.label.clone(), index as u32);
+            }
             for block in self.blocks.iter() {
                 block.lower(ctx, &mut target)?;
             }

@@ -79,6 +79,7 @@ impl<'a> Lexer<'a> {
 
         let kind = match lexeme.as_str() {
             "@add" => Instruction::Add,
+            "@assign" => Instruction::Assign,
             "@alloc" => Instruction::Alloc,
             "@call" => Instruction::Call,
             "@cmp" => Instruction::Cmp,

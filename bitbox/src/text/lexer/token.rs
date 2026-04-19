@@ -58,6 +58,7 @@ pub enum TokenKind {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
     Add,
+    Assign,
     Alloc,
     Call,
     Cmp,
@@ -75,19 +76,20 @@ pub enum Instruction {
 impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Instruction::Add => write!(f, "@add"),
-            Instruction::Alloc => write!(f, "@alloc"),
-            Instruction::Call => write!(f, "@call"),
-            Instruction::Cmp => write!(f, "@cmp"),
-            Instruction::ElemGet => write!(f, "@elemget"),
-            Instruction::ElemSet => write!(f, "@elemset"),
-            Instruction::Jump => write!(f, "@jump"),
-            Instruction::JumpIf => write!(f, "@jumpif"),
-            Instruction::Load => write!(f, "@load"),
-            Instruction::Mul => write!(f, "@mul"),
-            Instruction::Phi => write!(f, "@phi"),
-            Instruction::Ret => write!(f, "@ret"),
-            Instruction::Sub => write!(f, "@sub"),
+            Self::Add => write!(f, "@add"),
+            Self::Assign => write!(f, "@assign"),
+            Self::Alloc => write!(f, "@alloc"),
+            Self::Call => write!(f, "@call"),
+            Self::Cmp => write!(f, "@cmp"),
+            Self::ElemGet => write!(f, "@elemget"),
+            Self::ElemSet => write!(f, "@elemset"),
+            Self::Jump => write!(f, "@jump"),
+            Self::JumpIf => write!(f, "@jumpif"),
+            Self::Load => write!(f, "@load"),
+            Self::Mul => write!(f, "@mul"),
+            Self::Phi => write!(f, "@phi"),
+            Self::Ret => write!(f, "@ret"),
+            Self::Sub => write!(f, "@sub"),
         }
     }
 }

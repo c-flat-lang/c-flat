@@ -73,29 +73,24 @@ impl LocalFunctionVariables {
 pub struct LocalFunctionVariablesPass;
 
 impl Pass for LocalFunctionVariablesPass {
-    fn debug(
-        &self,
-        _module: &crate::ir::Module,
-        _ctx: &crate::backend::Context,
-        debug_mode: Option<DebugPass>,
-    ) -> bool {
-        if !matches!(debug_mode, Some(DebugPass::LocalFunctionVariables)) {
-            return false;
-        }
+    fn debug_pass(&self) -> DebugPass {
+        DebugPass::LocalFunctionVariables
+    }
+
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {
         for (function_name, variables) in _ctx.local_function_variables.iter() {
             eprintln!("{}:", function_name);
             for variable in variables {
                 eprintln!("  {} : {}", variable.name, variable.ty);
             }
         }
-        true
     }
+
     fn run(
         &mut self,
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
-        eprintln!("{: >30}", "LocalFunctionVariablesPass");
         for function in module.functions.iter() {
             for parameter in function.params.iter() {
                 ctx.local_function_variables

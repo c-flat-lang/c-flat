@@ -8,8 +8,8 @@ pub type Span = std::ops::Range<usize>;
 
 #[macro_export]
 macro_rules! ty {
-    // signed integers: i 1, i 32, i 64, etc
-    (i $bits:literal) => {
+    // signed integers: i 1, s 32, s 64, etc
+    (s $bits:literal) => {
         $crate::ir::Type::Signed($bits)
     };
 
@@ -41,24 +41,24 @@ macro_rules! ty {
 
 #[macro_export]
 macro_rules! var {
-    ($name:literal : $ty:tt) => {
-        $crate::ir::Variable::new($name.to_string(), ty!($ty))
+    ($name:literal : $($ty:tt)+) => {
+        $crate::ir::Variable::new($name.to_string(), ty!($($ty)+))
     };
 }
 
 #[macro_export]
 macro_rules! tmp {
-    ($asm:expr, $ty:tt) => {
-        $asm.var(ty!($ty))
+    ($asm:expr, $($ty:tt)+) => {
+        $asm.var(ty!($($ty)+))
     };
 }
 
 #[macro_export]
 macro_rules! op {
-    ($value:literal : $ty:tt) => {
+    ($value:literal : $($ty:tt)+) => {
         $crate::ir::Operand::ConstantInt($crate::ir::ConstantInt {
             value: $value,
-            ty: ty!($ty),
+            ty: ty!($($ty)+),
         })
     };
     ($var:expr) => {
@@ -348,10 +348,9 @@ impl std::fmt::Display for BasicBlock {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(
             f,
-            "{} {} {}:",
-            Paint::red("block"),
-            Paint::bold(&self.id.0),
-            Paint::yellow(&self.label)
+            "%{}: {}",
+            Paint::yellow(&self.label),
+            Paint::dim(&format!("// {}", &self.id.0)).rgb(128, 128, 128)
         )?;
 
         for instruction in &self.instructions {

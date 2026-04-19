@@ -1,0 +1,19 @@
+fn factorial(n: s32) s32 {
+  return if n == 1 {
+    let result = 1;
+    result
+  } else {
+    let n_minus_one = n - 1;
+    let recursive_result = factorial(n_minus_one);
+    let result = n * recursive_result;
+    result
+  };
+}
+
+pub fn main() s32 {
+  let input = 5;
+  let fact_result = factorial(input);
+  write_int(fact_result);
+  write_char(10);
+  return fact_result;
+}

@@ -577,7 +577,8 @@ impl Lower<Wasm32LowerContext<'_>> for IIfElse {
             block.lower(ctx, target)?;
         }
 
-        // let ty: BlockType = result
+        // let ty: BlockType = self
+        //     .result
         //     .as_ref()
         //     .map(|r| r.ty.clone().into())
         //     .unwrap_or(BlockType::Empty);

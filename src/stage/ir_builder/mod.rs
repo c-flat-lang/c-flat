@@ -64,7 +64,7 @@ impl IRBuilder {
         }
 
         let mut assembler = function_builder.assembler();
-        assembler.create_block(format!("entry_{}", name.lexeme));
+        assembler.create_block("entry");
 
         body.lower(&mut assembler, &mut ctx);
 

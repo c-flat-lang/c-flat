@@ -19,7 +19,7 @@ impl Default for SymbolTableBuilder {
             ty: ir::Type::Void,
             visibility: ir::Visibility::Public,
             kind: SymbolKind::Function,
-            params: Some(vec![ir::Type::Unsigned(32)]),
+            params: Some(vec![ir::Type::Signed(32)]),
         });
         table.push(Symbol {
             name: "writeln".to_string(),
@@ -33,7 +33,7 @@ impl Default for SymbolTableBuilder {
             ty: ir::Type::Void,
             visibility: ir::Visibility::Public,
             kind: SymbolKind::Function,
-            params: Some(vec![ir::Type::Unsigned(32)]),
+            params: Some(vec![ir::Type::Signed(32)]),
         });
         table.exit_scope();
 
@@ -146,8 +146,35 @@ impl SymbolTableBuilder {
                     params: None,
                 });
             }
+            super::lexer::token::Instruction::Assign => {
+                let [ty, des, _] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @assign");
+                };
+                let ty = ir::Type::from(ty);
+                self.table.push(Symbol {
+                    name: des.lexeme.to_string(),
+                    kind: SymbolKind::Variable,
+                    ty: ty.clone(),
+                    visibility: ir::Visibility::Private,
+                    params: None,
+                });
+            }
             super::lexer::token::Instruction::Alloc => todo!(),
-            super::lexer::token::Instruction::Call => todo!(),
+            super::lexer::token::Instruction::Call => {
+                let [ty, des, _] = &instruction.arguments[0..3] else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @call");
+                };
+                let ty = ir::Type::from(ty);
+                self.table.push(Symbol {
+                    name: des.lexeme.to_string(),
+                    kind: SymbolKind::Variable,
+                    ty: ty.clone(),
+                    visibility: ir::Visibility::Private,
+                    params: None,
+                });
+            }
             super::lexer::token::Instruction::Cmp => {
                 let [ty, des, _, _] = &instruction.arguments.as_slice() else {
                     // NOTE: If this happens then the parser is broken.
@@ -184,7 +211,20 @@ impl SymbolTableBuilder {
                     params: None,
                 });
             }
-            super::lexer::token::Instruction::Mul => todo!(),
+            super::lexer::token::Instruction::Mul => {
+                let [ty, des, _, _] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @mul");
+                };
+                let ty = ir::Type::from(ty);
+                self.table.push(Symbol {
+                    name: des.lexeme.to_string(),
+                    kind: SymbolKind::Variable,
+                    ty: ty.clone(),
+                    visibility: ir::Visibility::Private,
+                    params: None,
+                });
+            }
             super::lexer::token::Instruction::Phi => {
                 let [ty, des] = &instruction.arguments[0..2] else {
                     // NOTE: If this happens then the parser is broken.
@@ -217,7 +257,20 @@ impl SymbolTableBuilder {
                     expected: symbol.ty.clone(),
                 }));
             }
-            super::lexer::token::Instruction::Sub => todo!(),
+            super::lexer::token::Instruction::Sub => {
+                let [ty, des, _, _] = &instruction.arguments.as_slice() else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @sub");
+                };
+                let ty = ir::Type::from(ty);
+                self.table.push(Symbol {
+                    name: des.lexeme.to_string(),
+                    kind: SymbolKind::Variable,
+                    ty: ty.clone(),
+                    visibility: ir::Visibility::Private,
+                    params: None,
+                });
+            }
         }
         Ok(())
     }
