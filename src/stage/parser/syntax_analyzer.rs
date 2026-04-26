@@ -81,7 +81,7 @@ impl Parser {
             Some(token) if token.kind == kind => Ok(token),
             Some(token) => Err(Box::new(ErrorExpectedToken {
                 actual: token,
-                expected: kind,
+                expected: vec![kind],
             })),
             None => Err(Box::new(ErrorUnexpectedEndOfInput)),
         }
@@ -535,7 +535,16 @@ impl Parser {
             TokenKind::LeftBracket => self.parse_array_literal(token),
             _ => Err(Box::new(ErrorExpectedToken {
                 actual: token,
-                expected: TokenKind::Number,
+                expected: vec![
+                    TokenKind::Number,
+                    TokenKind::Float,
+                    TokenKind::String,
+                    TokenKind::Char,
+                    TokenKind::Identifier,
+                    TokenKind::Keyword(Keyword::True),
+                    TokenKind::Keyword(Keyword::False),
+                    TokenKind::LeftBracket,
+                ],
             })),
         }
     }

@@ -77,16 +77,25 @@ impl Report for ErrorExpectedKeyWord {
 #[derive(Debug)]
 pub struct ErrorExpectedToken {
     pub actual: Token,
-    pub expected: TokenKind,
+    pub expected: Vec<TokenKind>,
 }
 
 impl Report for ErrorExpectedToken {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.actual.span)
-            .with_message(format!(
-                "expected token `{:?}`, found `{}`",
-                self.expected, self.actual.lexeme
-            ))
+            .with_message({
+                let expected = self
+                    .expected
+                    .iter()
+                    .map(|k| format!("`{k:?}`"))
+                    .collect::<Vec<_>>();
+                let expected_str = if expected.len() == 1 {
+                    format!("expected {}", expected[0])
+                } else {
+                    format!("expected one of: {}", expected.join(", "))
+                };
+                format!("{}, found `{}`", expected_str, self.actual.lexeme)
+            })
             .with_lines_above(3)
             .build()
     }
