@@ -23,7 +23,10 @@ impl Parser {
 
 impl Parser {
     pub fn new(lexer: Peekable<std::vec::IntoIter<Token>>) -> Self {
-        Self { lexer, restrict_struct_literal: false }
+        Self {
+            lexer,
+            restrict_struct_literal: false,
+        }
     }
 
     pub fn parse(&mut self) -> Result<Vec<ast::Item>> {
