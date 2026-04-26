@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::backend::x86_64::linux::Function;
 use crate::backend::x86_64::linux::passes::emit::assembler::{
-    Instruction, Location, Reg, Reg8, Reg16, Reg32, PhysReg, RegKind,
+    Instruction, Location, PhysReg, Reg, Reg8, Reg16, Reg32, RegKind,
 };
 use crate::passes::PassOutput;
 
@@ -157,9 +157,9 @@ fn rewrite_function(f: &mut Function) {
         });
         free.extend(reclaimed);
 
-        let pool_idx = free
-            .pop()
-            .unwrap_or_else(|| panic!("register spill required — not implemented (too many live vregs)"));
+        let pool_idx = free.pop().unwrap_or_else(|| {
+            panic!("register spill required — not implemented (too many live vregs)")
+        });
         assignment.insert(*id, SCRATCH_POOL[pool_idx]);
         active.push((*end, *id, pool_idx));
     }
