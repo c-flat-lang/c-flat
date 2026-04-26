@@ -47,7 +47,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
                                 file!(),
                                 line!(),
                                 column!(),
-                                target.assembler
+                                target.assembler.alloc
                             )),
                         },
                     ));

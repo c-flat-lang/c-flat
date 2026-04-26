@@ -268,7 +268,10 @@ impl Emitter {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @jumpif");
                 };
-                let cond = Variable::new(cond.lexeme.clone(), ir::Type::Unsigned(1));
+                let Some(symbol) = self.symbol_table.get(&cond.lexeme) else {
+                    panic!("Unknown variable: {}", cond.lexeme);
+                };
+                let cond = Variable::new(cond.lexeme.clone(), symbol.ty.clone());
                 target.assembler.jump_if(cond, label.lexeme.clone());
             }
             super::lexer::token::Instruction::Load => {

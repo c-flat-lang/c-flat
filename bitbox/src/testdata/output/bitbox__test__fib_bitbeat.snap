@@ -1,0 +1,164 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Bitbeat, \"../examples/fib.bitbox\", contents)"
+---
+(
+    name: "main",
+    functions: {
+        "fib": (
+            name: "fib",
+            arity: 3,
+            code: [
+                LoadImm(
+                    dst: (4),
+                    value: 0,
+                ),
+                Mov(
+                    dst: (5),
+                    src: (4),
+                ),
+                CmpEq(
+                    dst: (6),
+                    lhs: (1),
+                    rhs: (5),
+                ),
+                JumpIf(
+                    cmp: (6),
+                    target: (5),
+                ),
+                Jump(
+                    target: (8),
+                ),
+                Send(
+                    dst_pid: (0),
+                    src_reg: (2),
+                ),
+                Halt,
+                Jump(
+                    target: (8),
+                ),
+                LoadImm(
+                    dst: (7),
+                    value: 1,
+                ),
+                Mov(
+                    dst: (8),
+                    src: (7),
+                ),
+                Sub(
+                    dst: (9),
+                    lhs: (1),
+                    rhs: (8),
+                ),
+                Add(
+                    dst: (10),
+                    lhs: (2),
+                    rhs: (3),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "fib",
+                    args: [
+                        (9),
+                        (3),
+                        (10),
+                    ],
+                    dst: (11),
+                ),
+                Recv(
+                    dst_reg: (12),
+                ),
+                Send(
+                    dst_pid: (0),
+                    src_reg: (12),
+                ),
+                Halt,
+            ],
+            returns: true,
+        ),
+        "main": (
+            name: "main",
+            arity: 0,
+            code: [
+                LoadImm(
+                    dst: (1),
+                    value: 55,
+                ),
+                Mov(
+                    dst: (2),
+                    src: (1),
+                ),
+                LoadImm(
+                    dst: (3),
+                    value: 0,
+                ),
+                Mov(
+                    dst: (4),
+                    src: (3),
+                ),
+                LoadImm(
+                    dst: (5),
+                    value: 1,
+                ),
+                Mov(
+                    dst: (6),
+                    src: (5),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "fib",
+                    args: [
+                        (2),
+                        (4),
+                        (6),
+                    ],
+                    dst: (7),
+                ),
+                Recv(
+                    dst_reg: (8),
+                ),
+                Mov(
+                    dst: (9),
+                    src: (8),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "write_int",
+                    args: [
+                        (9),
+                    ],
+                    dst: (10),
+                ),
+                LoadImm(
+                    dst: (11),
+                    value: 10,
+                ),
+                Mov(
+                    dst: (12),
+                    src: (11),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "write_char",
+                    args: [
+                        (12),
+                    ],
+                    dst: (13),
+                ),
+                LoadImm(
+                    dst: (14),
+                    value: 0,
+                ),
+                Mov(
+                    dst: (15),
+                    src: (14),
+                ),
+                Print(
+                    reg: (15),
+                ),
+                Halt,
+            ],
+            returns: true,
+        ),
+    },
+)

@@ -11,17 +11,9 @@ pub struct Cli {
     pub file_path: String,
 }
 
-fn snapshot_compiler(target: Target, path: &str, input: &str) -> String {
-    match target {
-        Target::Wasm32 => compile_wasm32(path, input),
-        Target::X86_64Linux => todo!("X86_64Linux"),
-        Target::Bitbeat => todo!("Bitbeat"),
-    }
-}
-
-fn compile_wasm32(path: &str, src: &str) -> String {
+fn snapshot_compiler(target: Target, path: &str, src: &str) -> String {
     let cli_options = Cli {
-        target: Target::Wasm32,
+        target,
         file_path: path.to_string(),
     };
     let tokens = lex(&src);
@@ -51,7 +43,13 @@ fn compile_wasm32(path: &str, src: &str) -> String {
         cli_options.target,
         Some(DebugPass::Emit),
     );
-    let output = compiler.run(&mut ir_module).expect("Compilation failed");
+    let output = match compiler.run(&mut ir_module) {
+        Ok(output) => output,
+        Err(err) => {
+            eprintln!("{}", err);
+            panic!("Compilation failed");
+        }
+    };
     let PassOutput::String(result) = output else {
         panic!("Expected PassOutput::String");
     };
@@ -85,3 +83,9 @@ snapshot!(
 );
 
 snapshot!(Target::Wasm32, test_fib_wasm32, "../examples/fib.bitbox");
+snapshot!(Target::Bitbeat, test_fib_bitbeat, "../examples/fib.bitbox");
+snapshot!(
+    Target::X86_64Linux,
+    test_fib_x86_64_linux,
+    "../examples/fib.bitbox"
+);
