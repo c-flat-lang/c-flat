@@ -101,29 +101,11 @@ impl Cli {
                 .iter()
                 .find(|arg| arg.starts_with("--dump-after="))
                 .unwrap();
-            let mode = match value.strip_prefix("--dump-after=").unwrap() {
-                "lowering-ir" => DebugMode::LoweredIr,
-                "emit" => DebugMode::Emit,
-                "control-flow-graph" => DebugMode::ControlFlowGraph,
-                "liveness-analysis" => DebugMode::LivenessAnalysis,
-                "detect-loops" => DebugMode::DetectLoops,
-                "phi-node-elimination" => DebugMode::PhiNodeElimination,
-                _ => {
-                    eprintln!("Unknown debug mode: {}", value);
-                    eprintln!(
-                        r#"Options:
-                        lowering-ir,
-                        emit,
-                        control-flow-graph,
-                        liveness-analysis,
-                        detect-loops,
-                        phi-node-elimination
-                        structuring-ir
-                        "#
-                    );
-                    std::process::exit(1);
-                }
+            let Some(vlaue) = value.strip_prefix("--dump-after=") else {
+                eprintln!("Invalid argument: {}", value);
+                std::process::exit(1);
             };
+            let mode = DebugMode::from_dump_after(vlaue);
             debug_mode = Some(mode);
         }
 
@@ -180,7 +162,19 @@ fn print_help() {
     eprintln!("  -a            Print AST");
     eprintln!("  -s            Print symbol table");
     eprintln!("  -ir           Print IR");
+    print_target_help();
+    print_dump_after_help();
+    eprintln!("  -h, --help    Print this help message");
+}
+
+fn print_target_help() {
     eprintln!("  --target=TRIPLE");
+    eprintln!("    wasm32");
+    eprintln!("    x86_64-linux");
+    eprintln!("    bitbeat");
+}
+
+fn print_dump_after_help() {
     eprintln!("  --dump-after=PASS");
     eprintln!("    lowering-ir");
     eprintln!("    emit");
@@ -189,7 +183,7 @@ fn print_help() {
     eprintln!("    detect-loops");
     eprintln!("    phi-node-elimination");
     eprintln!("    local-function-variables");
-    eprintln!("  -h, --help    Print this help message");
+    eprintln!("    structuring-ir");
 }
 
 fn unknown_arg(arg: &str) -> ! {
@@ -212,6 +206,7 @@ pub enum DebugMode {
     DetectLoops,
     PhiNodeElimination,
     LocalFunctionVariables,
+    StructuringIr,
 }
 
 impl DebugMode {
@@ -234,6 +229,7 @@ impl DebugMode {
             "detect-loops" => Self::DetectLoops,
             "phi-node-elimination" => Self::PhiNodeElimination,
             "local-function-variables" => Self::LocalFunctionVariables,
+            "structuring-ir" => Self::StructuringIr,
             _ => {
                 eprintln!("Unknown debug mode: {value}");
                 eprintln!("Options:");
@@ -244,6 +240,7 @@ impl DebugMode {
                 eprintln!("   detect-loops");
                 eprintln!("   phi-node-elimination");
                 eprintln!("   local-function-variables");
+                eprintln!("   structuring-ir");
                 std::process::exit(1);
             }
         }
@@ -261,6 +258,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::DetectLoops => DetectLoops,
             DebugMode::PhiNodeElimination => PhiNodeElimination,
             DebugMode::LocalFunctionVariables => LocalFunctionVariables,
+            DebugMode::StructuringIr => StructuringIr,
             _ => return None,
         })
     }

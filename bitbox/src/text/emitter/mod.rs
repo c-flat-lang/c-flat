@@ -137,7 +137,8 @@ impl Emitter {
     fn emit_instruction(&self, instruction: &ast::Instruction, target: &mut EmitterContext) {
         match instruction.instruction_kind {
             super::lexer::token::Instruction::Add => {
-                let [ty, des, lhs, rhs] = instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, lhs, rhs] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @add");
                 };
@@ -148,7 +149,8 @@ impl Emitter {
                 target.assembler.add(des, lhs, rhs);
             }
             super::lexer::token::Instruction::Assign => {
-                let [ty, des, src] = instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, src] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @assign");
                 };
@@ -158,7 +160,8 @@ impl Emitter {
                 target.assembler.assign(des, src);
             }
             super::lexer::token::Instruction::Alloc => {
-                let [ty, des, size] = instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, size] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @alloc");
                 };
@@ -169,11 +172,10 @@ impl Emitter {
                 target.assembler.alloc(ty, des, src);
             }
             super::lexer::token::Instruction::Call => {
-                let [ty, des, name] = &instruction.arguments[0..3] else {
-                    // NOTE: If this happens then the parser is broken.
-                    panic!("Invalid instruction arguments for @call");
-                };
-                let token_args = &instruction.arguments[3..];
+                let tokens = instruction.arguments.as_slice();
+                let vargs = if tokens.len() < 3 { 1 } else { 3 };
+                let name = &tokens[if vargs == 1 { 0 } else { 2 }];
+                let token_args = &tokens[vargs..];
                 let args = token_args
                     .iter()
                     .enumerate()
@@ -202,12 +204,22 @@ impl Emitter {
                         self.token_to_operand(token, &ty)
                     })
                     .collect::<Vec<_>>();
-                let ty = ir::Type::from(ty.lexeme.as_str());
-                let des = target.alloc_variable(&ty, des);
-                target.assembler.call(Some(des), name.lexeme.clone(), &args);
+
+                let ty = if vargs < 3 {
+                    ir::Type::Void
+                } else {
+                    ir::Type::from(tokens[0].lexeme.as_str())
+                };
+                let des = if vargs == 3 {
+                    Some(target.alloc_variable(&ty, &tokens[1]))
+                } else {
+                    None
+                };
+                target.assembler.call(des, name.lexeme.clone(), &args);
             }
             super::lexer::token::Instruction::Cmp => {
-                let [ty, des, lhs, rhs] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, lhs, rhs] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @cmp");
                 };
@@ -219,7 +231,8 @@ impl Emitter {
                 target.assembler.eq(des, lhs, rhs);
             }
             super::lexer::token::Instruction::ElemGet => {
-                let [ty, des, addr, index] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, addr, index] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @elemget");
                 };
@@ -230,7 +243,8 @@ impl Emitter {
                 target.assembler.elemget(des, addr, index);
             }
             super::lexer::token::Instruction::ElemSet => {
-                let [ty, addr, index, value] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, addr, index, value] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @elemset");
                 };
@@ -241,14 +255,16 @@ impl Emitter {
                 target.assembler.elemset(addr, index, value);
             }
             super::lexer::token::Instruction::Jump => {
-                let [label] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [label] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @jump");
                 };
                 target.assembler.jump(label.lexeme.clone());
             }
             super::lexer::token::Instruction::JumpIf => {
-                let [cond, label] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [cond, label] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @jumpif");
                 };
@@ -256,7 +272,8 @@ impl Emitter {
                 target.assembler.jump_if(cond, label.lexeme.clone());
             }
             super::lexer::token::Instruction::Load => {
-                let [ty, des, value] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, value] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @load");
                 };
@@ -267,7 +284,8 @@ impl Emitter {
                 target.assembler.load(des, value);
             }
             super::lexer::token::Instruction::Mul => {
-                let [ty, des, lhs, rhs] = instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, lhs, rhs] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @mul");
                 };
@@ -278,19 +296,20 @@ impl Emitter {
                 target.assembler.mul(des, lhs, rhs);
             }
             super::lexer::token::Instruction::Phi => {
-                let [ty, des] = &instruction.arguments[0..2] else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des] = &args[0..2] else {
                     // NOTE: If this happens then the parser is broken.
-                    panic!("Invalid instruction arguments for @mul");
+                    panic!("Invalid instruction arguments for @phi");
                 };
                 let ty = ir::Type::from(ty.lexeme.as_str());
                 let des = target.alloc_variable(&ty, des);
-                if !instruction.arguments.len().is_multiple_of(2) {
+                if !args.len().is_multiple_of(2) {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @phi");
                 }
 
                 let mut values = Vec::new();
-                for token in instruction.arguments[2..].chunks(2) {
+                for token in args[2..].chunks(2) {
                     let [label, value] = token else {
                         // NOTE: If this happens then the parser is broken.
                         panic!("Invalid instruction arguments for @phi");
@@ -321,7 +340,8 @@ impl Emitter {
                 }
             }
             super::lexer::token::Instruction::Sub => {
-                let [ty, des, lhs, rhs] = instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, lhs, rhs] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @sub");
                 };

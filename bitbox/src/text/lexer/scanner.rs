@@ -56,7 +56,8 @@ impl<'a> Lexer<'a> {
 
     fn parse_identifier(&mut self, value: char) -> Token {
         let mut lexeme = String::from(value);
-        while let Some(value) = self.next_if(|value| value.is_ascii_alphanumeric() || value == '_')
+        while let Some(value) =
+            self.next_if(|value| value.is_ascii_alphanumeric() || value == '_' || value == '.')
         {
             lexeme.push(value);
         }
@@ -66,6 +67,8 @@ impl<'a> Lexer<'a> {
             "const" => self.spanned(TokenKind::Keyword(Keyword::Const), lexeme),
             "function" => self.spanned(TokenKind::Keyword(Keyword::Function), lexeme),
             "public" => self.spanned(TokenKind::Keyword(Keyword::Public), lexeme),
+            "then" => self.spanned(TokenKind::Keyword(Keyword::Then), lexeme),
+            "else" => self.spanned(TokenKind::Keyword(Keyword::Else), lexeme),
             _ => self.spanned(TokenKind::Identifier, lexeme),
         }
     }
@@ -79,8 +82,8 @@ impl<'a> Lexer<'a> {
 
         let kind = match lexeme.as_str() {
             "@add" => Instruction::Add,
-            "@assign" => Instruction::Assign,
             "@alloc" => Instruction::Alloc,
+            "@assign" => Instruction::Assign,
             "@call" => Instruction::Call,
             "@cmp" => Instruction::Cmp,
             "@elemget" => Instruction::ElemGet,
@@ -88,8 +91,8 @@ impl<'a> Lexer<'a> {
             "@jump" => Instruction::Jump,
             "@jumpif" => Instruction::JumpIf,
             "@load" => Instruction::Load,
-            "@phi" => Instruction::Phi,
             "@mul" => Instruction::Mul,
+            "@phi" => Instruction::Phi,
             "@ret" => Instruction::Ret,
             "@sub" => Instruction::Sub,
             _ => return self.spanned(TokenKind::InvalidToken, lexeme),
@@ -137,7 +140,8 @@ impl<'a> Lexer<'a> {
 
     fn parse_label(&mut self) -> Token {
         let mut lexeme = String::new();
-        while let Some(value) = self.next_if(|value| value.is_ascii_alphanumeric() || value == '_')
+        while let Some(value) =
+            self.next_if(|value| value.is_ascii_alphanumeric() || value == '_' || value == '.')
         {
             lexeme.push(value);
         }
@@ -165,7 +169,7 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-        self.parse()
+        Some(self.spanned(TokenKind::Delimiter, "\\n"))
     }
 
     fn parse(&mut self) -> Option<Token> {
@@ -184,7 +188,9 @@ impl<'a> Lexer<'a> {
             Some('(') => Some(self.spanned(TokenKind::LeftParen, '(')),
             Some(')') => Some(self.spanned(TokenKind::RightParen, ')')),
             Some('{') if self.peek('\n') => self.parser_char_delemiter(TokenKind::LeftBrace, '{'),
+            Some('{') => Some(self.spanned(TokenKind::LeftBrace, '{')),
             Some('}') if self.peek('\n') => self.parser_char_delemiter(TokenKind::RightBrace, '}'),
+            Some('}') => Some(self.spanned(TokenKind::RightBrace, '}')),
             Some('[') => Some(self.spanned(TokenKind::LeftBracket, '[')),
             Some(']') => Some(self.spanned(TokenKind::RightBracket, ']')),
             Some(':') => Some(self.spanned(TokenKind::Colon, ':')),

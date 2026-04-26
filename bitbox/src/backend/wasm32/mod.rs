@@ -12,9 +12,9 @@ pub struct Wasm32Backend;
 impl Backend for Wasm32Backend {
     fn passes(&self) -> Vec<Box<dyn Pass>> {
         vec![
-            Box::new(StructuringPass),
             Box::new(LocalFunctionVariablesPass),
             Box::new(ControlFlowGraphPass),
+            Box::new(StructuringPass),
             Box::new(LivenessAnalysisPass),
             Box::new(EmitWasm32Pass),
         ]

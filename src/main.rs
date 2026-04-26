@@ -4,6 +4,8 @@ use cflat::Cli;
 use cflat::front_end_compiler;
 #[cfg(feature = "default")]
 fn main() {
+    use bitbox::passes::PassOutput;
+
     let cli_options = Cli::parse();
     let source = std::fs::read_to_string(&cli_options.file_path).expect("Failed to read file");
 
@@ -16,14 +18,18 @@ fn main() {
         }
     };
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
-    let compiler = bitbox::Compiler::new(
+    let mut compiler = bitbox::Compiler::new(
         &cli_options.file_path,
         cli_options.target,
         compiler_debug_mode,
     );
 
-    match compiler.run(&mut module) {
-        Ok(Some(path)) if cli_options.run => {
+    let compiler_output = compiler.run(&mut module);
+
+    match compiler_output {
+        #[cfg(feature = "wasm-runtime")]
+        Ok(PassOutput::Nothing) if cli_options.run => {
+            let path = compiler.file_output_path();
             eprintln!("{: >30} {}", "Running", path);
             match cli_options.target {
                 cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path.as_str())
@@ -50,10 +56,15 @@ fn main() {
                 }
             }
         }
+        Ok(PassOutput::String(result)) => {
+            println!("{}", result);
+        }
         Err(err) => {
             eprintln!("{}", err);
             std::process::exit(1);
         }
-        _ => {}
+        _ => {
+            unreachable!();
+        }
     }
 }

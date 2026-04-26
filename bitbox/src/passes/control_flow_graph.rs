@@ -1,4 +1,7 @@
-use crate::{ir::instruction::IJumpIf, passes::DebugPass};
+use crate::{
+    ir::instruction::IJumpIf,
+    passes::{DebugPass, PassOutput},
+};
 use std::collections::HashMap;
 
 use super::Pass;
@@ -48,7 +51,7 @@ impl Pass for ControlFlowGraphPass {
         DebugPass::ControlFlowGraph
     }
 
-    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) -> PassOutput {
         let formater = |data: &HashMap<String, Table>, kind: &str| {
             let mut data = data
                 .iter()
@@ -59,21 +62,25 @@ impl Pass for ControlFlowGraphPass {
                     )
                 })
                 .collect::<Vec<_>>();
-            eprintln!("{kind}:");
+            let mut output = String::new();
+            output += &format!("{kind}:\n");
             for (name, data) in data.iter_mut() {
                 data.sort_by(|a, b| a.0.0.cmp(&b.0.0));
-                eprintln!("{name}:");
+                output += &format!("{name}:\n");
                 for (block_id, in_bounds) in data.iter() {
-                    eprintln!("  {block_id:?}:");
+                    output += &format!("  {block_id:?}:\n");
                     for in_bound in in_bounds.iter() {
-                        eprintln!("    {in_bound:?}");
+                        output += &format!("    {in_bound:?}:\n");
                     }
                 }
             }
+            output
         };
 
-        formater(&ctx.cfg.in_bound, "IN BOUND");
-        formater(&ctx.cfg.out_bound, "OUT BOUND");
+        let mut output = String::new();
+        output += &formater(&ctx.cfg.in_bound, "IN BOUND");
+        output += &formater(&ctx.cfg.out_bound, "OUT BOUND");
+        PassOutput::String(output)
     }
 
     fn run(

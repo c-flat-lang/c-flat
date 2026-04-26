@@ -351,88 +351,76 @@ impl Lowerable for ExprIfElse {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ExprIfElse {
-            condition,
-            then_branch,
-            else_branch,
-            ty,
-            ..
-        } = self;
+        let condition_label = assembler.create_label_id("cond");
+        let then_label = assembler.create_label_id("then");
+        let else_label = assembler.create_label_id("else");
+        let merge_label = assembler.create_label_id("merge");
 
-        let result = if ty == &ast::Type::Void {
+        let result_var = if self.ty == ast::Type::Void {
             None
         } else {
-            let ty = ty.as_bitbox_type();
-            let return_value = assembler.var(ty.clone());
-            // assembler.alloc(ty, return_value.clone());
-            Some(return_value)
+            Some(assembler.var(self.ty.as_bitbox_type()))
         };
 
-        let mut var = vec![];
-
-        let mut cond_blocks = vec![];
-        let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
-
-        #[cfg(not(feature = "uuids"))]
-        let counter = assembler.counter();
-
-        #[cfg(not(feature = "uuids"))]
-        cond_assembler.with_counter(counter);
-
-        cond_assembler.create_block("cond");
-        let Some(cond_result) = condition.lower(&mut cond_assembler, ctx) else {
-            panic!("Condition should produce a variable");
-        };
-
-        #[cfg(not(feature = "uuids"))]
-        let counter = cond_assembler.counter();
-
-        var.clear();
-        let mut then_blocks = vec![];
-        let mut then_assembler = AssemblerBuilder::new(&mut then_blocks, &mut var);
-        #[cfg(not(feature = "uuids"))]
-        then_assembler.with_counter(counter);
-
-        then_assembler.create_block("then_branch");
-        let then_block_result = then_branch.lower(&mut then_assembler, ctx);
-
-        if let (Some(then_block_result), Some(result)) = (then_block_result, result.clone()) {
-            then_assembler.assign(result, then_block_result);
+        // Condition block
+        if !assembler.is_current_block_empty() {
+            assembler.create_block(&condition_label);
         }
+        let cond_var = self
+            .condition
+            .lower(assembler, ctx)
+            .expect("condition must produce a value");
 
-        #[cfg(not(feature = "uuids"))]
-        let counter = then_assembler.counter();
-
-        let mut else_blocks = vec![];
-        if let Some(else_branch) = else_branch {
-            var.clear();
-            let mut else_assembler = AssemblerBuilder::new(&mut else_blocks, &mut var);
-
-            #[cfg(not(feature = "uuids"))]
-            else_assembler.with_counter(counter);
-
-            else_assembler.create_block("else_branch");
-            let else_block_result = else_branch.lower(&mut else_assembler, ctx);
-
-            if let Some(else_block_result) = else_block_result {
-                else_assembler.assign(result.clone().unwrap(), else_block_result);
-            }
-            #[cfg(not(feature = "uuids"))]
-            assembler.with_counter(else_assembler.counter());
+        assembler.jump_if(cond_var, &then_label);
+        let condition_jump_label = if self.else_branch.is_none() {
+            &merge_label
         } else {
-            #[cfg(not(feature = "uuids"))]
-            assembler.with_counter(counter);
+            &else_label
+        };
+        assembler.jump(condition_jump_label);
+
+        // Then block
+        let then_label = assembler.create_block(&then_label);
+        if let Some(val) = self.then_branch.lower(assembler, ctx)
+            && let Some(res) = &result_var
+        {
+            assembler.assign(res.clone(), val);
+        }
+        assembler.jump(&merge_label);
+
+        // Else block (optional)
+        let else_label = if let Some(else_b) = &self.else_branch {
+            let else_l = assembler.create_block(else_label);
+            if let Some(val) = else_b.lower(assembler, ctx)
+                && let Some(res) = &result_var
+            {
+                assembler.assign(res.clone(), val);
+            }
+            assembler.jump(&merge_label);
+            Some(else_l)
+        } else {
+            None
+        };
+
+        // Merge block
+        assembler.create_block(&merge_label);
+
+        // Phi node if result is needed
+        if let Some(result) = &result_var {
+            let mut phi_entries = vec![(then_label, result.clone())];
+
+            if let Some(el_label) = else_label {
+                phi_entries.push((el_label, result.clone()));
+            } else {
+                // No else branch — you may want to initialize `result_var` before the if
+                // For now, we can duplicate the value from then or use a default.
+                // Simple solution: initialize before condition
+            }
+
+            assembler.phi(result.clone(), phi_entries);
         }
 
-        assembler.if_else(
-            cond_blocks,
-            cond_result,
-            then_blocks,
-            else_blocks,
-            result.clone(),
-        );
-
-        result
+        result_var
     }
 }
 
@@ -481,7 +469,7 @@ impl Lowerable for Litral {
         match self {
             ast::Litral::String(_) => todo!("STRING"),
             ast::Litral::Integer(token) => {
-                let ty = Type::Unsigned(32);
+                let ty = Type::Signed(32);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, 32));
                 Some(var)
@@ -505,7 +493,7 @@ impl Lowerable for Litral {
                 Some(var)
             }
             ast::Litral::BoolFalse(_) => {
-                let ty = Type::Unsigned(32);
+                let ty = Type::Signed(32);
                 let var = assembler.var(ty);
                 assembler.assign(var.clone(), Operand::const_bool(false));
                 Some(var)

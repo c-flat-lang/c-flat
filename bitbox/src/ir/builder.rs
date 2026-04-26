@@ -50,6 +50,8 @@ pub struct AssemblerBuilder<'a> {
     variables: &'a mut Vec<Variable>,
     #[cfg(not(feature = "uuids"))]
     counter: usize,
+    #[cfg(not(feature = "uuids"))]
+    label_counter: usize,
 }
 
 impl<'a> AssemblerBuilder<'a> {
@@ -60,8 +62,23 @@ impl<'a> AssemblerBuilder<'a> {
             variables,
             #[cfg(not(feature = "uuids"))]
             counter: 0,
+            #[cfg(not(feature = "uuids"))]
+            label_counter: 0,
         }
     }
+
+    #[cfg(not(feature = "uuids"))]
+    pub fn create_label_id(&mut self, label: impl Into<String>) -> String {
+        let num = self.label_counter;
+        self.label_counter += 1;
+        format!("{}.{}", label.into(), num)
+    }
+
+    #[cfg(feature = "uuids")]
+    pub fn create_label_id(&mut self, label: impl Into<String>) -> String {
+        format!("{}.{}", label.into(), uuid::Uuid::new_v4())
+    }
+
     #[cfg(not(feature = "uuids"))]
     pub fn with_counter(&mut self, counter: usize) -> &mut Self {
         self.counter = counter;
@@ -380,6 +397,14 @@ impl<'a> AssemblerBuilder<'a> {
         };
         self.push_instruction(instruction);
         self
+    }
+
+    pub fn is_current_block_empty(&self) -> bool {
+        let Some(block) = self.blocks.last() else {
+            return false;
+        };
+
+        block.instructions.is_empty()
     }
 }
 

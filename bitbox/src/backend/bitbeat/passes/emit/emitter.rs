@@ -1,6 +1,6 @@
 use super::{BitbeatLowerContext, OperandResult};
 use crate::backend::Lower;
-use crate::passes::{DebugPass, Pass};
+use crate::passes::{DebugPass, Pass, PassOutput};
 
 #[derive(Debug)]
 pub struct EmitBitbeatPass;
@@ -10,11 +10,11 @@ impl Pass for EmitBitbeatPass {
         DebugPass::Emit
     }
 
-    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) -> PassOutput {
         let module = ctx.output.get_bitbeat();
         let data = ron::ser::to_string_pretty(module, ron::ser::PrettyConfig::default())
             .expect("Failed to serialize module");
-        eprintln!("{}", data);
+        PassOutput::String(data)
     }
 
     fn run(

@@ -3,7 +3,7 @@ use crate::{
         Variable,
         instruction::{ICall, IIfElse},
     },
-    passes::DebugPass,
+    passes::{DebugPass, PassOutput},
 };
 
 use super::Pass;
@@ -77,13 +77,15 @@ impl Pass for LocalFunctionVariablesPass {
         DebugPass::LocalFunctionVariables
     }
 
-    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) -> PassOutput {
+        let mut output = String::new();
         for (function_name, variables) in _ctx.local_function_variables.iter() {
-            eprintln!("{}:", function_name);
+            output += &format!("{}:", function_name);
             for variable in variables {
-                eprintln!("  {} : {}", variable.name, variable.ty);
+                output += &format!("  {} : {}", variable.name, variable.ty);
             }
         }
+        PassOutput::String(output)
     }
 
     fn run(

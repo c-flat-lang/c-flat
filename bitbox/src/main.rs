@@ -1,6 +1,6 @@
 mod cli;
 use bitbox::{
-    passes::DebugPass,
+    passes::{DebugPass, PassOutput},
     text::{emitter::Emitter, lexer::lex, parser::Parser, semantic_analyzer::SymbolTableBuilder},
 };
 
@@ -49,14 +49,25 @@ fn main() {
     }
 
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
-    if let Err(error) = bitbox::Compiler::new(
+    eprintln!(
+        "Compiling {} for target {:?}",
+        cli_options.file_path, cli_options.target
+    );
+
+    let mut compiler = bitbox::Compiler::new(
         &cli_options.file_path,
         cli_options.target,
         compiler_debug_mode,
-    )
-    .run(&mut ir_module)
-    {
-        eprintln!("{}", error);
-        std::process::exit(1);
+    );
+
+    match compiler.run(&mut ir_module) {
+        Ok(PassOutput::String(output)) => {
+            println!("{}", output);
+        }
+        Ok(_) => {}
+        Err(error) => {
+            eprintln!("{}", error);
+            std::process::exit(1);
+        }
     }
 }

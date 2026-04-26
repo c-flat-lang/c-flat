@@ -6,7 +6,7 @@ use crate::{
         BasicBlock, BlockId, Function, Instruction, Operand,
         instruction::{IIfElse, IJump, IJumpIf, ILoop, IPhi},
     },
-    passes::DebugPass,
+    passes::{DebugPass, PassOutput},
 };
 
 use super::Pass;
@@ -22,7 +22,7 @@ impl LabelCreator {
     fn gen_name(&mut self) -> String {
         let counter = self.counter;
         self.counter += 1;
-        format!("{}", counter)
+        counter.to_string()
     }
 
     #[cfg(feature = "uuids")]
@@ -39,8 +39,8 @@ impl Pass for LoweringPass {
         DebugPass::LoweredIr
     }
 
-    fn debug(&self, module: &crate::ir::Module, _ctx: &crate::backend::Context) {
-        eprintln!("{}", module);
+    fn debug(&self, module: &crate::ir::Module, _ctx: &crate::backend::Context) -> PassOutput {
+        PassOutput::String(format!("{}", module))
     }
 
     fn run(

@@ -66,27 +66,39 @@ impl Report for ErrorExpectedKeyWord {
 pub struct ErrorExpectedToken {
     pub actual: Token,
     pub expected: TokenKind,
+    #[cfg(feature = "debug")]
+    pub compiler_line: String,
 }
 
 impl Report for ErrorExpectedToken {
     fn report(&self, filename: &str, src: &str) -> String {
-        let message = match &self.expected {
-            TokenKind::Keyword(keyword) => {
-                format!(
-                    "expected keyword like `{}`, but found `{}`",
-                    keyword, self.actual.lexeme
-                )
+        let message = {
+            let message = match &self.expected {
+                TokenKind::Keyword(keyword) => {
+                    format!(
+                        "expected keyword like `{}`, but found `{}`",
+                        keyword, self.actual.lexeme
+                    )
+                }
+                TokenKind::Instruction(instruction) => {
+                    format!(
+                        "expected instruction like `{}`, but found `{}`",
+                        instruction, self.actual.lexeme
+                    )
+                }
+                _ => format!(
+                    "expected token `{:?}`, found `{}`",
+                    self.expected, self.actual.lexeme
+                ),
+            };
+            #[cfg(feature = "debug")]
+            {
+                format!("{}\n{}", message, self.compiler_line)
             }
-            TokenKind::Instruction(instruction) => {
-                format!(
-                    "expected instruction like `{}`, but found `{}`",
-                    instruction, self.actual.lexeme
-                )
+            #[cfg(not(feature = "debug"))]
+            {
+                message
             }
-            _ => format!(
-                "expected token `{:?}`, found `{}`",
-                self.expected, self.actual.lexeme
-            ),
         };
         ReportBuilder::new(filename, src, &self.actual.span)
             .with_message(message)

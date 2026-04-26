@@ -91,7 +91,7 @@ impl Default for Output {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum CompilerResult {
     Wasm32(Vec<u8>),
     X86_64(String),

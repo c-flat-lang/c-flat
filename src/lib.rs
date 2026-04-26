@@ -25,11 +25,11 @@ pub fn front_end_compiler(src: &str, cli_options: Cli) -> Result<bitbox::ir::Mod
     let mut ast = stage::parser::Parser::default().run(tokens)?;
 
     if let Some(DebugMode::Ast) = cli_options.debug_mode() {
-        // eprintln!("{:#?}", ast);
+        // eprintln!("{:#?}", ast);test_text_mode
         // std::process::exit(0);
     }
 
-    let symbol_table = stage::semantic_nalyzer::SemanticAnalyzer::default().run(&mut ast)?;
+    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode() {
         // eprintln!("{:#?}", symbol_table);
@@ -63,14 +63,18 @@ pub fn compile_source(
     };
     let compiler_debug_mode: Option<DebugPass> =
         cli_options.debug_mode().clone().and_then(Into::into);
-    match bitbox::Compiler::new(
+    let mut compiler = bitbox::Compiler::new(
         &cli_options.file_path(),
         cli_options.target(),
         compiler_debug_mode,
-    )
-    .run(&mut module)
-    {
-        Ok(CompilerResult::Wasm32(bytes)) => Ok(js_sys::Uint8Array::from(&bytes[..])),
+    );
+    match compiler.run(&mut module) {
+        Ok(_) => {
+            let CompilerResult::Wasm32(bytes) = compiler.results.unwrap_or_default() else {
+                unimplemented!()
+            };
+            Ok(js_sys::Uint8Array::from(&bytes[..]))
+        }
         Err(error) => Err(JsValue::from_str(&error.to_string())),
         _ => unimplemented!(),
     }

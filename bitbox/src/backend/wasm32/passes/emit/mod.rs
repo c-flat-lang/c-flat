@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::backend::Lower;
 use crate::ir::{self, Module, Type, Visibility};
-use crate::passes::{DebugPass, Pass};
+use crate::passes::{DebugPass, Pass, PassOutput};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
     Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, ImportSection,
@@ -18,13 +18,14 @@ impl Pass for EmitWasm32Pass {
         DebugPass::Emit
     }
 
-    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) -> PassOutput {
         let mut wasm_module = ctx.output.get_wasm32().clone();
         let bytes = wasm_module.finish();
-        match wasmprinter::print_bytes(&bytes) {
-            Ok(wat) => eprintln!("{wat}"),
-            Err(err) => eprintln!("{err}"),
-        }
+        let output = match wasmprinter::print_bytes(&bytes) {
+            Ok(wat) => wat,
+            Err(err) => err.to_string(),
+        };
+        PassOutput::String(output)
     }
 
     fn run(

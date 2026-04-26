@@ -7,7 +7,7 @@ use crate::{
             IXOr,
         },
     },
-    passes::DebugPass,
+    passes::{DebugPass, PassOutput},
 };
 
 use super::Pass;
@@ -418,9 +418,10 @@ impl LivenessAnalysisInfo {
             .is_some_and(|vars| vars.contains(var))
     }
 
-    pub fn print(&self, module: &crate::ir::Module) {
+    pub fn format(&self, module: &crate::ir::Module) -> String {
+        let mut output = String::new();
         for (function_name, block_table) in &self.table {
-            eprintln!("Function: {}", function_name);
+            output += &format!("Function: {}", function_name);
             let mut blocks: Vec<(&crate::ir::BlockId, &usize, &[crate::ir::Variable])> =
                 block_table
                     .iter()
@@ -437,13 +438,13 @@ impl LivenessAnalysisInfo {
             let mut last_block: Option<&&BlockId> = None;
             for (block, index, vars) in blocks.iter() {
                 if last_block.is_none() || last_block.is_some_and(|b| b != block) {
-                    eprintln!("{:?}", block);
+                    output += &format!("{:?}", block);
                 }
-                eprintln!(
+                output += &format!(
                     "Instruction: {}, {}",
                     index, ir_block[block.0].instructions[**index]
                 );
-                eprintln!(
+                output += &format!(
                     "Live variables: {}",
                     vars.iter()
                         .map(|v| format!("{}, ", v.name))
@@ -452,6 +453,7 @@ impl LivenessAnalysisInfo {
                 last_block = Some(block);
             }
         }
+        output
     }
 }
 
@@ -465,9 +467,8 @@ impl Pass for LivenessAnalysisPass {
         DebugPass::LivenessAnalysis
     }
 
-    fn debug(&self, module: &crate::ir::Module, ctx: &crate::backend::Context) {
-        eprintln!("{: >30?}", DebugPass::LivenessAnalysis);
-        ctx.liveness.print(module);
+    fn debug(&self, module: &crate::ir::Module, ctx: &crate::backend::Context) -> PassOutput {
+        PassOutput::String(ctx.liveness.format(module))
     }
 
     fn run(

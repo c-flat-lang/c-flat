@@ -1,0 +1,75 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, \"../examples/fib.bitbox\", contents)"
+---
+(module
+  (type (;0;) (func (param i32)))
+  (type (;1;) (func))
+  (type (;2;) (func (param i32)))
+  (type (;3;) (func (param i32 i32 i32) (result i32)))
+  (type (;4;) (func (result i32)))
+  (import "core" "write_i32" (func (;0;) (type 0)))
+  (import "core" "writenl" (func (;1;) (type 1)))
+  (import "core" "write_char" (func (;2;) (type 2)))
+  (memory (;0;) 1)
+  (global (;0;) (mut i32) i32.const 0)
+  (export "main" (func 4))
+  (func (;3;) (type 3) (param i32 i32 i32) (result i32)
+    (local i32 i32 i32 i32 i32 i32)
+    i32.const 0
+    local.set 3
+    local.get 0
+    local.get 3
+    i32.eq
+    local.set 4
+    local.get 4
+    br_if 1 (; INVALID ;)
+    br 2 (; INVALID ;)
+    local.get 1
+    return
+    br 2 (; INVALID ;)
+    i32.const 1
+    local.set 5
+    local.get 0
+    local.get 5
+    i32.sub
+    local.set 6
+    local.get 1
+    local.get 2
+    i32.add
+    local.set 7
+    local.get 6
+    local.get 2
+    local.get 7
+    call 3
+    local.set 8
+    local.get 8
+    return
+  )
+  (func (;4;) (type 4) (result i32)
+    (local i32 i32 i32 i32 i32 i32 i32)
+    i32.const 55
+    local.set 0
+    i32.const 0
+    local.set 1
+    i32.const 1
+    local.set 2
+    local.get 0
+    local.get 1
+    local.get 2
+    call 3
+    local.set 3
+    local.get 3
+    local.set 4
+    local.get 4
+    call 0
+    i32.const 10
+    local.set 5
+    local.get 5
+    call 2
+    i32.const 0
+    local.set 6
+    local.get 6
+    return
+  )
+)

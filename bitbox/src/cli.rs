@@ -15,6 +15,19 @@ impl HasArg for Vec<String> {
     }
 }
 
+fn help_dump_after() {
+    eprintln!("    --dump-after  Print debug info after pass");
+    eprintln!("                  options:");
+    eprintln!("                    lowering-ir");
+    eprintln!("                    emit");
+    eprintln!("                    control-flow-graph");
+    eprintln!("                    liveness-analysis");
+    eprintln!("                    detect-loops");
+    eprintln!("                    phi-node-elimination");
+    eprintln!("                    local-function-variables");
+    eprintln!("                    structuring-ir");
+}
+
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
@@ -35,16 +48,7 @@ impl Cli {
             eprintln!("    -ir           Print IR");
             eprintln!("    --target      Target triple");
             eprintln!("    --dump-after  Print debug info after pass");
-            eprintln!("    --dump-after  Print debug info after pass");
-            eprintln!("                  options:");
-            eprintln!("                    lowering-ir");
-            eprintln!("                    emit");
-            eprintln!("                    control-flow-graph");
-            eprintln!("                    liveness-analysis");
-            eprintln!("                    detect-loops");
-            eprintln!("                    phi-node-elimination");
-            eprintln!("                    local-function-variables");
-            eprintln!("                    structuring-ir");
+            help_dump_after();
             eprintln!("    -h, --help    Print this help message");
 
             std::process::exit(0);
@@ -66,36 +70,20 @@ impl Cli {
         } else if args.has_arg("-ir") {
             debug_mode = Some(DebugMode::Ir);
         } else if args.has_prefix("--dump-after=") {
-            let value = args
+            let arg = args
                 .iter()
                 .find(|arg| arg.starts_with("--dump-after="))
                 .unwrap();
-            let mode = match value.strip_prefix("--dump-after=").unwrap() {
-                "lowering-ir" => DebugMode::LoweredIr,
-                "emit" => DebugMode::Emit,
-                "control-flow-graph" => DebugMode::ControlFlowGraph,
-                "liveness-analysis" => DebugMode::LivenessAnalysis,
-                "detect-loops" => DebugMode::DetectLoops,
-                "phi-node-elimination" => DebugMode::PhiNodeElimination,
-                "local-function-variables" => DebugMode::LocalFunctionVariables,
-                "structuring-ir" => DebugMode::StructuredIr,
-                _ => {
-                    eprintln!("Unknown debug mode: {}", value);
-                    eprintln!(
-                        r#"Options:
-                        lowering-ir,
-                        emit,
-                        control-flow-graph,
-                        liveness-analysis,
-                        detect-loops,
-                        phi-node-elimination
-                        local-function-variables
-                        structuring-ir
-                        "#
-                    );
-                    std::process::exit(1);
-                }
+            let Some(value) = arg.strip_prefix("--dump-after=") else {
+                eprintln!("Invalid argument: {}", arg);
+                help_dump_after();
+                std::process::exit(1);
             };
+            let mode = DebugMode::from_str(value).unwrap_or_else(|_| {
+                eprintln!("Unknown debug mode: {}", value);
+                help_dump_after();
+                std::process::exit(1);
+            });
             debug_mode = Some(mode);
         }
 
@@ -131,7 +119,29 @@ pub enum DebugMode {
     PhiNodeElimination,
     SymbolTable,
     Token,
-    StructuredIr,
+    StructuringIr,
+}
+
+impl FromStr for DebugMode {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ast" => Ok(DebugMode::Ast),
+            "control-flow-graph" => Ok(DebugMode::ControlFlowGraph),
+            "detect-loops" => Ok(DebugMode::DetectLoops),
+            "emit" => Ok(DebugMode::Emit),
+            "ir" => Ok(DebugMode::Ir),
+            "liveness-analysis" => Ok(DebugMode::LivenessAnalysis),
+            "local-function-variables" => Ok(DebugMode::LocalFunctionVariables),
+            "lowering-ir" => Ok(DebugMode::LoweredIr),
+            "phi-node-elimination" => Ok(DebugMode::PhiNodeElimination),
+            "symbol-table" => Ok(DebugMode::SymbolTable),
+            "token" => Ok(DebugMode::Token),
+            "structuring-ir" => Ok(DebugMode::StructuringIr),
+            _ => Err(()),
+        }
+    }
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
@@ -146,7 +156,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::LocalFunctionVariables => {
                 Some(bitbox::passes::DebugPass::LocalFunctionVariables)
             }
-            DebugMode::StructuredIr => Some(bitbox::passes::DebugPass::StructuredIr),
+            DebugMode::StructuringIr => Some(bitbox::passes::DebugPass::StructuringIr),
             _ => None,
         }
     }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::passes::DebugPass;
+use crate::passes::{DebugPass, PassOutput};
 
 use super::Pass;
 
@@ -12,8 +12,8 @@ impl Pass for PhiNodeEliminationPass {
         DebugPass::PhiNodeElimination
     }
 
-    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {
-        todo!()
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) -> PassOutput {
+        PassOutput::Nothing
     }
 
     fn run(

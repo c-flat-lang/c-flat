@@ -1,0 +1,29 @@
+function fib(n_v0: s32, a_v0: s32, b_v0: s32, ) s32{
+  %entry: // 0
+    @assign s32 : tmp.0_v0, 0
+    @cmp s32 : tmp.1_v0, n_v0, tmp.0_v0
+    @jumpif tmp.1_v0, %then.1
+    @jump %merge.3
+  %then.1: // 1
+    @ret s32 : a_v0
+    @jump %merge.3
+  %merge.3: // 2
+    @assign s32 : tmp.2_v0, 1
+    @sub s32 : tmp.3_v0, n_v0, tmp.2_v0
+    @add s32 : tmp.4_v0, a_v0, b_v0
+    @call s32 : tmp.5_v0 fib(tmp.3_v0, b_v0, tmp.4_v0)
+    @ret s32 : tmp.5_v0
+}
+public function main() s32{
+  %entry: // 0
+    @assign s32 : tmp.0_v0, 55
+    @assign s32 : tmp.1_v0, 0
+    @assign s32 : tmp.2_v0, 1
+    @call s32 : tmp.3_v0 fib(tmp.0_v0, tmp.1_v0, tmp.2_v0)
+    @assign s32 : value_v0, tmp.3_v0
+    @call write_int(value_v0)
+    @assign s32 : tmp.4_v0, 10
+    @call write_char(tmp.4_v0)
+    @assign s32 : tmp.5_v0, 0
+    @ret s32 : tmp.5_v0
+}

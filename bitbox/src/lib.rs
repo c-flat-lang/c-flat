@@ -1,4 +1,4 @@
-use crate::passes::DebugPass;
+use crate::passes::{DebugPass, PassOutput};
 
 pub mod backend;
 pub mod error;
@@ -73,6 +73,9 @@ pub struct Compiler {
     pub(crate) src_path: String,
     pub(crate) backend: Box<dyn backend::Backend>,
     pub(crate) debug_mode: Option<DebugPass>,
+    #[cfg(not(feature = "wasm"))]
+    pub(crate) save_to_file: bool,
+    pub results: Option<backend::CompilerResult>,
 }
 
 impl Compiler {
@@ -82,19 +85,42 @@ impl Compiler {
             src_path: src_path.into(),
             backend: target.backend(),
             debug_mode,
+            #[cfg(not(feature = "wasm"))]
+            save_to_file: true,
+            results: None,
         }
     }
 
-    pub fn run(&self, module: &mut ir::Module) -> Result<Option<String>, error::Error> {
+    #[cfg(not(feature = "wasm"))]
+    pub fn save(&mut self, save_to_file: bool) -> &mut Self {
+        self.save_to_file = save_to_file;
+        self
+    }
+
+    pub fn file_output_path(&self) -> String {
+        self.target.get_new_path(&self.src_path)
+    }
+
+    pub fn run(&mut self, module: &mut ir::Module) -> Result<PassOutput, error::Error> {
         let mut ctx = backend::Context::new(&self.target);
+
         for mut pass in self.backend.passes() {
-            pass.execute(module, &mut ctx, self.debug_mode)?;
+            let passoutput = pass.execute(module, &mut ctx, self.debug_mode)?;
+            let PassOutput::String(_) = passoutput else {
+                continue;
+            };
+            return Ok(passoutput);
         }
 
         let compiler_result = ctx.output.finish();
-        let path = self.target.get_new_path(&self.src_path);
+        self.results.replace(compiler_result.clone());
         #[cfg(not(feature = "wasm"))]
-        compiler_result.save_to_file(&path);
-        Ok(Some(path))
+        {
+            if self.save_to_file {
+                let path = self.file_output_path();
+                compiler_result.save_to_file(&path);
+            }
+        }
+        Ok(PassOutput::Nothing)
     }
 }

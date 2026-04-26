@@ -20,6 +20,7 @@ insta = { version = "1.47.2", features = ["yaml"] }
 pretty_assertions = "1.4.1"
 
 [features]
+debug = []
 default = []
 wasm = ["wasm-bindgen", "uuid", "uuid/js"]
 uuids = ["uuid"]

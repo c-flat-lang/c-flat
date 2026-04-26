@@ -9,7 +9,7 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 };
 use crate::backend::{Context, Lower};
 use crate::ir;
-use crate::passes::DebugPass;
+use crate::passes::{DebugPass, PassOutput};
 use assembler::Location;
 
 #[derive(Debug)]
@@ -45,8 +45,8 @@ impl crate::passes::Pass for EmitX86_64LinuxPass {
         DebugPass::Emit
     }
 
-    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) {
-        eprintln!("{}", ctx.output.get_x86_64());
+    fn debug(&self, _module: &crate::ir::Module, ctx: &crate::backend::Context) -> PassOutput {
+        PassOutput::String(format!("{}", ctx.output.get_x86_64()))
     }
 
     fn run(

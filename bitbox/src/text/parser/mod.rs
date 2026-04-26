@@ -29,7 +29,12 @@ impl Parser {
     fn consume(&mut self, expected: TokenKind) -> Result<Token> {
         match self.stream.next() {
             Some(actual) if actual.kind == expected => Ok(actual),
-            Some(actual) => Err(Box::new(ErrorExpectedToken { expected, actual })),
+            Some(actual) => Err(Box::new(ErrorExpectedToken {
+                expected,
+                actual,
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
+            })),
             None => Err(Box::new(ErrorUnexpectedEndOfInput)),
         }
     }
@@ -143,6 +148,8 @@ impl Parser {
             return Err(Box::new(ErrorExpectedToken {
                 actual: name,
                 expected: TokenKind::LabelDefinition,
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         let delim = self.next()?;
@@ -150,6 +157,8 @@ impl Parser {
             return Err(Box::new(ErrorExpectedToken {
                 actual: delim,
                 expected: TokenKind::Delimiter,
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         }
         Ok(name)
@@ -184,13 +193,15 @@ impl Parser {
             return Err(Box::new(ErrorExpectedToken {
                 actual: tok,
                 expected: TokenKind::Instruction(token::Instruction::Add),
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             }));
         };
 
         let arguments = match inst {
             token::Instruction::Add => self.parse_add()?,
-            token::Instruction::Assign => self.parse_assign()?,
             token::Instruction::Alloc => self.parse_alloc()?,
+            token::Instruction::Assign => self.parse_assign()?,
             token::Instruction::Call => self.parse_call()?,
             token::Instruction::Cmp => self.parse_cmp()?,
             token::Instruction::ElemGet => self.parse_elem_get()?,
@@ -387,13 +398,20 @@ impl Parser {
     }
 
     fn parse_call(&mut self) -> Result<Vec<Token>> {
-        let ty = self.consume(TokenKind::Identifier)?;
-        self.consume(TokenKind::Colon)?;
-        let des = self.consume(TokenKind::Identifier)?;
-        let name = self.consume(TokenKind::Identifier)?;
+        let mut result = Vec::new();
+        let ty_or_callee = self.consume(TokenKind::Identifier)?;
+        if self.is_peek_a(TokenKind::Colon) {
+            self.consume(TokenKind::Colon)?;
+            let des = self.consume(TokenKind::Identifier)?;
+            let name = self.consume(TokenKind::Identifier)?;
+            result.push(ty_or_callee); // Type
+            result.push(des);
+            result.push(name);
+        } else {
+            result.push(ty_or_callee); // Callee
+        };
         let arguments = self.parse_arguments()?;
         self.consume(TokenKind::Delimiter)?;
-        let mut result = vec![ty, des, name];
         result.extend_from_slice(&arguments);
         Ok(result)
     }

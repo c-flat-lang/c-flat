@@ -513,7 +513,7 @@ impl From<IReturn> for Instruction {
 /// @jump %recursive_case
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IJump {
-    pub label: String,
+    pub label: Label,
 }
 
 impl IJump {
@@ -524,7 +524,7 @@ impl IJump {
 
 impl fmt::Display for IJump {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", Paint::blue("@jump"), short_uuid(&self.label))
+        write!(f, "{} %{}", Paint::blue("@jump"), short_uuid(&self.label))
     }
 }
 
@@ -552,7 +552,7 @@ impl fmt::Display for IJumpIf {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {}, {}",
+            "{} {}, %{}",
             Paint::blue("@jumpif"),
             color_op(&self.cond),
             short_uuid(&self.label)
@@ -601,10 +601,28 @@ impl From<IPhi> for Instruction {
     }
 }
 
-/// @if <cond> : <optional result> then [<then_branch>] else [<else_branch>]
-/// @if is_one : result then [@assign s32 : result, 1] else [@assign s32 : result, 0]
-/// With out a result
-/// @if condition then [...] else [...]
+/// Example:
+/// The formating of this instruction is as follows. Because I'm lazy it must be in this format or
+/// it will panic in text mode.
+///
+/// @if <cond> : <optional result> then
+/// [
+///   <then_branch>
+/// ]
+/// else
+/// [
+///   <else_branch>
+/// ]
+///
+/// @if is_one : result then
+/// [
+///   @assign s32 : result, 1
+/// ]
+/// else
+/// [
+///   @assign s32 : result, 0
+/// ]
+///
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IIfElse {
     pub cond: Vec<BasicBlock>,

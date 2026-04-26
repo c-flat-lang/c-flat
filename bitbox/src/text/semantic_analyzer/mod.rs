@@ -133,7 +133,8 @@ impl SymbolTableBuilder {
     fn walk_instruction(&mut self, instruction: &ast::Instruction) -> Result<()> {
         match instruction.instruction_kind {
             super::lexer::token::Instruction::Add => {
-                let [ty, des, _, _] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _, _] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @add");
                 };
@@ -146,8 +147,24 @@ impl SymbolTableBuilder {
                     params: None,
                 });
             }
+            super::lexer::token::Instruction::Alloc => {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _] = args else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @alloc");
+                };
+                let ty = ir::Type::from(ty);
+                self.table.push(Symbol {
+                    name: des.lexeme.to_string(),
+                    kind: SymbolKind::Variable,
+                    ty: ty.clone(),
+                    visibility: ir::Visibility::Private,
+                    params: None,
+                });
+            }
             super::lexer::token::Instruction::Assign => {
-                let [ty, des, _] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @assign");
                 };
@@ -160,9 +177,13 @@ impl SymbolTableBuilder {
                     params: None,
                 });
             }
-            super::lexer::token::Instruction::Alloc => todo!(),
             super::lexer::token::Instruction::Call => {
-                let [ty, des, _] = &instruction.arguments[0..3] else {
+                let args = instruction.arguments.as_slice();
+                if args.len() < 3 {
+                    return Ok(());
+                }
+                // FIXME: variable length in args.
+                let [ty, des, _] = &args[0..3] else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @call");
                 };
@@ -176,7 +197,8 @@ impl SymbolTableBuilder {
                 });
             }
             super::lexer::token::Instruction::Cmp => {
-                let [ty, des, _, _] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _, _] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @cmp");
                 };
@@ -189,8 +211,22 @@ impl SymbolTableBuilder {
                     params: None,
                 });
             }
-            super::lexer::token::Instruction::ElemGet => todo!(),
-            super::lexer::token::Instruction::ElemSet => todo!(),
+            super::lexer::token::Instruction::ElemGet => {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _, _] = args else {
+                    // NOTE: If this happens then the parser is broken.
+                    panic!("Invalid instruction arguments for @elem_get");
+                };
+                let ty = ir::Type::from(ty);
+                self.table.push(Symbol {
+                    name: des.lexeme.to_string(),
+                    kind: SymbolKind::Variable,
+                    ty: ty.clone(),
+                    visibility: ir::Visibility::Private,
+                    params: None,
+                });
+            }
+            super::lexer::token::Instruction::ElemSet => {}
             super::lexer::token::Instruction::Jump => {
                 // Maybe a symbole type should be Label?
             }
@@ -198,7 +234,8 @@ impl SymbolTableBuilder {
                 // Maybe a symbole type should be Label?
             }
             super::lexer::token::Instruction::Load => {
-                let [ty, des, _] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @load");
                 };
@@ -212,7 +249,8 @@ impl SymbolTableBuilder {
                 });
             }
             super::lexer::token::Instruction::Mul => {
-                let [ty, des, _, _] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _, _] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @mul");
                 };
@@ -226,7 +264,8 @@ impl SymbolTableBuilder {
                 });
             }
             super::lexer::token::Instruction::Phi => {
-                let [ty, des] = &instruction.arguments[0..2] else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des] = &args[0..2] else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @phi");
                 };
@@ -240,7 +279,8 @@ impl SymbolTableBuilder {
                 });
             }
             super::lexer::token::Instruction::Ret => {
-                let [ty, src] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, src] = args else {
                     return Ok(());
                 };
                 let Some(symbol) = self.table.get(&src.lexeme) else {
@@ -258,7 +298,8 @@ impl SymbolTableBuilder {
                 }));
             }
             super::lexer::token::Instruction::Sub => {
-                let [ty, des, _, _] = &instruction.arguments.as_slice() else {
+                let args = instruction.arguments.as_slice();
+                let [ty, des, _, _] = args else {
                     // NOTE: If this happens then the parser is broken.
                     panic!("Invalid instruction arguments for @sub");
                 };

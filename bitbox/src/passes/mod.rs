@@ -14,8 +14,14 @@ pub enum DebugPass {
     LocalFunctionVariables,
     LoweredIr,
     PhiNodeElimination,
-    StructuredIr,
     VirtRegRewrite,
+    StructuringIr,
+}
+
+#[derive(Debug)]
+pub enum PassOutput {
+    Nothing,
+    String(String),
 }
 
 pub trait Pass {
@@ -26,21 +32,26 @@ pub trait Pass {
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error>;
 
-    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {}
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) -> PassOutput;
 
     fn execute(
         &mut self,
         module: &mut crate::ir::Module,
         ctx: &mut crate::backend::Context,
         debug_mode: Option<DebugPass>,
-    ) -> Result<(), crate::error::Error> {
+    ) -> Result<PassOutput, crate::error::Error> {
         eprintln!("{: >30}", format!("{:?}", self.debug_pass()));
-        if let Some(dm) = debug_mode
+
+        self.run(module, ctx)?;
+
+        let output = if let Some(dm) = debug_mode
             && dm == self.debug_pass()
         {
-            self.debug(module, ctx);
-            return Ok(());
-        }
-        self.run(module, ctx)
+            self.debug(module, ctx)
+        } else {
+            PassOutput::Nothing
+        };
+
+        Ok(output)
     }
 }

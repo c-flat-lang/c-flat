@@ -1,3 +1,5 @@
+use crate::passes::PassOutput;
+
 pub struct VirtRegRewritePass;
 
 impl crate::passes::Pass for VirtRegRewritePass {
@@ -5,7 +7,7 @@ impl crate::passes::Pass for VirtRegRewritePass {
         crate::passes::DebugPass::VirtRegRewrite
     }
 
-    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) {
+    fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) -> PassOutput {
         todo!()
     }
 

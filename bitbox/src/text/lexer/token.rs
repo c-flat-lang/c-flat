@@ -58,8 +58,8 @@ pub enum TokenKind {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Instruction {
     Add,
-    Assign,
     Alloc,
+    Assign,
     Call,
     Cmp,
     ElemGet,
@@ -77,8 +77,8 @@ impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Add => write!(f, "@add"),
-            Self::Assign => write!(f, "@assign"),
             Self::Alloc => write!(f, "@alloc"),
+            Self::Assign => write!(f, "@assign"),
             Self::Call => write!(f, "@call"),
             Self::Cmp => write!(f, "@cmp"),
             Self::ElemGet => write!(f, "@elemget"),
@@ -105,6 +105,8 @@ pub enum Keyword {
     Import,
     Function,
     Public,
+    Then,
+    Else,
 }
 
 impl std::fmt::Display for Keyword {
@@ -114,6 +116,8 @@ impl std::fmt::Display for Keyword {
             Keyword::Import => write!(f, "import"),
             Keyword::Function => write!(f, "function"),
             Keyword::Public => write!(f, "public"),
+            Keyword::Then => write!(f, "then"),
+            Keyword::Else => write!(f, "else"),
         }
     }
 }
