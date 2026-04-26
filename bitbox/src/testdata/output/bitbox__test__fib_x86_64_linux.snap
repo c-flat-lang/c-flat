@@ -1,0 +1,152 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::X86_64Linux, \"../examples/fib.bitbox\", contents)"
+---
+.intel_syntax noprefix
+.globl main
+  # Defining Function fib
+fib:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 32
+  # -- args --
+  # arg 0: n
+  mov dword ptr [rbp-4], edi
+  # arg 1: a
+  mov dword ptr [rbp-8], esi
+  # arg 2: b
+  mov dword ptr [rbp-12], edx
+fib_entry:
+  # @assign s32 : tmp.0_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(3 : Reg64), 0
+  mov dword ptr [rbp-16], vreg(3 : Reg32)
+  # @cmp s32 : tmp.1_v0, n_v0, tmp.0_v0
+  # lowering cmp
+  # lowering operand
+  # lowering operand
+  mov vreg(5 : Reg32), dword ptr [rbp-16]
+  cmp dword ptr [rbp-4], vreg(5 : Reg32)
+  sete vreg(6 : Reg8)
+  movzx vreg(7 : Reg64), vreg(6 : Reg8)
+  # @jumpif tmp.1_v0, %then.1
+  # lowering jump if
+  # lowering operand
+  test vreg(7 : Reg64), vreg(7 : Reg64)
+  jnz fib_then_1
+  # @jump %merge.3
+  # lowering jump if
+  jmp fib_merge_3
+fib_then_1:
+  # @ret s32 : a_v0
+  # lowering return
+  mov eax, dword ptr [rbp-8]
+  jmp exit_fib
+  # @jump %merge.3
+  # lowering jump if
+  jmp fib_merge_3
+fib_merge_3:
+  # @assign s32 : tmp.2_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(9 : Reg64), 1
+  mov dword ptr [rbp-20], vreg(9 : Reg32)
+  # @sub s32 : tmp.3_v0, n_v0, tmp.2_v0
+  # lowering sub
+  # lowering operand
+  # lowering operand
+  mov vreg(11 : Reg32), dword ptr [rbp-20]
+  sub dword ptr [rbp-4], vreg(11 : Reg32)
+  # @add s32 : tmp.4_v0, a_v0, b_v0
+  # lowering add
+  # lowering operand
+  # lowering operand
+  mov vreg(13 : Reg32), dword ptr [rbp-12]
+  add dword ptr [rbp-8], vreg(13 : Reg32)
+  # @call s32 : tmp.5_v0 fib(tmp.3_v0, b_v0, tmp.4_v0)
+  # lowering call
+  # lowering operand
+  # lowering operand
+  # lowering operand
+  mov edx, dword ptr [rbp-8]
+  mov esi, dword ptr [rbp-12]
+  mov edi, dword ptr [rbp-4]
+  call fib
+  mov vreg(15 : Reg64), rax
+  # @ret s32 : tmp.5_v0
+  # lowering return
+  mov eax, vreg(15 : Reg32)
+  jmp exit_fib
+exit_fib:
+  add rsp, 32
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function fib ---
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 32
+  # -- args --
+main_entry:
+  # @assign s32 : tmp.0_v0, 55
+  # lowering assign
+  # lowering operand
+  mov vreg(0 : Reg64), 55
+  mov dword ptr [rbp-4], vreg(0 : Reg32)
+  # @assign s32 : tmp.1_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(2 : Reg64), 0
+  mov dword ptr [rbp-8], vreg(2 : Reg32)
+  # @assign s32 : tmp.2_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(4 : Reg64), 1
+  mov dword ptr [rbp-12], vreg(4 : Reg32)
+  # @call s32 : tmp.3_v0 fib(tmp.0_v0, tmp.1_v0, tmp.2_v0)
+  # lowering call
+  # lowering operand
+  # lowering operand
+  # lowering operand
+  mov edx, dword ptr [rbp-12]
+  mov esi, dword ptr [rbp-8]
+  mov edi, dword ptr [rbp-4]
+  call fib
+  mov vreg(6 : Reg64), rax
+  # @assign s32 : value_v0, tmp.3_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-16], vreg(6 : Reg32)
+  # @call write_int(value_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-16]
+  call write_int
+  # @assign s32 : tmp.4_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(9 : Reg64), 10
+  mov dword ptr [rbp-20], vreg(9 : Reg32)
+  # @call write_char(tmp.4_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-20]
+  call write_char
+  # @assign s32 : tmp.5_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(11 : Reg64), 0
+  mov dword ptr [rbp-24], vreg(11 : Reg32)
+  # @ret s32 : tmp.5_v0
+  # lowering return
+  mov eax, dword ptr [rbp-24]
+  jmp exit_main
+exit_main:
+  add rsp, 32
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---
