@@ -1,1 +1,1 @@
-wasm-pack build --target web --out-dir ./web-editor/pkg -- --features wasm
+wasm-pack build --target web --out-dir ./playground/public/pkg -- --features wasm
