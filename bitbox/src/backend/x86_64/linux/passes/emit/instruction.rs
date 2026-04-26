@@ -149,7 +149,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJumpIf {
         target
             .assembler
             .test(cond.clone(), cond.clone())
-            .jnz(&self.label);
+            .jnz(format!("{}_{}", target.function_name, &self.label));
 
         Ok(())
     }
@@ -163,7 +163,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJump {
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering jump if");
-        target.assembler.jmp(&self.label);
+        target
+            .assembler
+            .jmp(format!("{}_{}", target.function_name, &self.label));
 
         Ok(())
     }

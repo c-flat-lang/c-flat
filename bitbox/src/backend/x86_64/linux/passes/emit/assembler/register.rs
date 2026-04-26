@@ -256,7 +256,7 @@ pub enum Reg32 {
 }
 
 impl CastableReg for Reg32 {
-    const KIND: RegKind = RegKind::Reg64;
+    const KIND: RegKind = RegKind::Reg32;
 }
 
 impl From<PhysReg> for Reg32 {

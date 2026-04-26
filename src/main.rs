@@ -27,11 +27,11 @@ fn main() {
     let compiler_output = compiler.run(&mut module);
 
     match compiler_output {
-        #[cfg(feature = "wasm-runtime")]
         Ok(PassOutput::Nothing) if cli_options.run => {
             let path = compiler.file_output_path();
             eprintln!("{: >30} {}", "Running", path);
             match cli_options.target {
+                #[cfg(feature = "wasm-runtime")]
                 cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path.as_str())
                 {
                     Ok(()) => {}
@@ -40,13 +40,21 @@ fn main() {
                         std::process::exit(1);
                     }
                 },
+                #[cfg(not(feature = "wasm-runtime"))]
+                cflat::Target::Wasm32 | cflat::Target::Bitbeat => {
+                    eprintln!(
+                        "Error: Running Wasm and Bitbeat targets is not supported without the 'wasm-runtime' feature."
+                    );
+                    std::process::exit(1);
+                }
+
                 cflat::Target::X86_64Linux => {
-                    let cmd_result = std::process::Command::new(path.as_str()).output();
+                    let cmd_result =
+                        std::process::Command::new(format!("./{}", path.as_str())).output();
                     match cmd_result {
                         Ok(output) => {
-                            if !output.status.success() {
-                                println!("{}", String::from_utf8_lossy(&output.stderr));
-                            }
+                            println!("{}", String::from_utf8_lossy(&output.stderr));
+                            println!("{}", String::from_utf8_lossy(&output.stdout));
                         }
                         Err(e) => {
                             println!("{}", e);
@@ -59,12 +67,12 @@ fn main() {
         Ok(PassOutput::String(result)) => {
             println!("{}", result);
         }
+        Ok(_) => {
+            // Compilation succeeded, output written to file.
+        }
         Err(err) => {
             eprintln!("{}", err);
             std::process::exit(1);
-        }
-        _ => {
-            unreachable!();
         }
     }
 }

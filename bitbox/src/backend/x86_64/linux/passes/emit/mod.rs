@@ -188,7 +188,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
         ctx: &mut Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        target.assembler.define_label(&self.label);
+        target
+            .assembler
+            .define_label(format!("{}_{}", target.function_name, &self.label));
 
         for (instr_index, instruction) in self.instructions.iter().enumerate() {
             target
