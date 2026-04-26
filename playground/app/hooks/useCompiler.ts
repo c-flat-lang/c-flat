@@ -25,8 +25,8 @@ export function useCompiler() {
   async function compile(source: string): Promise<Uint8Array> {
     if (!mod.current) throw new Error("Compiler not loaded");
     const { compile_source, Cli, Target } = mod.current;
-    const cli = new Cli(Target.Wasm32, "example.cb");
-    return compile_source(source, cli) as Uint8Array;
+    const cli = new Cli(Target.Wasm32, "fib.cb");
+    return compile_source(source, cli);
   }
 
   async function run(wasmBytes: Uint8Array): Promise<RunResult> {
@@ -37,7 +37,9 @@ export function useCompiler() {
       core: {
         write: (ptr: number, len: number) => {
           if (!memoryBuffer) return;
-          lines.push(new TextDecoder().decode(memoryBuffer.slice(ptr, ptr + len)));
+          lines.push(
+            new TextDecoder().decode(memoryBuffer.slice(ptr, ptr + len)),
+          );
         },
         write_i32: (n: number) => lines.push(String(n)),
         write_int: (n: number) => lines.push(String(n)),
@@ -48,7 +50,9 @@ export function useCompiler() {
 
     try {
       const result = await WebAssembly.instantiate(wasmBytes, imports);
-      const instance = (result as unknown as WebAssembly.WebAssemblyInstantiatedSource).instance;
+      const instance = (
+        result as unknown as WebAssembly.WebAssemblyInstantiatedSource
+      ).instance;
       const memory = instance.exports.memory as WebAssembly.Memory | undefined;
       if (memory) memoryBuffer = new Uint8Array(memory.buffer);
       (instance.exports.main as () => void)();

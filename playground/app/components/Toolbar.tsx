@@ -7,11 +7,16 @@ interface ToolbarProps {
   vimMode: string;
 }
 
-export default function Toolbar({ onRun, ready, status, vimMode }: ToolbarProps) {
+export default function Toolbar({
+  onRun,
+  ready,
+  status,
+  vimMode,
+}: ToolbarProps) {
   const busy = status === "compiling" || status === "running";
 
   return (
-    <div className="flex items-center justify-between px-3 h-8 bg-[#007acc] text-white text-xs font-mono select-none shrink-0">
+    <div className="flex items-center justify-between px-3 h-8 bg-[#3c3836] text-white text-xs font-mono select-none shrink-0">
       {/* Left: vim mode */}
       <span className="w-24 text-yellow-200 font-bold uppercase tracking-wider">
         {vimMode || "NORMAL"}

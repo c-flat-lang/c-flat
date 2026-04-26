@@ -46,7 +46,7 @@ export default function Home() {
       <div className="flex flex-1 min-h-0">
         <div className="flex flex-col flex-1 min-w-0 border-r border-[#3e3e3e]">
           <div className="px-3 py-1 bg-[#252526] border-b border-[#3e3e3e] text-xs text-[#858585] font-mono">
-            example.cb
+            fib.cb
           </div>
           <div className="flex-1 min-h-0">
             <Editor ref={editorRef} />
@@ -56,7 +56,12 @@ export default function Home() {
           <Output output={output} error={error} status={status} />
         </div>
       </div>
-      <Toolbar onRun={handleRun} ready={ready} status={status} vimMode={vimMode} />
+      <Toolbar
+        onRun={handleRun}
+        ready={ready}
+        status={status}
+        vimMode={vimMode}
+      />
     </div>
   );
 }

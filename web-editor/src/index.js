@@ -79,7 +79,7 @@ async function main() {
 
   runBtn.addEventListener("click", async () => {
     const source = editor.getValue();
-    const options = new Cli(Target.Wasm32, "example.cb");
+    const options = new Cli(Target.Wasm32, "fib.cb");
 
     try {
       const wasmBytes = compile_source(source, options);
