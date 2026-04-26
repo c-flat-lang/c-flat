@@ -9,6 +9,10 @@ use crate::stage::parser::ast::{self, ExprMemberAccess};
 
 pub struct Parser {
     lexer: std::iter::Peekable<std::vec::IntoIter<Token>>,
+    /// When true, struct literal expressions (`Foo { .field = val }`) are not
+    /// parsed in primary position. Set while parsing `if`/`while` conditions so
+    /// that `if cond {` is never mistaken for a struct instantiation.
+    restrict_struct_literal: bool,
 }
 
 impl Parser {
@@ -19,7 +23,7 @@ impl Parser {
 
 impl Parser {
     pub fn new(lexer: Peekable<std::vec::IntoIter<Token>>) -> Self {
-        Self { lexer }
+        Self { lexer, restrict_struct_literal: false }
     }
 
     pub fn parse(&mut self) -> Result<Vec<ast::Item>> {
@@ -279,7 +283,9 @@ impl Parser {
             return self.return_expression();
         }
         let while_token = self.consume(TokenKind::Keyword(Keyword::While))?;
+        self.restrict_struct_literal = true;
         let condition = self.parse_expr()?;
+        self.restrict_struct_literal = false;
         let body = self.parse_block()?;
         let while_expr = ast::ExprWhile {
             while_token,
@@ -312,7 +318,9 @@ impl Parser {
         }
         let if_token = self.consume(TokenKind::Keyword(Keyword::If))?;
 
+        self.restrict_struct_literal = true;
         let condition = self.parse_expr()?;
+        self.restrict_struct_literal = false;
         let then_branch = self.parse_block()?;
         let mut else_token = None;
         let else_branch = if self.peek(TokenKind::Keyword(Keyword::Else)) {
@@ -510,7 +518,7 @@ impl Parser {
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
             TokenKind::Identifier => {
-                if self.peek(TokenKind::LeftBrace) {
+                if !self.restrict_struct_literal && self.peek(TokenKind::LeftBrace) {
                     return self.parse_struct_instantiation(token);
                 }
                 Ok(ast::Expr::Identifier(token))

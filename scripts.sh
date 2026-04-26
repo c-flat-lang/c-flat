@@ -1,1 +1,1 @@
-wasm-pack build --target web --out-dir ./playground/public/pkg -- --features wasm
+wasm-pack build --target web --out-dir ./playground/lib/cflat -- --features wasm
