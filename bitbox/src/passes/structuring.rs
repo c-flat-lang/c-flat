@@ -71,9 +71,9 @@ fn try_raise_if_else(func: &mut Function, ctx: &crate::backend::Context) -> bool
             let block = func.blocks.iter().find(|b| b.id == bid).unwrap();
             let label = &block.label;
 
-            if label.starts_with("then_") || label == "then" {
+            if label.starts_with("then.") || label.starts_with("then_") || label == "then" {
                 then_ids.push(bid);
-            } else if label.starts_with("else_") || label == "else" {
+            } else if label.starts_with("else.") || label.starts_with("else_") || label == "else" {
                 else_ids.push(bid);
             }
         }
