@@ -10,7 +10,7 @@ syn keyword aKeyword if else
 syn keyword aKeyword true false
 syn keyword aKeyword or and let in const
 syn keyword aKeyword fn struct enum union type
-syn keyword aKeyword return
+syn keyword aKeyword return extern
 
 " syn keyword aFunction println print
 

@@ -81,6 +81,7 @@ impl<'st> TypeChecker<'st> {
             ast::Item::Function(function) => self.walk_function(function),
             ast::Item::Type(type_def) => self.walk_type_def(type_def),
             ast::Item::Use(r#use) => self.walk_use(r#use),
+            ast::Item::ExternFunction(extern_function) => todo!(),
         }
     }
 

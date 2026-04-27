@@ -87,6 +87,7 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
                 Item::Function(function) => self.build_function(function, &mut mb),
                 Item::Type(_) => {}
                 Item::Use(u) => self.build_use(u),
+                Item::ExternFunction(extern_function) => todo!(),
             }
         }
         Ok(mb.build())

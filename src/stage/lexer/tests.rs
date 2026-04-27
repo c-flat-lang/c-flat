@@ -43,3 +43,4 @@ macro_rules! snapshot {
 }
 
 snapshot!(hello_world, "../../../examples/hello_world.cb");
+snapshot!(extern_function, "../../../examples/extern.cb");

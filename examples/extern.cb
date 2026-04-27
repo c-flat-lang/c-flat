@@ -1,0 +1,10 @@
+ extern C fn initWindow(s33, s32) void;
+ extern C fn beginDrawing() void;
+ extern C fn drawText(*u8, s32, s32, s32, u32) void;
+ extern C fn closeWindow() void;
+
+ pub fn main() void {
+     initWindow(800, 600);
+     beginDrawing();
+     closeWindow();
+ }

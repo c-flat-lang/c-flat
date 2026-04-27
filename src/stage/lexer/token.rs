@@ -58,9 +58,11 @@ pub enum TokenKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Keyword {
     And,
+    As,
     Const,
     Else,
     Enum,
+    Extern,
     False,
     Fn,
     For,
@@ -81,9 +83,11 @@ impl std::fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::And => write!(f, "and"),
+            Self::As => write!(f, "as"),
             Self::Const => write!(f, "const"),
             Self::Else => write!(f, "else"),
             Self::Enum => write!(f, "enum"),
+            Self::Extern => write!(f, "extern"),
             Self::False => write!(f, "false"),
             Self::Fn => write!(f, "fn"),
             Self::For => write!(f, "for"),
