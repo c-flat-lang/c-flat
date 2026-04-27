@@ -131,6 +131,31 @@ pub enum Item {
     Function(Function),
     Type(TypeDef),
     Use(Use),
+    ExternFunction(ExternFunction),
+}
+
+#[derive(Debug)]
+pub struct ExternFunction {
+    pub visibility: Visibility,
+    pub extern_token: Token,
+    pub fn_token: Token,
+    pub calling_convention: Token,
+    pub binding_name: Token,
+    pub local_name: Option<Token>,
+    pub params: Vec<Type>,
+    pub return_type: Type,
+}
+
+impl ExternFunction {
+    pub fn span(&self) -> Span {
+        let start = self.extern_token.span.start;
+        let end = self
+            .local_name
+            .as_ref()
+            .map(|n| n.span.end)
+            .unwrap_or(self.binding_name.span.end);
+        start..end
+    }
 }
 
 #[derive(Debug, Clone)]

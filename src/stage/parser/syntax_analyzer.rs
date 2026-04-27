@@ -38,6 +38,10 @@ impl Parser {
             };
 
             match token.kind {
+                TokenKind::Keyword(Keyword::Extern) => {
+                    let extern_function = self.parse_extern_function(visibility)?;
+                    items.push(ast::Item::ExternFunction(extern_function));
+                }
                 TokenKind::Keyword(Keyword::Fn) => {
                     let function = self.parse_function(visibility)?;
                     items.push(ast::Item::Function(function));
@@ -103,6 +107,45 @@ impl Parser {
             Some(_) => Ok(ast::Visibility::Private),
             None => Err(Box::new(ErrorUnexpectedEndOfInput)),
         }
+    }
+
+    fn parse_extern_function(
+        &mut self,
+        visibility: ast::Visibility,
+    ) -> Result<ast::ExternFunction> {
+        let extern_token = self.consume(TokenKind::Keyword(Keyword::Extern))?;
+        let calling_convention = self.consume(TokenKind::Identifier)?;
+        let fn_token = self.consume(TokenKind::Keyword(Keyword::Fn))?;
+        let (binding_name, local_name) = self.consume(TokenKind::Identifier).and_then(|bn| {
+            if !self.peek(TokenKind::Keyword(Keyword::As)) {
+                return Ok((bn, None));
+            }
+            self.consume(TokenKind::Keyword(Keyword::As))?;
+            Ok((bn, self.consume(TokenKind::Identifier).ok()))
+        })?;
+        self.consume(TokenKind::LeftParen)?;
+        let mut params = Vec::new();
+        while !self.peek(TokenKind::RightParen) {
+            let ty = self.parse_type()?;
+            eprintln!("{:?}", ty);
+            params.push(ty);
+            if self.peek(TokenKind::Comma) {
+                self.consume(TokenKind::Comma)?;
+            }
+        }
+        self.consume(TokenKind::RightParen)?;
+        let return_type = self.parse_type()?;
+        self.consume(TokenKind::Semicolon)?;
+        Ok(ast::ExternFunction {
+            visibility,
+            extern_token,
+            fn_token,
+            calling_convention,
+            binding_name,
+            local_name,
+            params,
+            return_type,
+        })
     }
 
     fn parse_type_def(&mut self, visibility: ast::Visibility) -> Result<ast::TypeDef> {
