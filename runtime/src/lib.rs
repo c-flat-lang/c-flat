@@ -45,9 +45,8 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
 
     let mut linker: Linker<WasiCtx> = Linker::new(&engine);
     linker.func_wrap("core", "write_char", |a: i32| {
-        match String::from_utf8(a.to_le_bytes().to_vec()) {
-            Ok(s) => print!("{}", s),
-            Err(err) => println!("{}", err),
+        if let Some(c) = char::from_u32(a as u32) {
+            print!("{}", c);
         }
     })?;
     linker.func_wrap("core", "writenl", || {
