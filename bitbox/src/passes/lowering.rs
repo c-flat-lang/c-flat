@@ -100,10 +100,8 @@ fn lower_loop(
     let mut block = func.blocks[block_index].clone();
     let after_loop = block.instructions.split_off(instr_index + 1);
 
-    debug_assert!(matches!(
-        block.instructions.pop(),
-        Some(Instruction::Loop(_))
-    ));
+    let popped = block.instructions.pop();
+    debug_assert!(matches!(popped, Some(Instruction::Loop(_))));
 
     let start_label = format!("start_loop_{}", vc.gen_name());
     let body_label = format!("body_loop_{}", vc.gen_name());
@@ -191,10 +189,8 @@ fn lower_if_else(
 
     let mut block = func.blocks[block_index].clone();
     let after_if = block.instructions.split_off(instr_index + 1);
-    debug_assert!(matches!(
-        block.instructions.pop(),
-        Some(Instruction::IfElse(_))
-    ));
+    let popped = block.instructions.pop();
+    debug_assert!(matches!(popped, Some(Instruction::IfElse(_))));
 
     let cond_label = format!("cond_{}", vc.gen_name());
     let then_label = format!("then_{}", vc.gen_name());
