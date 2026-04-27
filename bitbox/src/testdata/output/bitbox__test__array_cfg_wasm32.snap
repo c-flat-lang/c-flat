@@ -1,0 +1,6 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::ControlFlowGraph,\n\"../examples/array.bitbox\", contents)"
+---
+IN BOUND:
+OUT BOUND:

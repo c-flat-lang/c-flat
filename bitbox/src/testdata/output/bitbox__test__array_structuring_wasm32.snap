@@ -1,0 +1,13 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::StructuringIr,\n\"../examples/array.bitbox\", contents)"
+---
+[31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@alloc[0m [33ms32[0m : [1;36marr_v0[0m, [33m3[0m
+    [34m@elemset[0m [33ms32[0m : [1;36marr_v0[0m, [33m0[0m, [33m100[0m
+    [34m@elemset[0m [33ms32[0m : [1;36marr_v0[0m, [33m1[0m, [33m200[0m
+    [34m@elemset[0m [33ms32[0m : [1;36marr_v0[0m, [33m2[0m, [33m300[0m
+    [34m@elemget[0m [33ms32[0m : [1;36mret_v0[0m, [1;36marr_v0[0m, [33m1[0m
+    [34m@ret[0m [33ms32[0m : [1;36mret_v0[0m
+}

@@ -1,0 +1,20 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::LoweredIr,\n\"../examples/looping.bitbox\", contents)"
+---
+[31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@load[0m [33mu8[0m : [1;36mstart_v0[0m, [33m0[0m
+    [34m@jump[0m %[1;36mloop[0m
+  %[33mloop[0m: [2;38;2;128;128;128m// 1[0m
+    [34m@phi[0m [33mu8[0m : [1;36mresult_v0[0m,
+    [[1;36mentry[0m, [1;36mstart_v0[0m]
+    [[1;36mloop[0m, [1;36mnext_v0[0m]
+
+    [34m@cmp[0m [33mu8[0m : [1;36mis_running_v0[0m, [1;36mresult_v0[0m, [33m10[0m
+    [34m@add[0m [33mu8[0m : [1;36mnext_v0[0m, [1;36mresult_v0[0m, [33m1[0m
+    [34m@jumpif[0m [1;36mis_running_v0[0m, %[1;36mexit[0m
+    [34m@jump[0m %[1;36mloop[0m
+  %[33mexit[0m: [2;38;2;128;128;128m// 2[0m
+    [34m@ret[0m [33mu8[0m : [1;36mresult_v0[0m
+}

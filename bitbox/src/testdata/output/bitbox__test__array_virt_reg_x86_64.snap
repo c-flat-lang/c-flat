@@ -1,0 +1,56 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::VirtRegRewrite,\n\"../examples/array.bitbox\", contents)"
+---
+.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+main_entry:
+  # @alloc s32 : arr_v0, 3
+  # lowering alloc
+  # @elemset s32 : arr_v0, 0, 100
+  # lowering elemset
+  # lowering operand
+  mov r10, 0
+  # lowering operand
+  mov r11, 100
+  lea rax, dword ptr [rbp-12]
+  mov [rax + r10 * 4], r11d
+  # @elemset s32 : arr_v0, 1, 200
+  # lowering elemset
+  # lowering operand
+  mov rax, 1
+  # lowering operand
+  mov r11, 200
+  lea r10, dword ptr [rbp-12]
+  mov [r10 + rax * 4], r11d
+  # @elemset s32 : arr_v0, 2, 300
+  # lowering elemset
+  # lowering operand
+  mov r10, 2
+  # lowering operand
+  mov r11, 300
+  lea rax, dword ptr [rbp-12]
+  mov [rax + r10 * 4], r11d
+  # @elemget s32 : ret_v0, arr_v0, 1
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov rax, 1
+  lea r11, dword ptr [rbp-12]
+  mov r10d, [r11 + rax * 4]
+  # @ret s32 : ret_v0
+  # lowering return
+  mov eax, r10d
+  jmp exit_main
+exit_main:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

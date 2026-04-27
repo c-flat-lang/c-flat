@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/test.rs
-expression: "snapshot_compiler(Target::Bitbeat, \"../examples/fib.bitbox\", contents)"
+expression: "snapshot_compiler(Target::Bitbeat, DebugPass::Emit, \"../examples/fib.bitbox\",\ncontents)"
 ---
 (
     name: "main",

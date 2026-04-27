@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/test.rs
-expression: "snapshot_compiler(Target::X86_64Linux, \"../examples/fib.bitbox\", contents)"
+expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::VirtRegRewrite,\n\"../examples/fib.bitbox\", contents)"
 ---
 .intel_syntax noprefix
 .globl main
@@ -20,20 +20,20 @@ fib_entry:
   # @assign s32 : tmp.0_v0, 0
   # lowering assign
   # lowering operand
-  mov vreg(3 : Reg64), 0
-  mov dword ptr [rbp-16], vreg(3 : Reg32)
+  mov r10, 0
+  mov dword ptr [rbp-16], r10d
   # @cmp s32 : tmp.1_v0, n_v0, tmp.0_v0
   # lowering cmp
   # lowering operand
   # lowering operand
-  mov vreg(5 : Reg32), dword ptr [rbp-16]
-  cmp dword ptr [rbp-4], vreg(5 : Reg32)
-  sete vreg(6 : Reg8)
-  movzx vreg(7 : Reg64), vreg(6 : Reg8)
+  mov r10d, dword ptr [rbp-16]
+  cmp dword ptr [rbp-4], r10d
+  sete r10b
+  movzx r11, r10b
   # @jumpif tmp.1_v0, %then.1
   # lowering jump if
   # lowering operand
-  test vreg(7 : Reg64), vreg(7 : Reg64)
+  test r11, r11
   jnz fib_then_1
   # @jump %merge.3
   # lowering jump if
@@ -50,33 +50,33 @@ fib_merge_3:
   # @assign s32 : tmp.2_v0, 1
   # lowering assign
   # lowering operand
-  mov vreg(9 : Reg64), 1
-  mov dword ptr [rbp-20], vreg(9 : Reg32)
+  mov r11, 1
+  mov dword ptr [rbp-20], r11d
   # @sub s32 : tmp.3_v0, n_v0, tmp.2_v0
   # lowering sub
   # lowering operand
   # lowering operand
-  mov vreg(11 : Reg32), dword ptr [rbp-20]
-  sub dword ptr [rbp-4], vreg(11 : Reg32)
+  mov r11d, dword ptr [rbp-4]
+  sub r11d, dword ptr [rbp-20]
   # @add s32 : tmp.4_v0, a_v0, b_v0
   # lowering add
   # lowering operand
   # lowering operand
-  mov vreg(13 : Reg32), dword ptr [rbp-12]
-  add dword ptr [rbp-8], vreg(13 : Reg32)
+  mov r10d, dword ptr [rbp-8]
+  add r10d, dword ptr [rbp-12]
   # @call s32 : tmp.5_v0 fib(tmp.3_v0, b_v0, tmp.4_v0)
   # lowering call
   # lowering operand
   # lowering operand
   # lowering operand
-  mov edx, dword ptr [rbp-8]
+  mov rdx, r10
   mov esi, dword ptr [rbp-12]
-  mov edi, dword ptr [rbp-4]
+  mov rdi, r11
   call fib
-  mov vreg(15 : Reg64), rax
+  mov r10, rax
   # @ret s32 : tmp.5_v0
   # lowering return
-  mov eax, vreg(15 : Reg32)
+  mov eax, r10d
   jmp exit_fib
 exit_fib:
   add rsp, 32
@@ -94,18 +94,18 @@ main_entry:
   # @assign s32 : tmp.0_v0, 55
   # lowering assign
   # lowering operand
-  mov vreg(0 : Reg64), 55
-  mov dword ptr [rbp-4], vreg(0 : Reg32)
+  mov r10, 55
+  mov dword ptr [rbp-4], r10d
   # @assign s32 : tmp.1_v0, 0
   # lowering assign
   # lowering operand
-  mov vreg(2 : Reg64), 0
-  mov dword ptr [rbp-8], vreg(2 : Reg32)
+  mov r10, 0
+  mov dword ptr [rbp-8], r10d
   # @assign s32 : tmp.2_v0, 1
   # lowering assign
   # lowering operand
-  mov vreg(4 : Reg64), 1
-  mov dword ptr [rbp-12], vreg(4 : Reg32)
+  mov r10, 1
+  mov dword ptr [rbp-12], r10d
   # @call s32 : tmp.3_v0 fib(tmp.0_v0, tmp.1_v0, tmp.2_v0)
   # lowering call
   # lowering operand
@@ -115,11 +115,11 @@ main_entry:
   mov esi, dword ptr [rbp-8]
   mov edi, dword ptr [rbp-4]
   call fib
-  mov vreg(6 : Reg64), rax
+  mov r10, rax
   # @assign s32 : value_v0, tmp.3_v0
   # lowering assign
   # lowering operand
-  mov dword ptr [rbp-16], vreg(6 : Reg32)
+  mov dword ptr [rbp-16], r10d
   # @call write_int(value_v0)
   # lowering call
   # lowering operand
@@ -128,8 +128,8 @@ main_entry:
   # @assign s32 : tmp.4_v0, 10
   # lowering assign
   # lowering operand
-  mov vreg(9 : Reg64), 10
-  mov dword ptr [rbp-20], vreg(9 : Reg32)
+  mov r10, 10
+  mov dword ptr [rbp-20], r10d
   # @call write_char(tmp.4_v0)
   # lowering call
   # lowering operand
@@ -138,8 +138,8 @@ main_entry:
   # @assign s32 : tmp.5_v0, 0
   # lowering assign
   # lowering operand
-  mov vreg(11 : Reg64), 0
-  mov dword ptr [rbp-24], vreg(11 : Reg32)
+  mov r10, 0
+  mov dword ptr [rbp-24], r10d
   # @ret s32 : tmp.5_v0
   # lowering return
   mov eax, dword ptr [rbp-24]

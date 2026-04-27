@@ -1,0 +1,60 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::LivenessAnalysis,\n\"../examples/factorial.bitbox\", contents)"
+---
+Function: factorial
+BlockId(0)
+Instruction: 0, [34m@assign[0m [33ms32[0m : [1;36mtmp_1_v0_v0[0m, [33m1[0m
+Live variables: n_v0, result_v0, tmp_0_v0, 
+Instruction: 1, [34m@cmp[0m [33ms32[0m : [1;36mtmp_2_v0_v0[0m, [1;36mn_v0_v0[0m, [1;36mtmp_1_v0_v0[0m
+Live variables: n_v0, result_v0, tmp_0_v0, tmp_1_v0, 
+Instruction: 2, [34m@jumpif[0m [1;36mtmp_2_v0_v0[0m, %[1;36mthen_1[0m
+Live variables: n_v0, result_v0, tmp_0_v0, tmp_2_v0, 
+Instruction: 3, [34m@jump[0m %[1;36melse_2[0m
+Live variables: n_v0, result_v0, tmp_0_v0, 
+BlockId(1)
+Instruction: 1, [34m@assign[0m [33ms32[0m : [1;36mresult_v0_v0[0m, [1;36mtmp_3_v0_v0[0m
+Live variables: tmp_3_v0, 
+Instruction: 2, [34m@assign[0m [33ms32[0m : [1;36mtmp_0_v0_v0[0m, [1;36mresult_v0_v0[0m
+Live variables: result_v0, 
+Instruction: 3, [34m@jump[0m %[1;36mmerge_3[0m
+Live variables: tmp_0_v0, 
+BlockId(2)
+Instruction: 0, [34m@assign[0m [33ms32[0m : [1;36mtmp_4_v0_v0[0m, [33m1[0m
+Live variables: n_v0, result_v0, tmp_0_v0, 
+Instruction: 1, [34m@sub[0m [33ms32[0m : [1;36mtmp_5_v0_v0[0m, [1;36mn_v0_v0[0m, [1;36mtmp_4_v0_v0[0m
+Live variables: n_v0, result_v0, tmp_0_v0, tmp_4_v0, 
+Instruction: 2, [34m@assign[0m [33ms32[0m : [1;36mn_minus_one_v0_v0[0m, [1;36mtmp_5_v0_v0[0m
+Live variables: n_v0, result_v0, tmp_0_v0, tmp_5_v0, 
+Instruction: 3, [34m@call[0m [33ms32[0m : [1;36mtmp_6_v0_v0[0m [35mfactorial[0m([1;36mn_minus_one_v0_v0[0m)
+Live variables: n_minus_one_v0, n_v0, result_v0, tmp_0_v0, 
+Instruction: 4, [34m@assign[0m [33ms32[0m : [1;36mrecursive_result_v0_v0[0m, [1;36mtmp_6_v0_v0[0m
+Live variables: n_v0, result_v0, tmp_0_v0, tmp_6_v0, 
+Instruction: 5, [34m@mul[0m [33ms32[0m : [1;36mtmp_7_v0_v0[0m, [1;36mn_v0_v0[0m, [1;36mrecursive_result_v0_v0[0m
+Live variables: n_v0, recursive_result_v0, result_v0, tmp_0_v0, 
+Instruction: 6, [34m@assign[0m [33ms32[0m : [1;36mresult_v0_v1[0m, [1;36mtmp_7_v0_v0[0m
+Live variables: result_v0, tmp_0_v0, tmp_7_v0, 
+Instruction: 7, [34m@assign[0m [33ms32[0m : [1;36mtmp_0_v0_v1[0m, [1;36mresult_v0_v0[0m
+Live variables: result_v0, tmp_0_v0, 
+Instruction: 8, [34m@jump[0m %[1;36mmerge_3[0m
+Live variables: tmp_0_v0, 
+BlockId(3)
+Instruction: 0, [34m@phi[0m [33ms32[0m : [1;36mtmp_0_v0_v2[0m,
+    [[1;36mthen_1[0m, [1;36mtmp_0_v0_v0[0m]
+    [[1;36melse_2[0m, [1;36mtmp_0_v0_v0[0m]
+
+Live variables: tmp_0_v0, 
+Instruction: 1, [34m@ret[0m [33ms32[0m : [1;36mtmp_0_v0_v0[0m
+Live variables: tmp_0_v0, 
+Function: main
+BlockId(0)
+Instruction: 1, [34m@assign[0m [33ms32[0m : [1;36minput_v0_v0[0m, [1;36mtmp_0_v0_v0[0m
+Live variables: tmp_0_v0, 
+Instruction: 2, [34m@call[0m [33ms32[0m : [1;36mtmp_1_v0_v0[0m [35mfactorial[0m([1;36minput_v0_v0[0m)
+Live variables: input_v0, 
+Instruction: 3, [34m@assign[0m [33ms32[0m : [1;36mfact_result_v0_v0[0m, [1;36mtmp_1_v0_v0[0m
+Live variables: tmp_1_v0, 
+Instruction: 4, [34m@call[0m [33ms32[0m : [1;36mnone_v0[0m [35mwrite_int[0m([1;36mfact_result_v0_v0[0m)
+Live variables: fact_result_v0, 
+Instruction: 5, [34m@ret[0m [33ms32[0m : [1;36mfact_result_v0_v0[0m
+Live variables: fact_result_v0,

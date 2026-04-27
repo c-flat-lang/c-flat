@@ -1,0 +1,5 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::LocalFunctionVariables,\n\"../examples/array.bitbox\", contents)"
+---
+main:  arr : s32  ret : s32

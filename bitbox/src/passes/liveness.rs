@@ -420,7 +420,10 @@ impl LivenessAnalysisInfo {
 
     pub fn format(&self, module: &crate::ir::Module) -> String {
         let mut output = String::new();
-        for (function_name, block_table) in &self.table {
+        let mut function_names: Vec<&String> = self.table.keys().collect();
+        function_names.sort();
+        for function_name in function_names {
+            let block_table = &self.table[function_name];
             output += &format!("Function: {}\n", function_name);
             let mut blocks: Vec<(&crate::ir::BlockId, &usize, &[crate::ir::Variable])> =
                 block_table
@@ -444,12 +447,14 @@ impl LivenessAnalysisInfo {
                     "Instruction: {}, {}\n",
                     index, ir_block[block.0].instructions[**index]
                 );
-                output += &format!(
-                    "Live variables: {}\n",
-                    vars.iter()
-                        .map(|v| format!("{}, ", v.name))
+                output += &format!("Live variables: {}\n", {
+                    let mut sorted: Vec<_> = vars.iter().map(|v| v.name.clone()).collect();
+                    sorted.sort();
+                    sorted
+                        .iter()
+                        .map(|n| format!("{}, ", n))
                         .collect::<String>()
-                );
+                });
                 last_block = Some(block);
             }
         }

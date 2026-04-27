@@ -1,0 +1,56 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::Emit,\n\"../examples/array.bitbox\", contents)"
+---
+.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+main_entry:
+  # @alloc s32 : arr_v0, 3
+  # lowering alloc
+  # @elemset s32 : arr_v0, 0, 100
+  # lowering elemset
+  # lowering operand
+  mov vreg(1 : Reg64), 0
+  # lowering operand
+  mov vreg(2 : Reg64), 100
+  lea vreg(3 : Reg64), dword ptr [rbp-12]
+  mov [vreg(3 : Reg64) + vreg(1 : Reg64) * 4], vreg(2 : Reg32)
+  # @elemset s32 : arr_v0, 1, 200
+  # lowering elemset
+  # lowering operand
+  mov vreg(4 : Reg64), 1
+  # lowering operand
+  mov vreg(5 : Reg64), 200
+  lea vreg(6 : Reg64), dword ptr [rbp-12]
+  mov [vreg(6 : Reg64) + vreg(4 : Reg64) * 4], vreg(5 : Reg32)
+  # @elemset s32 : arr_v0, 2, 300
+  # lowering elemset
+  # lowering operand
+  mov vreg(7 : Reg64), 2
+  # lowering operand
+  mov vreg(8 : Reg64), 300
+  lea vreg(9 : Reg64), dword ptr [rbp-12]
+  mov [vreg(9 : Reg64) + vreg(7 : Reg64) * 4], vreg(8 : Reg32)
+  # @elemget s32 : ret_v0, arr_v0, 1
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(10 : Reg64), 1
+  lea vreg(11 : Reg64), dword ptr [rbp-12]
+  mov vreg(12 : Reg32), [vreg(11 : Reg64) + vreg(10 : Reg64) * 4]
+  # @ret s32 : ret_v0
+  # lowering return
+  mov eax, vreg(12 : Reg32)
+  jmp exit_main
+exit_main:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

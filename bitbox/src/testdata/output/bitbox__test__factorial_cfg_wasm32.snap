@@ -1,0 +1,22 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::ControlFlowGraph,\n\"../examples/factorial.bitbox\", contents)"
+---
+IN BOUND:
+factorial:
+  BlockId(1):
+    BlockId(0):
+  BlockId(2):
+    BlockId(0):
+  BlockId(3):
+    BlockId(1):
+    BlockId(2):
+OUT BOUND:
+factorial:
+  BlockId(0):
+    BlockId(1):
+    BlockId(2):
+  BlockId(1):
+    BlockId(3):
+  BlockId(2):
+    BlockId(3):

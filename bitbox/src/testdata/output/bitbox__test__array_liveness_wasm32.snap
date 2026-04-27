@@ -1,0 +1,16 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::LivenessAnalysis,\n\"../examples/array.bitbox\", contents)"
+---
+Function: main
+BlockId(0)
+Instruction: 1, [34m@elemset[0m [33ms32[0m : [1;36marr_v0[0m, [33m0[0m, [33m100[0m
+Live variables: arr, 
+Instruction: 2, [34m@elemset[0m [33ms32[0m : [1;36marr_v0[0m, [33m1[0m, [33m200[0m
+Live variables: arr, 
+Instruction: 3, [34m@elemset[0m [33ms32[0m : [1;36marr_v0[0m, [33m2[0m, [33m300[0m
+Live variables: arr, 
+Instruction: 4, [34m@elemget[0m [33ms32[0m : [1;36mret_v0[0m, [1;36marr_v0[0m, [33m1[0m
+Live variables: arr, 
+Instruction: 5, [34m@ret[0m [33ms32[0m : [1;36mret_v0[0m
+Live variables: ret,

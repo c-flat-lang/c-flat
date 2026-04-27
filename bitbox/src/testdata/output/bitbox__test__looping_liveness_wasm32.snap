@@ -1,0 +1,27 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::LivenessAnalysis,\n\"../examples/looping.bitbox\", contents)"
+---
+Function: main
+BlockId(0)
+Instruction: 0, [34m@load[0m [33mu8[0m : [1;36mstart_v0[0m, [33m0[0m
+Live variables: next, 
+Instruction: 1, [34m@jump[0m %[1;36mloop[0m
+Live variables: next, start, 
+BlockId(1)
+Instruction: 0, [34m@phi[0m [33mu8[0m : [1;36mresult_v0[0m,
+    [[1;36mentry[0m, [1;36mstart_v0[0m]
+    [[1;36mloop[0m, [1;36mnext_v0[0m]
+
+Live variables: next, start, 
+Instruction: 1, [34m@cmp[0m [33mu8[0m : [1;36mis_running_v0[0m, [1;36mresult_v0[0m, [33m10[0m
+Live variables: result, start, 
+Instruction: 2, [34m@add[0m [33mu8[0m : [1;36mnext_v0[0m, [1;36mresult_v0[0m, [33m1[0m
+Live variables: is_running, result, start, 
+Instruction: 3, [34m@jumpif[0m [1;36mis_running_v0[0m, %[1;36mexit[0m
+Live variables: is_running, next, result, start, 
+Instruction: 4, [34m@jump[0m %[1;36mloop[0m
+Live variables: next, result, start, 
+BlockId(2)
+Instruction: 0, [34m@ret[0m [33mu8[0m : [1;36mresult_v0[0m
+Live variables: result,

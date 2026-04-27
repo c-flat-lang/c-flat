@@ -1,0 +1,5 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::LocalFunctionVariables,\n\"../examples/looping.bitbox\", contents)"
+---
+main:  start : u8  result : u8  is_running : u8  next : u8

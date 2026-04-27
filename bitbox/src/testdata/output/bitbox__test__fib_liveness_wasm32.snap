@@ -1,0 +1,39 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::LivenessAnalysis,\n\"../examples/fib.bitbox\", contents)"
+---
+Function: fib
+BlockId(0)
+Instruction: 0, [34m@if[0m [1;36mtmp.1_v0[0m:
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.0_v0[0m, [33m0[0m
+    [34m@cmp[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [1;36mn_v0[0m, [1;36mtmp.0_v0[0m
+  then:
+    [34m@ret[0m [33ms32[0m : [1;36ma_v0[0m
+
+Live variables: a, b, n, tmp.0, 
+Instruction: 1, [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m1[0m
+Live variables: a, b, n, 
+Instruction: 2, [34m@sub[0m [33ms32[0m : [1;36mtmp.3_v0[0m, [1;36mn_v0[0m, [1;36mtmp.2_v0[0m
+Live variables: a, b, n, tmp.2, 
+Instruction: 3, [34m@add[0m [33ms32[0m : [1;36mtmp.4_v0[0m, [1;36ma_v0[0m, [1;36mb_v0[0m
+Live variables: a, b, tmp.3, 
+Instruction: 4, [34m@call[0m [33ms32[0m : [1;36mtmp.5_v0[0m [35mfib[0m([1;36mtmp.3_v0[0m, [1;36mb_v0[0m, [1;36mtmp.4_v0[0m)
+Live variables: b, tmp.3, tmp.4, 
+Instruction: 5, [34m@ret[0m [33ms32[0m : [1;36mtmp.5_v0[0m
+Live variables: tmp.5, 
+Function: main
+BlockId(0)
+Instruction: 1, [34m@assign[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m0[0m
+Live variables: tmp.0, 
+Instruction: 2, [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m1[0m
+Live variables: tmp.0, tmp.1, 
+Instruction: 3, [34m@call[0m [33ms32[0m : [1;36mtmp.3_v0[0m [35mfib[0m([1;36mtmp.0_v0[0m, [1;36mtmp.1_v0[0m, [1;36mtmp.2_v0[0m)
+Live variables: tmp.0, tmp.1, tmp.2, 
+Instruction: 4, [34m@assign[0m [33ms32[0m : [1;36mvalue_v0[0m, [1;36mtmp.3_v0[0m
+Live variables: tmp.3, 
+Instruction: 5, [34m@call[0m [35mwrite_int[0m([1;36mvalue_v0[0m)
+Live variables: value, 
+Instruction: 7, [34m@call[0m [35mwrite_char[0m([1;36mtmp.4_v0[0m)
+Live variables: tmp.4, 
+Instruction: 9, [34m@ret[0m [33ms32[0m : [1;36mtmp.5_v0[0m
+Live variables: tmp.5,

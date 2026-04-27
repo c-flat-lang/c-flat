@@ -1,0 +1,157 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Bitbeat, DebugPass::Emit,\n\"../examples/factorial.bitbox\", contents)"
+---
+(
+    name: "main",
+    functions: {
+        "factorial": (
+            name: "factorial",
+            arity: 1,
+            code: [
+                LoadImm(
+                    dst: (2),
+                    value: 1,
+                ),
+                Mov(
+                    dst: (3),
+                    src: (2),
+                ),
+                CmpEq(
+                    dst: (4),
+                    lhs: (1),
+                    rhs: (3),
+                ),
+                JumpIf(
+                    cmp: (4),
+                    target: (5),
+                ),
+                Jump(
+                    target: (10),
+                ),
+                LoadImm(
+                    dst: (5),
+                    value: 1,
+                ),
+                Mov(
+                    dst: (6),
+                    src: (5),
+                ),
+                Mov(
+                    dst: (7),
+                    src: (6),
+                ),
+                Mov(
+                    dst: (8),
+                    src: (7),
+                ),
+                Jump(
+                    target: (21),
+                ),
+                LoadImm(
+                    dst: (9),
+                    value: 1,
+                ),
+                Mov(
+                    dst: (10),
+                    src: (9),
+                ),
+                Sub(
+                    dst: (11),
+                    lhs: (1),
+                    rhs: (10),
+                ),
+                Mov(
+                    dst: (12),
+                    src: (11),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "factorial",
+                    args: [
+                        (12),
+                    ],
+                    dst: (13),
+                ),
+                Recv(
+                    dst_reg: (14),
+                ),
+                Mov(
+                    dst: (15),
+                    src: (14),
+                ),
+                Mul(
+                    dst: (16),
+                    lhs: (1),
+                    rhs: (15),
+                ),
+                Mov(
+                    dst: (17),
+                    src: (16),
+                ),
+                Mov(
+                    dst: (18),
+                    src: (7),
+                ),
+                Jump(
+                    target: (21),
+                ),
+                Send(
+                    dst_pid: (0),
+                    src_reg: (8),
+                ),
+                Halt,
+            ],
+            returns: true,
+        ),
+        "main": (
+            name: "main",
+            arity: 0,
+            code: [
+                LoadImm(
+                    dst: (1),
+                    value: 5,
+                ),
+                Mov(
+                    dst: (2),
+                    src: (1),
+                ),
+                Mov(
+                    dst: (3),
+                    src: (2),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "factorial",
+                    args: [
+                        (3),
+                    ],
+                    dst: (4),
+                ),
+                Recv(
+                    dst_reg: (5),
+                ),
+                Mov(
+                    dst: (6),
+                    src: (5),
+                ),
+                Spawn(
+                    module: "main",
+                    function: "write_int",
+                    args: [
+                        (6),
+                    ],
+                    dst: (7),
+                ),
+                Recv(
+                    dst_reg: (8),
+                ),
+                Print(
+                    reg: (6),
+                ),
+                Halt,
+            ],
+            returns: true,
+        ),
+    },
+)

@@ -1,0 +1,34 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::StructuringIr,\n\"../examples/factorial.bitbox\", contents)"
+---
+[31mfunction[0m [35mfactorial[0m([1;36mn_v0_v0[0m: [33ms32[0m, ) s32{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@if[0m [1;36mtmp_2_v0_v0[0m -> [1;36mtmp_0_v0_v2[0m:
+    [34m@assign[0m [33ms32[0m : [1;36mtmp_1_v0_v0[0m, [33m1[0m
+    [34m@cmp[0m [33ms32[0m : [1;36mtmp_2_v0_v0[0m, [1;36mn_v0_v0[0m, [1;36mtmp_1_v0_v0[0m
+  then:
+    [34m@assign[0m [33ms32[0m : [1;36mtmp_3_v0_v0[0m, [33m1[0m
+    [34m@assign[0m [33ms32[0m : [1;36mresult_v0_v0[0m, [1;36mtmp_3_v0_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp_0_v0_v0[0m, [1;36mresult_v0_v0[0m
+  else:
+    [34m@assign[0m [33ms32[0m : [1;36mtmp_4_v0_v0[0m, [33m1[0m
+    [34m@sub[0m [33ms32[0m : [1;36mtmp_5_v0_v0[0m, [1;36mn_v0_v0[0m, [1;36mtmp_4_v0_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mn_minus_one_v0_v0[0m, [1;36mtmp_5_v0_v0[0m
+    [34m@call[0m [33ms32[0m : [1;36mtmp_6_v0_v0[0m [35mfactorial[0m([1;36mn_minus_one_v0_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mrecursive_result_v0_v0[0m, [1;36mtmp_6_v0_v0[0m
+    [34m@mul[0m [33ms32[0m : [1;36mtmp_7_v0_v0[0m, [1;36mn_v0_v0[0m, [1;36mrecursive_result_v0_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mresult_v0_v1[0m, [1;36mtmp_7_v0_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp_0_v0_v1[0m, [1;36mresult_v0_v0[0m
+
+    [34m@ret[0m [33ms32[0m : [1;36mtmp_0_v0_v0[0m
+}
+[31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp_0_v0_v0[0m, [33m5[0m
+    [34m@assign[0m [33ms32[0m : [1;36minput_v0_v0[0m, [1;36mtmp_0_v0_v0[0m
+    [34m@call[0m [33ms32[0m : [1;36mtmp_1_v0_v0[0m [35mfactorial[0m([1;36minput_v0_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mfact_result_v0_v0[0m, [1;36mtmp_1_v0_v0[0m
+    [34m@call[0m [33ms32[0m : [1;36mnone_v0[0m [35mwrite_int[0m([1;36mfact_result_v0_v0[0m)
+    [34m@ret[0m [33ms32[0m : [1;36mfact_result_v0_v0[0m
+}

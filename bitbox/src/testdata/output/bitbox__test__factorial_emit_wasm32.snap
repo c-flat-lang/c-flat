@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/test.rs
-expression: "snapshot_compiler(Target::Wasm32, \"../examples/factorial.bitbox\", contents)"
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit,\n\"../examples/factorial.bitbox\", contents)"
 ---
 (module
   (type (;0;) (func (param i32)))

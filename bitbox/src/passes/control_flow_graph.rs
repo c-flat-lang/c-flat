@@ -62,6 +62,7 @@ impl Pass for ControlFlowGraphPass {
                     )
                 })
                 .collect::<Vec<_>>();
+            data.sort_by(|a, b| a.0.cmp(&b.0));
             let mut output = String::new();
             output += &format!("{kind}:\n");
             for (name, data) in data.iter_mut() {

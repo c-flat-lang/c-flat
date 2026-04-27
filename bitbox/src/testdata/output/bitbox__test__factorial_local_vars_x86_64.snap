@@ -1,0 +1,5 @@
+---
+source: bitbox/src/test.rs
+expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::LocalFunctionVariables,\n\"../examples/factorial.bitbox\", contents)"
+---
+factorial:  n_v0 : s32  tmp_1_v0 : s32  tmp_2_v0 : s32  tmp_3_v0 : s32  result_v0 : s32  tmp_0_v0 : s32  tmp_4_v0 : s32  tmp_5_v0 : s32  n_minus_one_v0 : s32  tmp_6_v0 : s32  recursive_result_v0 : s32  tmp_7_v0 : s32  result_v0 : s32  tmp_0_v0 : s32  tmp_0_v0 : s32main:  tmp_0_v0 : s32  input_v0 : s32  tmp_1_v0 : s32  fact_result_v0 : s32  none : s32

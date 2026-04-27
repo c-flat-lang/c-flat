@@ -79,7 +79,10 @@ impl Pass for LocalFunctionVariablesPass {
 
     fn debug(&self, _module: &crate::ir::Module, _ctx: &crate::backend::Context) -> PassOutput {
         let mut output = String::new();
-        for (function_name, variables) in _ctx.local_function_variables.iter() {
+        let mut entries: Vec<(&String, &Vec<crate::ir::Variable>)> =
+            _ctx.local_function_variables.iter().collect();
+        entries.sort_by_key(|(name, _)| *name);
+        for (function_name, variables) in entries {
             output += &format!("{}:", function_name);
             for variable in variables {
                 output += &format!("  {} : {}", variable.name, variable.ty);
