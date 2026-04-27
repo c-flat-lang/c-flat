@@ -108,10 +108,12 @@ impl CompilerResult {
         match self {
             Self::Wasm32(bytes) => std::fs::write(path, bytes).unwrap(),
             Self::X86_64(asm) => {
-                // write assembly to file
                 let asm_path = format!("{}.s", path);
                 std::fs::write(&asm_path, asm.as_bytes()).unwrap();
-                // Call gcc
+                let runtime_src = include_str!("../../../runtime.c");
+                let runtime_path = format!("{}.runtime.c", path);
+                std::fs::write(&runtime_path, runtime_src).unwrap();
+
                 let cmd_result = Command::new("gcc")
                     .arg("-static")
                     .arg("-Wall")
@@ -119,7 +121,7 @@ impl CompilerResult {
                     .arg("-g")
                     .arg("-no-pie")
                     .arg(&asm_path)
-                    .arg("runtime.c")
+                    .arg(&runtime_path)
                     .arg("-o")
                     .arg(path)
                     //---RAYLIB---
@@ -143,8 +145,6 @@ impl CompilerResult {
                         std::process::exit(1);
                     }
                 }
-                // Remove assembly file
-                // std::fs::remove_file(asm_path).expect("Failed to remove assembly file");
             }
             Self::Bitbeat(module) => module.save_to_file(path),
         }
