@@ -45,7 +45,7 @@ impl Pass for StructuringPass {
 }
 
 /// Recursively raises if-else patterns inside nested `ILoop`/`IIfElse` block lists.
-fn raise_nested_in_blocks(blocks: &mut Vec<BasicBlock>) {
+fn raise_nested_in_blocks(blocks: &mut [BasicBlock]) {
     for block in blocks.iter_mut() {
         for inst in block.instructions.iter_mut() {
             match inst {
@@ -278,7 +278,7 @@ fn try_raise_if_else_in_blocks(blocks: &mut Vec<BasicBlock>) -> bool {
     false
 }
 
-fn renumber_local_blocks(blocks: &mut Vec<BasicBlock>) {
+fn renumber_local_blocks(blocks: &mut [BasicBlock]) {
     for (i, b) in blocks.iter_mut().enumerate() {
         b.id = BlockId(i);
     }
