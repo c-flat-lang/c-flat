@@ -50,12 +50,9 @@ fn main() {
 
                 cflat::Target::X86_64Linux => {
                     let cmd_result =
-                        std::process::Command::new(format!("./{}", path.as_str())).output();
+                        std::process::Command::new(format!("./{}", path.as_str())).spawn();
                     match cmd_result {
-                        Ok(output) => {
-                            println!("{}", String::from_utf8_lossy(&output.stderr));
-                            println!("{}", String::from_utf8_lossy(&output.stdout));
-                        }
+                        Ok(_) => {}
                         Err(e) => {
                             println!("{}", e);
                             std::process::exit(1);

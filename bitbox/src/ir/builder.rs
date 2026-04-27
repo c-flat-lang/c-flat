@@ -90,6 +90,17 @@ impl<'a> AssemblerBuilder<'a> {
         self.counter
     }
 
+    #[cfg(not(feature = "uuids"))]
+    pub fn with_label_counter(&mut self, label_counter: usize) -> &mut Self {
+        self.label_counter = label_counter;
+        self
+    }
+
+    #[cfg(not(feature = "uuids"))]
+    pub fn label_counter(&self) -> usize {
+        self.label_counter
+    }
+
     fn push_instruction(&mut self, instruction: impl Into<Instruction>) {
         let Some(BlockId(id)) = self.current_block else {
             panic!("block not set");

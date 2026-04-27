@@ -37,12 +37,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
+    readonly compile_source: (a: number, b: number, c: number) => [number, number, number];
     readonly __wbg_cli_free: (a: number, b: number) => void;
     readonly cli_debug_mode: (a: number) => number;
     readonly cli_file_path: (a: number) => [number, number];
     readonly cli_new: (a: number, b: number, c: number, d: number) => number;
     readonly cli_target: (a: number) => number;
-    readonly compile_source: (a: number, b: number, c: number) => [number, number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

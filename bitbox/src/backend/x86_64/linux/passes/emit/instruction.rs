@@ -70,7 +70,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
         target.assembler.comment("lowering assign");
         match &self.src {
             // TODO: Check if old source drops reference to variable location.
-            Operand::Variable(src_var) if self.des.temporary && src_var.ty.is_ptr() => {
+            // Arrays and pointers are aliased — no value copy needed.
+            Operand::Variable(src_var)
+                if src_var.ty.is_ptr() || matches!(self.des.ty, crate::ir::Type::Array(..)) =>
+            {
                 target.assembler.alloc.alias_variable(&self.des, src_var);
             }
             Operand::Variable(_) if self.des.temporary => {
@@ -251,8 +254,14 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAdd {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        target.assembler.add(lhs.clone(), rhs.clone());
-        target.assembler.alloc.store_variable(&self.des, lhs);
+        // Materialize lhs into a fresh register so we don't modify the source
+        // variable's stack slot in-place (x86 `add dst, src` writes back to dst).
+        let lhs_reg = target.assembler.materialize_value(&lhs);
+        target.assembler.add(lhs_reg, rhs);
+        target
+            .assembler
+            .alloc
+            .store_variable(&self.des, Location::Reg(lhs_reg));
 
         Ok(())
     }
@@ -269,8 +278,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ISub {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        target.assembler.sub(lhs.clone(), rhs.clone());
-        target.assembler.alloc.store_variable(&self.des, lhs);
+        let lhs_reg = target.assembler.materialize_value(&lhs);
+        target.assembler.sub(lhs_reg, rhs);
+        target
+            .assembler
+            .alloc
+            .store_variable(&self.des, Location::Reg(lhs_reg));
 
         Ok(())
     }
@@ -400,9 +413,17 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         let value = target.assembler.materialize_value(&value);
         let element_size = self.addr.ty.element_size();
 
+        // Cast value to the element size to avoid wide stores clobbering adjacent elements.
+        let sized_value = match element_size {
+            1 => value.cast_to::<Reg8>(),
+            2 => value.cast_to::<Reg16>(),
+            4 => value.cast_to::<Reg32>(),
+            _ => value,
+        };
+
         target
             .assembler
-            .store_indexed(base, index, element_size, value);
+            .store_indexed(base, index, element_size, sized_value);
 
         Ok(())
     }
@@ -426,9 +447,17 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
 
         let out = target.assembler.alloc.vreg::<Reg64>();
 
+        // Use the element-sized register variant for the load to avoid
+        // reading adjacent elements (e.g., use r11d for 4-byte loads).
+        let load_reg = match self.des.ty.size() {
+            1 => out.cast_to::<Reg8>(),
+            2 => out.cast_to::<Reg16>(),
+            4 => out.cast_to::<Reg32>(),
+            _ => out,
+        };
         target
             .assembler
-            .load_indexed(base, index_reg, self.des.ty.size(), out.into());
+            .load_indexed(base, index_reg, self.des.ty.size(), load_reg.into());
 
         target.assembler.alloc.store_variable(&self.des, out);
 

@@ -21,7 +21,7 @@ pub fn main() s32 {
     current[current.len - 1] = 1;
 
     let mut steps = 0;
-    while true {
+    while steps < 100 {
         let mut i = 0;
         while i < current.len {
             let left = if i == 0 { 0 } else { current[i - 1] };

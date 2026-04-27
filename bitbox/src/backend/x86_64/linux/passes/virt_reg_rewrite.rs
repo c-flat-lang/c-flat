@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::backend::x86_64::linux::Function;
 use crate::backend::x86_64::linux::passes::emit::assembler::{
-    Instruction, Location, PhysReg, Reg, Reg8, Reg16, Reg32, RegKind,
+    Instruction, Location, MemIndexed, PhysReg, Reg, Reg8, Reg16, Reg32, RegKind,
 };
 use crate::passes::PassOutput;
 
@@ -57,6 +57,14 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Test(a, b) => {
             f(a);
             f(b);
+            for loc in [a, b] {
+                if let Location::MemIndexed(mi) = loc {
+                    let base_loc = Location::Reg(mi.base);
+                    let idx_loc = Location::Reg(mi.index);
+                    f(&base_loc);
+                    f(&idx_loc);
+                }
+            }
         }
         Instruction::Pop(a)
         | Instruction::Push(a)
@@ -105,6 +113,18 @@ fn rewrite_loc(loc: Location, assignment: &HashMap<usize, PhysReg>) -> Location 
             RegKind::Reg16 => base.cast_to::<Reg16>(),
             RegKind::Reg8 => base.cast_to::<Reg8>(),
         })
+    } else if let Location::MemIndexed(mi) = loc {
+        let rw_reg = |reg: Reg| -> Reg {
+            if let Reg::VReg(v) = reg {
+                let &phys = assignment
+                    .get(&v.id)
+                    .unwrap_or_else(|| panic!("unassigned vreg {} in MemIndexed", v.id));
+                phys.into()
+            } else {
+                reg
+            }
+        };
+        Location::MemIndexed(MemIndexed::new(rw_reg(mi.base), rw_reg(mi.index), mi.scale))
     } else {
         loc
     }

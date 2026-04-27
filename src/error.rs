@@ -90,7 +90,7 @@ impl Report for ErrorExpectedToken {
                     .map(|k| format!("`{k:?}`"))
                     .collect::<Vec<_>>();
                 let expected_str = if expected.len() == 1 {
-                    format!("expected {}", expected[0])
+                    format!("exected {}", expected[0])
                 } else {
                     format!("expected one of: {}", expected.join(", "))
                 };

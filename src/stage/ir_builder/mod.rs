@@ -721,12 +721,16 @@ impl Lowerable for ExprWhile {
 
         #[cfg(not(feature = "uuids"))]
         let counter = assembler.counter();
+        #[cfg(not(feature = "uuids"))]
+        let label_counter = assembler.label_counter();
 
         let mut cond_blocks = vec![];
         let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
 
         #[cfg(not(feature = "uuids"))]
-        cond_assembler.with_counter(counter);
+        cond_assembler
+            .with_counter(counter)
+            .with_label_counter(label_counter);
 
         cond_assembler.create_block("cond");
         let Some(cond_result) = self.condition.lower(&mut cond_assembler, ctx) else {
@@ -735,19 +739,25 @@ impl Lowerable for ExprWhile {
 
         #[cfg(not(feature = "uuids"))]
         let counter = cond_assembler.counter();
+        #[cfg(not(feature = "uuids"))]
+        let label_counter = cond_assembler.label_counter();
 
         var.clear();
         let mut loop_blocks = vec![];
         let mut loop_assembler = AssemblerBuilder::new(&mut loop_blocks, &mut var);
 
         #[cfg(not(feature = "uuids"))]
-        loop_assembler.with_counter(counter);
+        loop_assembler
+            .with_counter(counter)
+            .with_label_counter(label_counter);
 
         loop_assembler.create_block("loop_body");
         let then_block_result = self.body.lower(&mut loop_assembler, ctx);
 
         #[cfg(not(feature = "uuids"))]
-        assembler.with_counter(loop_assembler.counter());
+        assembler
+            .with_counter(loop_assembler.counter())
+            .with_label_counter(loop_assembler.label_counter());
 
         assembler.loop_(cond_blocks, cond_result, loop_blocks);
         None

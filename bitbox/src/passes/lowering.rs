@@ -133,18 +133,25 @@ fn lower_loop(
         .push(IJump::new(exit_label.clone()).into());
 
     let mut body_blocks = body.clone();
-    for bb in &mut body_blocks {
-        bb.label = body_label.clone();
-
-        let ends_in_ret_or_jump = bb.instructions.last().map(|inst| {
+    // NOTE: Only the first body block is the jump target from start_block; keep all
+    // other blocks' original labels so intra-body jumps (e.g. then.N / else.N
+    // from if-expressions inside the loop) remain valid.
+    if let Some(first) = body_blocks.first_mut() {
+        first.label = body_label.clone();
+    }
+    // NOTE: Only the last body block needs the loop-back jump (if it doesn't already
+    // end in a terminator). Adding it to every block would corrupt control flow
+    // for multi-block bodies.
+    if let Some(last) = body_blocks.last_mut() {
+        let ends_in_ret_or_jump = last.instructions.last().map(|inst| {
             matches!(
                 inst,
                 Instruction::Return(..) | Instruction::Jump(..) | Instruction::JumpIf(..)
             )
         });
-
         if ends_in_ret_or_jump != Some(true) {
-            bb.instructions.push(IJump::new(start_label.clone()).into());
+            last.instructions
+                .push(IJump::new(start_label.clone()).into());
         }
     }
 

@@ -46,9 +46,9 @@ impl std::fmt::Display for Stack {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MemIndexed {
-    base: Reg,
-    index: Reg,
-    scale: i32,
+    pub base: Reg,
+    pub index: Reg,
+    pub scale: i32,
 }
 
 impl MemIndexed {
