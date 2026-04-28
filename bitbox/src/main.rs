@@ -60,6 +60,14 @@ fn main() {
         compiler_debug_mode,
     );
 
+    if let Some(linking_options) = cli_options.link {
+        let options = linking_options
+            .split(' ')
+            .map(|s| s.trim().to_string())
+            .collect::<Vec<String>>();
+        compiler.set_linking_options(options);
+    }
+
     match compiler.run(&mut ir_module) {
         Ok(PassOutput::String(output)) => {
             println!("{}", output);

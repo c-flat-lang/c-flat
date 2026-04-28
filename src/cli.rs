@@ -23,6 +23,7 @@ pub struct Cli {
     pub target: Target,
     pub file_path: String,
     pub run: bool,
+    pub link: Option<String>,
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
@@ -34,6 +35,7 @@ impl Cli {
             file_path,
             debug_mode,
             run: false,
+            link: None,
         }
     }
 
@@ -69,6 +71,7 @@ impl Cli {
         let mut run = false;
         let mut debug_mode = None;
         let mut target = Target::default();
+        let mut link = None;
 
         let i = 0;
         while i < args.len() {
@@ -76,6 +79,24 @@ impl Cli {
 
             if arg == "run" {
                 run = true;
+                args.remove(i);
+                continue;
+            }
+
+            if arg == "--link" {
+                if i + 1 >= args.len() {
+                    eprintln!("Expected argument after 'link'");
+                    std::process::exit(1);
+                }
+                link = Some(args[i + 1].clone());
+                args.drain(i..=i + 1);
+                continue;
+            } else if arg.starts_with("--link=") {
+                let Some(value) = arg.strip_prefix("--link=") else {
+                    eprintln!("Expected argument after 'link'");
+                    std::process::exit(1);
+                };
+                link = Some(value.to_string());
                 args.remove(i);
                 continue;
             }
@@ -109,6 +130,7 @@ impl Cli {
             target,
             file_path,
             run,
+            link,
         }
     }
 }

@@ -76,6 +76,7 @@ pub struct Compiler {
     #[cfg(not(feature = "wasm"))]
     pub(crate) save_to_file: bool,
     pub results: Option<backend::CompilerResult>,
+    pub(crate) link: Vec<String>,
 }
 
 impl Compiler {
@@ -88,7 +89,13 @@ impl Compiler {
             #[cfg(not(feature = "wasm"))]
             save_to_file: true,
             results: None,
+            link: Vec::new(),
         }
+    }
+
+    pub fn set_linking_options(&mut self, link_args: Vec<String>) -> &mut Self {
+        self.link = link_args;
+        self
     }
 
     #[cfg(not(feature = "wasm"))]
@@ -118,7 +125,7 @@ impl Compiler {
         {
             if self.save_to_file {
                 let path = self.file_output_path();
-                compiler_result.save_to_file(&path);
+                compiler_result.save_to_file(&path, &self.link);
             }
         }
         Ok(PassOutput::Nothing)
