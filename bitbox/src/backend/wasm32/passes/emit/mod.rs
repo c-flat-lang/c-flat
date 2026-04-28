@@ -303,7 +303,9 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
-            ir::Instruction::Phi(..) => todo!("@phi"),
+            ir::Instruction::Phi(..) => unreachable!(
+                "Phi instructions should have been removed by the SSA elimination pass"
+            ),
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             ir::Instruction::Div(..) => todo!("@div"),
