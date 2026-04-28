@@ -69,6 +69,12 @@ pub enum Instruction {
     /// @loop <cond> [<loop_body>]
     /// @loop condition [...]
     Loop(ILoop),
+    /// `@ref *T : <des>, <src>`
+    /// Takes the address of `src` and stores it in `des`.
+    Ref(IRef),
+    /// `@not bool : <des>, <src>`
+    /// Logical NOT: des = !src
+    Not(INot),
 }
 
 impl fmt::Display for Instruction {
@@ -99,6 +105,8 @@ impl fmt::Display for Instruction {
             Self::Phi(iphi) => write!(f, "{iphi}"),
             Self::IfElse(ifelse) => write!(f, "{ifelse}"),
             Self::Loop(iloop) => write!(f, "{iloop}"),
+            Self::Ref(iref) => write!(f, "{iref}"),
+            Self::Not(inot) => write!(f, "{inot}"),
         }
     }
 }
@@ -738,5 +746,69 @@ impl fmt::Display for ILoop {
 impl From<ILoop> for Instruction {
     fn from(i: ILoop) -> Self {
         Instruction::Loop(i)
+    }
+}
+
+/// `@ref *T : <des>, <src>`
+/// Takes the address of `src` (a local variable) and stores it as a pointer in `des`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IRef {
+    pub des: Variable,
+    pub src: Variable,
+}
+
+impl IRef {
+    pub fn new(des: Variable, src: Variable) -> Self {
+        Self { des, src }
+    }
+}
+
+impl fmt::Display for IRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}",
+            Paint::blue("@ref"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_var(&self.src),
+        )
+    }
+}
+
+impl From<IRef> for Instruction {
+    fn from(i: IRef) -> Self {
+        Instruction::Ref(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct INot {
+    pub des: Variable,
+    pub src: Variable,
+}
+
+impl INot {
+    pub fn new(des: Variable, src: Variable) -> Self {
+        Self { des, src }
+    }
+}
+
+impl fmt::Display for INot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}",
+            Paint::blue("@not"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_var(&self.src),
+        )
+    }
+}
+
+impl From<INot> for Instruction {
+    fn from(i: INot) -> Self {
+        Instruction::Not(i)
     }
 }

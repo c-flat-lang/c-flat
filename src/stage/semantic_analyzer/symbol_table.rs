@@ -10,41 +10,10 @@ pub struct SymbolTableBuilder {
     errors: Vec<Box<dyn Report>>,
 }
 
-// fn create_symbol(name: &str, return_type: ast::Type, args: Vec<ast::Type>) -> Symbol {
-//     Symbol {
-//         name: name.to_string(),
-//         ty: return_type,
-//         visibility: ast::Visibility::Public,
-//         kind: SymbolKind::Function,
-//         is_mutable: false,
-//         params: Some(args),
-//     }
-// }
-
 impl Default for SymbolTableBuilder {
     fn default() -> Self {
         let mut table = SymbolTable::default();
         table.enter_scope("global");
-        // ------RAYLIB--------
-        // use ast::Type::*;
-        // table.push(create_symbol(
-        //     "initWindow",
-        //     Void,
-        //     vec![UnsignedNumber(32), UnsignedNumber(32)],
-        // ));
-        // table.push(create_symbol(
-        //     "setTargetFPS",
-        //     Void,
-        //     vec![UnsignedNumber(32)],
-        // ));
-        // table.push(create_symbol("windowShouldClose", Bool, vec![]));
-        // table.push(create_symbol("beginDrawing", Void, vec![]));
-        // table.push(create_symbol("clearBackground", Void, vec![]));
-        // // table.push(create_symbol("DrawText", Void, vec![String, UnsignedNumber(32), UnsignedNumber(32), UnsignedNumber(32)]));
-        // table.push(create_symbol("endDrawing", Void, vec![]));
-        // table.push(create_symbol("closeWindow", Void, vec![]));
-        // ----------------------
-
         table.push(Symbol {
             name: "write_int".to_string(),
             ty: ast::Type::Void,
@@ -224,6 +193,8 @@ impl SymbolTableBuilder {
             }
             Expr::While(expr) => self.walk_expr_while(expr),
             Expr::Block(block) => self.walk_block(block),
+            Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
+            Expr::Not(expr) => self.walk_expr(&expr.expr),
         }
     }
 
@@ -316,11 +287,12 @@ impl SymbolTableBuilder {
 
         self.table.push(Symbol {
             name: extern_function.name().to_string(),
-            kind: SymbolKind::Function,
+            binding_name: Some(extern_function.binding_name.lexeme.to_string()),
+            kind: SymbolKind::ExternFunction,
             ty: return_type.clone(),
             is_mutable: false,
             visibility: *visibility,
-            params: Some(params.iter().map(|ty| ty.clone()).collect()),
+            params: Some(params.clone()),
             ..Default::default()
         });
     }
@@ -331,6 +303,7 @@ pub enum SymbolKind {
     #[default]
     Variable,
     Function,
+    ExternFunction,
     Parameter,
     Struct,
 }
@@ -345,6 +318,7 @@ pub struct SymbolField {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Symbol {
     pub name: String,
+    pub binding_name: Option<String>,
     pub kind: SymbolKind,
     pub ty: ast::Type,
     pub is_mutable: bool,

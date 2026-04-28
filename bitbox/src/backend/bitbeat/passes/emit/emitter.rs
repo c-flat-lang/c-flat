@@ -115,6 +115,8 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::Div(..) => todo!("div"),
             crate::ir::Instruction::IfElse(..) => todo!("ifelse"),
             crate::ir::Instruction::Loop(..) => todo!("loop"),
+            crate::ir::Instruction::Ref(..) => todo!("@ref"),
+            crate::ir::Instruction::Not(..) => todo!("@not"),
         }
         Ok(())
     }

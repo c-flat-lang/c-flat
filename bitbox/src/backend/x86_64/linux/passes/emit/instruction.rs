@@ -7,7 +7,7 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf, ILt,
-    IReturn, ISub,
+    INot, IRef, IReturn, ISub,
 };
 use crate::ir::{Operand, Type};
 
@@ -566,6 +566,54 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
 
         target.assembler.alloc.store_variable(&self.des, out);
 
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IRef {
+    type Output = ();
+    fn lower(
+        &self,
+        _ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering ref (address-of)");
+        let src_loc = target
+            .assembler
+            .alloc
+            .get_variable_location(&self.src)
+            .unwrap_or_else(|| panic!("ref: source variable not found: {}", self.src.name));
+        let addr_reg = target.assembler.materialize_address(&src_loc);
+        target
+            .assembler
+            .alloc
+            .store_variable(&self.des, Location::Reg(addr_reg));
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for INot {
+    type Output = ();
+    fn lower(
+        &self,
+        _ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering not");
+        let src_loc = target
+            .assembler
+            .alloc
+            .get_variable_location(&self.src)
+            .unwrap_or_else(|| panic!("not: source variable not found: {}", self.src.name));
+        let src_reg = target.assembler.materialize_value(&src_loc);
+        // test src, src → ZF=1 if src==0
+        target.assembler.test(src_reg, src_reg);
+        let flag_reg = target.assembler.alloc.vreg::<Reg8>();
+        // sete al → al=1 if ZF set (i.e. src was 0 = false → NOT = true)
+        target.assembler.sete(flag_reg);
+        let out = target.assembler.alloc.vreg::<Reg64>();
+        target.assembler.movezx(out, flag_reg);
+        target.assembler.alloc.store_variable(&self.des, out);
         Ok(())
     }
 }

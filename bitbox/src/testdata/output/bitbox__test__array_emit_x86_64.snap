@@ -19,7 +19,7 @@ main_entry:
   mov vreg(1 : Reg64), 0
   # lowering operand
   mov vreg(2 : Reg64), 100
-  lea vreg(3 : Reg64), dword ptr [rbp-12]
+  lea vreg(3 : Reg64), qword ptr [rbp-12]
   mov [vreg(3 : Reg64) + vreg(1 : Reg64) * 4], vreg(2 : Reg32)
   # @elemset s32 : arr_v0, 1, 200
   # lowering elemset
@@ -27,7 +27,7 @@ main_entry:
   mov vreg(4 : Reg64), 1
   # lowering operand
   mov vreg(5 : Reg64), 200
-  lea vreg(6 : Reg64), dword ptr [rbp-12]
+  lea vreg(6 : Reg64), qword ptr [rbp-12]
   mov [vreg(6 : Reg64) + vreg(4 : Reg64) * 4], vreg(5 : Reg32)
   # @elemset s32 : arr_v0, 2, 300
   # lowering elemset
@@ -35,14 +35,14 @@ main_entry:
   mov vreg(7 : Reg64), 2
   # lowering operand
   mov vreg(8 : Reg64), 300
-  lea vreg(9 : Reg64), dword ptr [rbp-12]
+  lea vreg(9 : Reg64), qword ptr [rbp-12]
   mov [vreg(9 : Reg64) + vreg(7 : Reg64) * 4], vreg(8 : Reg32)
   # @elemget s32 : ret_v0, arr_v0, 1
   # lowering elemget
   # lowering operand
   # lowering operand
   mov vreg(10 : Reg64), 1
-  lea vreg(11 : Reg64), dword ptr [rbp-12]
+  lea vreg(11 : Reg64), qword ptr [rbp-12]
   mov vreg(12 : Reg32), [vreg(11 : Reg64) + vreg(10 : Reg64) * 4]
   # @ret s32 : ret_v0
   # lowering return

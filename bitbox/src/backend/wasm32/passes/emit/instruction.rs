@@ -3,11 +3,19 @@ use wasm_encoder::{BlockType, ValType};
 use super::Wasm32LowerContext;
 use crate::backend::Lower;
 
-use crate::ir::Type;
 use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump,
-    IJumpIf, ILoad, ILoop, ILt, IMul, IOr, IReturn, ISub, IXOr,
+    IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IReturn, ISub, IXOr,
 };
+use crate::ir::{BasicBlock, Instruction, Type};
+
+fn branch_terminates(blocks: &[BasicBlock]) -> bool {
+    blocks.iter().any(|b| {
+        b.instructions
+            .iter()
+            .any(|i| matches!(i, Instruction::Return(_)))
+    })
+}
 
 impl Lower<Wasm32LowerContext<'_>> for IAdd {
     type Output = ();
@@ -607,6 +615,16 @@ impl Lower<Wasm32LowerContext<'_>> for IIfElse {
         }
 
         target.assembler.end();
+
+        // If both branches unconditionally return, the code after `end` is unreachable.
+        // Emit `unreachable` so the wasm validator knows the stack is polymorphic here,
+        // satisfying any implicit return type the enclosing function declares.
+        let both_terminate =
+            branch_terminates(&self.then_branch) && branch_terminates(&self.else_branch);
+        if both_terminate {
+            target.assembler.unreachable();
+        }
+
         Ok(())
     }
 }
@@ -647,6 +665,36 @@ impl Lower<Wasm32LowerContext<'_>> for ILoop {
 
         target.assembler.end(); // end loop
         target.assembler.end(); // end block
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for INot {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let Some(src_idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.src.name)
+        else {
+            panic!("Variable {:?} not found", self.src);
+        };
+        target.assembler.local_get(src_idx as u32);
+        target.assembler.i32_eqz();
+        let Some(des_idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(des_idx as u32);
         Ok(())
     }
 }

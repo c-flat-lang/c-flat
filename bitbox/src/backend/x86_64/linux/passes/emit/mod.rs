@@ -254,6 +254,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
             ir::Instruction::XOr(..) => todo!("xor"),
+            ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
+            ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
         }
         Ok(())
     }
