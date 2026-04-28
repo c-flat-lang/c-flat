@@ -87,7 +87,7 @@ impl<'a> Tokenizer<'a> {
         self.spanned(kind, lexeme)
     }
 
-    fn parse_string(&mut self) -> Token {
+    fn parse_raw_string(&mut self) -> Token {
         let mut lexeme = String::from('#');
         while let Some(value) = self.next_char() {
             lexeme.push(value);
@@ -95,7 +95,9 @@ impl<'a> Tokenizer<'a> {
                 break;
             }
         }
-        let lexeme = lexeme[2..lexeme.len() - 2].replace("\\n", "\n");
+        let lexeme = lexeme[2..lexeme.len() - 2]
+            .replace("\\n", "\n")
+            .replace("\\0", "\0");
         self.spanned(TokenKind::String, lexeme)
     }
 
@@ -169,7 +171,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             value if value.is_ascii_whitespace() => self.skip_char(),
             '/' if self.peek_char('/') => self.skip_line(),
             '#' if self.peek_char('\'') => Some(self.parse_char()),
-            '#' if self.peek_char('"') => Some(self.parse_string()),
+            '#' if self.peek_char('"') => Some(self.parse_raw_string()),
             '=' if self.peek_char('=') => self.double_char(TokenKind::EqualEqual, "=="),
             '>' if self.peek_char('=') => self.double_char(TokenKind::GreaterEqual, ">="),
             '<' if self.peek_char('=') => self.double_char(TokenKind::LessEqual, "<="),

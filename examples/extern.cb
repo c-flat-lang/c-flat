@@ -1,3 +1,8 @@
+// Build command:
+// cargo run -r -- \
+//   --target=x86_64-linux \
+//   --link "-L/opt/raylib/release/libs/linux -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
+//   examples/extern.cb
 extern C fn InitWindow as init_window(s32, s32, *[10; u8]) void;
 extern C fn BeginDrawing as begin_drawing() void;
 extern C fn EndDrawing as end_drawing() void;
@@ -7,14 +12,18 @@ extern C fn WindowShouldClose as window_should_close() bool;
 extern C fn ClearBackground as clear_background(u32) void;
 extern C fn DrawText as draw_text(*[41; u8], s32, s32, s32, s32) void;
 
- pub fn main() s32 {
+pub fn main() s32 {
     let screen_width = 1920;
     let screen_height = 1080;
 
     // #"raylib-cb"#
-    let title: [10; u8] = [114, 97, 121, 108, 105, 98, 45, 99, 98, 0]; // "raylib-cb" in ASCII with null terminator
+    // [114, 97, 121, 108, 105, 98, 45, 99, 98, 0];
+    let title: [10; u8] = #"raylib-cb\0"#;
     // #"Congrats! You created your first window!"#
-    let text: [41; u8] = [67, 111, 110, 103, 114, 97, 116, 115, 33, 32, 89, 111, 117, 32, 99, 114, 101, 97, 116, 101, 100, 32, 121, 111, 117, 114, 32, 102, 105, 114, 115, 116, 32, 119, 105, 110, 100, 111, 119, 33, 0]; // "Congrats! You created your first window!" in ASCII with null terminator
+    // [67, 111, 110, 103, 114, 97, 116, 115, 33, 32, 89, 111, 117, 32, 99, 114, 101, 97,
+    // 116, 101, 100, 32, 121, 111, 117, 114, 32, 102, 105, 114, 115, 116, 32, 119, 105,
+    // 110, 100, 111, 119, 33, 0];
+    let text: [41; u8] = #"Congrats! You created your first window!\0"#
     init_window(screen_width, screen_height, &title);
 
     set_target_fps(60);
@@ -28,4 +37,4 @@ extern C fn DrawText as draw_text(*[41; u8], s32, s32, s32, s32) void;
     }
     close_window();
     return 0;
- }
+}

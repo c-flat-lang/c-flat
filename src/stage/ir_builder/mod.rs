@@ -470,7 +470,30 @@ impl Lowerable for Litral {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         match self {
-            ast::Litral::String(_) => todo!("STRING"),
+            ast::Litral::String(token) => {
+                let bytes = token.lexeme.as_bytes();
+                let elem_ty = Type::Unsigned(8);
+                let arr_ty = Type::Array(bytes.len(), Box::new(elem_ty.clone()));
+                let size = Operand::ConstantInt(ir::ConstantInt::new(
+                    bytes.len() as i64,
+                    Type::Signed(32),
+                ));
+                let ptr = assembler.var(arr_ty.clone());
+                assembler.alloc(arr_ty, ptr.clone(), size);
+                for (index, &byte) in bytes.iter().enumerate() {
+                    let elem = assembler.var(elem_ty.clone());
+                    assembler.assign(
+                        elem.clone(),
+                        Operand::ConstantInt(ir::ConstantInt::new(byte as i64, elem_ty.clone())),
+                    );
+                    assembler.elemset(
+                        ptr.clone(),
+                        Operand::ConstantInt(ir::ConstantInt::new(index as i64, Type::Signed(32))),
+                        elem,
+                    );
+                }
+                Some(ptr)
+            }
             ast::Litral::Integer(token) => {
                 let ty = Type::Signed(32);
                 let var = assembler.var(ty);
