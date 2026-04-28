@@ -1,6 +1,6 @@
 use crate::ir::{
-    BasicBlock, BlockId, Constant, Function, Import, Instruction, Module, Operand, Type, Variable,
-    Visibility,
+    BasicBlock, BlockId, Constant, ExternDecl, Function, Import, Instruction, Module, Operand,
+    Type, Variable, Visibility,
     instruction::{
         IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse,
         IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IReturn, ISub, IXOr,
@@ -12,6 +12,7 @@ use crate::ir::{
 pub struct ModuleBuilder {
     imports: Vec<Import>,
     constants: Vec<Constant>,
+    externs: Vec<ExternDecl>,
     functions: Vec<Function>,
 }
 
@@ -30,6 +31,11 @@ impl ModuleBuilder {
         self
     }
 
+    pub fn extern_decl(&mut self, decl: ExternDecl) -> &mut Self {
+        self.externs.push(decl);
+        self
+    }
+
     pub fn function(&mut self, function: Function) -> &mut Self {
         self.functions.push(function);
         self
@@ -39,6 +45,7 @@ impl ModuleBuilder {
         Module {
             imports: self.imports,
             constants: self.constants,
+            externs: self.externs,
             functions: self.functions,
         }
     }

@@ -1,27 +1,5 @@
-// function factorial(n: s32) s32 {
-//   %entry:
-//     @cmp s32 : is_one, n, 1
-//     @jumpif is_one, %then_0
-//     @jump %else_0
-//   %then_0:
-//     @load s32 : result, 1
-//     @jump %merge_0
-//   %else_0:
-//     @sub s32 : n_minus_one, n, 1
-//     @call s32 : recursive_result factorial(n_minus_one)
-//     @mul s32 : result, n, recursive_result
-//     @jump %merge_0
-//   %merge_0:
-//     @phi s32 : result, [(%then_0, result), (%else_0, result)]
-//     @ret s32 : result
-// }
-// public function main() s32 {
-//   %entry:
-//     @load s32 : input, 5
-//     @call s32 : fact_result factorial(input)
-//     @call s32 : exit_code write_int(fact_result)
-//     @ret s32 : fact_result
-// }
+extern function write_int(s32) void
+
 function factorial(n_v0: s32, ) s32{
   %entry:
     @assign s32 : tmp_1_v0, 1

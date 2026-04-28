@@ -241,42 +241,6 @@ snapshot!(
     "../examples/looping.bitbox"
 );
 
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::Wasm32,
-    DebugPass::LocalFunctionVariables,
-    test_test_local_vars_wasm32,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::Wasm32,
-    DebugPass::ControlFlowGraph,
-    test_test_cfg_wasm32,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::Wasm32,
-    DebugPass::LivenessAnalysis,
-    test_test_liveness_wasm32,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::Wasm32,
-    DebugPass::StructuringIr,
-    test_test_structuring_wasm32,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::Wasm32,
-    DebugPass::Emit,
-    test_test_emit_wasm32,
-    "../examples/test.bitbox"
-);
-
 // ── x86_64-linux ──────────────────────────────────────────────────────────────
 
 snapshot!(
@@ -475,49 +439,6 @@ snapshot!(
     "../examples/looping.bitbox"
 );
 
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::X86_64Linux,
-    DebugPass::LocalFunctionVariables,
-    test_test_local_vars_x86_64,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::X86_64Linux,
-    DebugPass::ControlFlowGraph,
-    test_test_cfg_x86_64,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::X86_64Linux,
-    DebugPass::LoweredIr,
-    test_test_lowered_ir_x86_64,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::X86_64Linux,
-    DebugPass::LivenessAnalysis,
-    test_test_liveness_x86_64,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "x86_64 backend does not yet implement mul",
-    Target::X86_64Linux,
-    DebugPass::Emit,
-    test_test_emit_x86_64,
-    "../examples/test.bitbox"
-);
-snapshot!(
-    ignore: "x86_64 backend does not yet implement mul",
-    Target::X86_64Linux,
-    DebugPass::VirtRegRewrite,
-    test_test_virt_reg_x86_64,
-    "../examples/test.bitbox"
-);
-
 // ── bitbeat ───────────────────────────────────────────────────────────────────
 
 snapshot!(
@@ -552,11 +473,4 @@ snapshot!(
     DebugPass::Emit,
     test_looping_emit_bitbeat,
     "../examples/looping.bitbox"
-);
-snapshot!(
-    ignore: "bitbox parser does not support @if syntax used in test.bitbox",
-    Target::Bitbeat,
-    DebugPass::Emit,
-    test_test_emit_bitbeat,
-    "../examples/test.bitbox"
 );

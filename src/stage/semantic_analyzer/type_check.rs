@@ -258,13 +258,6 @@ impl<'st> TypeChecker<'st> {
             panic!("Caller must be an identifier");
         };
 
-        if matches!(
-            ident.lexeme.as_str(),
-            "write_int" | "writenl" | "write_char"
-        ) {
-            return Type::Void;
-        }
-
         let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()) else {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };

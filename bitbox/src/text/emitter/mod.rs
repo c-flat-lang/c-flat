@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::text::semantic_analyzer::SymbolTable;
 
-use crate::ir::{self, Operand, Type, Variable, Visibility};
+use crate::ir::{self, ExternDecl, Operand, Type, Variable, Visibility};
 use crate::text::lexer::token::{Token, TokenKind};
 use crate::text::parser::ast;
 
@@ -58,6 +58,7 @@ impl Emitter {
 
     pub fn emit(mut self) -> ir::Module {
         self.emit_imports();
+        self.emit_externs();
         self.emit_functions();
         self.ir_module.build()
     }
@@ -89,6 +90,46 @@ impl Emitter {
                     self.functions.insert(func.name.lexeme.clone(), function);
                 }
             }
+        }
+    }
+
+    /// Register extern C function declarations so `@call Name(...)` can resolve argument types.
+    /// Also adds them to `ir::Module.externs` so backends (wasm, x86_64) can handle them.
+    fn emit_externs(&mut self) {
+        for ext in self.ast_module.externs.iter() {
+            let function = ast::Function {
+                name: ext.name.clone(),
+                visibility: Visibility::Public,
+                params: ext
+                    .params
+                    .iter()
+                    .map(|ty| {
+                        (
+                            Token {
+                                kind: TokenKind::Identifier,
+                                lexeme: format!("var_{}", ty.lexeme),
+                                span: ty.span.clone(),
+                            },
+                            ty.clone(),
+                        )
+                    })
+                    .collect(),
+                return_type: ext.return_type.clone(),
+                block: vec![],
+            };
+            self.functions.insert(ext.name.lexeme.clone(), function);
+
+            let params = ext
+                .params
+                .iter()
+                .map(|ty| ir::Type::from(ty.lexeme.as_str()))
+                .collect();
+            let return_type = ir::Type::from(ext.return_type.lexeme.as_str());
+            self.ir_module.extern_decl(ExternDecl {
+                name: ext.name.lexeme.clone(),
+                params,
+                return_type,
+            });
         }
     }
 

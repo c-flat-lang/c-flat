@@ -14,8 +14,10 @@ impl From<&str> for ir::Type {
             ir::Type::Signed(stripped.parse().unwrap())
         } else if let Some(stripped) = s.strip_prefix("f") {
             ir::Type::Float(stripped.parse().unwrap())
+        } else if s == "void" {
+            ir::Type::Void
         } else {
-            unreachable!()
+            unreachable!("Unknown type: {}", s)
         }
     }
 }

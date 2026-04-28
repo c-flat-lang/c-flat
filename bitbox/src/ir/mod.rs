@@ -438,7 +438,16 @@ pub struct Constant {
 pub struct Module {
     pub imports: Vec<Import>,
     pub constants: Vec<Constant>,
+    pub externs: Vec<ExternDecl>,
     pub functions: Vec<Function>,
+}
+
+/// A declaration of an external C symbol resolved at link time.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExternDecl {
+    pub name: String,
+    pub params: Vec<Type>,
+    pub return_type: Type,
 }
 
 impl std::fmt::Display for Module {
@@ -446,6 +455,15 @@ impl std::fmt::Display for Module {
         for import in &self.imports {
             // TODO: pretty print
             writeln!(f, "{:?}", import)?;
+        }
+        for ext in &self.externs {
+            let params = ext
+                .params
+                .iter()
+                .map(|t| t.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            writeln!(f, "extern {} ({}) -> {}", ext.name, params, ext.return_type)?;
         }
         for constant in &self.constants {
             // TODO: pretty print

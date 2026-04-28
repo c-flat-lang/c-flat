@@ -1,3 +1,6 @@
+extern function write_int(s32) void
+extern function write_char(s32) void
+
 function fib(n: s32, a: s32, b: s32, ) s32{
   %entry: // 0
     @assign s32 : tmp.0, 0

@@ -4,44 +4,10 @@ use crate::text::error::{ErrorMissMatchedType, ErrorMissingSymbol, Errors, Repor
 use crate::text::parser::ast;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
     errors: Vec<Box<dyn Report>>,
-}
-
-impl Default for SymbolTableBuilder {
-    fn default() -> Self {
-        let mut table = SymbolTable::default();
-        table.enter_scope("global");
-        table.push(Symbol {
-            name: "write_int".to_string(),
-            ty: ir::Type::Void,
-            visibility: ir::Visibility::Public,
-            kind: SymbolKind::Function,
-            params: Some(vec![ir::Type::Signed(32)]),
-        });
-        table.push(Symbol {
-            name: "writeln".to_string(),
-            ty: ir::Type::Void,
-            visibility: ir::Visibility::Public,
-            kind: SymbolKind::Function,
-            params: Some(vec![]),
-        });
-        table.push(Symbol {
-            name: "write_char".to_string(),
-            ty: ir::Type::Void,
-            visibility: ir::Visibility::Public,
-            kind: SymbolKind::Function,
-            params: Some(vec![ir::Type::Signed(32)]),
-        });
-        table.exit_scope();
-
-        Self {
-            table,
-            errors: Vec::new(),
-        }
-    }
 }
 
 impl SymbolTableBuilder {

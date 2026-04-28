@@ -2,6 +2,8 @@
 source: bitbox/src/test.rs
 expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::LoweredIr,\n\"../examples/fib.bitbox\", contents)"
 ---
+extern write_int (s32) -> void
+extern write_char (s32) -> void
 [31mfunction[0m [35mfib[0m([1;36mn_v0[0m: [33ms32[0m, [1;36ma_v0[0m: [33ms32[0m, [1;36mb_v0[0m: [33ms32[0m, ) s32{
   %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
     [34m@assign[0m [33ms32[0m : [1;36mtmp.0_v0[0m, [33m0[0m

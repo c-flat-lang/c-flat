@@ -167,6 +167,7 @@ Ok(
             },
         ],
         imports: [],
+        externs: [],
         constants: [],
     },
 )

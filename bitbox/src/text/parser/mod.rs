@@ -10,6 +10,7 @@ use crate::ir::Visibility;
 enum TopLevel {
     Function(ast::Function),
     Import(ast::Import),
+    Extern(ast::ExternFunction),
     Constant(ast::Constant),
 }
 
@@ -65,6 +66,7 @@ impl Parser {
     pub fn parse(&mut self) -> Result<ast::Module> {
         let mut imports = vec![];
         let mut functions = vec![];
+        let mut externs = vec![];
         let mut constants = vec![];
 
         while !self.end_of_stream() {
@@ -74,6 +76,7 @@ impl Parser {
             match self.parse_top_level()? {
                 TopLevel::Import(import) => imports.push(import),
                 TopLevel::Function(func) => functions.push(func),
+                TopLevel::Extern(ext) => externs.push(ext),
                 TopLevel::Constant(constant) => constants.push(constant),
             }
         }
@@ -81,6 +84,7 @@ impl Parser {
         Ok(ast::Module {
             functions,
             imports,
+            externs,
             constants,
         })
     }
@@ -91,6 +95,8 @@ impl Parser {
             Ok(TopLevel::Function(self.parse_function(visibility)?))
         } else if self.is_peek_a(TokenKind::Keyword(token::Keyword::Import)) {
             Ok(TopLevel::Import(self.parse_import()?))
+        } else if self.is_peek_a(TokenKind::Keyword(token::Keyword::Extern)) {
+            Ok(TopLevel::Extern(self.parse_extern_function()?))
         } else if self.is_peek_a(TokenKind::Keyword(token::Keyword::Const)) {
             Ok(TopLevel::Constant(self.parse_constant()?))
         } else {
@@ -100,6 +106,7 @@ impl Parser {
                 expected: vec![
                     token::Keyword::Function,
                     token::Keyword::Import,
+                    token::Keyword::Extern,
                     token::Keyword::Const,
                 ],
             }))
@@ -252,6 +259,55 @@ impl Parser {
         Ok(params)
     }
 
+    /// Parses a full type token including compound types like `*u8` or `[10 x u8]`.
+    /// Returns a single synthetic token whose lexeme is the assembled type string.
+    fn parse_type_token(&mut self) -> Result<Token> {
+        if self.is_peek_a(TokenKind::Star) {
+            // pointer: *<inner>
+            let star = self.next()?;
+            let inner = self.parse_type_token()?;
+            return Ok(Token {
+                kind: TokenKind::Identifier,
+                lexeme: format!("*{}", inner.lexeme),
+                span: star.span,
+            });
+        }
+        if self.is_peek_a(TokenKind::LeftBracket) {
+            // array: [N x T]
+            let open = self.next()?;
+            let count = self.consume(TokenKind::Number)?;
+            // consume the 'x' separator (lexed as an identifier)
+            let _x = self.consume(TokenKind::Identifier)?;
+            let elem = self.parse_type_token()?;
+            self.consume(TokenKind::RightBracket)?;
+            return Ok(Token {
+                kind: TokenKind::Identifier,
+                lexeme: format!("[{} x {}]", count.lexeme, elem.lexeme),
+                span: open.span,
+            });
+        }
+        // simple type: s32, u8, void, etc.
+        self.consume(TokenKind::Identifier)
+    }
+
+    fn parse_extern_function_params(&mut self) -> Result<Vec<Token>> {
+        let mut params = vec![];
+        self.consume(TokenKind::LeftParen)?;
+        if self.is_peek_a(TokenKind::RightParen) {
+            self.consume(TokenKind::RightParen)?;
+            return Ok(params);
+        }
+        loop {
+            params.push(self.parse_type_token()?);
+            if !self.is_peek_a(TokenKind::Comma) {
+                break;
+            }
+            self.consume(TokenKind::Comma)?;
+        }
+        self.consume(TokenKind::RightParen)?;
+        Ok(params)
+    }
+
     fn parse_import(&mut self) -> Result<ast::Import> {
         self.consume(TokenKind::Keyword(token::Keyword::Import))?;
         self.consume(TokenKind::Keyword(token::Keyword::Function))?;
@@ -267,6 +323,22 @@ impl Parser {
             params,
             return_type,
         }))
+    }
+
+    /// Parses `extern function Name(type, type, ...) return_type;`
+    /// Declares a C external symbol so `@call Name(...)` can resolve argument types.
+    fn parse_extern_function(&mut self) -> Result<ast::ExternFunction> {
+        self.consume(TokenKind::Keyword(token::Keyword::Extern))?;
+        self.consume(TokenKind::Keyword(token::Keyword::Function))?;
+        let name = self.consume(TokenKind::Identifier)?;
+        let params = self.parse_extern_function_params()?;
+        let return_type = self.parse_type_token()?;
+        self.consume(TokenKind::Delimiter)?;
+        Ok(ast::ExternFunction {
+            name,
+            params,
+            return_type,
+        })
     }
 
     fn parse_constant(&mut self) -> Result<ast::Constant> {

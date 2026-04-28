@@ -2,6 +2,7 @@
 source: bitbox/src/test.rs
 expression: "snapshot_compiler(Target::X86_64Linux, DebugPass::LoweredIr,\n\"../examples/factorial.bitbox\", contents)"
 ---
+extern write_int (s32) -> void
 [31mfunction[0m [35mfactorial[0m([1;36mn_v0_v0[0m: [33ms32[0m, ) s32{
   %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
     [34m@assign[0m [33ms32[0m : [1;36mtmp_1_v0_v0[0m, [33m1[0m

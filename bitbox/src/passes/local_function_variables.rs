@@ -9,23 +9,10 @@ use crate::{
 use super::Pass;
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LocalFunctionVariables {
     table: HashMap<String, Vec<Variable>>,
     functions: Vec<String>,
-}
-
-impl Default for LocalFunctionVariables {
-    fn default() -> Self {
-        Self {
-            table: HashMap::new(),
-            functions: vec![
-                "write_int".to_string(),
-                "writeln".to_string(),
-                "write_char".to_string(),
-            ],
-        }
-    }
 }
 
 impl LocalFunctionVariables {
@@ -52,6 +39,17 @@ impl LocalFunctionVariables {
 
     pub fn get_function_id(&self, as_str: &str) -> Option<usize> {
         self.functions.iter().position(|f| f == as_str)
+    }
+
+    pub fn register_function(&mut self, function_name: impl Into<String>) {
+        let name = function_name.into();
+        if !self.functions.contains(&name) {
+            self.functions.push(name);
+        }
+    }
+
+    pub fn clear_functions(&mut self) {
+        self.functions.clear();
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&String, &Vec<Variable>)> {
@@ -94,6 +92,10 @@ impl Pass for LocalFunctionVariablesPass {
             for block in function.blocks.iter() {
                 block_pass(function.name.as_str(), block, ctx);
             }
+        }
+        for ext in module.externs.iter() {
+            ctx.local_function_variables
+                .register_function(ext.name.as_str());
         }
         Ok(())
     }

@@ -5,6 +5,7 @@ use crate::text::lexer::token::{Instruction as TokenInstruction, Token};
 pub struct Module {
     pub functions: Vec<Function>,
     pub imports: Vec<Import>,
+    pub externs: Vec<ExternFunction>,
     pub constants: Vec<Constant>,
 }
 
@@ -57,6 +58,13 @@ pub enum Import {
 #[derive(Debug)]
 pub struct ImportFunction {
     pub module_name: Token,
+    pub name: Token,
+    pub params: Vec<Token>,
+    pub return_type: Token,
+}
+
+#[derive(Debug)]
+pub struct ExternFunction {
     pub name: Token,
     pub params: Vec<Token>,
     pub return_type: Token,

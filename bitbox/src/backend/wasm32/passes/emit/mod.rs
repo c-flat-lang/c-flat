@@ -87,6 +87,48 @@ impl Pass for EmitWasm32Pass {
             );
         }
 
+        // Emit extern C functions as wasm imports (skip built-ins already added above).
+        const BUILTIN_IMPORTS: &[&str] = &["write_i32", "writenl", "write_char"];
+        for ext in module.externs.iter() {
+            if BUILTIN_IMPORTS.contains(&ext.name.as_str()) {
+                continue;
+            }
+            let param_types: Vec<ValType> = ext.params.iter().map(|t| t.clone().into()).collect();
+            let result_types: Vec<ValType> = if ext.return_type == Type::Void {
+                vec![]
+            } else {
+                vec![ext.return_type.clone().into()]
+            };
+            let wasm_out = ctx.output.get_mut_wasm32();
+            wasm_out
+                .type_section
+                .ty()
+                .function(param_types, result_types);
+            wasm_out.import_section.import(
+                "env",
+                ext.name.as_str(),
+                EntityType::Function(wasm_out.funciton_count),
+            );
+            wasm_out.funciton_count += 1;
+        }
+
+        // Rebuild function index list so get_function_id() returns correct wasm indices:
+        // [built-in imports (0..2), extern imports (3..), defined functions (..)].
+        ctx.local_function_variables.clear_functions();
+        for name in BUILTIN_IMPORTS {
+            ctx.local_function_variables.register_function(*name);
+        }
+        for ext in module.externs.iter() {
+            if !BUILTIN_IMPORTS.contains(&ext.name.as_str()) {
+                ctx.local_function_variables
+                    .register_function(ext.name.as_str());
+            }
+        }
+        for func in module.functions.iter() {
+            ctx.local_function_variables
+                .register_function(func.name.as_str());
+        }
+
         for function in module.functions.iter() {
             function.lower(ctx, &mut *self)?;
         }

@@ -64,6 +64,7 @@ impl<'a> Lexer<'a> {
 
         match lexeme.as_str() {
             "import" => self.spanned(TokenKind::Keyword(Keyword::Import), lexeme),
+            "extern" => self.spanned(TokenKind::Keyword(Keyword::Extern), lexeme),
             "const" => self.spanned(TokenKind::Keyword(Keyword::Const), lexeme),
             "function" => self.spanned(TokenKind::Keyword(Keyword::Function), lexeme),
             "public" => self.spanned(TokenKind::Keyword(Keyword::Public), lexeme),
