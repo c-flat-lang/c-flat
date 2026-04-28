@@ -41,7 +41,6 @@ export function useCompiler() {
             new TextDecoder().decode(memoryBuffer.slice(ptr, ptr + len)),
           );
         },
-        write_i32: (n: number) => lines.push(String(n)),
         write_int: (n: number) => lines.push(String(n)),
         writenl: () => lines.push("\n"),
         write_char: (c: number) => lines.push(String.fromCharCode(c)),

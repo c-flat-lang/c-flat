@@ -16,7 +16,7 @@ export class Cli {
      */
     get debug_mode() {
         const ret = wasm.cli_debug_mode(this.__wbg_ptr);
-        return ret === 12 ? undefined : ret;
+        return ret === 14 ? undefined : ret;
     }
     /**
      * @returns {string}
@@ -41,7 +41,7 @@ export class Cli {
     constructor(target, file_path, debug_mode) {
         const ptr0 = passStringToWasm0(file_path, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.cli_new(target, ptr0, len0, isLikeNone(debug_mode) ? 12 : debug_mode);
+        const ret = wasm.cli_new(target, ptr0, len0, isLikeNone(debug_mode) ? 14 : debug_mode);
         this.__wbg_ptr = ret >>> 0;
         CliFinalization.register(this, this.__wbg_ptr, this);
         return this;
@@ -57,21 +57,23 @@ export class Cli {
 if (Symbol.dispose) Cli.prototype[Symbol.dispose] = Cli.prototype.free;
 
 /**
- * @enum {0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}
+ * @enum {0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}
  */
 export const DebugMode = Object.freeze({
     Token: 0, "0": "Token",
     Ast: 1, "1": "Ast",
     SymbolTable: 2, "2": "SymbolTable",
-    Ir: 3, "3": "Ir",
-    LoweredIr: 4, "4": "LoweredIr",
-    Emit: 5, "5": "Emit",
-    ControlFlowGraph: 6, "6": "ControlFlowGraph",
-    LivenessAnalysis: 7, "7": "LivenessAnalysis",
-    DetectLoops: 8, "8": "DetectLoops",
-    PhiNodeElimination: 9, "9": "PhiNodeElimination",
-    LocalFunctionVariables: 10, "10": "LocalFunctionVariables",
-    StructuringIr: 11, "11": "StructuringIr",
+    TypeChecker: 3, "3": "TypeChecker",
+    Ir: 4, "4": "Ir",
+    LoweredIr: 5, "5": "LoweredIr",
+    Emit: 6, "6": "Emit",
+    ControlFlowGraph: 7, "7": "ControlFlowGraph",
+    LivenessAnalysis: 8, "8": "LivenessAnalysis",
+    DetectLoops: 9, "9": "DetectLoops",
+    PhiNodeElimination: 10, "10": "PhiNodeElimination",
+    LocalFunctionVariables: 11, "11": "LocalFunctionVariables",
+    StructuringIr: 12, "12": "StructuringIr",
+    VirtRegRewrite: 13, "13": "VirtRegRewrite",
 });
 
 /**

@@ -52,7 +52,7 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
     linker.func_wrap("core", "writenl", || {
         println!();
     })?;
-    linker.func_wrap("core", "write_i32", |a: i32| {
+    linker.func_wrap("core", "write_int", |a: i32| {
         print!("{}", a);
     })?;
     linker.func_wrap(

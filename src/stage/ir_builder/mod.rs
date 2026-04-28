@@ -87,7 +87,26 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
                 Item::Function(function) => self.build_function(function, &mut mb),
                 Item::Type(_) => {}
                 Item::Use(u) => self.build_use(u),
-                Item::ExternFunction(_) => {}
+                Item::ExternFunction(extern_function) => {
+                    let ast::ExternFunction {
+                        visibility,
+                        binding_name,
+                        params,
+                        return_type,
+                        ..
+                    } = extern_function;
+
+                    let declaration = ir::ExternDecl {
+                        name: binding_name.lexeme.clone(),
+                        params: params
+                            .iter()
+                            .map(|ty| ty.clone().as_bitbox_type())
+                            .collect(),
+                        return_type: return_type.as_bitbox_type(),
+                    };
+
+                    mb.extern_decl(declaration);
+                }
             }
         }
         Ok(mb.build())

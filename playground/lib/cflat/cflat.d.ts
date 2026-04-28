@@ -14,15 +14,17 @@ export enum DebugMode {
     Token = 0,
     Ast = 1,
     SymbolTable = 2,
-    Ir = 3,
-    LoweredIr = 4,
-    Emit = 5,
-    ControlFlowGraph = 6,
-    LivenessAnalysis = 7,
-    DetectLoops = 8,
-    PhiNodeElimination = 9,
-    LocalFunctionVariables = 10,
-    StructuringIr = 11,
+    TypeChecker = 3,
+    Ir = 4,
+    LoweredIr = 5,
+    Emit = 6,
+    ControlFlowGraph = 7,
+    LivenessAnalysis = 8,
+    DetectLoops = 9,
+    PhiNodeElimination = 10,
+    LocalFunctionVariables = 11,
+    StructuringIr = 12,
+    VirtRegRewrite = 13,
 }
 
 export enum Target {
@@ -37,12 +39,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
     readonly memory: WebAssembly.Memory;
-    readonly compile_source: (a: number, b: number, c: number) => [number, number, number];
     readonly __wbg_cli_free: (a: number, b: number) => void;
     readonly cli_debug_mode: (a: number) => number;
     readonly cli_file_path: (a: number) => [number, number];
     readonly cli_new: (a: number, b: number, c: number, d: number) => number;
     readonly cli_target: (a: number) => number;
+    readonly compile_source: (a: number, b: number, c: number) => [number, number, number];
     readonly __wbindgen_externrefs: WebAssembly.Table;
     readonly __wbindgen_free: (a: number, b: number, c: number) => void;
     readonly __wbindgen_malloc: (a: number, b: number) => number;

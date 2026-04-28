@@ -2,13 +2,26 @@
 
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers, drawSelection, highlightActiveLine } from "@codemirror/view";
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  drawSelection,
+  highlightActiveLine,
+} from "@codemirror/view";
 import { defaultKeymap, historyKeymap, history } from "@codemirror/commands";
-import { syntaxHighlighting, defaultHighlightStyle, bracketMatching } from "@codemirror/language";
+import {
+  syntaxHighlighting,
+  defaultHighlightStyle,
+  bracketMatching,
+} from "@codemirror/language";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { vim } from "@replit/codemirror-vim";
 
-const DEFAULT_SOURCE = `pub fn fib(n: s32, a: s32, b: s32) s32 {
+const DEFAULT_SOURCE = `extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
+pub fn fib(n: s32, a: s32, b: s32) s32 {
   let is_zero = n == 0;
   if is_zero {
     return a;

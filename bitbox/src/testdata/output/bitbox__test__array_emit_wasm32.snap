@@ -3,17 +3,11 @@ source: bitbox/src/test.rs
 expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/array.bitbox\",\ncontents)"
 ---
 (module
-  (type (;0;) (func (param i32)))
-  (type (;1;) (func))
-  (type (;2;) (func (param i32)))
-  (type (;3;) (func (result i32)))
-  (import "core" "write_i32" (func (;0;) (type 0)))
-  (import "core" "writenl" (func (;1;) (type 1)))
-  (import "core" "write_char" (func (;2;) (type 2)))
+  (type (;0;) (func (result i32)))
   (memory (;0;) 1)
   (global (;0;) (mut i32) i32.const 0)
-  (export "main" (func 3))
-  (func (;3;) (type 3) (result i32)
+  (export "main" (func 0))
+  (func (;0;) (type 0) (result i32)
     (local i32 i32)
     global.get 0
     local.tee 0

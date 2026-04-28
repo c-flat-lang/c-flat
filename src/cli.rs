@@ -35,6 +35,7 @@ impl Cli {
             file_path,
             debug_mode,
             run: false,
+            #[cfg(not(feature = "wasm"))]
             link: None,
         }
     }

@@ -4,19 +4,15 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
 ---
 (module
   (type (;0;) (func (param i32)))
-  (type (;1;) (func))
-  (type (;2;) (func (param i32)))
-  (type (;3;) (func (param i32)))
-  (type (;4;) (func (param i32 i32 i32) (result i32)))
-  (type (;5;) (func (result i32)))
-  (import "core" "write_i32" (func (;0;) (type 0)))
-  (import "core" "writenl" (func (;1;) (type 1)))
-  (import "core" "write_char" (func (;2;) (type 2)))
-  (import "env" "write_int" (func (;3;) (type 3)))
+  (type (;1;) (func (param i32)))
+  (type (;2;) (func (param i32 i32 i32) (result i32)))
+  (type (;3;) (func (result i32)))
+  (import "core" "write_int" (func (;0;) (type 0)))
+  (import "core" "write_char" (func (;1;) (type 1)))
   (memory (;0;) 1)
   (global (;0;) (mut i32) i32.const 0)
-  (export "main" (func 5))
-  (func (;4;) (type 4) (param i32 i32 i32) (result i32)
+  (export "main" (func 3))
+  (func (;2;) (type 2) (param i32 i32 i32) (result i32)
     (local i32 i32 i32 i32 i32 i32)
     i32.const 0
     local.set 3
@@ -42,12 +38,12 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
     local.get 6
     local.get 2
     local.get 7
-    call 4
+    call 2
     local.set 8
     local.get 8
     return
   )
-  (func (;5;) (type 5) (result i32)
+  (func (;3;) (type 3) (result i32)
     (local i32 i32 i32 i32 i32 i32 i32)
     i32.const 55
     local.set 0
@@ -58,16 +54,16 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
     local.get 0
     local.get 1
     local.get 2
-    call 4
+    call 2
     local.set 3
     local.get 3
     local.set 4
     local.get 4
-    call 3
+    call 0
     i32.const 10
     local.set 5
     local.get 5
-    call 2
+    call 1
     i32.const 0
     local.set 6
     local.get 6

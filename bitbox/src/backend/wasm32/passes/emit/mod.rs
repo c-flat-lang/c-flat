@@ -35,41 +35,6 @@ impl Pass for EmitWasm32Pass {
     ) -> Result<(), crate::error::Error> {
         {
             let module = ctx.output.get_mut_wasm32();
-
-            module.import_section.import(
-                "core",
-                "write_i32",
-                EntityType::Function(module.funciton_count),
-            );
-            module
-                .type_section
-                .ty()
-                .function(vec![ValType::I32], vec![]);
-
-            module.funciton_count += 1;
-
-            module.import_section.import(
-                "core",
-                "writenl",
-                EntityType::Function(module.funciton_count),
-            );
-            module.type_section.ty().function(vec![], vec![]);
-
-            module.funciton_count += 1;
-
-            module.import_section.import(
-                "core",
-                "write_char",
-                EntityType::Function(module.funciton_count),
-            );
-
-            module
-                .type_section
-                .ty()
-                .function(vec![ValType::I32], vec![]);
-
-            module.funciton_count += 1;
-
             module.memory_section.memory(MemoryType {
                 minimum: 1,
                 maximum: None,
@@ -87,12 +52,8 @@ impl Pass for EmitWasm32Pass {
             );
         }
 
-        // Emit extern C functions as wasm imports (skip built-ins already added above).
-        const BUILTIN_IMPORTS: &[&str] = &["write_i32", "writenl", "write_char"];
+        // Emit all extern function declarations as wasm imports.
         for ext in module.externs.iter() {
-            if BUILTIN_IMPORTS.contains(&ext.name.as_str()) {
-                continue;
-            }
             let param_types: Vec<ValType> = ext.params.iter().map(|t| t.clone().into()).collect();
             let result_types: Vec<ValType> = if ext.return_type == Type::Void {
                 vec![]
@@ -105,7 +66,7 @@ impl Pass for EmitWasm32Pass {
                 .ty()
                 .function(param_types, result_types);
             wasm_out.import_section.import(
-                "env",
+                "core",
                 ext.name.as_str(),
                 EntityType::Function(wasm_out.funciton_count),
             );
@@ -113,16 +74,11 @@ impl Pass for EmitWasm32Pass {
         }
 
         // Rebuild function index list so get_function_id() returns correct wasm indices:
-        // [built-in imports (0..2), extern imports (3..), defined functions (..)].
+        // [extern imports (0..), defined functions (..)].
         ctx.local_function_variables.clear_functions();
-        for name in BUILTIN_IMPORTS {
-            ctx.local_function_variables.register_function(*name);
-        }
         for ext in module.externs.iter() {
-            if !BUILTIN_IMPORTS.contains(&ext.name.as_str()) {
-                ctx.local_function_variables
-                    .register_function(ext.name.as_str());
-            }
+            ctx.local_function_variables
+                .register_function(ext.name.as_str());
         }
         for func in module.functions.iter() {
             ctx.local_function_variables
