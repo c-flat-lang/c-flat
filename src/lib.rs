@@ -105,6 +105,10 @@ pub fn front_end_compiler(src: &str, cli_options: &Cli) -> Result<bitbox::ir::Mo
         std::process::exit(0);
     }
 
+    if let Some(DebugMode::TypeChecker) = cli_options.debug_mode {
+        std::process::exit(0);
+    }
+
     let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
 
     if let Some(DebugMode::Ir) = cli_options.debug_mode {

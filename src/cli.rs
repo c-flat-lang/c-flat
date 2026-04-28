@@ -6,20 +6,6 @@ use std::str::FromStr;
 #[cfg(feature = "wasm")]
 use wasm_bindgen::prelude::*;
 
-trait HasArg {
-    fn has_arg(&self, expected: &str) -> bool;
-    fn has_prefix(&self, expected: &str) -> bool;
-}
-
-impl HasArg for Vec<String> {
-    fn has_arg(&self, expected: &str) -> bool {
-        self.iter().any(|arg| arg == expected)
-    }
-    fn has_prefix(&self, expected: &str) -> bool {
-        self.iter().any(|arg| arg.starts_with(expected))
-    }
-}
-
 #[cfg(feature = "wasm")]
 #[wasm_bindgen]
 #[derive(Debug, Clone)]
@@ -81,48 +67,24 @@ impl Cli {
         });
 
         let mut run = false;
-
-        if args.has_arg("run") {
-            run = true;
-        }
-
         let mut debug_mode = None;
-
-        if args.has_arg("-t") {
-            debug_mode = Some(DebugMode::Token);
-        } else if args.has_arg("-a") {
-            debug_mode = Some(DebugMode::Ast);
-        } else if args.has_arg("-s") {
-            debug_mode = Some(DebugMode::SymbolTable);
-        } else if args.has_arg("-ir") {
-            debug_mode = Some(DebugMode::Ir);
-        } else if args.has_prefix("--dump-after=") {
-            let value = args
-                .iter()
-                .find(|arg| arg.starts_with("--dump-after="))
-                .unwrap();
-            let Some(vlaue) = value.strip_prefix("--dump-after=") else {
-                eprintln!("Invalid argument: {}", value);
-                std::process::exit(1);
-            };
-            let mode = DebugMode::from_dump_after(vlaue);
-            debug_mode = Some(mode);
-        }
-
         let mut target = Target::default();
 
         let i = 0;
         while i < args.len() {
             let arg = &args[i];
 
-            if let Some(mode) = DebugMode::from_flag(arg) {
-                debug_mode = Some(mode);
+            if arg == "run" {
+                run = true;
                 args.remove(i);
                 continue;
             }
 
-            if arg.starts_with("run") {
-                run = true;
+            if let Some(value) = arg.strip_prefix("--target=") {
+                target = Target::from_str(value).unwrap_or_else(|err| {
+                    eprintln!("{} '{}'", err, value);
+                    std::process::exit(1);
+                });
                 args.remove(i);
                 continue;
             }
@@ -133,11 +95,8 @@ impl Cli {
                 continue;
             }
 
-            if let Some(value) = arg.strip_prefix("--target=") {
-                target = Target::from_str(value).unwrap_or_else(|err| {
-                    eprintln!("{} '{}'", err, value);
-                    std::process::exit(1);
-                });
+            if let Some(mode) = DebugMode::from_flag(arg) {
+                debug_mode = Some(mode);
                 args.remove(i);
                 continue;
             }
@@ -156,34 +115,23 @@ impl Cli {
 
 fn print_help() {
     let bin = std::env::args().next().unwrap();
-    eprintln!("Usage: {bin} <filename>");
+    eprintln!("Usage: {bin} [options] <filename>");
     eprintln!("Options:");
+    eprintln!("  run           Compile and run the program");
     eprintln!("  -t            Print tokens");
     eprintln!("  -a            Print AST");
+    eprintln!("  --check       Type check code");
     eprintln!("  -s            Print symbol table");
     eprintln!("  -ir           Print IR");
-    print_target_help();
-    print_dump_after_help();
-    eprintln!("  -h, --help    Print this help message");
-}
-
-fn print_target_help() {
     eprintln!("  --target=TRIPLE");
     eprintln!("    wasm32");
     eprintln!("    x86_64-linux");
     eprintln!("    bitbeat");
-}
-
-fn print_dump_after_help() {
     eprintln!("  --dump-after=PASS");
-    eprintln!("    lowering-ir");
-    eprintln!("    emit");
-    eprintln!("    control-flow-graph");
-    eprintln!("    liveness-analysis");
-    eprintln!("    detect-loops");
-    eprintln!("    phi-node-elimination");
-    eprintln!("    local-function-variables");
-    eprintln!("    structuring-ir");
+    for pass in DebugMode::DUMP_AFTER_PASSES {
+        eprintln!("    {pass}");
+    }
+    eprintln!("  -h, --help    Print this help message");
 }
 
 fn unknown_arg(arg: &str) -> ! {
@@ -198,6 +146,7 @@ pub enum DebugMode {
     Token,
     Ast,
     SymbolTable,
+    TypeChecker,
     Ir,
     LoweredIr,
     Emit,
@@ -207,14 +156,28 @@ pub enum DebugMode {
     PhiNodeElimination,
     LocalFunctionVariables,
     StructuringIr,
+    VirtRegRewrite,
 }
 
 impl DebugMode {
+    const DUMP_AFTER_PASSES: &'static [&'static str] = &[
+        "lowering-ir",
+        "emit",
+        "control-flow-graph",
+        "liveness-analysis",
+        "detect-loops",
+        "phi-node-elimination",
+        "local-function-variables",
+        "structuring-ir",
+        "virt-reg-rewrite",
+    ];
+
     fn from_flag(flag: &str) -> Option<Self> {
         Some(match flag {
             "-t" => Self::Token,
             "-a" => Self::Ast,
             "-s" => Self::SymbolTable,
+            "--check" => Self::TypeChecker,
             "-ir" => Self::Ir,
             _ => return None,
         })
@@ -230,17 +193,13 @@ impl DebugMode {
             "phi-node-elimination" => Self::PhiNodeElimination,
             "local-function-variables" => Self::LocalFunctionVariables,
             "structuring-ir" => Self::StructuringIr,
+            "virt-reg-rewrite" => Self::VirtRegRewrite,
             _ => {
-                eprintln!("Unknown debug mode: {value}");
-                eprintln!("Options:");
-                eprintln!("   lowering-ir");
-                eprintln!("   emit");
-                eprintln!("   control-flow-graph");
-                eprintln!("   liveness-analysis");
-                eprintln!("   detect-loops");
-                eprintln!("   phi-node-elimination");
-                eprintln!("   local-function-variables");
-                eprintln!("   structuring-ir");
+                eprintln!("Unknown pass: {value}");
+                eprintln!("Valid options:");
+                for pass in Self::DUMP_AFTER_PASSES {
+                    eprintln!("  {pass}");
+                }
                 std::process::exit(1);
             }
         }
@@ -259,6 +218,7 @@ impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
             DebugMode::PhiNodeElimination => PhiNodeElimination,
             DebugMode::LocalFunctionVariables => LocalFunctionVariables,
             DebugMode::StructuringIr => StructuringIr,
+            DebugMode::VirtRegRewrite => VirtRegRewrite,
             _ => return None,
         })
     }

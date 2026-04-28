@@ -1,33 +1,6 @@
 use bitbox::Target;
 use std::str::FromStr;
 
-trait HasArg {
-    fn has_arg(&self, expected: &str) -> bool;
-    fn has_prefix(&self, expected: &str) -> bool;
-}
-
-impl HasArg for Vec<String> {
-    fn has_arg(&self, expected: &str) -> bool {
-        self.iter().any(|arg| arg == expected)
-    }
-    fn has_prefix(&self, expected: &str) -> bool {
-        self.iter().any(|arg| arg.starts_with(expected))
-    }
-}
-
-fn help_dump_after() {
-    eprintln!("    --dump-after  Print debug info after pass");
-    eprintln!("                  options:");
-    eprintln!("                    lowering-ir");
-    eprintln!("                    emit");
-    eprintln!("                    control-flow-graph");
-    eprintln!("                    liveness-analysis");
-    eprintln!("                    detect-loops");
-    eprintln!("                    phi-node-elimination");
-    eprintln!("                    local-function-variables");
-    eprintln!("                    structuring-ir");
-}
-
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
@@ -37,73 +10,80 @@ pub struct Cli {
 
 impl Cli {
     pub fn parse() -> Self {
-        let args = std::env::args().skip(1).collect::<Vec<_>>();
+        let mut args = std::env::args().skip(1).collect::<Vec<_>>();
 
         if args.iter().any(|arg| arg == "-h" || arg == "--help") {
-            eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
-            eprintln!("  Options:");
-            eprintln!("    -t            Print tokens");
-            eprintln!("    -a            Print AST");
-            eprintln!("    -s            Print symbol table");
-            eprintln!("    -ir           Print IR");
-            eprintln!("    --target      Target triple");
-            eprintln!("    --dump-after  Print debug info after pass");
-            help_dump_after();
-            eprintln!("    -h, --help    Print this help message");
-
+            print_help();
             std::process::exit(0);
         }
 
-        let Some(file_path) = args.last() else {
-            eprintln!("Usage: {} <filename>", std::env::args().next().unwrap());
+        let file_path = args.pop().unwrap_or_else(|| {
+            print_help();
             std::process::exit(1);
-        };
+        });
 
         let mut debug_mode = None;
-
-        if args.has_arg("-t") {
-            debug_mode = Some(DebugMode::Token);
-        } else if args.has_arg("-a") {
-            debug_mode = Some(DebugMode::Ast);
-        } else if args.has_arg("-s") {
-            debug_mode = Some(DebugMode::SymbolTable);
-        } else if args.has_arg("-ir") {
-            debug_mode = Some(DebugMode::Ir);
-        } else if args.has_prefix("--dump-after=") {
-            let arg = args
-                .iter()
-                .find(|arg| arg.starts_with("--dump-after="))
-                .unwrap();
-            let Some(value) = arg.strip_prefix("--dump-after=") else {
-                eprintln!("Invalid argument: {}", arg);
-                help_dump_after();
-                std::process::exit(1);
-            };
-            let mode = DebugMode::from_str(value).unwrap_or_else(|_| {
-                eprintln!("Unknown debug mode: {}", value);
-                help_dump_after();
-                std::process::exit(1);
-            });
-            debug_mode = Some(mode);
-        }
-
         let mut target = Target::default();
-        if let Some(arg) = args.iter().find(|arg| arg.starts_with("--target")) {
-            let value = arg.strip_prefix("--target=").unwrap();
-            target = match Target::from_str(value) {
-                Ok(target) => target,
-                Err(err) => {
+
+        let mut i = 0;
+        while i < args.len() {
+            let arg = &args[i];
+
+            if let Some(value) = arg.strip_prefix("--target=") {
+                target = Target::from_str(value).unwrap_or_else(|err| {
                     eprintln!("{} '{}'", err, value);
                     std::process::exit(1);
-                }
-            };
+                });
+                args.remove(i);
+                continue;
+            }
+
+            if let Some(value) = arg.strip_prefix("--dump-after=") {
+                debug_mode = Some(DebugMode::from_dump_after(value));
+                args.remove(i);
+                continue;
+            }
+
+            if let Some(mode) = DebugMode::from_flag(arg) {
+                debug_mode = Some(mode);
+                args.remove(i);
+                continue;
+            }
+
+            unknown_arg(arg);
         }
+
         Self {
             debug_mode,
             target,
-            file_path: file_path.to_string(),
+            file_path,
         }
     }
+}
+
+fn print_help() {
+    let bin = std::env::args().next().unwrap();
+    eprintln!("Usage: {bin} [options] <filename>");
+    eprintln!("Options:");
+    eprintln!("  -t            Print tokens");
+    eprintln!("  -a            Print AST");
+    eprintln!("  -s            Print symbol table");
+    eprintln!("  -ir           Print IR");
+    eprintln!("  --target=TRIPLE");
+    eprintln!("    wasm32");
+    eprintln!("    x86_64-linux");
+    eprintln!("    bitbeat");
+    eprintln!("  --dump-after=PASS");
+    for pass in DebugMode::DUMP_AFTER_PASSES {
+        eprintln!("    {pass}");
+    }
+    eprintln!("  -h, --help    Print this help message");
+}
+
+fn unknown_arg(arg: &str) -> ! {
+    eprintln!("Unknown argument: {arg}");
+    eprintln!("Run with --help to see valid options.");
+    std::process::exit(1);
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -120,44 +100,69 @@ pub enum DebugMode {
     SymbolTable,
     Token,
     StructuringIr,
+    VirtRegRewrite,
 }
 
-impl FromStr for DebugMode {
-    type Err = ();
+impl DebugMode {
+    const DUMP_AFTER_PASSES: &'static [&'static str] = &[
+        "lowering-ir",
+        "emit",
+        "control-flow-graph",
+        "liveness-analysis",
+        "detect-loops",
+        "phi-node-elimination",
+        "local-function-variables",
+        "structuring-ir",
+        "virt-reg-rewrite",
+    ];
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "ast" => Ok(DebugMode::Ast),
-            "control-flow-graph" => Ok(DebugMode::ControlFlowGraph),
-            "detect-loops" => Ok(DebugMode::DetectLoops),
-            "emit" => Ok(DebugMode::Emit),
-            "ir" => Ok(DebugMode::Ir),
-            "liveness-analysis" => Ok(DebugMode::LivenessAnalysis),
-            "local-function-variables" => Ok(DebugMode::LocalFunctionVariables),
-            "lowering-ir" => Ok(DebugMode::LoweredIr),
-            "phi-node-elimination" => Ok(DebugMode::PhiNodeElimination),
-            "symbol-table" => Ok(DebugMode::SymbolTable),
-            "token" => Ok(DebugMode::Token),
-            "structuring-ir" => Ok(DebugMode::StructuringIr),
-            _ => Err(()),
+    fn from_flag(flag: &str) -> Option<Self> {
+        Some(match flag {
+            "-t" => Self::Token,
+            "-a" => Self::Ast,
+            "-s" => Self::SymbolTable,
+            "-ir" => Self::Ir,
+            _ => return None,
+        })
+    }
+
+    fn from_dump_after(value: &str) -> Self {
+        match value {
+            "lowering-ir" => Self::LoweredIr,
+            "emit" => Self::Emit,
+            "control-flow-graph" => Self::ControlFlowGraph,
+            "liveness-analysis" => Self::LivenessAnalysis,
+            "detect-loops" => Self::DetectLoops,
+            "phi-node-elimination" => Self::PhiNodeElimination,
+            "local-function-variables" => Self::LocalFunctionVariables,
+            "structuring-ir" => Self::StructuringIr,
+            "virt-reg-rewrite" => Self::VirtRegRewrite,
+            _ => {
+                eprintln!("Unknown pass: {value}");
+                eprintln!("Valid options:");
+                for pass in Self::DUMP_AFTER_PASSES {
+                    eprintln!("  {pass}");
+                }
+                std::process::exit(1);
+            }
         }
     }
 }
 
 impl From<DebugMode> for Option<bitbox::passes::DebugPass> {
     fn from(value: DebugMode) -> Option<bitbox::passes::DebugPass> {
-        match value {
-            DebugMode::LoweredIr => Some(bitbox::passes::DebugPass::LoweredIr),
-            DebugMode::Emit => Some(bitbox::passes::DebugPass::Emit),
-            DebugMode::ControlFlowGraph => Some(bitbox::passes::DebugPass::ControlFlowGraph),
-            DebugMode::LivenessAnalysis => Some(bitbox::passes::DebugPass::LivenessAnalysis),
-            DebugMode::DetectLoops => Some(bitbox::passes::DebugPass::DetectLoops),
-            DebugMode::PhiNodeElimination => Some(bitbox::passes::DebugPass::PhiNodeElimination),
-            DebugMode::LocalFunctionVariables => {
-                Some(bitbox::passes::DebugPass::LocalFunctionVariables)
-            }
-            DebugMode::StructuringIr => Some(bitbox::passes::DebugPass::StructuringIr),
-            _ => None,
-        }
+        use bitbox::passes::DebugPass::*;
+        Some(match value {
+            DebugMode::LoweredIr => LoweredIr,
+            DebugMode::Emit => Emit,
+            DebugMode::ControlFlowGraph => ControlFlowGraph,
+            DebugMode::LivenessAnalysis => LivenessAnalysis,
+            DebugMode::DetectLoops => DetectLoops,
+            DebugMode::PhiNodeElimination => PhiNodeElimination,
+            DebugMode::LocalFunctionVariables => LocalFunctionVariables,
+            DebugMode::StructuringIr => StructuringIr,
+            DebugMode::VirtRegRewrite => VirtRegRewrite,
+            _ => return None,
+        })
     }
 }
