@@ -6,6 +6,7 @@ pub struct Cli {
     pub debug_mode: Option<DebugMode>,
     pub target: Target,
     pub file_path: String,
+    pub link: Option<String>,
 }
 
 impl Cli {
@@ -24,10 +25,29 @@ impl Cli {
 
         let mut debug_mode = None;
         let mut target = Target::default();
+        let mut link = None;
 
-        let mut i = 0;
+        let i = 0;
         while i < args.len() {
             let arg = &args[i];
+
+            if arg == "--link" {
+                if i + 1 >= args.len() {
+                    eprintln!("Expected argument after 'link'");
+                    std::process::exit(1);
+                }
+                link = Some(args[i + 1].clone());
+                args.drain(i..=i + 1);
+                continue;
+            } else if arg.starts_with("--link=") {
+                let Some(value) = arg.strip_prefix("--link=") else {
+                    eprintln!("Expected argument after 'link'");
+                    std::process::exit(1);
+                };
+                link = Some(value.to_string());
+                args.remove(i);
+                continue;
+            }
 
             if let Some(value) = arg.strip_prefix("--target=") {
                 target = Target::from_str(value).unwrap_or_else(|err| {
@@ -57,6 +77,7 @@ impl Cli {
             debug_mode,
             target,
             file_path,
+            link,
         }
     }
 }
@@ -65,19 +86,20 @@ fn print_help() {
     let bin = std::env::args().next().unwrap();
     eprintln!("Usage: {bin} [options] <filename>");
     eprintln!("Options:");
-    eprintln!("  -t            Print tokens");
-    eprintln!("  -a            Print AST");
-    eprintln!("  -s            Print symbol table");
-    eprintln!("  -ir           Print IR");
-    eprintln!("  --target=TRIPLE");
+    eprintln!("  -t                 Print tokens");
+    eprintln!("  -a                 Print AST");
+    eprintln!("  -s                 Print symbol table");
+    eprintln!("  -ir                Print IR");
+    eprintln!("  --link [options]   Link with another file (e.g. a C library)");
+    eprintln!("  --target=TRIPLE    Compile for a specific target. Valid options:");
     eprintln!("    wasm32");
     eprintln!("    x86_64-linux");
     eprintln!("    bitbeat");
-    eprintln!("  --dump-after=PASS");
+    eprintln!("  --dump-after=PASS  Dump IR after a specific pass. Valid options:");
     for pass in DebugMode::DUMP_AFTER_PASSES {
         eprintln!("    {pass}");
     }
-    eprintln!("  -h, --help    Print this help message");
+    eprintln!("  -h, --help         Print this help message");
 }
 
 fn unknown_arg(arg: &str) -> ! {

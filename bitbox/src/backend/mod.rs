@@ -104,7 +104,7 @@ impl Default for CompilerResult {
 }
 
 impl CompilerResult {
-    pub fn save_to_file(&self, path: &str) {
+    pub fn save_to_file(&self, path: &str, link: &[String]) {
         match self {
             Self::Wasm32(bytes) => std::fs::write(path, bytes).unwrap(),
             Self::X86_64(asm) => {
@@ -123,14 +123,7 @@ impl CompilerResult {
                     .arg(&runtime_path)
                     .arg("-o")
                     .arg(path)
-                    .arg("-L/opt/raylib/release/libs/linux")
-                    .arg("-lraylib")
-                    .arg("-lGL")
-                    .arg("-lm")
-                    .arg("-lpthread")
-                    .arg("-ldl")
-                    .arg("-lrt")
-                    .arg("-lX11")
+                    .args(link)
                     .output();
                 match cmd_result {
                     Ok(output) => {
