@@ -127,7 +127,6 @@ impl Parser {
         let mut params = Vec::new();
         while !self.peek(TokenKind::RightParen) {
             let ty = self.parse_type()?;
-            eprintln!("{:?}", ty);
             params.push(ty);
             if self.peek(TokenKind::Comma) {
                 self.consume(TokenKind::Comma)?;

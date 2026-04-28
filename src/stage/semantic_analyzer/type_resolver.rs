@@ -50,7 +50,21 @@ impl<'st> TypeResolver<'st> {
             ast::Item::Function(function) => self.walk_function(function),
             ast::Item::Type(type_def) => self.walk_type_def(type_def),
             ast::Item::Use(r#use) => self.walk_use(r#use),
-            ast::Item::ExternFunction(extern_function) => todo!(),
+            ast::Item::ExternFunction(extern_function) => {
+                self.walk_extern_function(extern_function)
+            }
+        }
+    }
+
+    fn walk_extern_function(&mut self, extern_function: &mut ast::ExternFunction) {
+        // FIX: span is incorrect
+        self.walk_type(
+            &mut extern_function.return_type,
+            extern_function.fn_token.span.clone(),
+        );
+        let span = extern_function.binding_name.span.clone();
+        for ty in extern_function.params.iter_mut() {
+            self.walk_type(ty, span.clone());
         }
     }
 
