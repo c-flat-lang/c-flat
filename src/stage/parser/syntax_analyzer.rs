@@ -558,6 +558,20 @@ impl Parser {
             return Err(Box::new(ErrorUnexpectedEndOfInput));
         };
         match token.kind {
+            TokenKind::Ampersand => {
+                let expr = self.parse_call()?;
+                Ok(ast::Expr::AddressOf(ast::ExprAddressOf {
+                    ampersand: token,
+                    expr: Box::new(expr),
+                }))
+            }
+            TokenKind::Bang => {
+                let expr = self.parse_call()?;
+                Ok(ast::Expr::Not(ast::ExprNot {
+                    bang: token,
+                    expr: Box::new(expr),
+                }))
+            }
             TokenKind::Number => Ok(ast::Expr::Litral(ast::Litral::Integer(token))),
             TokenKind::Float => Ok(ast::Expr::Litral(ast::Litral::Float(token))),
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),

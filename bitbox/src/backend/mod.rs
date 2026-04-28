@@ -115,7 +115,6 @@ impl CompilerResult {
                 std::fs::write(&runtime_path, runtime_src).unwrap();
 
                 let cmd_result = Command::new("gcc")
-                    .arg("-static")
                     .arg("-Wall")
                     .arg("-Wextra")
                     .arg("-g")
@@ -124,15 +123,14 @@ impl CompilerResult {
                     .arg(&runtime_path)
                     .arg("-o")
                     .arg(path)
-                    //---RAYLIB---
-                    // .arg("-L/opt/raylib/release/libs/linux")
-                    // .arg("-lraylib")
-                    // .arg("-lm")
-                    // .arg("-lpthread")
-                    // .arg("-ldl")
-                    // .arg("-lrt")
-                    // .arg("-lX11")
-                    //------------
+                    .arg("-L/opt/raylib/release/libs/linux")
+                    .arg("-lraylib")
+                    .arg("-lGL")
+                    .arg("-lm")
+                    .arg("-lpthread")
+                    .arg("-ldl")
+                    .arg("-lrt")
+                    .arg("-lX11")
                     .output();
                 match cmd_result {
                     Ok(output) => {

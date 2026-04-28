@@ -3,7 +3,8 @@ use crate::ir::{
     Visibility,
     instruction::{
         IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse,
-        IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, IOr, IPhi, IReturn, ISub, IXOr, Label,
+        IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IReturn, ISub, IXOr,
+        Label,
     },
 };
 
@@ -201,6 +202,18 @@ impl<'a> AssemblerBuilder<'a> {
         value: impl Into<Operand>,
     ) -> &mut Self {
         self.push_instruction(IElemSet::new(addr, index.into(), value.into()));
+        self
+    }
+
+    /// `@ref *T : <des>, <src>`
+    /// Takes the address of `src` and stores it in `des`.
+    pub fn ref_of(&mut self, des: Variable, src: Variable) -> &mut Self {
+        self.push_instruction(IRef::new(des, src));
+        self
+    }
+
+    pub fn not(&mut self, des: Variable, src: Variable) -> &mut Self {
+        self.push_instruction(INot::new(des, src));
         self
     }
 

@@ -28,7 +28,9 @@ impl Type {
             Self::Array(size, ty) => {
                 bitbox::ir::Type::Array(*size, Box::new(ty.clone().as_bitbox_type()))
             }
-            Self::Pointer(_) => todo!(),
+            Self::Pointer(inner) => {
+                bitbox::ir::Type::Pointer(Box::new(inner.clone().as_bitbox_type()))
+            }
             Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: struct_type.name.clone(),
                 fields: struct_type
@@ -242,6 +244,34 @@ impl ExprBlock {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprAddressOf {
+    pub ampersand: Token,
+    pub expr: Box<Expr>,
+}
+
+impl ExprAddressOf {
+    pub fn span(&self) -> Span {
+        let start = self.ampersand.span.start;
+        let end = self.expr.span().end;
+        start..end
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprNot {
+    pub bang: Token,
+    pub expr: Box<Expr>,
+}
+
+impl ExprNot {
+    pub fn span(&self) -> Span {
+        let start = self.bang.span.start;
+        let end = self.expr.span().end;
+        start..end
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Statement {
     pub expr: Box<Expr>,
     pub delem: Option<Token>,
@@ -278,6 +308,8 @@ pub enum Expr {
     ArrayIndex(ExprArrayIndex),
     ArrayRepeat(ExprArrayRepeat),
     Block(ExprBlock),
+    AddressOf(ExprAddressOf),
+    Not(ExprNot),
 }
 
 impl Expr {
@@ -298,6 +330,8 @@ impl Expr {
             Self::ArrayIndex(expr) => expr.span(),
             Self::ArrayRepeat(expr) => expr.span(),
             Self::Block(block) => block.span(),
+            Self::AddressOf(expr) => expr.span(),
+            Self::Not(expr) => expr.span(),
         }
     }
 

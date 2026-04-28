@@ -20,16 +20,6 @@ impl Default for LocalFunctionVariables {
         Self {
             table: HashMap::new(),
             functions: vec![
-                // ------RAYLIB--------
-                // "initWindow".to_string(),
-                // "setTargetFPS".to_string(),
-                // "windowShouldClose".to_string(),
-                // "beginDrawing".to_string(),
-                // "clearBackground".to_string(),
-                // "drawText".to_string(),
-                // "endDrawing".to_string(),
-                // "closeWindow".to_string(),
-                // --------------------
                 "write_int".to_string(),
                 "writeln".to_string(),
                 "write_char".to_string(),
@@ -215,6 +205,18 @@ fn block_pass(
             | crate::ir::Instruction::Jump(..)
             | crate::ir::Instruction::JumpIf(..)
             | crate::ir::Instruction::Return(..) => (),
+            crate::ir::Instruction::Ref(iref) => {
+                ctx.local_function_variables
+                    .add(function_name, iref.des.clone());
+                ctx.local_function_variables
+                    .add(function_name, iref.src.clone());
+            }
+            crate::ir::Instruction::Not(inot) => {
+                ctx.local_function_variables
+                    .add(function_name, inot.des.clone());
+                ctx.local_function_variables
+                    .add(function_name, inot.src.clone());
+            }
         }
     }
 }

@@ -109,6 +109,8 @@ impl<'st> TypeResolver<'st> {
             Expr::ArrayIndex(expr_array_index) => self.walk_expr_array_index(expr_array_index),
             Expr::ArrayRepeat(expr_array_repeat) => self.walk_expr_array_repeat(expr_array_repeat),
             Expr::Block(expr_block) => self.walk_expr_block(expr_block),
+            Expr::AddressOf(expr_address_of) => self.walk_expr(&mut expr_address_of.expr),
+            Expr::Not(expr_not) => self.walk_expr(&mut expr_not.expr),
         }
     }
 

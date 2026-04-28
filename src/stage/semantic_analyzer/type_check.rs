@@ -51,6 +51,9 @@ impl Type {
 pub struct TypeChecker<'st> {
     symbol_table: &'st mut SymbolTable,
     errors: Vec<Box<dyn Report>>,
+    /// When set, integer literals inside an array literal are typed as this
+    /// instead of the default `SignedNumber(32)`. Allows `[10; u8] = [65, 66, ...]`.
+    numeric_hint: Option<Type>,
 }
 
 impl<'st> TypeChecker<'st> {
@@ -58,6 +61,7 @@ impl<'st> TypeChecker<'st> {
         Self {
             symbol_table,
             errors: Vec::new(),
+            numeric_hint: None,
         }
     }
 
@@ -171,6 +175,8 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
             ast::Expr::ArrayRepeat(expr) => self.walk_expr_array_repeat(expr),
             ast::Expr::Block(expr) => self.walk_block(expr),
+            ast::Expr::AddressOf(expr) => self.walk_expr_address_of(expr),
+            ast::Expr::Not(expr) => self.walk_expr_not(expr),
         }
     }
 
@@ -207,7 +213,14 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_declare(&mut self, expr: &mut ast::ExprDecl) -> ast::Type {
+        // If there's an array type annotation, hint the element type to integer literals
+        // so `let x: [10; u8] = [65, 66, ...]` doesn't error with "expected u8, found s32".
+        if let Some(Type::Array(_, elem_ty)) = &expr.ty {
+            self.numeric_hint = Some(*elem_ty.clone());
+        }
         let value_type = self.walk_expr(&mut expr.expr);
+        self.numeric_hint = None;
+
         if let Some(ty) = &expr.ty
             && ty != &value_type
         {
@@ -229,7 +242,7 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_litral(&mut self, expr: &ast::Litral) -> ast::Type {
         match expr {
-            ast::Litral::Integer(_) => Type::SignedNumber(32),
+            ast::Litral::Integer(_) => self.numeric_hint.clone().unwrap_or(Type::SignedNumber(32)),
             ast::Litral::Float(_) => Type::Float(32),
             ast::Litral::Char(_) => Type::UnsignedNumber(8),
             ast::Litral::String(s) => {
@@ -252,31 +265,7 @@ impl<'st> TypeChecker<'st> {
             return Type::Void;
         }
 
-        // // --- RAYLIB ----
-        //
-        // if matches!(
-        //     ident.lexeme.as_str(),
-        //     "initWindow"
-        //         | "setTargetFPS"
-        //         | "beginDrawing"
-        //         | "clearBackground"
-        //         | "drawText"
-        //         | "endDrawing"
-        //         | "closeWindow"
-        // ) {
-        //     return Type::Void;
-        // }
-        //
-        // if matches!(ident.lexeme.as_str(), "windowShouldClose") {
-        //     return Type::Bool;
-        // }
-        //
-        // // ------------
-
         let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()) else {
-            // self.errors
-            //     .push(format!("Undefined function: {}", ident.lexeme));
-            // return Type::Void;
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
         symbol.ty.clone()
@@ -374,6 +363,16 @@ impl<'st> TypeChecker<'st> {
             panic!("Expected array type")
         };
         *array_type
+    }
+
+    fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
+        let inner_type = self.walk_expr(&mut expr.expr);
+        Type::Pointer(Box::new(inner_type))
+    }
+
+    fn walk_expr_not(&mut self, expr: &mut ast::ExprNot) -> Type {
+        self.walk_expr(&mut expr.expr);
+        Type::Bool
     }
 
     fn walk_expr_array_repeat(&mut self, expr: &mut ast::ExprArrayRepeat) -> Type {

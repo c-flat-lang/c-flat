@@ -247,7 +247,15 @@ impl std::fmt::Display for Instruction {
             Self::Jmp(label) => write!(f, "  jmp {label}"),
             Self::Jnz(label) => write!(f, "  jnz {label}"),
             Self::Jz(label) => write!(f, "  jz {label}"),
-            Self::Lea(dst, src) => write!(f, "  lea {dst}, {src}"),
+            Self::Lea(dst, src) => {
+                let src_str = match src {
+                    Location::Stack(s) | Location::Address(s) => {
+                        format!("qword ptr [rbp-{}]", s.offset)
+                    }
+                    other => format!("{other}"),
+                };
+                write!(f, "  lea {dst}, {src_str}")
+            }
             Self::Mov(dst, src) => write!(f, "  mov {dst}, {src}"),
             Self::Movezx(dst, src) => write!(f, "  movzx {dst}, {src}"),
             Self::Pop(dst) => write!(f, "  pop {dst}"),

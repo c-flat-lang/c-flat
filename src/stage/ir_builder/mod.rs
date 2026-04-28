@@ -10,9 +10,9 @@ use bitbox::ir::{
 };
 
 use crate::stage::parser::ast::{
-    Expr, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary, ExprBlock,
-    ExprCall, ExprDecl, ExprIfElse, ExprMemberAccess, ExprReturn, ExprStruct, ExprWhile, Litral,
-    Struct,
+    Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
+    ExprBlock, ExprCall, ExprDecl, ExprIfElse, ExprMemberAccess, ExprNot, ExprReturn, ExprStruct,
+    ExprWhile, Litral, Struct,
 };
 
 #[derive(Debug, Default)]
@@ -87,7 +87,7 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
                 Item::Function(function) => self.build_function(function, &mut mb),
                 Item::Type(_) => {}
                 Item::Use(u) => self.build_use(u),
-                Item::ExternFunction(extern_function) => todo!(),
+                Item::ExternFunction(_) => {}
             }
         }
         Ok(mb.build())
@@ -177,6 +177,8 @@ impl Lowerable for Expr {
             Expr::ArrayRepeat(expr) => expr.lower(assembler, ctx),
             Expr::While(expr) => expr.lower(assembler, ctx),
             Expr::Block(block) => block.lower(assembler, ctx),
+            Expr::AddressOf(expr) => expr.lower(assembler, ctx),
+            Expr::Not(expr) => expr.lower(assembler, ctx),
         }
     }
 }
@@ -583,52 +585,35 @@ impl Lowerable for ExprCall {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        // TODO: We may need to reverse the args
+        let ast::Expr::Identifier(ident) = self.caller.as_ref() else {
+            panic!("Caller must be an identifier");
+        };
+
+        let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) else {
+            panic!("Symbol not found {}", ident.lexeme);
+        };
+
+        let callee = symbol
+            .binding_name
+            .as_ref()
+            .unwrap_or(&ident.lexeme)
+            .clone();
+        let ty = symbol.ty.as_bitbox_type();
+
         let args: Vec<Operand> = self
             .args
             .iter()
             .filter_map(|arg| arg.lower(assembler, ctx).map(|var| var.into()))
             .collect();
 
-        // HACK: This works for now but later you probably would want to be able to call
-        // (lambda x: x + 1)(2)
-        // but thats if we want to support lambdas and I dont think we do
-        let ast::Expr::Identifier(ident) = self.caller.as_ref() else {
-            panic!("Caller must be an identifier");
-        };
-
-        let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
-            symbol.ty.as_bitbox_type()
-        } else if matches!(
-            ident.lexeme.as_str(),
-            "write_int" | "writenl" | "write_char"
-        ) {
-            Type::Void
-        // // --- RAYLIB ----
-        // } else if matches!(
-        //     ident.lexeme.as_str(),
-        //     "initWindow"
-        //         | "setTargetFPS"
-        //         | "beginDrawing"
-        //         | "clearBackground"
-        //         | "drawText"
-        //         | "endDrawing"
-        //         | "closeWindow"
-        // ) {
-        //     Type::Void
-        // } else if matches!(ident.lexeme.as_str(), "windowShouldClose") {
-        //     Type::Unsigned(32)
-        // // ------------
-        } else {
-            panic!("Symbol not found {}", ident.lexeme);
-        };
         let des_var = if ty == Type::Void {
             None
         } else {
             let des = assembler.var(ty.clone());
             Some(des)
         };
-        assembler.call(des_var.clone(), ident.lexeme.clone(), &args);
+
+        assembler.call(des_var.clone(), callee, &args);
 
         des_var
     }
@@ -762,5 +747,32 @@ impl Lowerable for ExprWhile {
 
         assembler.loop_(cond_blocks, cond_result, loop_blocks);
         None
+    }
+}
+
+impl Lowerable for ExprAddressOf {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let src_var = self.expr.lower(assembler, ctx)?;
+        let ptr_ty = ir::Type::Pointer(Box::new(src_var.ty.clone()));
+        let des = assembler.var(ptr_ty);
+        assembler.ref_of(des.clone(), src_var);
+        Some(des)
+    }
+}
+
+impl Lowerable for ExprNot {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let src_var = self.expr.lower(assembler, ctx)?;
+        let des = assembler.var(src_var.ty.clone());
+        assembler.not(des.clone(), src_var);
+        Some(des)
     }
 }
