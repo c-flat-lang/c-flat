@@ -139,21 +139,22 @@ fn print_help() {
     let bin = std::env::args().next().unwrap();
     eprintln!("Usage: {bin} [options] <filename>");
     eprintln!("Options:");
-    eprintln!("  run           Compile and run the program");
-    eprintln!("  -t            Print tokens");
-    eprintln!("  -a            Print AST");
-    eprintln!("  --check       Type check code");
-    eprintln!("  -s            Print symbol table");
-    eprintln!("  -ir           Print IR");
-    eprintln!("  --target=TRIPLE");
+    eprintln!("  run                Compile and run the program");
+    eprintln!("  -t                 Print tokens");
+    eprintln!("  -a                 Print AST");
+    eprintln!("  --check            Type check code");
+    eprintln!("  -s                 Print symbol table");
+    eprintln!("  -ir                Print IR");
+    eprintln!("  --link [options]   Link with additional libraries (e.g. --link=\"-lm\")");
+    eprintln!("  --target=TRIPLE    Set compilation target. Valid options:");
     eprintln!("    wasm32");
     eprintln!("    x86_64-linux");
     eprintln!("    bitbeat");
-    eprintln!("  --dump-after=PASS");
+    eprintln!("  --dump-after=PASS  Dump after a specific pass. Valid options:");
     for pass in DebugMode::DUMP_AFTER_PASSES {
         eprintln!("    {pass}");
     }
-    eprintln!("  -h, --help    Print this help message");
+    eprintln!("  -h, --help         Print this help message");
 }
 
 fn unknown_arg(arg: &str) -> ! {
