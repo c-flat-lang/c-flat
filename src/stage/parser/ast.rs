@@ -156,6 +156,13 @@ impl ExternFunction {
             .unwrap_or(self.binding_name.span.end);
         start..end
     }
+
+    pub fn name(&self) -> &str {
+        self.local_name
+            .as_ref()
+            .map(|n| n.lexeme.as_str())
+            .unwrap_or(self.binding_name.lexeme.as_str())
+    }
 }
 
 #[derive(Debug, Clone)]

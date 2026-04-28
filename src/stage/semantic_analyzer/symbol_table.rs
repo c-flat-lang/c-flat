@@ -99,7 +99,9 @@ impl SymbolTableBuilder {
             ast::Item::Function(function) => self.walk_function(function),
             ast::Item::Type(type_def) => self.walk_type_def(type_def),
             ast::Item::Use(r#use) => self.walk_use(r#use),
-            ast::Item::ExternFunction(_) => todo!(),
+            ast::Item::ExternFunction(extern_function) => {
+                self.walk_extern_function(extern_function)
+            }
         }
     }
 
@@ -304,37 +306,24 @@ impl SymbolTableBuilder {
         self.walk_expr(base);
     }
 
-    // fn walk_type(&mut self, ty: &mut Type, span: Span) {
-    //     let found = ty.clone();
-    //     match ty {
-    //         Type::Bool
-    //         | Type::UnsignedNumber(_)
-    //         | Type::SignedNumber(_)
-    //         | Type::Float(_)
-    //         | Type::Void => {}
-    //         Type::Array(_, ty) => self.walk_type(ty, span),
-    //         Type::Pointer(ty) => self.walk_type(ty, span),
-    //         Type::Struct(struct_type) => {
-    //             for (_, ty) in struct_type.fields.iter_mut() {
-    //                 self.walk_type(ty, span.clone());
-    //             }
-    //         }
-    //         Type::Enum(_) => todo!("Enum"),
-    //         Type::Name(name) => {
-    //             let Some(symbol) = self.table.get(&name) else {
-    //                 self.errors.push(Box::new(ErrorMissMatchedType {
-    //                     span: span,
-    //                     found,
-    //                     expected: Type::Name(name.clone()),
-    //                     #[cfg(feature = "debug")]
-    //                     compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-    //                 }));
-    //                 return;
-    //             };
-    //             *ty = symbol.ty.clone();
-    //         }
-    //     }
-    // }
+    fn walk_extern_function(&mut self, extern_function: &ast::ExternFunction) {
+        let ast::ExternFunction {
+            visibility,
+            params,
+            return_type,
+            ..
+        } = extern_function;
+
+        self.table.push(Symbol {
+            name: extern_function.name().to_string(),
+            kind: SymbolKind::Function,
+            ty: return_type.clone(),
+            is_mutable: false,
+            visibility: *visibility,
+            params: Some(params.iter().map(|ty| ty.clone()).collect()),
+            ..Default::default()
+        });
+    }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]

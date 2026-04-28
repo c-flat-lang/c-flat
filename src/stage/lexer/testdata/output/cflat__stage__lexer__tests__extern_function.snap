@@ -2,13 +2,13 @@
 source: src/stage/lexer/tests.rs
 expression: snapshot_lexing(contents)
 ---
- extern C fn initWindow(s33, s32) void;
+ extern C fn initWindow(s32, s32) void;
  ^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 1..7 }
         ^ Token { kind: Identifier, lexeme: "C", span: 8..9 }
           ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 10..12 }
              ^^^^^^^^^^ Token { kind: Identifier, lexeme: "initWindow", span: 13..23 }
                        ^ Token { kind: LeftParen, lexeme: "(", span: 23..24 }
-                        ^^^ Token { kind: Identifier, lexeme: "s33", span: 24..27 }
+                        ^^^ Token { kind: Identifier, lexeme: "s32", span: 24..27 }
                            ^ Token { kind: Comma, lexeme: ",", span: 27..28 }
                              ^^^ Token { kind: Identifier, lexeme: "s32", span: 29..32 }
                                 ^ Token { kind: RightParen, lexeme: ")", span: 32..33 }

@@ -81,8 +81,15 @@ impl<'st> TypeChecker<'st> {
             ast::Item::Function(function) => self.walk_function(function),
             ast::Item::Type(type_def) => self.walk_type_def(type_def),
             ast::Item::Use(r#use) => self.walk_use(r#use),
-            ast::Item::ExternFunction(extern_function) => todo!(),
+            ast::Item::ExternFunction(extern_function) => {
+                self.walk_extern_function(extern_function)
+            }
         }
+    }
+
+    fn walk_extern_function(&self, extern_function: &mut ast::ExternFunction) -> Type {
+        // For now we just assume extern functions are always correct since we have no way to verify them
+        extern_function.return_type.clone()
     }
 
     fn walk_use(&mut self, item: &ast::Use) -> ast::Type {
