@@ -105,14 +105,17 @@ impl Default for CompilerResult {
 
 impl CompilerResult {
     pub fn save_to_file(&self, path: &str, link: &[String]) {
+        if !std::path::Path::new("bin").exists() {
+            std::fs::create_dir("bin").expect("Failed to create bin directory");
+        }
         match self {
-            Self::Wasm32(bytes) => std::fs::write(path, bytes).unwrap(),
+            Self::Wasm32(bytes) => std::fs::write(path, bytes).expect("Failed to write Wasm file"),
             Self::X86_64(asm) => {
                 let asm_path = format!("{}.s", path);
-                std::fs::write(&asm_path, asm.as_bytes()).unwrap();
+                std::fs::write(&asm_path, asm.as_bytes()).expect("Failed to write assembly file");
                 let runtime_src = include_str!("../../../runtime.c");
                 let runtime_path = format!("{}.runtime.c", path);
-                std::fs::write(&runtime_path, runtime_src).unwrap();
+                std::fs::write(&runtime_path, runtime_src).expect("Failed to write runtime C file");
 
                 let cmd_result = Command::new("gcc")
                     .arg("-Wall")
@@ -129,6 +132,7 @@ impl CompilerResult {
                     Ok(output) => {
                         if !output.status.success() {
                             println!("Error: {}", String::from_utf8_lossy(&output.stderr));
+                            std::process::exit(1);
                         }
                     }
                     Err(e) => {

@@ -36,6 +36,13 @@ impl VReg {
             kind: RegKind::Reg8,
         }
     }
+
+    pub fn as_xmm(self) -> Self {
+        Self {
+            id: self.id,
+            kind: RegKind::Xmm,
+        }
+    }
 }
 
 impl std::fmt::Display for VReg {
@@ -50,6 +57,7 @@ pub enum RegKind {
     Reg16,
     Reg32,
     Reg64,
+    Xmm,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -656,11 +664,60 @@ impl std::fmt::Display for Reg8 {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum XmmReg {
+    Xmm0,
+    Xmm1,
+    Xmm2,
+    Xmm3,
+    Xmm4,
+    Xmm5,
+    Xmm6,
+    Xmm7,
+    Xmm8,
+    Xmm9,
+    Xmm10,
+    Xmm11,
+    Xmm12,
+    Xmm13,
+    Xmm14,
+    Xmm15,
+}
+
+impl CastableReg for XmmReg {
+    const KIND: RegKind = RegKind::Xmm;
+}
+
+impl std::fmt::Display for XmmReg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::Xmm0 => "xmm0",
+            Self::Xmm1 => "xmm1",
+            Self::Xmm2 => "xmm2",
+            Self::Xmm3 => "xmm3",
+            Self::Xmm4 => "xmm4",
+            Self::Xmm5 => "xmm5",
+            Self::Xmm6 => "xmm6",
+            Self::Xmm7 => "xmm7",
+            Self::Xmm8 => "xmm8",
+            Self::Xmm9 => "xmm9",
+            Self::Xmm10 => "xmm10",
+            Self::Xmm11 => "xmm11",
+            Self::Xmm12 => "xmm12",
+            Self::Xmm13 => "xmm13",
+            Self::Xmm14 => "xmm14",
+            Self::Xmm15 => "xmm15",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Reg {
     Reg64(Reg64),
     Reg32(Reg32),
     Reg16(Reg16),
     Reg8(Reg8),
+    Xmm(XmmReg),
     VReg(VReg),
 }
 
@@ -709,6 +766,11 @@ impl Reg {
                 Reg::VReg(reg) => reg.as_reg8().into(),
                 _ => self.as_reg8().into(),
             },
+            RegKind::Xmm => match self {
+                Reg::VReg(reg) => Reg::VReg(reg.as_xmm()),
+                Reg::Xmm(_) => self,
+                _ => panic!("cannot cast GP register to XMM"),
+            },
         }
     }
 
@@ -723,6 +785,7 @@ impl Reg {
             Reg::Reg32(reg) => Reg64::from(reg),
             Reg::Reg16(reg) => Reg64::from(reg),
             Reg::Reg8(reg) => Reg64::from(reg),
+            Reg::Xmm(_) => unreachable!("XMM register cannot be used as GP register"),
             Reg::VReg(reg) => unreachable!(
                 "{} is a virtual register and can not be used as a physical register",
                 reg
@@ -736,6 +799,7 @@ impl Reg {
             Reg::Reg32(reg) => reg,
             Reg::Reg16(reg) => Reg32::from(reg),
             Reg::Reg8(reg) => Reg32::from(reg),
+            Reg::Xmm(_) => unreachable!("XMM register cannot be used as GP register"),
             Reg::VReg(reg) => unreachable!(
                 "{} is a virtual register and can not be used as a physical register",
                 reg
@@ -749,6 +813,7 @@ impl Reg {
             Reg::Reg32(reg) => Reg16::from(reg),
             Reg::Reg16(reg) => reg,
             Reg::Reg8(reg) => Reg16::from(reg),
+            Reg::Xmm(_) => unreachable!("XMM register cannot be used as GP register"),
             Reg::VReg(reg) => unreachable!(
                 "{} is a virtual register and can not be used as a physical register",
                 reg
@@ -762,6 +827,7 @@ impl Reg {
             Reg::Reg32(reg) => Reg8::from(reg),
             Reg::Reg16(reg) => Reg8::from(reg),
             Reg::Reg8(reg) => reg,
+            Reg::Xmm(_) => unreachable!("XMM register cannot be used as GP register"),
             Reg::VReg(reg) => unreachable!(
                 "{} is a virtual register and can not be used as a physical register",
                 reg
@@ -775,6 +841,7 @@ impl Reg {
             Reg::Reg32(_) => RegKind::Reg32,
             Reg::Reg16(_) => RegKind::Reg16,
             Reg::Reg8(_) => RegKind::Reg8,
+            Reg::Xmm(_) => RegKind::Xmm,
             Reg::VReg(reg) => reg.kind,
         }
     }
@@ -787,6 +854,7 @@ impl std::fmt::Display for Reg {
             Reg::Reg32(reg) => write!(f, "{}", reg),
             Reg::Reg16(reg) => write!(f, "{}", reg),
             Reg::Reg8(reg) => write!(f, "{}", reg),
+            Reg::Xmm(reg) => write!(f, "{}", reg),
             Reg::VReg(reg) => write!(f, "{}", reg),
         }
     }
@@ -819,5 +887,11 @@ impl From<Reg8> for Reg {
 impl From<VReg> for Reg {
     fn from(reg: VReg) -> Self {
         Reg::VReg(reg)
+    }
+}
+
+impl From<XmmReg> for Reg {
+    fn from(reg: XmmReg) -> Self {
+        Reg::Xmm(reg)
     }
 }

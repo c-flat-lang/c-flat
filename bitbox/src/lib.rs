@@ -105,7 +105,14 @@ impl Compiler {
     }
 
     pub fn file_output_path(&self) -> String {
-        self.target.get_new_path(&self.src_path)
+        let path = self
+            .src_path
+            .rsplit_once('/')
+            .map(|(dir, file)| (dir.to_string(), file.to_string()))
+            .unwrap_or_else(|| ("".to_string(), self.src_path.to_string()))
+            .1;
+        let file_with_extention = self.target.get_new_path(&path);
+        format!("bin/{file_with_extention}")
     }
 
     pub fn run(&mut self, module: &mut ir::Module) -> Result<PassOutput, error::Error> {

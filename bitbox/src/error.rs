@@ -1,8 +1,11 @@
+use crate::ir::Type;
+
 #[derive(Debug)]
 pub enum Error {
     InvalidInstruction { index: usize, message: String },
     MissingMainFunction,
     X86_64AssemblyError(crate::backend::x86_64::linux::passes::emit::error::Error),
+    MalformedNumber { value: String, ty: Type },
 }
 
 impl std::fmt::Display for Error {
@@ -13,6 +16,7 @@ impl std::fmt::Display for Error {
             }
             Error::MissingMainFunction => write!(f, "Missing main function"),
             Error::X86_64AssemblyError(e) => write!(f, "{}", e),
+            Error::MalformedNumber { value, ty } => write!(f, "Malformed number `{value}`: `{ty}`"),
         }
     }
 }

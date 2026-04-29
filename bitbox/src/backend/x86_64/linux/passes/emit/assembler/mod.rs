@@ -153,6 +153,12 @@ impl From<Reg8> for Location {
     }
 }
 
+impl From<XmmReg> for Location {
+    fn from(reg: XmmReg) -> Self {
+        Location::Reg(Reg::Xmm(reg))
+    }
+}
+
 impl From<Stack> for Location {
     fn from(stack: Stack) -> Self {
         Location::Stack(stack)
@@ -233,6 +239,23 @@ pub enum Instruction {
     Setl(Location),
     Sub(Location, Location),
     Test(Location, Location),
+    // SSE / XMM instructions
+    Movd(Location, Location),
+    Movss(Location, Location),
+    Movsd(Location, Location),
+    Addss(Location, Location),
+    Addsd(Location, Location),
+    Subss(Location, Location),
+    Subsd(Location, Location),
+    Mulss(Location, Location),
+    Mulsd(Location, Location),
+    Divss(Location, Location),
+    Divsd(Location, Location),
+    Ucomiss(Location, Location),
+    Ucomisd(Location, Location),
+    // Integer → float conversions
+    Cvtsi2ss(Location, Location),
+    Cvtsi2sd(Location, Location),
 }
 
 impl std::fmt::Display for Instruction {
@@ -267,6 +290,21 @@ impl std::fmt::Display for Instruction {
             Self::Setl(dst) => write!(f, "  setl {dst}"),
             Self::Sub(lhs, rhs) => write!(f, "  sub {lhs}, {rhs}"),
             Self::Test(dst, src) => write!(f, "  test {dst}, {src}"),
+            Self::Movd(dst, src) => write!(f, "  movd {dst}, {src}"),
+            Self::Movss(dst, src) => write!(f, "  movss {dst}, {src}"),
+            Self::Movsd(dst, src) => write!(f, "  movsd {dst}, {src}"),
+            Self::Addss(dst, src) => write!(f, "  addss {dst}, {src}"),
+            Self::Addsd(dst, src) => write!(f, "  addsd {dst}, {src}"),
+            Self::Subss(dst, src) => write!(f, "  subss {dst}, {src}"),
+            Self::Subsd(dst, src) => write!(f, "  subsd {dst}, {src}"),
+            Self::Mulss(dst, src) => write!(f, "  mulss {dst}, {src}"),
+            Self::Mulsd(dst, src) => write!(f, "  mulsd {dst}, {src}"),
+            Self::Divss(dst, src) => write!(f, "  divss {dst}, {src}"),
+            Self::Divsd(dst, src) => write!(f, "  divsd {dst}, {src}"),
+            Self::Ucomiss(dst, src) => write!(f, "  ucomiss {dst}, {src}"),
+            Self::Ucomisd(dst, src) => write!(f, "  ucomisd {dst}, {src}"),
+            Self::Cvtsi2ss(dst, src) => write!(f, "  cvtsi2ss {dst}, {src}"),
+            Self::Cvtsi2sd(dst, src) => write!(f, "  cvtsi2sd {dst}, {src}"),
         }
     }
 }
@@ -547,6 +585,7 @@ impl Assembler {
                 RegKind::Reg16 => src_reg.cast_to::<Reg16>(),
                 RegKind::Reg32 => src_reg.cast_to::<Reg32>(),
                 RegKind::Reg64 => src_reg.cast_to::<Reg64>(),
+                RegKind::Xmm => *src_reg,
             }
             .into();
 
@@ -732,6 +771,126 @@ impl Assembler {
         if misalignment != 0 {
             self.add(Reg64::Rsp, pad);
         }
+        self
+    }
+
+    pub fn movd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Movd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn movss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Movss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn movsd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Movsd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn addss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Addss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn addsd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Addsd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn subss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Subss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn subsd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Subsd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn mulss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Mulss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn mulsd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Mulsd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn divss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Divss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn divsd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Divsd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn ucomiss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Ucomiss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn ucomisd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Ucomisd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn cvtsi2ss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Cvtsi2ss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn cvtsi2sd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Cvtsi2sd(dst.into(), src.into()),
+        );
         self
     }
 }

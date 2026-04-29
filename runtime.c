@@ -7,3 +7,7 @@ void write_int(int x) {
 void write_char(char x) {
     printf("%c", x);
 }
+
+void write_float(float x) {
+    printf("%f", x);
+}

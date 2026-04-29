@@ -326,7 +326,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
         match self {
             ir::Operand::ConstantInt(constant) => match constant.ty.clone().into() {
                 ValType::I32 => {
-                    target.assembler.i32_const(constant.value as i32);
+                    target.assembler.i32_const(constant.parse::<i32>()?);
                 }
                 ValType::I64 => todo!("@const_i64"),
                 ValType::F32 => todo!("@const_f32"),

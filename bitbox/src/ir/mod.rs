@@ -216,27 +216,36 @@ impl std::fmt::Display for Variable {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ConstantInt {
-    pub value: i64,
+    pub value: String,
     pub ty: Type,
 }
 
 impl ConstantInt {
-    pub fn new(value: i64, ty: Type) -> Self {
-        Self { value, ty }
+    pub fn new(value: impl Into<String>, ty: Type) -> Self {
+        Self {
+            value: value.into(),
+            ty,
+        }
+    }
+
+    pub fn parse<T>(&self) -> Result<T, crate::error::Error>
+    where
+        T: std::str::FromStr,
+    {
+        let value = self.value.replace("_", "");
+        value
+            .parse::<T>()
+            .map_err(|_| crate::error::Error::MalformedNumber {
+                value: self.value.clone(),
+                ty: self.ty.clone(),
+            })
     }
 }
 
 impl From<(&str, Type)> for ConstantInt {
     fn from((value, ty): (&str, Type)) -> Self {
-        let value = value.replace("_", "");
-        if let Some(stripped) = value.strip_prefix("0x") {
-            return ConstantInt {
-                value: i64::from_str_radix(stripped, 16).unwrap(),
-                ty,
-            };
-        }
         ConstantInt {
-            value: value.parse().unwrap(),
+            value: value.to_string(),
             ty,
         }
     }
@@ -259,12 +268,12 @@ impl Operand {
     pub fn const_bool(value: bool) -> Self {
         if value {
             Operand::ConstantInt(ConstantInt {
-                value: 1,
+                value: "1".to_string(),
                 ty: Type::Unsigned(32),
             })
         } else {
             Operand::ConstantInt(ConstantInt {
-                value: 0,
+                value: "0".to_string(),
                 ty: Type::Unsigned(32),
             })
         }

@@ -1,0 +1,18 @@
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
+pub fn main() void {
+    let a = 10;
+    let b = 5;
+
+    if a < b {
+        write_int(1);
+        write_char(10);
+    } else if a > b {
+        write_int(2);
+        write_char(10);
+    } else {
+        write_int(3);
+        write_char(10);
+    }
+}

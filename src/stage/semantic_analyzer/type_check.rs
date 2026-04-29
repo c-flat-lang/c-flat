@@ -1,6 +1,8 @@
 #![allow(unused)]
 use super::type_resolver::TypeResolver;
-use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
+use crate::error::{
+    ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
+};
 use crate::stage::lexer::token::{Keyword as Kw, Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, StructType, Type};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
@@ -15,9 +17,9 @@ impl Type {
                 Type::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(Type::UnsignedNumber(*lhs)),
             (
-                Type::UnsignedNumber(lhs),
+                Type::UnsignedNumber(lhs) | Type::Float(lhs),
                 (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
-                Type::UnsignedNumber(rhs),
+                Type::UnsignedNumber(rhs) | Type::Float(rhs),
             ) if lhs == rhs => Some(Type::Bool),
             (Type::SignedNumber(lhs), (Plus | Minus | Star | Slash), Type::SignedNumber(rhs))
                 if lhs == rhs =>
@@ -137,7 +139,7 @@ impl<'st> TypeChecker<'st> {
     fn walk_block(&mut self, block: &mut ast::ExprBlock) -> ast::Type {
         let mut last_type = Type::Void;
 
-        let last_index = block.statements.len() - 1;
+        let last_index = block.statements.len().saturating_sub(1);
         for (i, statement) in block.statements.iter_mut().enumerate() {
             if i != last_index {
                 self.walk_expr(&mut statement.expr);
@@ -160,23 +162,23 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr(&mut self, expr: &mut ast::Expr) -> ast::Type {
         match expr {
-            ast::Expr::Return(expr) => self.walk_expr_return(expr),
-            ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
-            ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
-            ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
-            ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
-            ast::Expr::Call(expr) => self.walk_expr_call(expr),
-            ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
-            ast::Expr::While(expr) => self.walk_expr_while(expr),
-            ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
-            ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
-            ast::Expr::MemberAccess(..) => self.walk_expr_member_access(expr),
+            ast::Expr::AddressOf(expr) => self.walk_expr_address_of(expr),
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
             ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
             ast::Expr::ArrayRepeat(expr) => self.walk_expr_array_repeat(expr),
+            ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
+            ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Block(expr) => self.walk_block(expr),
-            ast::Expr::AddressOf(expr) => self.walk_expr_address_of(expr),
+            ast::Expr::Call(expr) => self.walk_expr_call(expr),
+            ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
+            ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
+            ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
+            ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
+            ast::Expr::MemberAccess(..) => self.walk_expr_member_access(expr),
             ast::Expr::Not(expr) => self.walk_expr_not(expr),
+            ast::Expr::Return(expr) => self.walk_expr_return(expr),
+            ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
+            ast::Expr::While(expr) => self.walk_expr_while(expr),
         }
     }
 
@@ -199,7 +201,9 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_assignment(&mut self, expr: &mut ast::ExprAssignment) -> ast::Type {
         let lhs = self.walk_expr(&mut expr.left);
+        self.maybe_numeric_hint(&lhs);
         let rhs = self.walk_expr(&mut expr.right);
+        self.numeric_hint = None;
         if lhs != rhs {
             self.errors.push(Box::new(ErrorMissMatchedType {
                 span: expr.right.span(),
@@ -215,8 +219,9 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_declare(&mut self, expr: &mut ast::ExprDecl) -> ast::Type {
         // If there's an array type annotation, hint the element type to integer literals
         // so `let x: [10; u8] = [65, 66, ...]` doesn't error with "expected u8, found s32".
-        if let Some(Type::Array(_, elem_ty)) = &expr.ty {
-            self.numeric_hint = Some(*elem_ty.clone());
+        // Furthermore, if there's a non-array numeric type annotation, hint integer literals to that type so
+        if let Some(maybe) = &expr.ty {
+            self.maybe_numeric_hint(maybe);
         }
         let value_type = self.walk_expr(&mut expr.expr);
         self.numeric_hint = None;
@@ -243,7 +248,7 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_litral(&mut self, expr: &ast::Litral) -> ast::Type {
         match expr {
             ast::Litral::Integer(_) => self.numeric_hint.clone().unwrap_or(Type::SignedNumber(32)),
-            ast::Litral::Float(_) => Type::Float(32),
+            ast::Litral::Float(_) => self.numeric_hint.clone().unwrap_or(Type::Float(32)),
             ast::Litral::Char(_) => Type::UnsignedNumber(8),
             ast::Litral::String(s) => {
                 Type::Array(s.lexeme.len(), Box::new(Type::UnsignedNumber(8)))
@@ -283,7 +288,10 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_identifier(&mut self, expr: &Token) -> ast::Type {
         let Some(symbol) = self.symbol_table.get(expr.lexeme.as_str()) else {
-            unimplemented!("I also do not think this is a reachable state. Hope I never see this.");
+            self.errors.push(Box::new(ErrorUndefinedSymbol {
+                found: expr.clone(),
+            }));
+            return Type::Void;
         };
         symbol.ty.clone()
     }
@@ -445,6 +453,16 @@ impl<'st> TypeChecker<'st> {
                 field.ty.clone()
             }
             _ => unimplemented!("Handle member access for non array types"),
+        }
+    }
+
+    fn maybe_numeric_hint(&mut self, maybe: &Type) {
+        match maybe {
+            Type::Array(_, elem_ty) => self.numeric_hint = Some(*elem_ty.clone()),
+            ty @ Type::SignedNumber(_) => self.numeric_hint = Some(ty.clone()),
+            ty @ Type::UnsignedNumber(_) => self.numeric_hint = Some(ty.clone()),
+            ty @ Type::Float(_) => self.numeric_hint = Some(ty.clone()),
+            _ => {}
         }
     }
 }

@@ -2,7 +2,7 @@ use super::X86_64LinuxLowerContext;
 use crate::backend::Lower;
 
 use crate::backend::x86_64::linux::passes::emit::assembler::{
-    Location, Reg8, Reg16, Reg32, Reg64, Stack,
+    Location, Reg, Reg8, Reg16, Reg32, Reg64, RegKind, Stack, XmmReg,
 };
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
@@ -21,18 +21,26 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering operand");
         match self {
-            Operand::ConstantInt(constant) => {
-                let reg = target.assembler.alloc.vreg::<Reg64>();
-
-                match constant.ty {
-                    Type::Signed(_) | Type::Unsigned(_) => {
-                        target.assembler.mov(reg, constant.value);
-                    }
-                    _ => todo!("non-integer constants not implemented yet"),
+            Operand::ConstantInt(constant) => match constant.ty {
+                Type::Signed(_) | Type::Unsigned(_) => {
+                    let reg = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.mov(reg, constant.parse::<i64>()?);
+                    Ok(reg.into())
                 }
-
-                Ok(reg.into())
-            }
+                Type::Float(32) => {
+                    let gp = target.assembler.alloc.vreg::<Reg32>();
+                    target
+                        .assembler
+                        .mov(gp, constant.parse::<f32>()?.to_bits() as i64);
+                    let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                    target.assembler.movd(xmm, gp);
+                    Ok(xmm.into())
+                }
+                _ => todo!(
+                    "non-integer {:?} constants not implemented yet",
+                    constant.ty
+                ),
+            },
 
             Operand::Variable(variable) => {
                 let Some(location) = target.assembler.alloc.get_variable_location(variable) else {
@@ -82,10 +90,30 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
                 {
                     des
                 } else {
-                    target.assembler.alloc.vreg::<Reg64>().into()
+                    match &self.des.ty {
+                        Type::Float(_) => target.assembler.alloc.vreg::<XmmReg>().into(),
+                        _ => target.assembler.alloc.vreg::<Reg64>().into(),
+                    }
                 };
 
-                target.assembler.mov(des.clone(), src_loc);
+                match &self.des.ty {
+                    Type::Float(32) => {
+                        if is_gp_loc(&src_loc) {
+                            // des is an XmmReg vreg here (temporary), so cvtsi2ss is valid
+                            target.assembler.cvtsi2ss(des.clone(), src_loc)
+                        } else {
+                            target.assembler.movss(des.clone(), src_loc)
+                        }
+                    }
+                    Type::Float(64) => {
+                        if is_gp_loc(&src_loc) {
+                            target.assembler.cvtsi2sd(des.clone(), src_loc)
+                        } else {
+                            target.assembler.movsd(des.clone(), src_loc)
+                        }
+                    }
+                    _ => target.assembler.mov(des.clone(), src_loc),
+                };
                 target.assembler.alloc.store_variable(&self.des, des);
             }
             _ => {
@@ -95,11 +123,37 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
                     } else if !self.des.temporary {
                         target.assembler.alloc.alloc_stack(&self.des.ty, 1).into()
                     } else {
-                        target.assembler.alloc.vreg::<Reg64>().into()
+                        match &self.des.ty {
+                            Type::Float(_) => target.assembler.alloc.vreg::<XmmReg>().into(),
+                            _ => target.assembler.alloc.vreg::<Reg64>().into(),
+                        }
                     };
                 let src_loc: Location = self.src.lower(ctx, target)?;
 
-                target.assembler.mov(des_reg.clone(), src_loc);
+                match &self.des.ty {
+                    Type::Float(32) => {
+                        if is_gp_loc(&src_loc) {
+                            // cvtsi2ss requires an XMM destination — use a temp vreg then store
+                            let tmp = target.assembler.alloc.vreg::<XmmReg>();
+                            target.assembler.cvtsi2ss(tmp, src_loc);
+                            target.assembler.movss(des_reg.clone(), tmp);
+                        } else {
+                            target.assembler.movss(des_reg.clone(), src_loc);
+                        }
+                    }
+                    Type::Float(64) => {
+                        if is_gp_loc(&src_loc) {
+                            let tmp = target.assembler.alloc.vreg::<XmmReg>();
+                            target.assembler.cvtsi2sd(tmp, src_loc);
+                            target.assembler.movsd(des_reg.clone(), tmp);
+                        } else {
+                            target.assembler.movsd(des_reg.clone(), src_loc);
+                        }
+                    }
+                    _ => {
+                        target.assembler.mov(des_reg.clone(), src_loc);
+                    }
+                };
                 target.assembler.alloc.store_variable(&self.des, des_reg);
             }
         }
@@ -123,12 +177,22 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                 let Some(reg) = target.assembler.alloc.get_variable_location(var) else {
                     panic!("Variable {:?} not found", var);
                 };
-                match Stack::access_size(&var.ty) {
-                    1 => target.assembler.mov(Reg8::Al, reg),
-                    2 => target.assembler.mov(Reg16::Ax, reg),
-                    4 => target.assembler.mov(Reg32::Eax, reg),
-                    8 => target.assembler.mov(Reg64::Rax, reg),
-                    _ => unreachable!(),
+                match &var.ty {
+                    Type::Float(32) => {
+                        target.assembler.movss(Reg::Xmm(XmmReg::Xmm0), reg);
+                    }
+                    Type::Float(64) => {
+                        target.assembler.movsd(Reg::Xmm(XmmReg::Xmm0), reg);
+                    }
+                    _ => {
+                        match Stack::access_size(&var.ty) {
+                            1 => target.assembler.mov(Reg8::Al, reg),
+                            2 => target.assembler.mov(Reg16::Ax, reg),
+                            4 => target.assembler.mov(Reg32::Eax, reg),
+                            8 => target.assembler.mov(Reg64::Rax, reg),
+                            _ => unreachable!(),
+                        };
+                    }
                 };
             }
             Operand::None => todo!("ret none"),
@@ -254,14 +318,34 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAdd {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        // Materialize lhs into a fresh register so we don't modify the source
-        // variable's stack slot in-place (x86 `add dst, src` writes back to dst).
-        let lhs_reg = target.assembler.materialize_value(&lhs);
-        target.assembler.add(lhs_reg, rhs);
-        target
-            .assembler
-            .alloc
-            .store_variable(&self.des, Location::Reg(lhs_reg));
+        match &self.des.ty {
+            Type::Float(32) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(lhs_xmm, lhs);
+                target.assembler.addss(lhs_xmm, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            Type::Float(64) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(lhs_xmm, lhs);
+                target.assembler.addsd(lhs_xmm, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            _ => {
+                let lhs_reg = target.assembler.materialize_value(&lhs);
+                target.assembler.add(lhs_reg, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_reg));
+            }
+        }
 
         Ok(())
     }
@@ -278,12 +362,34 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ISub {
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
 
-        let lhs_reg = target.assembler.materialize_value(&lhs);
-        target.assembler.sub(lhs_reg, rhs);
-        target
-            .assembler
-            .alloc
-            .store_variable(&self.des, Location::Reg(lhs_reg));
+        match &self.des.ty {
+            Type::Float(32) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(lhs_xmm, lhs);
+                target.assembler.subss(lhs_xmm, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            Type::Float(64) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(lhs_xmm, lhs);
+                target.assembler.subsd(lhs_xmm, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            _ => {
+                let lhs_reg = target.assembler.materialize_value(&lhs);
+                target.assembler.sub(lhs_reg, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_reg));
+            }
+        }
 
         Ok(())
     }
@@ -354,9 +460,25 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         target.assembler.call(&self.callee);
 
         if let Some(variable) = &self.des {
-            let reg = target.assembler.alloc.vreg::<Reg64>();
-            target.assembler.mov(reg, Reg64::Rax);
-            target.assembler.alloc.store_variable(variable, reg);
+            match &variable.ty {
+                Type::Float(32) => {
+                    // SysV ABI: f32 return value is in xmm0
+                    let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                    target.assembler.movss(xmm, XmmReg::Xmm0);
+                    target.assembler.alloc.store_variable(variable, xmm);
+                }
+                Type::Float(64) => {
+                    // SysV ABI: f64 return value is in xmm0
+                    let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                    target.assembler.movsd(xmm, XmmReg::Xmm0);
+                    target.assembler.alloc.store_variable(variable, xmm);
+                }
+                _ => {
+                    let reg = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.mov(reg, Reg64::Rax);
+                    target.assembler.alloc.store_variable(variable, reg);
+                }
+            }
         }
 
         for reg in used_regs {
@@ -382,7 +504,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAlloc {
         let mem_loc = target
             .assembler
             .alloc
-            .alloc_stack(&self.ty, constant.value as i32);
+            .alloc_stack(&self.ty, constant.parse::<i32>()?);
 
         target.assembler.alloc.store_variable(&self.des, mem_loc);
 
@@ -615,5 +737,14 @@ impl Lower<X86_64LinuxLowerContext<'_>> for INot {
         target.assembler.movezx(out, flag_reg);
         target.assembler.alloc.store_variable(&self.des, out);
         Ok(())
+    }
+}
+
+/// Returns true if a location holds an integer/GP value (not an XMM float value).
+fn is_gp_loc(loc: &Location) -> bool {
+    match loc {
+        Location::Reg(reg) => reg.kind() != RegKind::Xmm,
+        Location::Stack(_) => true,
+        _ => false,
     }
 }

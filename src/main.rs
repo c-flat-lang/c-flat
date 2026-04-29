@@ -7,7 +7,10 @@ fn main() {
     use bitbox::passes::PassOutput;
 
     let cli_options = Cli::parse();
-    let source = std::fs::read_to_string(&cli_options.file_path).expect("Failed to read file");
+    let source = std::fs::read_to_string(&cli_options.file_path).unwrap_or_else(|err| {
+        eprintln!("Error reading file {}: {}", cli_options.file_path, err);
+        std::process::exit(1);
+    });
 
     let mut module = match front_end_compiler(&source, &cli_options) {
         Ok(module) => module,

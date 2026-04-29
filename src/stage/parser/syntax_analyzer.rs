@@ -407,7 +407,6 @@ impl Parser {
             right: Box::new(right_expr),
         };
 
-        self.consume(TokenKind::Semicolon)?;
         Ok(ast::Expr::Assignment(assignment))
     }
 

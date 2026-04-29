@@ -1,0 +1,7 @@
+extern C fn write_float(f32) void;
+
+pub fn main() s32 {
+    let f = 3.14;
+    write_float(f);
+    return 0;
+}

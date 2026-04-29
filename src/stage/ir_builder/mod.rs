@@ -241,7 +241,7 @@ impl Lowerable for ExprStruct {
         let ptr = assembler.var(ty.clone());
 
         let size = Operand::ConstantInt(ir::ConstantInt::new(
-            (ty.size() * fields.len() as i32) as i64,
+            (ty.size() * fields.len() as i32).to_string(),
             Type::Signed(32),
         ));
 
@@ -269,7 +269,7 @@ impl Lowerable for ExprStruct {
 
             assembler.elemset(
                 ptr.clone(),
-                Operand::ConstantInt(ConstantInt::new(index as i64, Type::Signed(32))),
+                Operand::ConstantInt(ConstantInt::new(index.to_string(), Type::Signed(32))),
                 value,
             );
         }
@@ -299,7 +299,7 @@ impl Lowerable for ExprMemberAccess {
         };
 
         let des = assembler.var(field_ty.clone());
-        let index = Operand::ConstantInt(ConstantInt::new(idx as i64, Type::Signed(32)));
+        let index = Operand::ConstantInt(ConstantInt::new(idx.to_string(), Type::Signed(32)));
 
         assembler.elemget(des.clone(), ptr, index);
 
@@ -315,7 +315,7 @@ impl Lowerable for ExprArray {
     ) -> Option<Variable> {
         let ty = self.ty.clone().as_bitbox_type();
         let size = Operand::ConstantInt(ir::ConstantInt::new(
-            (self.elements.len() * (ty.size() as usize)) as i64,
+            (self.elements.len() * (ty.size() as usize)).to_string(),
             Type::Signed(32),
         ));
         let ptr = assembler.var(ty.clone());
@@ -326,7 +326,7 @@ impl Lowerable for ExprArray {
             };
             assembler.elemset(
                 ptr.clone(),
-                Operand::ConstantInt(ConstantInt::new(index as i64, Type::Signed(32))),
+                Operand::ConstantInt(ConstantInt::new(index.to_string(), Type::Signed(32))),
                 value,
             );
         }
@@ -494,7 +494,7 @@ impl Lowerable for Litral {
                 let elem_ty = Type::Unsigned(8);
                 let arr_ty = Type::Array(bytes.len(), Box::new(elem_ty.clone()));
                 let size = Operand::ConstantInt(ir::ConstantInt::new(
-                    bytes.len() as i64,
+                    bytes.len().to_string(),
                     Type::Signed(32),
                 ));
                 let ptr = assembler.var(arr_ty.clone());
@@ -503,11 +503,17 @@ impl Lowerable for Litral {
                     let elem = assembler.var(elem_ty.clone());
                     assembler.assign(
                         elem.clone(),
-                        Operand::ConstantInt(ir::ConstantInt::new(byte as i64, elem_ty.clone())),
+                        Operand::ConstantInt(ir::ConstantInt::new(
+                            byte.to_string(),
+                            elem_ty.clone(),
+                        )),
                     );
                     assembler.elemset(
                         ptr.clone(),
-                        Operand::ConstantInt(ir::ConstantInt::new(index as i64, Type::Signed(32))),
+                        Operand::ConstantInt(ir::ConstantInt::new(
+                            index.to_string(),
+                            Type::Signed(32),
+                        )),
                         elem,
                     );
                 }
@@ -719,7 +725,7 @@ impl Lowerable for ExprArrayRepeat {
             panic!("Expected array type but got {}", self.ty);
         };
         let size = Operand::from(ConstantInt::new(
-            (count * ty.size()) as i64,
+            (count * ty.size()).to_string(),
             Type::Signed(32),
         ));
         let ptr = assembler.var(ty.clone().as_bitbox_type());
@@ -730,7 +736,7 @@ impl Lowerable for ExprArrayRepeat {
             };
             assembler.elemset(
                 ptr.clone(),
-                Operand::from(ConstantInt::new(index as i64, Type::Signed(32))),
+                Operand::from(ConstantInt::new(index.to_string(), Type::Signed(32))),
                 value,
             );
         }
