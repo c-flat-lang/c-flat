@@ -168,6 +168,7 @@ impl SymbolTableBuilder {
             Expr::Block(block) => self.walk_block(block),
             Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
             Expr::Not(expr) => self.walk_expr(&expr.expr),
+            Expr::Grouping(expr_grouping) => todo!("{:#?}", expr_grouping),
         }
     }
 

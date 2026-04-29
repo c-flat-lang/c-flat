@@ -310,6 +310,7 @@ pub enum Expr {
     Block(ExprBlock),
     AddressOf(ExprAddressOf),
     Not(ExprNot),
+    Grouping(ExprGrouping),
 }
 
 impl Expr {
@@ -332,11 +333,27 @@ impl Expr {
             Self::Block(block) => block.span(),
             Self::AddressOf(expr) => expr.span(),
             Self::Not(expr) => expr.span(),
+            Self::Grouping(grouping) => grouping.span(),
         }
     }
 
     pub fn is_addressable(&self) -> bool {
         matches!(self, Expr::Identifier(..) | Expr::ArrayIndex(..))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprGrouping {
+    pub open_paren: Token,
+    pub expr: Box<Expr>,
+    pub close_paren: Token,
+}
+
+impl ExprGrouping {
+    pub fn span(&self) -> Span {
+        let start = self.open_paren.span.start;
+        let end = self.close_paren.span.end;
+        start..end
     }
 }
 

@@ -111,6 +111,7 @@ impl<'st> TypeResolver<'st> {
             Expr::Block(expr_block) => self.walk_expr_block(expr_block),
             Expr::AddressOf(expr_address_of) => self.walk_expr(&mut expr_address_of.expr),
             Expr::Not(expr_not) => self.walk_expr(&mut expr_not.expr),
+            Expr::Grouping(expr_grouping) => self.walk_expr(&mut expr_grouping.expr),
         }
     }
 

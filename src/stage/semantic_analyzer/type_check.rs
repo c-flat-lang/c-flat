@@ -179,6 +179,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Return(expr) => self.walk_expr_return(expr),
             ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
             ast::Expr::While(expr) => self.walk_expr_while(expr),
+            ast::Expr::Grouping(expr_grouping) => self.walk_expr(&mut expr_grouping.expr),
         }
     }
 

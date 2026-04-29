@@ -588,6 +588,15 @@ impl Parser {
                 Ok(ast::Expr::Litral(ast::Litral::BoolFalse(token)))
             }
             TokenKind::LeftBracket => self.parse_array_literal(token),
+            TokenKind::LeftParen => {
+                let expr = self.parse_expr()?;
+                let right_paren = self.consume(TokenKind::RightParen)?;
+                Ok(ast::Expr::Grouping(ast::ExprGrouping {
+                    open_paren: token,
+                    expr: Box::new(expr),
+                    close_paren: right_paren,
+                }))
+            }
             _ => Err(Box::new(ErrorExpectedToken {
                 actual: token,
                 expected: vec![

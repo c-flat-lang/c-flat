@@ -11,8 +11,8 @@ use bitbox::ir::{
 
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
-    ExprBlock, ExprCall, ExprDecl, ExprIfElse, ExprMemberAccess, ExprNot, ExprReturn, ExprStruct,
-    ExprWhile, Litral, Struct,
+    ExprBlock, ExprCall, ExprDecl, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot, ExprReturn,
+    ExprStruct, ExprWhile, Litral, Struct,
 };
 
 #[derive(Debug, Default)]
@@ -198,6 +198,7 @@ impl Lowerable for Expr {
             Expr::Block(block) => block.lower(assembler, ctx),
             Expr::AddressOf(expr) => expr.lower(assembler, ctx),
             Expr::Not(expr) => expr.lower(assembler, ctx),
+            Expr::Grouping(expr) => expr.lower(assembler, ctx),
         }
     }
 }
@@ -821,6 +822,17 @@ impl Lowerable for ExprNot {
         let src_var = self.expr.lower(assembler, ctx)?;
         let des = assembler.var(src_var.ty.clone());
         assembler.not(des.clone(), src_var);
+        Some(des)
+    }
+}
+
+impl Lowerable for ExprGrouping {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let des = self.expr.lower(assembler, ctx)?;
         Some(des)
     }
 }
