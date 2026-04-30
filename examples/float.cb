@@ -3,5 +3,11 @@ extern C fn write_float(f32) void;
 pub fn main() s32 {
     let f = 3.14;
     write_float(f);
+    let g: f32 = 2.718;
+    if f > g {
+        write_float(f);
+    } else {
+        write_float(g);
+    }
     return 0;
 }

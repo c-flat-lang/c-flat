@@ -1,3 +1,6 @@
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
 fn factorial(n: s32) s32 {
   return if n == 1 {
     let result = 1;

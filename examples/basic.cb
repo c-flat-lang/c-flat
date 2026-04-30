@@ -1,3 +1,6 @@
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
 fn max_s32(x: s32, y: s32) s32 {
     return if x > y { x } else { y };
 }
