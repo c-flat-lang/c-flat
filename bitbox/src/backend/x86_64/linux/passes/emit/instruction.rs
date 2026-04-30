@@ -6,8 +6,8 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 };
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf, ILt,
-    INot, IRef, IReturn, ISub,
+    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf,
+    ILt, IMul, INot, IRef, IRem, IReturn, ISub,
 };
 use crate::ir::{Operand, Type};
 
@@ -284,6 +284,83 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGte {
     }
 }
 
+impl Lower<X86_64LinuxLowerContext<'_>> for IRem {
+    type Output = ();
+
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering rem");
+
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        match &self.des.ty {
+            Type::Unsigned(bits) => todo!("@rem u{bits}"),
+            Type::Signed(_) => {
+                // cqo/idiv require physical rax and rdx
+                target.assembler.mov(Reg64::Rax, lhs);
+                target.assembler.cqo();
+                // idiv divides rdx:rax by src; remainder → rdx
+                target.assembler.idiv(rhs);
+                // capture rdx (remainder) into a vreg for the destination
+                let result = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(result, Reg64::Rdx);
+                target.assembler.alloc.store_variable(&self.des, result);
+            }
+            Type::Float(bits) => todo!("@rem f{bits}"),
+            ty => panic!("Remainder not supported for type {:?}", ty),
+        }
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IDiv {
+    type Output = ();
+
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering div");
+
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        match &self.des.ty {
+            Type::Signed(_) => {
+                // cqo sign-extends rax into rdx:rax; idiv src: quotient → rax, remainder → rdx
+                target.assembler.mov(Reg64::Rax, lhs);
+                target.assembler.cqo();
+                target.assembler.idiv(rhs);
+                let result = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(result, Reg64::Rax);
+                target.assembler.alloc.store_variable(&self.des, result);
+            }
+            Type::Float(32) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(lhs_xmm, lhs);
+                target.assembler.divss(lhs_xmm, rhs);
+                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            Type::Float(64) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(lhs_xmm, lhs);
+                target.assembler.divsd(lhs_xmm, rhs);
+                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            Type::Unsigned(bits) => todo!("@div u{bits}"),
+            ty => panic!("Division not supported for type {:?}", ty),
+        }
+
+        Ok(())
+    }
+}
+
 impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
     type Output = ();
     fn lower(
@@ -302,6 +379,41 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
         let out = target.assembler.alloc.vreg::<Reg64>();
         target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IMul {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering mul");
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        match &self.des.ty {
+            Type::Float(32) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(lhs_xmm, lhs);
+                target.assembler.mulss(lhs_xmm, rhs);
+                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            Type::Float(64) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(lhs_xmm, lhs);
+                target.assembler.mulsd(lhs_xmm, rhs);
+                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+            }
+            _ => {
+                let lhs_reg = target.assembler.materialize_value(&lhs);
+                target.assembler.imul(lhs_reg, rhs);
+                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_reg));
+            }
+        }
 
         Ok(())
     }
@@ -406,7 +518,21 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         let mut args = Vec::new();
         for arg in &self.args {
             let value = arg.lower(ctx, target)?;
-            args.push(value);
+            // Spill register-valued args to stack to prevent clobbering during arg setup.
+            // Without this, a vreg holding arg[i] may be assigned the same physical register
+            // that arg[j] (j > i) writes into, corrupting arg[i] before it reaches its arg reg.
+            let spilled = if let Location::Reg(_) = &value {
+                if let Some(ty) = arg.ty() {
+                    let stack = target.assembler.alloc.alloc_stack(ty, 1);
+                    target.assembler.mov(Location::Stack(stack), value);
+                    Location::Stack(stack)
+                } else {
+                    value
+                }
+            } else {
+                value
+            };
+            args.push(spilled);
         }
         let used_regs = target.assembler.caller_preserved_regs();
         for reg in used_regs.iter().rev() {

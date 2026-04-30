@@ -362,6 +362,7 @@ impl Lowerable for ExprBinary {
             TokenKind::GreaterEqual => assembler.gte(des.clone(), lhs, rhs),
             TokenKind::Keyword(Keyword::And) => assembler.and(des.clone(), lhs, rhs),
             TokenKind::Keyword(Keyword::Or) => assembler.or(des.clone(), lhs, rhs),
+            TokenKind::Percent => assembler.rem(des.clone(), lhs, rhs),
             op => unimplemented!("Operator not implemented {op:?}"),
         };
         Some(des)

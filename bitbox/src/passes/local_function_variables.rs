@@ -144,6 +144,9 @@ fn block_pass(
             crate::ir::Instruction::Gte(igte) => ctx
                 .local_function_variables
                 .add(function_name, igte.des.clone()),
+            crate::ir::Instruction::Rem(irem) => ctx
+                .local_function_variables
+                .add(function_name, irem.des.clone()),
             crate::ir::Instruction::Lt(ilt) => ctx
                 .local_function_variables
                 .add(function_name, ilt.des.clone()),

@@ -307,6 +307,14 @@ impl Operand {
     pub fn is_none(&self) -> bool {
         matches!(self, Operand::None)
     }
+
+    pub fn ty(&self) -> Option<&Type> {
+        match self {
+            Operand::ConstantInt(c) => Some(&c.ty),
+            Operand::Variable(v) => Some(&v.ty),
+            Operand::None => None,
+        }
+    }
 }
 
 impl From<Variable> for Operand {

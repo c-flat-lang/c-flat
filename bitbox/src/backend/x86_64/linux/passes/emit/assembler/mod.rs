@@ -239,6 +239,8 @@ pub enum Instruction {
     Setl(Location),
     Sub(Location, Location),
     Test(Location, Location),
+    // Integer multiplication (2-operand: dst *= src)
+    Imul(Location, Location),
     // SSE / XMM instructions
     Movd(Location, Location),
     Movss(Location, Location),
@@ -256,6 +258,9 @@ pub enum Instruction {
     // Integer → float conversions
     Cvtsi2ss(Location, Location),
     Cvtsi2sd(Location, Location),
+    // Integer division (rdx:rax implicit)
+    Cqo,
+    Idiv(Location),
 }
 
 impl std::fmt::Display for Instruction {
@@ -290,6 +295,7 @@ impl std::fmt::Display for Instruction {
             Self::Setl(dst) => write!(f, "  setl {dst}"),
             Self::Sub(lhs, rhs) => write!(f, "  sub {lhs}, {rhs}"),
             Self::Test(dst, src) => write!(f, "  test {dst}, {src}"),
+            Self::Imul(dst, src) => write!(f, "  imul {dst}, {src}"),
             Self::Movd(dst, src) => write!(f, "  movd {dst}, {src}"),
             Self::Movss(dst, src) => write!(f, "  movss {dst}, {src}"),
             Self::Movsd(dst, src) => write!(f, "  movsd {dst}, {src}"),
@@ -305,6 +311,8 @@ impl std::fmt::Display for Instruction {
             Self::Ucomisd(dst, src) => write!(f, "  ucomisd {dst}, {src}"),
             Self::Cvtsi2ss(dst, src) => write!(f, "  cvtsi2ss {dst}, {src}"),
             Self::Cvtsi2sd(dst, src) => write!(f, "  cvtsi2sd {dst}, {src}"),
+            Self::Cqo => write!(f, "  cqo"),
+            Self::Idiv(src) => write!(f, "  idiv {src}"),
         }
     }
 }
@@ -759,6 +767,12 @@ impl Assembler {
         self
     }
 
+    pub fn imul(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        let PreparedOperands { dst, src } = self.prepare_binary_operands(lhs.into(), rhs.into());
+        self.push_to(self.current_section, Instruction::Imul(dst, src));
+        self
+    }
+
     pub fn call(&mut self, name: impl Into<String>) -> &mut Self {
         let misalignment = (self.stack_offset + 8) % 16;
         let pad = 16 - misalignment;
@@ -891,6 +905,16 @@ impl Assembler {
             self.current_section,
             Instruction::Cvtsi2sd(dst.into(), src.into()),
         );
+        self
+    }
+
+    pub fn cqo(&mut self) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Cqo);
+        self
+    }
+
+    pub fn idiv(&mut self, src: impl Into<Location>) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Idiv(src.into()));
         self
     }
 }

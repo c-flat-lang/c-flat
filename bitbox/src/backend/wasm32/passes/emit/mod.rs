@@ -296,6 +296,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::XOr(ixor) => ixor.lower(ctx, target)?,
             ir::Instruction::Gt(igt) => igt.lower(ctx, target)?,
             ir::Instruction::Gte(igte) => igte.lower(ctx, target)?,
+            ir::Instruction::Rem(..) => todo!("@rem"),
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,

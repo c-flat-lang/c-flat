@@ -39,6 +39,9 @@ pub enum Instruction {
     /// `@gte <type> : <des>, <lhs>, <rhs>`
     /// `@gte u1 : is_one, n, 1`
     Gte(IGte),
+    /// `@rem <type> : <des>, <lhs>, <rhs>`
+    /// `@rem u32 : mod, n, 2`
+    Rem(IRem),
     /// `@lt <type> : <des>, <lhs>, <rhs>`
     /// `@lt u1 : is_one, n, 1`
     Lt(ILt),
@@ -94,6 +97,7 @@ impl fmt::Display for Instruction {
             Self::XOr(ixor) => write!(f, "{ixor}"),
             Self::Gt(igt) => write!(f, "{igt}"),
             Self::Gte(igte) => write!(f, "{igte}"),
+            Self::Rem(irem) => write!(f, "{irem}"),
             Self::Lt(ilt) => write!(f, "{ilt}"),
             Self::Assign(iassign) => write!(f, "{iassign}"),
             Self::Alloc(ialloc) => write!(f, "{ialloc}"),
@@ -259,6 +263,15 @@ create_binary_instruction!(
     IGte,
     Gte,
     "gte"
+);
+create_binary_instruction!(
+    "`@rem <type> : <des>, <lhs>, <rhs>`
+
+`@rem u32 : mod, n, 1`
+",
+    IRem,
+    Rem,
+    "rem"
 );
 create_binary_instruction!(
     "`@lt <type> : <des>, <lhs>, <rhs>`

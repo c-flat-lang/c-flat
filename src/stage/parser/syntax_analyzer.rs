@@ -479,10 +479,11 @@ impl Parser {
 
     fn parse_factor(&mut self) -> Result<ast::Expr> {
         let mut left = self.parse_call()?;
-        while let Some(op) = self
-            .lexer
-            .next_if(one_of(&[TokenKind::Star, TokenKind::Slash]))
-        {
+        while let Some(op) = self.lexer.next_if(one_of(&[
+            TokenKind::Star,
+            TokenKind::Slash,
+            TokenKind::Percent,
+        ])) {
             let right = Box::new(self.parse_call()?);
             let expr_binary = ast::ExprBinary {
                 left: Box::new(left),

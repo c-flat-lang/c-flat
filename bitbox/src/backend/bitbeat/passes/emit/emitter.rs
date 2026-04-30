@@ -104,6 +104,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::XOr(ixor) => ixor.lower(ctx, target)?,
             crate::ir::Instruction::Gt(..) => todo!("gt"),
             crate::ir::Instruction::Gte(..) => todo!("gte"),
+            crate::ir::Instruction::Rem(..) => todo!("rem"),
             crate::ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
             crate::ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             crate::ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,

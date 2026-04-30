@@ -11,30 +11,55 @@ impl Type {
     pub fn supports_binary_op(&self, op: &TokenKind, other: &Type) -> Option<Type> {
         use TokenKind::*;
         match (self, op, other) {
+            // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
             (
                 Type::UnsignedNumber(lhs),
-                (Plus | Minus | Star | Slash),
+                (Plus | Minus | Star | Slash | Percent),
                 Type::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(Type::UnsignedNumber(*lhs)),
             (
-                Type::UnsignedNumber(lhs) | Type::Float(lhs),
-                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
-                Type::UnsignedNumber(rhs) | Type::Float(rhs),
-            ) if lhs == rhs => Some(Type::Bool),
-            (Type::SignedNumber(lhs), (Plus | Minus | Star | Slash), Type::SignedNumber(rhs))
+                Type::SignedNumber(lhs),
+                (Plus | Minus | Star | Slash | Percent),
+                Type::SignedNumber(rhs),
+            ) if lhs == rhs => Some(Type::SignedNumber(*lhs)),
+            (Type::Float(lhs), (Plus | Minus | Star | Slash | Percent), Type::Float(rhs))
                 if lhs == rhs =>
             {
-                Some(Type::SignedNumber(*lhs))
+                Some(Type::Float(*lhs))
             }
+
+            // (EqualEqual | Greater | GreaterEqual | Less | LessEqual) Comparison ops work on numbers and return bools
+            (
+                Type::UnsignedNumber(lhs),
+                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                Type::UnsignedNumber(rhs),
+            ) if lhs == rhs => Some(Type::Bool),
             (
                 Type::SignedNumber(lhs),
                 (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
                 Type::SignedNumber(rhs),
             ) if lhs == rhs => Some(Type::Bool),
-            (Type::Float(lhs), TokenKind::Plus, Type::Float(rhs)) => Some(Type::Float(*lhs)),
+            (
+                Type::Float(lhs),
+                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                Type::Float(rhs),
+            ) if lhs == rhs => Some(Type::Bool),
+
+            // (AND | OR) only work on bools and return bools
             (Type::Bool, (EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or)), Type::Bool) => {
                 Some(Type::Bool)
             }
+
+            // (Plus | Minus | Star | Slash) only work on numbers and return the same type
+            (Type::SignedNumber(lhs), (Plus | Minus | Star | Slash), Type::SignedNumber(rhs))
+                if lhs == rhs =>
+            {
+                Some(Type::SignedNumber(*lhs))
+            }
+            (Type::Float(lhs), Plus | Minus | Star | Slash, Type::Float(rhs)) => {
+                Some(Type::Float(*lhs))
+            }
+
             //(Type::Custom(name), op, Type::Custom(rhs)) => {
             //    // For operator overloading — check user-defined impls
             //    // e.g., lookup "impl Add for MyType { ... }" in your symbol table maybe

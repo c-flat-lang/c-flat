@@ -9,13 +9,14 @@ use crate::passes::PassOutput;
 pub struct VirtRegRewritePass;
 
 /// Physical scratch registers to use for vreg allocation.
-/// R10/R11 first (pure scratch in SysV ABI), then caller-saved regs.
-const SCRATCH_POOL: [PhysReg; 9] = [
+/// R10/R11 first (pure scratch in SysV ABI), then caller-saved arg regs.
+/// Rax and Rdx are intentionally excluded: they are implicitly clobbered by
+/// cqo/idiv (Rax = dividend/quotient, Rdx = remainder) and Rax is the call
+/// return register. Allocating vregs there would corrupt live values.
+const SCRATCH_POOL: [PhysReg; 7] = [
     PhysReg::R10,
     PhysReg::R11,
-    PhysReg::Rax,
     PhysReg::Rcx,
-    PhysReg::Rdx,
     PhysReg::Rsi,
     PhysReg::Rdi,
     PhysReg::R8,
@@ -74,6 +75,7 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Movezx(a, b)
         | Instruction::Sub(a, b)
         | Instruction::Test(a, b)
+        | Instruction::Imul(a, b)
         | Instruction::Movd(a, b)
         | Instruction::Movss(a, b)
         | Instruction::Movsd(a, b)
@@ -105,7 +107,8 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Sete(a)
         | Instruction::Setg(a)
         | Instruction::Setge(a)
-        | Instruction::Setl(a) => {
+        | Instruction::Setl(a)
+        | Instruction::Idiv(a) => {
             f(a);
         }
         _ => {}
@@ -128,6 +131,7 @@ fn map_locations(
         Instruction::Movezx(a, b) => Instruction::Movezx(rw(a), rw(b)),
         Instruction::Sub(a, b) => Instruction::Sub(rw(a), rw(b)),
         Instruction::Test(a, b) => Instruction::Test(rw(a), rw(b)),
+        Instruction::Imul(a, b) => Instruction::Imul(rw(a), rw(b)),
         Instruction::Pop(a) => Instruction::Pop(rw(a)),
         Instruction::Push(a) => Instruction::Push(rw(a)),
         Instruction::Sete(a) => Instruction::Sete(rw(a)),
@@ -149,6 +153,7 @@ fn map_locations(
         Instruction::Ucomisd(a, b) => Instruction::Ucomisd(rw(a), rw(b)),
         Instruction::Cvtsi2ss(a, b) => Instruction::Cvtsi2ss(rw(a), rw(b)),
         Instruction::Cvtsi2sd(a, b) => Instruction::Cvtsi2sd(rw(a), rw(b)),
+        Instruction::Idiv(a) => Instruction::Idiv(rw(a)),
         other => other,
     }
 }
