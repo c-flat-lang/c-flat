@@ -368,11 +368,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGt {
         let out = target.assembler.alloc.vreg::<Reg64>();
         match self.lhs.ty() {
             Some(Type::Float(32)) => {
-                target.assembler.ucomiss(lhs, rhs);
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomiss(Location::Reg(lhs_xmm), rhs);
                 target.assembler.seta(flag);
             }
             Some(Type::Float(64)) => {
-                target.assembler.ucomisd(lhs, rhs);
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomisd(Location::Reg(lhs_xmm), rhs);
                 target.assembler.seta(flag);
             }
             _ => {
@@ -400,11 +404,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGte {
         let out = target.assembler.alloc.vreg::<Reg64>();
         match self.lhs.ty() {
             Some(Type::Float(32)) => {
-                target.assembler.ucomiss(lhs, rhs);
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomiss(Location::Reg(lhs_xmm), rhs);
                 target.assembler.setae(flag);
             }
             Some(Type::Float(64)) => {
-                target.assembler.ucomisd(lhs, rhs);
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomisd(Location::Reg(lhs_xmm), rhs);
                 target.assembler.setae(flag);
             }
             _ => {
@@ -515,11 +523,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
         let out = target.assembler.alloc.vreg::<Reg64>();
         match self.lhs.ty() {
             Some(Type::Float(32)) => {
-                target.assembler.ucomiss(lhs, rhs);
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomiss(Location::Reg(lhs_xmm), rhs);
                 target.assembler.setb(flag);
             }
             Some(Type::Float(64)) => {
-                target.assembler.ucomisd(lhs, rhs);
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomisd(Location::Reg(lhs_xmm), rhs);
                 target.assembler.setb(flag);
             }
             _ => {
