@@ -108,6 +108,9 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Setg(a)
         | Instruction::Setge(a)
         | Instruction::Setl(a)
+        | Instruction::Seta(a)
+        | Instruction::Setae(a)
+        | Instruction::Setb(a)
         | Instruction::Idiv(a) => {
             f(a);
         }
@@ -138,6 +141,9 @@ fn map_locations(
         Instruction::Setg(a) => Instruction::Setg(rw(a)),
         Instruction::Setge(a) => Instruction::Setge(rw(a)),
         Instruction::Setl(a) => Instruction::Setl(rw(a)),
+        Instruction::Seta(a) => Instruction::Seta(rw(a)),
+        Instruction::Setae(a) => Instruction::Setae(rw(a)),
+        Instruction::Setb(a) => Instruction::Setb(rw(a)),
         Instruction::Movd(a, b) => Instruction::Movd(rw(a), rw(b)),
         Instruction::Movss(a, b) => Instruction::Movss(rw(a), rw(b)),
         Instruction::Movsd(a, b) => Instruction::Movsd(rw(a), rw(b)),

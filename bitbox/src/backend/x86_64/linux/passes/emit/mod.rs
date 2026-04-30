@@ -24,6 +24,8 @@ pub struct X86_64LinuxLowerContext<'ctx> {
     pub block_id: ir::BlockId,
     pub instr_index: usize,
     pub assembler: Assembler,
+    /// Stack slot where the hidden return pointer (RDI) was saved for MEMORY-class struct returns.
+    pub hidden_ret_ptr: Option<Stack>,
 }
 
 impl<'ctx> X86_64LinuxLowerContext<'ctx> {
@@ -33,6 +35,7 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
             block_id: ir::BlockId(0),
             instr_index: 0,
             assembler: Assembler::default(),
+            hidden_ret_ptr: None,
         }
     }
 }
@@ -99,6 +102,24 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
         target.assembler.comment("-- args --");
         let mut gp_idx = 0usize;
         let mut xmm_idx = 0usize;
+
+        // SysV MEMORY class: if this function returns a struct > 16 bytes, the caller passes a
+        // hidden return pointer in RDI as the implicit first argument.
+        let returns_memory_class =
+            matches!(&self.return_type, Type::Struct(s) if s.abi_chunks().is_none());
+        if returns_memory_class {
+            let hidden_slot = target
+                .assembler
+                .alloc
+                .alloc_stack(&ir::Type::Pointer(Box::new(self.return_type.clone())), 1);
+            target.assembler.comment("save hidden return pointer (RDI)");
+            target
+                .assembler
+                .mov(assembler::Location::Stack(hidden_slot), Rdi);
+            target.hidden_ret_ptr = Some(hidden_slot);
+            gp_idx = 1; // RDI is taken by hidden pointer
+        }
+
         for arg in self.params.iter() {
             let arg_stack = target.assembler.alloc.alloc_stack(&arg.ty, 1);
             target.assembler.comment(format!("arg: {}", arg.name));

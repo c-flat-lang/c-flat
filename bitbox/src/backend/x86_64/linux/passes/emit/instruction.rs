@@ -2,7 +2,7 @@ use super::X86_64LinuxLowerContext;
 use crate::backend::Lower;
 
 use crate::backend::x86_64::linux::passes::emit::assembler::{
-    Location, Reg, Reg8, Reg16, Reg32, Reg64, RegKind, Stack, XmmReg,
+    Location, MemIndexed, Reg, Reg8, Reg16, Reg32, Reg64, RegKind, Stack, XmmReg,
 };
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
@@ -214,7 +214,90 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                                     }
                                 }
                             }
-                            None => panic!("returning struct > 16 bytes not supported"),
+                            None => {
+                                // MEMORY class: copy struct to the hidden return pointer saved in hidden_ret_ptr.
+                                let hidden_slot = target
+                                    .hidden_ret_ptr
+                                    .expect("MEMORY-class return but no hidden_ret_ptr");
+                                let ptr_reg = target.assembler.alloc.vreg::<Reg64>();
+                                target.assembler.mov(ptr_reg, Location::Stack(hidden_slot));
+
+                                let size = s.size() as usize;
+                                let full_qwords = size / 8;
+                                let remainder = size % 8;
+
+                                for i in 0..full_qwords {
+                                    let src = Stack {
+                                        offset: base_offset - (i as i32 * 8),
+                                        access_size: 8,
+                                    };
+                                    let chunk = target.assembler.alloc.vreg::<Reg64>();
+                                    target.assembler.mov(chunk, Location::Stack(src));
+                                    let off = target.assembler.alloc.vreg::<Reg64>();
+                                    target.assembler.mov(off, (i * 8) as i64);
+                                    target.assembler.store_indexed(
+                                        ptr_reg.into(),
+                                        off.into(),
+                                        1,
+                                        chunk.into(),
+                                    );
+                                }
+                                if remainder > 0 {
+                                    let src = Stack {
+                                        offset: base_offset - (full_qwords as i32 * 8),
+                                        access_size: remainder as i32,
+                                    };
+                                    let off = target.assembler.alloc.vreg::<Reg64>();
+                                    target.assembler.mov(off, (full_qwords * 8) as i64);
+                                    let tmp = target.assembler.alloc.vreg::<Reg64>();
+                                    match remainder {
+                                        1 => {
+                                            target
+                                                .assembler
+                                                .mov(tmp.cast_to::<Reg8>(), Location::Stack(src));
+                                            target.assembler.store_indexed(
+                                                ptr_reg.into(),
+                                                off.into(),
+                                                1,
+                                                tmp.cast_to::<Reg8>().into(),
+                                            );
+                                        }
+                                        2 => {
+                                            target
+                                                .assembler
+                                                .mov(tmp.cast_to::<Reg16>(), Location::Stack(src));
+                                            target.assembler.store_indexed(
+                                                ptr_reg.into(),
+                                                off.into(),
+                                                1,
+                                                tmp.cast_to::<Reg16>().into(),
+                                            );
+                                        }
+                                        3 | 4 => {
+                                            target
+                                                .assembler
+                                                .mov(tmp.cast_to::<Reg32>(), Location::Stack(src));
+                                            target.assembler.store_indexed(
+                                                ptr_reg.into(),
+                                                off.into(),
+                                                1,
+                                                tmp.cast_to::<Reg32>().into(),
+                                            );
+                                        }
+                                        _ => {
+                                            target.assembler.mov(tmp, Location::Stack(src));
+                                            target.assembler.store_indexed(
+                                                ptr_reg.into(),
+                                                off.into(),
+                                                1,
+                                                tmp.into(),
+                                            );
+                                        }
+                                    }
+                                }
+                                // Return the hidden pointer in rax (SysV requirement).
+                                target.assembler.mov(Reg64::Rax, ptr_reg);
+                            }
                         }
                     }
                     _ => {
@@ -281,15 +364,24 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGt {
         target.assembler.comment("lowering gt");
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
-
-        target.assembler.cmp(lhs, rhs);
         let flag = target.assembler.alloc.vreg::<Reg8>();
-
-        target.assembler.setg(flag);
         let out = target.assembler.alloc.vreg::<Reg64>();
+        match self.lhs.ty() {
+            Some(Type::Float(32)) => {
+                target.assembler.ucomiss(lhs, rhs);
+                target.assembler.seta(flag);
+            }
+            Some(Type::Float(64)) => {
+                target.assembler.ucomisd(lhs, rhs);
+                target.assembler.seta(flag);
+            }
+            _ => {
+                target.assembler.cmp(lhs, rhs);
+                target.assembler.setg(flag);
+            }
+        }
         target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
-
         Ok(())
     }
 }
@@ -301,18 +393,27 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGte {
         ctx: &mut crate::backend::Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        target.assembler.comment("lowering gt");
+        target.assembler.comment("lowering gte");
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
-
-        target.assembler.cmp(lhs, rhs);
         let flag = target.assembler.alloc.vreg::<Reg8>();
-
-        target.assembler.setge(flag);
         let out = target.assembler.alloc.vreg::<Reg64>();
+        match self.lhs.ty() {
+            Some(Type::Float(32)) => {
+                target.assembler.ucomiss(lhs, rhs);
+                target.assembler.setae(flag);
+            }
+            Some(Type::Float(64)) => {
+                target.assembler.ucomisd(lhs, rhs);
+                target.assembler.setae(flag);
+            }
+            _ => {
+                target.assembler.cmp(lhs, rhs);
+                target.assembler.setge(flag);
+            }
+        }
         target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
-
         Ok(())
     }
 }
@@ -410,15 +511,24 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
         target.assembler.comment("lowering lt");
         let lhs = self.lhs.lower(ctx, target)?;
         let rhs = self.rhs.lower(ctx, target)?;
-
-        target.assembler.cmp(lhs.clone(), rhs.clone());
         let flag = target.assembler.alloc.vreg::<Reg8>();
-
-        target.assembler.setl(flag);
         let out = target.assembler.alloc.vreg::<Reg64>();
+        match self.lhs.ty() {
+            Some(Type::Float(32)) => {
+                target.assembler.ucomiss(lhs, rhs);
+                target.assembler.setb(flag);
+            }
+            Some(Type::Float(64)) => {
+                target.assembler.ucomisd(lhs, rhs);
+                target.assembler.setb(flag);
+            }
+            _ => {
+                target.assembler.cmp(lhs.clone(), rhs.clone());
+                target.assembler.setl(flag);
+            }
+        }
         target.assembler.movezx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
-
         Ok(())
     }
 }
@@ -615,6 +725,32 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         let mut gp_idx = 0usize;
         let mut xmm_idx = 0usize;
 
+        // SysV MEMORY class: if the callee returns a struct > 16 bytes, pass a hidden return
+        // pointer in RDI as the implicit first argument. Allocate space now so we can LEA it.
+        let memory_class_ret_slot: Option<Stack> = if let Some(variable) = &self.des {
+            if let Type::Struct(s) = &variable.ty {
+                if s.abi_chunks().is_none() {
+                    let slot = target.assembler.alloc.alloc_stack(&variable.ty, 1);
+                    let addr_reg = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.lea(addr_reg, Location::Stack(slot));
+                    let rdi: Reg64 = target.assembler.arg_regs(0).expect("no RDI");
+                    moves.push(ArgMove {
+                        src: Location::Reg(addr_reg.into()),
+                        dst: Location::Reg(rdi.into()),
+                        kind: MoveKind::Gp,
+                    });
+                    gp_idx = 1;
+                    Some(slot)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         for (src, ty) in &spilled_args {
             match ty.as_ref() {
                 Some(Type::Struct(s)) => match s.abi_chunks() {
@@ -774,9 +910,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
                     target.assembler.alloc.store_variable(variable, xmm);
                 }
                 Type::Struct(s) => {
-                    let stack = target.assembler.alloc.alloc_stack(&variable.ty, 1);
                     match s.abi_chunks() {
                         Some(chunks) => {
+                            let stack = target.assembler.alloc.alloc_stack(&variable.ty, 1);
                             for (i, chunk) in chunks.iter().enumerate() {
                                 let chunk_dst = Stack {
                                     offset: stack.offset - (i as i32 * 8),
@@ -793,10 +929,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
                                     }
                                 }
                             }
+                            target.assembler.alloc.store_variable(variable, stack);
                         }
-                        None => panic!("receiving struct > 16 bytes not supported"),
+                        None => {
+                            // MEMORY class: callee wrote the struct to the slot we pre-allocated.
+                            let slot =
+                                memory_class_ret_slot.expect("MEMORY-class call but no ret slot");
+                            target.assembler.alloc.store_variable(variable, slot);
+                        }
                     }
-                    target.assembler.alloc.store_variable(variable, stack);
                 }
                 _ => {
                     let reg = target.assembler.alloc.vreg::<Reg64>();
@@ -857,41 +998,80 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
 
         let base = target.assembler.materialize_address(&base_ptr);
 
-        // For struct addr types, compute the actual byte offset via field_offset and use
-        // scale=1. For array types, use element_size as the stride.
-        // Read the constant field index directly from self.index (ConstantInt) for struct fields,
-        // since Operand::lower always returns Location::Reg (not Imm) for constants.
-        let (index_reg, stride, store_size) = match &self.addr.ty {
-            Type::Struct(s) => {
-                let field_idx = match &self.index {
-                    Operand::ConstantInt(c) => c.parse::<usize>()?,
-                    _ => panic!("IElemSet: dynamic struct field index not supported"),
-                };
-                let byte_offset = s.field_offset(field_idx);
-                // The store size is the field's actual size (capped at 8 bytes per move).
-                let field_size = s.fields[field_idx].1.size().min(8);
-                let off_reg = target
-                    .assembler
-                    .materialize_value(&Location::Imm(byte_offset as i64));
-                (off_reg, 1i32, field_size)
-            }
-            _ => {
-                let element_size = self.addr.ty.element_size();
-                (
-                    target.assembler.materialize_value(&index),
-                    element_size,
-                    element_size,
-                )
-            }
-        };
+        // Struct fields: use field_offset with scale=1. Handle float fields with movss/movsd.
+        if let Type::Struct(s) = &self.addr.ty {
+            let field_idx = match &self.index {
+                Operand::ConstantInt(c) => c.parse::<usize>()?,
+                _ => panic!("IElemSet: dynamic struct field index not supported"),
+            };
+            let byte_offset = s.field_offset(field_idx);
+            let off_reg = target
+                .assembler
+                .materialize_value(&Location::Imm(byte_offset as i64));
+            let mem = Location::MemIndexed(MemIndexed {
+                base,
+                index: off_reg,
+                scale: 1,
+            });
 
-        // Load the value with the correct store size.
-        // For struct fields storing aggregate values (e.g., an array pointer), the value's
-        // variable type is the element type (s32), but we need to load `store_size` bytes.
+            match &s.fields[field_idx].1 {
+                Type::Float(32) if matches!(self.value.ty(), Some(Type::Float(_))) => {
+                    // Float value → float field: use movss.
+                    let xmm_val = if matches!(&value, Location::Stack(_)) {
+                        let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.movss(Location::Reg(xmm), value);
+                        Location::Reg(xmm)
+                    } else {
+                        value
+                    };
+                    target.assembler.movss(mem, xmm_val);
+                }
+                Type::Float(64) if matches!(self.value.ty(), Some(Type::Float(_))) => {
+                    // Float value → float field: use movsd.
+                    let xmm_val = if matches!(&value, Location::Stack(_)) {
+                        let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.movsd(Location::Reg(xmm), value);
+                        Location::Reg(xmm)
+                    } else {
+                        value
+                    };
+                    target.assembler.movsd(mem, xmm_val);
+                }
+                field_ty => {
+                    let store_size = field_ty.size().min(8);
+                    let value_reg = if let Location::Stack(s) = &value {
+                        let sized_stack = Stack {
+                            offset: s.offset,
+                            access_size: store_size,
+                        };
+                        target
+                            .assembler
+                            .materialize_value(&Location::Stack(sized_stack))
+                    } else {
+                        target.assembler.materialize_value(&value)
+                    };
+                    let sized_value = match store_size {
+                        1 => value_reg.cast_to::<Reg8>(),
+                        2 => value_reg.cast_to::<Reg16>(),
+                        4 => value_reg.cast_to::<Reg32>(),
+                        _ => value_reg,
+                    };
+                    target
+                        .assembler
+                        .store_indexed(base, off_reg, 1, sized_value);
+                }
+            }
+            return Ok(());
+        }
+
+        // Array element store: index * element_size stride.
+        let element_size = self.addr.ty.element_size();
+        let index_reg = target.assembler.materialize_value(&index);
+
         let value_reg = if let Location::Stack(s) = &value {
             let sized_stack = Stack {
                 offset: s.offset,
-                access_size: store_size,
+                access_size: element_size,
             };
             target
                 .assembler
@@ -899,17 +1079,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         } else {
             target.assembler.materialize_value(&value)
         };
-
-        let sized_value = match store_size {
+        let sized_value = match element_size {
             1 => value_reg.cast_to::<Reg8>(),
             2 => value_reg.cast_to::<Reg16>(),
             4 => value_reg.cast_to::<Reg32>(),
             _ => value_reg,
         };
-
         target
             .assembler
-            .store_indexed(base, index_reg, stride, sized_value);
+            .store_indexed(base, index_reg, element_size, sized_value);
 
         Ok(())
     }
@@ -992,21 +1170,69 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
 
         let base = target.assembler.materialize_address(resolved_base);
 
-        let out = target.assembler.alloc.vreg::<Reg64>();
-
-        // Use the element-sized register variant for the load to avoid
-        // reading adjacent elements (e.g., use r11d for 4-byte loads).
-        let load_reg = match self.des.ty.size() {
-            1 => out.cast_to::<Reg8>(),
-            2 => out.cast_to::<Reg16>(),
-            4 => out.cast_to::<Reg32>(),
-            _ => out,
+        // For struct fields, use field_offset with scale=1 (not field_index * element_size).
+        // For array elements, use element_index with scale=element_size.
+        let ptr_ty = self.ptr.ty();
+        let struct_ty_opt = match &ptr_ty {
+            Some(Type::Struct(s)) => Some(s.clone()),
+            Some(Type::Pointer(inner)) => match inner.as_ref() {
+                Type::Struct(s) => Some(s.clone()),
+                _ => None,
+            },
+            _ => None,
         };
-        target
-            .assembler
-            .load_indexed(base, index_reg, self.des.ty.size(), load_reg.into());
+        let (offset_reg, scale) = if let Some(s) = struct_ty_opt {
+            let field_idx = match &self.index {
+                Operand::ConstantInt(c) => c.parse::<usize>()?,
+                _ => panic!("IElemGet: dynamic struct field index not supported for scalar"),
+            };
+            let byte_offset = s.field_offset(field_idx);
+            let off = target
+                .assembler
+                .materialize_value(&Location::Imm(byte_offset as i64));
+            (off, 1i32)
+        } else {
+            (index_reg, self.des.ty.size())
+        };
 
-        target.assembler.alloc.store_variable(&self.des, out);
+        // Float element loads must use movss/movsd (not mov) since XMM regs can't use `mov`.
+        match &self.des.ty {
+            Type::Float(32) => {
+                let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                let mem = Location::MemIndexed(MemIndexed::new(base, offset_reg, scale));
+                target.assembler.movss(Location::Reg(xmm), mem);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(xmm));
+            }
+            Type::Float(64) => {
+                let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                let mem = Location::MemIndexed(MemIndexed::new(base, offset_reg, scale));
+                target.assembler.movsd(Location::Reg(xmm), mem);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(xmm));
+            }
+            _ => {
+                let out = target.assembler.alloc.vreg::<Reg64>();
+
+                // Use the element-sized register variant for the load to avoid
+                // reading adjacent elements (e.g., use r11d for 4-byte loads).
+                let load_reg = match self.des.ty.size() {
+                    1 => out.cast_to::<Reg8>(),
+                    2 => out.cast_to::<Reg16>(),
+                    4 => out.cast_to::<Reg32>(),
+                    _ => out,
+                };
+                target
+                    .assembler
+                    .load_indexed(base, offset_reg, scale, load_reg.into());
+
+                target.assembler.alloc.store_variable(&self.des, out);
+            }
+        }
 
         Ok(())
     }

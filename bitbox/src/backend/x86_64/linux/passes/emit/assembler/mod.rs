@@ -237,6 +237,9 @@ pub enum Instruction {
     Setg(Location),
     Setge(Location),
     Setl(Location),
+    Seta(Location),
+    Setae(Location),
+    Setb(Location),
     Sub(Location, Location),
     Test(Location, Location),
     // Integer multiplication (2-operand: dst *= src)
@@ -293,6 +296,9 @@ impl std::fmt::Display for Instruction {
             Self::Setg(dst) => write!(f, "  setg {dst}"),
             Self::Setge(dst) => write!(f, "  setge {dst}"),
             Self::Setl(dst) => write!(f, "  setl {dst}"),
+            Self::Seta(dst) => write!(f, "  seta {dst}"),
+            Self::Setae(dst) => write!(f, "  setae {dst}"),
+            Self::Setb(dst) => write!(f, "  setb {dst}"),
             Self::Sub(lhs, rhs) => write!(f, "  sub {lhs}, {rhs}"),
             Self::Test(dst, src) => write!(f, "  test {dst}, {src}"),
             Self::Imul(dst, src) => write!(f, "  imul {dst}, {src}"),
@@ -745,6 +751,24 @@ impl Assembler {
         let src = src.into();
         debug_assert!(!matches!(src, Location::Imm(_)));
         self.push_to(self.current_section, Instruction::Setl(src));
+        self
+    }
+
+    pub fn seta(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        self.push_to(self.current_section, Instruction::Seta(src));
+        self
+    }
+
+    pub fn setae(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        self.push_to(self.current_section, Instruction::Setae(src));
+        self
+    }
+
+    pub fn setb(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        self.push_to(self.current_section, Instruction::Setb(src));
         self
     }
 
