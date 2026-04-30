@@ -455,29 +455,14 @@ impl<'st> TypeChecker<'st> {
                 Type::SignedNumber(32)
             }
             Type::Struct(struct_def) => {
-                let Some(symbol) = self.symbol_table.get(struct_def.name.as_str()) else {
-                    panic!(
-                        "Could not find struct `{}` in symbol table",
-                        struct_def.name
-                    );
-                };
-                let Some(members) = &symbol.fields else {
-                    panic!(
-                        "Could not find fields for struct `{}` in symbol table",
-                        struct_def.name
-                    );
-                };
-
-                let Some(field) = members
-                    .iter()
-                    .find(|field| field.name == member_access.member.lexeme.as_str())
-                else {
-                    unimplemented!(
-                        "I also do not think this is a reachable state. Hope I never see this."
-                    );
-                };
-                field.ty.clone()
+                self.lookup_struct_member(&struct_def, &member_access.member.lexeme)
             }
+            Type::Pointer(inner) => match inner.as_ref() {
+                Type::Struct(struct_def) => {
+                    self.lookup_struct_member(struct_def, &member_access.member.lexeme)
+                }
+                _ => unimplemented!("Handle member access for non struct pointer types"),
+            },
             _ => unimplemented!("Handle member access for non array types"),
         }
     }
@@ -490,6 +475,28 @@ impl<'st> TypeChecker<'st> {
             ty @ Type::Float(_) => self.numeric_hint = Some(ty.clone()),
             _ => {}
         }
+    }
+
+    fn lookup_struct_member(&self, struct_def: &StructType, member: &str) -> Type {
+        let Some(symbol) = self.symbol_table.get(struct_def.name.as_str()) else {
+            panic!(
+                "Could not find struct `{}` in symbol table",
+                struct_def.name
+            );
+        };
+        let Some(members) = &symbol.fields else {
+            panic!(
+                "Could not find fields for struct `{}` in symbol table",
+                struct_def.name
+            );
+        };
+        let Some(field) = members.iter().find(|f| f.name == member) else {
+            panic!(
+                "Field `{}` not found on struct `{}`",
+                member, struct_def.name
+            );
+        };
+        field.ty.clone()
     }
 }
 

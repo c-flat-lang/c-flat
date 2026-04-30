@@ -1,3 +1,6 @@
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
 type List struct {
   data: [2; s32],
 }
@@ -7,7 +10,7 @@ fn init_list() List {
   return list;
 }
 
-fn set_list(list: List, index: s32, value: s32) void {
+fn set_list(list: *List, index: s32, value: s32) void {
   list.data[index] = value;
 }
 
@@ -15,7 +18,7 @@ pub fn main() s32 {
   let list: List = init_list();
   write_int(list.data[0]);
   write_char(10);
-  set_list(list, 0, 1);
+  set_list(&list, 0, 1);
   write_int(list.data[0]);
   write_char(10);
   return 0;

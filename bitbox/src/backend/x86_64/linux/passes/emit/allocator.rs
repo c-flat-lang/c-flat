@@ -167,6 +167,7 @@ impl Allocator {
         let elem_size = Stack::access_size(ty);
         let alloc_size = match &ty {
             Type::Array(len, _) => elem_size * (*len as i32),
+            Type::Struct(s) => s.size(),
             _ => elem_size * count,
         };
 

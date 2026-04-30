@@ -10,11 +10,11 @@ fib:
   mov rbp, rsp
   sub rsp, 32
   # -- args --
-  # arg 0: n
+  # arg: n
   mov dword ptr [rbp-4], edi
-  # arg 1: a
+  # arg: a
   mov dword ptr [rbp-8], esi
-  # arg 2: b
+  # arg: b
   mov dword ptr [rbp-12], edx
 fib_entry:
   # @assign s32 : tmp.0_v0, 0
@@ -67,11 +67,13 @@ fib_merge_3:
   # @call s32 : tmp.5_v0 fib(tmp.3_v0, b_v0, tmp.4_v0)
   # lowering call
   # lowering operand
+  mov dword ptr [rbp-24], r11d
   # lowering operand
   # lowering operand
-  mov rdx, r10
+  mov dword ptr [rbp-28], r10d
+  mov edi, dword ptr [rbp-24]
   mov esi, dword ptr [rbp-12]
-  mov rdi, r11
+  mov edx, dword ptr [rbp-28]
   call fib
   mov r10, rax
   # @ret s32 : tmp.5_v0
@@ -111,9 +113,9 @@ main_entry:
   # lowering operand
   # lowering operand
   # lowering operand
-  mov edx, dword ptr [rbp-12]
-  mov esi, dword ptr [rbp-8]
   mov edi, dword ptr [rbp-4]
+  mov esi, dword ptr [rbp-8]
+  mov edx, dword ptr [rbp-12]
   call fib
   mov r10, rax
   # @assign s32 : value_v0, tmp.3_v0

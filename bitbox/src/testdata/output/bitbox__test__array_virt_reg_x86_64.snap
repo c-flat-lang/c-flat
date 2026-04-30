@@ -19,31 +19,31 @@ main_entry:
   mov r10, 0
   # lowering operand
   mov r11, 100
-  lea rax, qword ptr [rbp-12]
-  mov [rax + r10 * 4], r11d
+  lea rcx, qword ptr [rbp-12]
+  mov [rcx + r10 * 4], r11d
   # @elemset s32 : arr_v0, 1, 200
   # lowering elemset
   # lowering operand
-  mov rax, 1
+  mov rcx, 1
   # lowering operand
   mov r11, 200
   lea r10, qword ptr [rbp-12]
-  mov [r10 + rax * 4], r11d
+  mov [r10 + rcx * 4], r11d
   # @elemset s32 : arr_v0, 2, 300
   # lowering elemset
   # lowering operand
   mov r10, 2
   # lowering operand
   mov r11, 300
-  lea rax, qword ptr [rbp-12]
-  mov [rax + r10 * 4], r11d
+  lea rcx, qword ptr [rbp-12]
+  mov [rcx + r10 * 4], r11d
   # @elemget s32 : ret_v0, arr_v0, 1
   # lowering elemget
   # lowering operand
   # lowering operand
-  mov rax, 1
+  mov rcx, 1
   lea r11, qword ptr [rbp-12]
-  mov r10d, [r11 + rax * 4]
+  mov r10d, [r11 + rcx * 4]
   # @ret s32 : ret_v0
   # lowering return
   mov eax, r10d

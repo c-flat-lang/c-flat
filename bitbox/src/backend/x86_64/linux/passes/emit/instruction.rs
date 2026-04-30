@@ -9,7 +9,7 @@ use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf,
     ILt, IMul, INot, IRef, IRem, IReturn, ISub,
 };
-use crate::ir::{Operand, Type};
+use crate::ir::{AbiChunk, Operand, Type};
 
 impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
     type Output = Location;
@@ -80,7 +80,11 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IAssign {
             // TODO: Check if old source drops reference to variable location.
             // Arrays and pointers are aliased — no value copy needed.
             Operand::Variable(src_var)
-                if src_var.ty.is_ptr() || matches!(self.des.ty, crate::ir::Type::Array(..)) =>
+                if src_var.ty.is_ptr()
+                    || matches!(
+                        self.des.ty,
+                        crate::ir::Type::Array(..) | crate::ir::Type::Struct(..)
+                    ) =>
             {
                 target.assembler.alloc.alias_variable(&self.des, src_var);
             }
@@ -183,6 +187,35 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                     }
                     Type::Float(64) => {
                         target.assembler.movsd(Reg::Xmm(XmmReg::Xmm0), reg);
+                    }
+                    Type::Struct(s) => {
+                        let base_offset = match &reg {
+                            Location::Stack(s) => s.offset,
+                            _ => panic!("struct return value must be on stack"),
+                        };
+                        match s.abi_chunks() {
+                            Some(chunks) => {
+                                for (i, chunk) in chunks.iter().enumerate() {
+                                    let chunk_src = Stack {
+                                        offset: base_offset - (i as i32 * 8),
+                                        access_size: 8,
+                                    };
+                                    match chunk {
+                                        AbiChunk::Sse => {
+                                            let xmm = [XmmReg::Xmm0, XmmReg::Xmm1][i];
+                                            target
+                                                .assembler
+                                                .movsd(Reg::Xmm(xmm), Location::Stack(chunk_src));
+                                        }
+                                        AbiChunk::Integer => {
+                                            let gp = [Reg64::Rax, Reg64::Rdx][i];
+                                            target.assembler.mov(gp, Location::Stack(chunk_src));
+                                        }
+                                    }
+                                }
+                            }
+                            None => panic!("returning struct > 16 bytes not supported"),
+                        }
                     }
                     _ => {
                         match Stack::access_size(&var.ty) {
@@ -530,16 +563,28 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering call");
-        let mut args = Vec::new();
+        let mut spilled_args: Vec<(Location, Option<Type>)> = Vec::new();
         for arg in &self.args {
             let value = arg.lower(ctx, target)?;
             // Spill register-valued args to stack to prevent clobbering during arg setup.
-            // Without this, a vreg holding arg[i] may be assigned the same physical register
-            // that arg[j] (j > i) writes into, corrupting arg[i] before it reaches its arg reg.
             let spilled = if let Location::Reg(_) = &value {
                 if let Some(ty) = arg.ty() {
                     let stack = target.assembler.alloc.alloc_stack(ty, 1);
-                    target.assembler.mov(Location::Stack(stack), value);
+                    match ty {
+                        Type::Float(32) => {
+                            target
+                                .assembler
+                                .movss(Location::Stack(stack), value.clone());
+                        }
+                        Type::Float(64) => {
+                            target
+                                .assembler
+                                .movsd(Location::Stack(stack), value.clone());
+                        }
+                        _ => {
+                            target.assembler.mov(Location::Stack(stack), value.clone());
+                        }
+                    }
                     Location::Stack(stack)
                 } else {
                     value
@@ -547,55 +592,171 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
             } else {
                 value
             };
-            args.push(spilled);
+            spilled_args.push((spilled, arg.ty().cloned()));
         }
+
         let used_regs = target.assembler.caller_preserved_regs();
         for reg in used_regs.iter().rev() {
             target.assembler.push(*reg);
         }
 
-        for (i, arg) in args.iter().enumerate().rev() {
-            let reg = match arg {
-                Location::Reg(_) => target
-                    .assembler
-                    .arg_regs::<Reg64>(i)
-                    .expect("Too many arguments")
-                    .into(),
-                Location::Stack(stack) => match stack.access_size {
-                    1 => target
-                        .assembler
-                        .arg_regs::<Reg8>(i)
-                        .expect("Too many arguments")
-                        .into(),
-                    2 => target
-                        .assembler
-                        .arg_regs::<Reg16>(i)
-                        .expect("Too many arguments")
-                        .into(),
-                    4 => target
-                        .assembler
-                        .arg_regs::<Reg32>(i)
-                        .expect("Too many arguments")
-                        .into(),
-                    8 => target
-                        .assembler
-                        .arg_regs::<Reg64>(i)
-                        .expect("Too many arguments")
-                        .into(),
-                    _ => unreachable!("invalid stack size"),
+        // Build list of (src, dst, move_kind) in argument order.
+        enum MoveKind {
+            Gp,
+            Sse32,
+            Sse64,
+        }
+        struct ArgMove {
+            src: Location,
+            dst: Location,
+            kind: MoveKind,
+        }
+        let mut moves: Vec<ArgMove> = Vec::new();
+        let mut gp_idx = 0usize;
+        let mut xmm_idx = 0usize;
+
+        for (src, ty) in &spilled_args {
+            match ty.as_ref() {
+                Some(Type::Struct(s)) => match s.abi_chunks() {
+                    Some(chunks) => {
+                        let base_offset = match src {
+                            Location::Stack(s) => s.offset,
+                            _ => panic!("struct arg must be on stack"),
+                        };
+                        for (chunk_idx, chunk) in chunks.iter().enumerate() {
+                            let chunk_src = Location::Stack(Stack {
+                                offset: base_offset - (chunk_idx as i32 * 8),
+                                access_size: 8,
+                            });
+                            match chunk {
+                                AbiChunk::Sse => {
+                                    let xmm = target
+                                        .assembler
+                                        .xmm_arg_reg(xmm_idx)
+                                        .expect("Too many XMM arguments");
+                                    moves.push(ArgMove {
+                                        src: chunk_src,
+                                        dst: Location::Reg(Reg::Xmm(xmm)),
+                                        kind: MoveKind::Sse64,
+                                    });
+                                    xmm_idx += 1;
+                                }
+                                AbiChunk::Integer => {
+                                    let gp: Reg64 = target
+                                        .assembler
+                                        .arg_regs(gp_idx)
+                                        .expect("Too many GP arguments");
+                                    moves.push(ArgMove {
+                                        src: chunk_src,
+                                        dst: Location::Reg(Reg::from(gp)),
+                                        kind: MoveKind::Gp,
+                                    });
+                                    gp_idx += 1;
+                                }
+                            }
+                        }
+                    }
+                    None => panic!("passing struct > 16 bytes not supported"),
                 },
-
-                Location::MemIndexed(_) | Location::Address(_) => {
-                    target.assembler.materialize_address(arg)
+                Some(Type::Float(32)) => {
+                    let xmm = target
+                        .assembler
+                        .xmm_arg_reg(xmm_idx)
+                        .expect("Too many XMM arguments");
+                    moves.push(ArgMove {
+                        src: src.clone(),
+                        dst: Location::Reg(Reg::Xmm(xmm)),
+                        kind: MoveKind::Sse32,
+                    });
+                    xmm_idx += 1;
                 }
-                Location::Imm(_) => target
-                    .assembler
-                    .arg_regs::<Reg64>(i)
-                    .expect("Too many arguments")
-                    .into(),
-            };
+                Some(Type::Float(64)) => {
+                    let xmm = target
+                        .assembler
+                        .xmm_arg_reg(xmm_idx)
+                        .expect("Too many XMM arguments");
+                    moves.push(ArgMove {
+                        src: src.clone(),
+                        dst: Location::Reg(Reg::Xmm(xmm)),
+                        kind: MoveKind::Sse64,
+                    });
+                    xmm_idx += 1;
+                }
+                _ => {
+                    let dst: Location = match src {
+                        Location::Reg(_) => {
+                            let gp: Reg64 = target
+                                .assembler
+                                .arg_regs(gp_idx)
+                                .expect("Too many arguments");
+                            Location::Reg(Reg::from(gp))
+                        }
+                        Location::Stack(stack) => match stack.access_size {
+                            1 => {
+                                let r: Reg8 = target
+                                    .assembler
+                                    .arg_regs(gp_idx)
+                                    .expect("Too many arguments");
+                                Location::Reg(r.into())
+                            }
+                            2 => {
+                                let r: Reg16 = target
+                                    .assembler
+                                    .arg_regs(gp_idx)
+                                    .expect("Too many arguments");
+                                Location::Reg(r.into())
+                            }
+                            4 => {
+                                let r: Reg32 = target
+                                    .assembler
+                                    .arg_regs(gp_idx)
+                                    .expect("Too many arguments");
+                                Location::Reg(r.into())
+                            }
+                            8 => {
+                                let r: Reg64 = target
+                                    .assembler
+                                    .arg_regs(gp_idx)
+                                    .expect("Too many arguments");
+                                Location::Reg(r.into())
+                            }
+                            _ => unreachable!("invalid stack size"),
+                        },
+                        Location::MemIndexed(_) | Location::Address(_) => {
+                            let r = target.assembler.materialize_address(src);
+                            Location::Reg(r)
+                        }
+                        Location::Imm(_) => {
+                            let r: Reg64 = target
+                                .assembler
+                                .arg_regs(gp_idx)
+                                .expect("Too many arguments");
+                            Location::Reg(r.into())
+                        }
+                    };
+                    moves.push(ArgMove {
+                        src: src.clone(),
+                        dst,
+                        kind: MoveKind::Gp,
+                    });
+                    gp_idx += 1;
+                }
+            }
+        }
 
-            target.assembler.mov(reg, arg.clone());
+        // Emit moves in forward order (all sources already on stack, no clobbering risk).
+        for ArgMove { src, dst, kind } in moves {
+            match kind {
+                MoveKind::Gp => {
+                    target.assembler.mov(dst, src);
+                }
+                MoveKind::Sse32 => {
+                    target.assembler.movss(dst, src);
+                }
+                MoveKind::Sse64 => {
+                    target.assembler.movsd(dst, src);
+                }
+            }
         }
 
         target.assembler.call(&self.callee);
@@ -603,16 +764,39 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         if let Some(variable) = &self.des {
             match &variable.ty {
                 Type::Float(32) => {
-                    // SysV ABI: f32 return value is in xmm0
                     let xmm = target.assembler.alloc.vreg::<XmmReg>();
                     target.assembler.movss(xmm, XmmReg::Xmm0);
                     target.assembler.alloc.store_variable(variable, xmm);
                 }
                 Type::Float(64) => {
-                    // SysV ABI: f64 return value is in xmm0
                     let xmm = target.assembler.alloc.vreg::<XmmReg>();
                     target.assembler.movsd(xmm, XmmReg::Xmm0);
                     target.assembler.alloc.store_variable(variable, xmm);
+                }
+                Type::Struct(s) => {
+                    let stack = target.assembler.alloc.alloc_stack(&variable.ty, 1);
+                    match s.abi_chunks() {
+                        Some(chunks) => {
+                            for (i, chunk) in chunks.iter().enumerate() {
+                                let chunk_dst = Stack {
+                                    offset: stack.offset - (i as i32 * 8),
+                                    access_size: 8,
+                                };
+                                match chunk {
+                                    AbiChunk::Sse => {
+                                        let xmm = [XmmReg::Xmm0, XmmReg::Xmm1][i];
+                                        target.assembler.movsd(Location::Stack(chunk_dst), xmm);
+                                    }
+                                    AbiChunk::Integer => {
+                                        let gp = [Reg64::Rax, Reg64::Rdx][i];
+                                        target.assembler.mov(Location::Stack(chunk_dst), gp);
+                                    }
+                                }
+                            }
+                        }
+                        None => panic!("receiving struct > 16 bytes not supported"),
+                    }
+                    target.assembler.alloc.store_variable(variable, stack);
                 }
                 _ => {
                     let reg = target.assembler.alloc.vreg::<Reg64>();
@@ -672,21 +856,60 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         let value = self.value.lower(ctx, target)?;
 
         let base = target.assembler.materialize_address(&base_ptr);
-        let index = target.assembler.materialize_value(&index);
-        let value = target.assembler.materialize_value(&value);
-        let element_size = self.addr.ty.element_size();
 
-        // Cast value to the element size to avoid wide stores clobbering adjacent elements.
-        let sized_value = match element_size {
-            1 => value.cast_to::<Reg8>(),
-            2 => value.cast_to::<Reg16>(),
-            4 => value.cast_to::<Reg32>(),
-            _ => value,
+        // For struct addr types, compute the actual byte offset via field_offset and use
+        // scale=1. For array types, use element_size as the stride.
+        // Read the constant field index directly from self.index (ConstantInt) for struct fields,
+        // since Operand::lower always returns Location::Reg (not Imm) for constants.
+        let (index_reg, stride, store_size) = match &self.addr.ty {
+            Type::Struct(s) => {
+                let field_idx = match &self.index {
+                    Operand::ConstantInt(c) => c.parse::<usize>()?,
+                    _ => panic!("IElemSet: dynamic struct field index not supported"),
+                };
+                let byte_offset = s.field_offset(field_idx);
+                // The store size is the field's actual size (capped at 8 bytes per move).
+                let field_size = s.fields[field_idx].1.size().min(8);
+                let off_reg = target
+                    .assembler
+                    .materialize_value(&Location::Imm(byte_offset as i64));
+                (off_reg, 1i32, field_size)
+            }
+            _ => {
+                let element_size = self.addr.ty.element_size();
+                (
+                    target.assembler.materialize_value(&index),
+                    element_size,
+                    element_size,
+                )
+            }
+        };
+
+        // Load the value with the correct store size.
+        // For struct fields storing aggregate values (e.g., an array pointer), the value's
+        // variable type is the element type (s32), but we need to load `store_size` bytes.
+        let value_reg = if let Location::Stack(s) = &value {
+            let sized_stack = Stack {
+                offset: s.offset,
+                access_size: store_size,
+            };
+            target
+                .assembler
+                .materialize_value(&Location::Stack(sized_stack))
+        } else {
+            target.assembler.materialize_value(&value)
+        };
+
+        let sized_value = match store_size {
+            1 => value_reg.cast_to::<Reg8>(),
+            2 => value_reg.cast_to::<Reg16>(),
+            4 => value_reg.cast_to::<Reg32>(),
+            _ => value_reg,
         };
 
         target
             .assembler
-            .store_indexed(base, index, element_size, sized_value);
+            .store_indexed(base, index_reg, stride, sized_value);
 
         Ok(())
     }
@@ -702,11 +925,72 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering elemget");
         let base_ptr = &self.ptr.lower(ctx, target)?;
-
         let index = self.index.lower(ctx, target)?;
+
+        // For pointer-to-struct member access: load the pointer value first to get the struct address.
+        let is_ptr_to_struct = matches!(self.ptr.ty(), Some(Type::Pointer(inner)) if matches!(inner.as_ref(), Type::Struct(_)));
+        let effective_base: Location;
+        let resolved_base = if is_ptr_to_struct {
+            // base_ptr is the STORAGE location of the pointer variable; load its VALUE.
+            let ptr_val = target.assembler.materialize_value(base_ptr);
+            effective_base = Location::Reg(ptr_val);
+            &effective_base
+        } else {
+            base_ptr
+        };
+
+        // For aggregate result types (array/struct fields), return the field's stack address
+        // rather than loading a value into a register.
+        // Read the constant index from self.index directly, since Operand::lower returns Reg not Imm.
+        if matches!(self.des.ty, Type::Array(..) | Type::Struct(..)) {
+            let byte_offset: i32 = match (&self.ptr.ty(), &self.index) {
+                (Some(Type::Struct(s)), Operand::ConstantInt(c)) => {
+                    s.field_offset(c.parse::<usize>()?)
+                }
+                (Some(Type::Pointer(inner)), Operand::ConstantInt(c)) => {
+                    if let Type::Struct(s) = inner.as_ref() {
+                        s.field_offset(c.parse::<usize>()?)
+                    } else {
+                        c.parse::<i32>()? * self.des.ty.size()
+                    }
+                }
+                (_, Operand::ConstantInt(c)) => c.parse::<i32>()? * self.des.ty.size(),
+                _ => panic!("IElemGet: dynamic index for aggregate result type not supported"),
+            };
+            match resolved_base {
+                Location::Stack(s) => {
+                    let field_stack = Stack {
+                        offset: s.offset - byte_offset,
+                        access_size: Stack::access_size(&self.des.ty),
+                    };
+                    target
+                        .assembler
+                        .alloc
+                        .store_variable(&self.des, field_stack);
+                }
+                Location::Reg(r) => {
+                    // Pointer value in register: r holds the struct address; compute field address.
+                    let field_addr = if byte_offset == 0 {
+                        *r
+                    } else {
+                        let new_reg = target.assembler.alloc.vreg::<Reg64>();
+                        target.assembler.mov(new_reg, *r);
+                        target.assembler.add(new_reg, byte_offset as i64);
+                        new_reg
+                    };
+                    target
+                        .assembler
+                        .alloc
+                        .store_variable(&self.des, Location::Reg(field_addr));
+                }
+                _ => panic!("IElemGet: unexpected location for aggregate base: {resolved_base:?}"),
+            }
+            return Ok(());
+        }
+
         let index_reg = target.assembler.materialize_value(&index);
 
-        let base = target.assembler.materialize_address(base_ptr);
+        let base = target.assembler.materialize_address(resolved_base);
 
         let out = target.assembler.alloc.vreg::<Reg64>();
 

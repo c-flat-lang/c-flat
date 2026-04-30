@@ -8,7 +8,7 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
     Assembler, Reg, Reg8, Reg16, Reg32, Reg64, Stack,
 };
 use crate::backend::{Context, Lower};
-use crate::ir;
+use crate::ir::{self, AbiChunk, Type};
 use crate::passes::{DebugPass, PassOutput};
 use assembler::Location;
 
@@ -97,24 +97,92 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
             .set_section(assembler::FunctionSection::Body);
         // Args
         target.assembler.comment("-- args --");
-        for (index, arg) in self.params.iter().enumerate() {
-            let arg_size = Stack::access_size(&arg.ty);
-            let Some(reg): Option<Reg> = (match arg_size {
-                1 => target.assembler.arg_regs::<Reg8>(index).map(Reg8::into),
-                2 => target.assembler.arg_regs::<Reg16>(index).map(Reg16::into),
-                4 => target.assembler.arg_regs::<Reg32>(index).map(Reg32::into),
-                8 => target.assembler.arg_regs::<Reg64>(index).map(Reg64::into),
-
-                _ => unreachable!(),
-            }) else {
-                panic!("Too many arguments in function {}", self.name);
-            };
-            let arg_stack_memory = target.assembler.alloc.alloc_stack(&arg.ty, 1);
-            target
-                .assembler
-                .comment(format!("arg {}: {}", index, arg.name));
-            target.assembler.mov(arg_stack_memory, reg);
-            target.assembler.alloc.store_variable(arg, arg_stack_memory);
+        let mut gp_idx = 0usize;
+        let mut xmm_idx = 0usize;
+        for arg in self.params.iter() {
+            let arg_stack = target.assembler.alloc.alloc_stack(&arg.ty, 1);
+            target.assembler.comment(format!("arg: {}", arg.name));
+            match &arg.ty {
+                Type::Struct(s) => {
+                    match s.abi_chunks() {
+                        Some(chunks) => {
+                            for (chunk_idx, chunk) in chunks.iter().enumerate() {
+                                let chunk_dst = Stack {
+                                    offset: arg_stack.offset - (chunk_idx as i32 * 8),
+                                    access_size: 8,
+                                };
+                                match chunk {
+                                    AbiChunk::Integer => {
+                                        let gp: Reg64 = target
+                                            .assembler
+                                            .arg_regs(gp_idx)
+                                            .expect("too many GP params");
+                                        target.assembler.mov(Location::Stack(chunk_dst), gp);
+                                        gp_idx += 1;
+                                    }
+                                    AbiChunk::Sse => {
+                                        let xmm = target
+                                            .assembler
+                                            .xmm_arg_reg(xmm_idx)
+                                            .expect("too many XMM params");
+                                        target.assembler.movsd(Location::Stack(chunk_dst), xmm);
+                                        xmm_idx += 1;
+                                    }
+                                }
+                            }
+                        }
+                        None => {
+                            // MEMORY class: passed as pointer in GP reg
+                            let ptr: Reg64 =
+                                target.assembler.arg_regs(gp_idx).expect("too many params");
+                            target.assembler.mov(Location::Stack(arg_stack), ptr);
+                            gp_idx += 1;
+                        }
+                    }
+                }
+                Type::Float(32) => {
+                    let xmm = target
+                        .assembler
+                        .xmm_arg_reg(xmm_idx)
+                        .expect("too many XMM params");
+                    target.assembler.movss(Location::Stack(arg_stack), xmm);
+                    xmm_idx += 1;
+                }
+                Type::Float(64) => {
+                    let xmm = target
+                        .assembler
+                        .xmm_arg_reg(xmm_idx)
+                        .expect("too many XMM params");
+                    target.assembler.movsd(Location::Stack(arg_stack), xmm);
+                    xmm_idx += 1;
+                }
+                _ => {
+                    let arg_size = Stack::access_size(&arg.ty);
+                    let reg: Reg = (match arg_size {
+                        1 => target
+                            .assembler
+                            .arg_regs::<Reg8>(gp_idx)
+                            .map(|r| Reg::from(r)),
+                        2 => target
+                            .assembler
+                            .arg_regs::<Reg16>(gp_idx)
+                            .map(|r| Reg::from(r)),
+                        4 => target
+                            .assembler
+                            .arg_regs::<Reg32>(gp_idx)
+                            .map(|r| Reg::from(r)),
+                        8 => target
+                            .assembler
+                            .arg_regs::<Reg64>(gp_idx)
+                            .map(|r| Reg::from(r)),
+                        _ => unreachable!(),
+                    })
+                    .expect("too many args");
+                    target.assembler.mov(Location::Stack(arg_stack), reg);
+                    gp_idx += 1;
+                }
+            }
+            target.assembler.alloc.store_variable(arg, arg_stack);
         }
 
         target

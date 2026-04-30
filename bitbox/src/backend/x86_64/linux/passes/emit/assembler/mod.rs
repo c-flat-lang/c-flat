@@ -25,7 +25,7 @@ impl Stack {
             Type::Unsigned(bits) | Type::Signed(bits) | Type::Float(bits) => *bits as i32 / 8,
             Type::Pointer(_) => 8,
             Type::Array(_, elem) => Self::access_size(elem),
-            Type::Struct(_) => todo!("Size of struct"),
+            Type::Struct(_) => 8,
             Type::Void => 0,
         }
     }
@@ -466,6 +466,22 @@ impl Assembler {
         )
     }
 
+    /// Returns the XMM argument register at position `index` (xmm0–xmm7).
+    pub fn xmm_arg_reg(&self, index: usize) -> Option<XmmReg> {
+        [
+            XmmReg::Xmm0,
+            XmmReg::Xmm1,
+            XmmReg::Xmm2,
+            XmmReg::Xmm3,
+            XmmReg::Xmm4,
+            XmmReg::Xmm5,
+            XmmReg::Xmm6,
+            XmmReg::Xmm7,
+        ]
+        .get(index)
+        .copied()
+    }
+
     pub fn materialize_address(&mut self, loc: &Location) -> Reg {
         match loc {
             Location::Address(slot) => {
@@ -484,6 +500,12 @@ impl Assembler {
                 let r = self.alloc.vreg::<Reg64>();
                 self.lea(r, Location::MemIndexed(mem.clone()));
                 r
+            }
+
+            l @ Location::Reg(_) => {
+                // For pointer variables, the register value IS the address.
+                let Location::Reg(r) = l else { unreachable!() };
+                *r
             }
 
             l => {

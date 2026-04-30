@@ -241,12 +241,11 @@ impl Lowerable for ExprStruct {
 
         let ptr = assembler.var(ty.clone());
 
-        let size = Operand::ConstantInt(ir::ConstantInt::new(
-            (ty.size() * fields.len() as i32).to_string(),
-            Type::Signed(32),
-        ));
-
-        assembler.alloc(Type::Signed(32), ptr.clone(), size);
+        assembler.alloc(
+            ty.clone(),
+            ptr.clone(),
+            Operand::ConstantInt(ir::ConstantInt::new("1".to_string(), Type::Signed(32))),
+        );
 
         for (index, symbol_field) in fields.iter().enumerate() {
             let value = self
@@ -288,8 +287,13 @@ impl Lowerable for ExprMemberAccess {
         let Some(ptr) = self.base.lower(assembler, ctx) else {
             panic!("Failed to return variable from expr lowering in MemberAccess");
         };
-        let Type::Struct(StructType { fields, .. }) = &ptr.ty else {
-            panic!("Expected struct type");
+        let fields = match &ptr.ty {
+            ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+            ir::Type::Pointer(inner) => match inner.as_ref() {
+                ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+                _ => panic!("Expected pointer to struct type in MemberAccess"),
+            },
+            _ => panic!("Expected struct type in MemberAccess"),
         };
         let Some((idx, (_, field_ty))) = fields
             .iter()

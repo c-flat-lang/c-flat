@@ -144,25 +144,45 @@ pub struct StructType {
     pub packed: bool,
 }
 
+/// System V AMD64 ABI chunk classification for register-passing.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AbiChunk {
+    /// INTEGER class: passed in next GP register (rdi, rsi, ...).
+    Integer,
+    /// SSE class: passed in next XMM register (xmm0, xmm1, ...).
+    Sse,
+}
+
 impl StructType {
+    /// Total byte size of this struct (sum of all field sizes, no padding yet).
     pub fn size(&self) -> i32 {
-        // TODO: alignment is needed
-        // s32 -> 4 padding of 4
-        // 264 -> 8
-        // but
-        // s32 -> 4
-        // s32 -> 4
-        // no padding is needed?
-        // 264 -> 8
-        // but
-        // s32 -> 4
-        // 264 -> 8
-        // s32 -> 4
-        // padding is needed cause of the order
-        self.fields.iter().fold(
-            0,
-            |acc, (_, ty)| if acc > ty.size() { acc } else { ty.size() },
-        )
+        self.fields.iter().map(|(_, ty)| ty.size()).sum()
+    }
+
+    /// Byte offset of field at position `idx` within the struct.
+    pub fn field_offset(&self, idx: usize) -> i32 {
+        self.fields[..idx].iter().map(|(_, ty)| ty.size()).sum()
+    }
+
+    /// Returns the SysV AMD64 ABI chunks for passing this struct in registers.
+    /// Returns None if the struct is > 16 bytes (MEMORY class — must be passed by pointer).
+    pub fn abi_chunks(&self) -> Option<Vec<AbiChunk>> {
+        let size = self.size();
+        if size > 16 {
+            return None;
+        }
+        let num_chunks = ((size as usize) + 7) / 8;
+        let mut chunks = vec![AbiChunk::Sse; num_chunks];
+        let mut byte_offset = 0usize;
+        for (_, field_ty) in &self.fields {
+            let chunk_idx = byte_offset / 8;
+            match field_ty {
+                Type::Float(_) => {}                        // SSE stays
+                _ => chunks[chunk_idx] = AbiChunk::Integer, // INTEGER dominates
+            }
+            byte_offset += field_ty.size() as usize;
+        }
+        Some(chunks)
     }
 }
 
