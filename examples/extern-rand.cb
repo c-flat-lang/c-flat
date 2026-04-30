@@ -1,0 +1,27 @@
+// This example will only work for target=x86_64-linux
+extern C fn time(s32) s32;
+extern C fn srand(s32) void;
+extern C fn rand() s32;
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
+fn rand_range(min: s32, max: s32) s32 {
+    if min == max {
+        return min;
+    }
+    let r = rand();
+    return min + (r % (max - min));
+}
+
+pub fn main() void {
+    srand(time(0));
+
+    let mut count = 0;
+
+    while count < 10 {
+        let r = rand_range(0, 100);
+        write_int(r);
+        write_char(10);
+        count = count + 1;
+    }
+}

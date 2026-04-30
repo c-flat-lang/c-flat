@@ -115,7 +115,8 @@ impl CompilerResult {
                 std::fs::write(&asm_path, asm.as_bytes()).expect("Failed to write assembly file");
                 let runtime_src = include_str!("../../../runtime.c");
                 if !std::path::Path::new("bin/runtime.c").exists() {
-                    std::fs::write("bin/runtime.c", runtime_src).expect("Failed to write runtime C file");
+                    std::fs::write("bin/runtime.c", runtime_src)
+                        .expect("Failed to write runtime C file");
                 }
 
                 let cmd_result = Command::new("gcc")

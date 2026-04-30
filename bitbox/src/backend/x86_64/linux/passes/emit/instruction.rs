@@ -345,13 +345,19 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IDiv {
                 let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
                 target.assembler.movss(lhs_xmm, lhs);
                 target.assembler.divss(lhs_xmm, rhs);
-                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
             }
             Type::Float(64) => {
                 let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
                 target.assembler.movsd(lhs_xmm, lhs);
                 target.assembler.divsd(lhs_xmm, rhs);
-                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
             }
             Type::Unsigned(bits) => todo!("@div u{bits}"),
             ty => panic!("Division not supported for type {:?}", ty),
@@ -400,18 +406,27 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IMul {
                 let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
                 target.assembler.movss(lhs_xmm, lhs);
                 target.assembler.mulss(lhs_xmm, rhs);
-                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
             }
             Type::Float(64) => {
                 let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
                 target.assembler.movsd(lhs_xmm, lhs);
                 target.assembler.mulsd(lhs_xmm, rhs);
-                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_xmm));
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_xmm));
             }
             _ => {
                 let lhs_reg = target.assembler.materialize_value(&lhs);
                 target.assembler.imul(lhs_reg, rhs);
-                target.assembler.alloc.store_variable(&self.des, Location::Reg(lhs_reg));
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_reg));
             }
         }
 
