@@ -159,22 +159,10 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
                 _ => {
                     let arg_size = Stack::access_size(&arg.ty);
                     let reg: Reg = (match arg_size {
-                        1 => target
-                            .assembler
-                            .arg_regs::<Reg8>(gp_idx)
-                            .map(|r| Reg::from(r)),
-                        2 => target
-                            .assembler
-                            .arg_regs::<Reg16>(gp_idx)
-                            .map(|r| Reg::from(r)),
-                        4 => target
-                            .assembler
-                            .arg_regs::<Reg32>(gp_idx)
-                            .map(|r| Reg::from(r)),
-                        8 => target
-                            .assembler
-                            .arg_regs::<Reg64>(gp_idx)
-                            .map(|r| Reg::from(r)),
+                        1 => target.assembler.arg_regs::<Reg8>(gp_idx).map(Reg::from),
+                        2 => target.assembler.arg_regs::<Reg16>(gp_idx).map(Reg::from),
+                        4 => target.assembler.arg_regs::<Reg32>(gp_idx).map(Reg::from),
+                        8 => target.assembler.arg_regs::<Reg64>(gp_idx).map(Reg::from),
                         _ => unreachable!(),
                     })
                     .expect("too many args");

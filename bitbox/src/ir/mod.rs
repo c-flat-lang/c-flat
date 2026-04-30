@@ -171,7 +171,7 @@ impl StructType {
         if size > 16 {
             return None;
         }
-        let num_chunks = ((size as usize) + 7) / 8;
+        let num_chunks = (size as usize).div_ceil(8);
         let mut chunks = vec![AbiChunk::Sse; num_chunks];
         let mut byte_offset = 0usize;
         for (_, field_ty) in &self.fields {
