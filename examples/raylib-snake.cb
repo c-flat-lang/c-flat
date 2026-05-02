@@ -1,34 +1,17 @@
-// TODO: implement >= and <=
-// TODO: implement Slices
+// BUILD WITH
+// cargo run --features "debug" -- \
+// --target=x86_64-linux \
+// # this may need to be adjusted depending on where raylib is on your system
+// --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
+// examples/raylib-snake2.cb
 
 // runtime.c
-// extern C {
-//     fn write_float(f32) void;
-//     fn write_char(u8) void;
-//     fn write_int(s32) void;
-//     fn write_char(u8) void;
-// }
 extern C fn write_int(s32) void;
 extern C fn write_u8(u8) void;
 extern C fn write_float(f32) void;
 extern C fn write_char(u8) void;
 
 // RAYLIB
-
-// extern C {
-//     fn InitWindow as init_window(s32, s32, *[25; u8]) void; extern C fn BeginDrawing as begin_drawing() void;
-//     fn EndDrawing as end_drawing() void;
-//     fn CloseWindow as close_window() void;
-//     fn SetTargetFPS as set_target_fps(s32) void;
-//     fn WindowShouldClose as window_should_close() bool;
-//     fn ClearBackground as clear_background(u32) void;
-//     fn DrawText as draw_text(*[8; u8], s32, s32, s32, s32) void;
-//     fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, s32) void;
-//     fn IsKeyPressed as is_key_pressed(s32, s32, s32, s32, s32) bool;
-//     fn GetFrameTime as get_frame_time() f32;
-//     fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
-// }
-
 type Rectangle struct {
     x: f32,
     y: f32,
@@ -36,24 +19,26 @@ type Rectangle struct {
     height: f32,
 }
 
+type Color struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+}
 extern C fn InitWindow as init_window(s32, s32, *[25; u8]) void; extern C fn BeginDrawing as begin_drawing() void;
 extern C fn EndDrawing as end_drawing() void;
 extern C fn CloseWindow as close_window() void;
 extern C fn SetTargetFPS as set_target_fps(s32) void;
 extern C fn WindowShouldClose as window_should_close() bool;
-extern C fn ClearBackground as clear_background(u32) void;
+extern C fn ClearBackground as clear_background(Color) void;
 extern C fn DrawText as draw_text(*[8; u8], s32, s32, s32, s32) void;
-extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, s32) void;
-extern C fn IsKeyPressed as is_key_pressed(s32, s32, s32, s32, s32) bool;
+extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
+extern C fn IsKeyPressed as is_key_pressed(s32) bool;
+extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
 extern C fn GetFrameTime as get_frame_time() f32;
 extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
 
 // libc
-// extern C {
-//     fn time(s32) s32;
-//     fn srand(s32) void;
-//     fn rand() s32;
-// }
 extern C fn time(s32) s32;
 extern C fn srand(s32) void;
 extern C fn rand() s32;
@@ -116,63 +101,36 @@ fn playerIsCollidingWithFood(player_x: s32, player_y: s32, food_x: s32, food_y: 
     return check_collision_recs(player_rect, food_rect);
 }
 
-type Player struct {
-    x: s32,
-    y: s32,
-    body: [32; u8],
-    last_moved: f32,
-    speed: f32,
-    direction: u8,
-}
-
-fn Player_new() Player {
-    let player: Player = Player {
-        .x = 10,
-        .y = 10,
-        .body = [0;32],
-        .last_moved = 0.0,
-        .speed = 0.2,
-        .direction = 3, // right
-    };
-    return player;
-}
-
-type Direction struct {
-    up: u8,
-    down: u8,
-    left: u8,
-    right: u8,
-}
-
-fn Direction_new() Direction {
-    let direction: Direction = Direction {
-        .up = 0,
-        .down = 1,
-        .left = 2,
-        .right = 3,
-    };
-    return direction;
-}
-
-type Food struct {
-    x: s32,
-    y: s32,
-    is_alive: bool,
-}
-
-fn Food_new(screen_width: s32, screen_height: s32, cell_size: s32) Food {
-    // let x: s32 = rand_range(0, screen_width / cell_size);
-    // let y: s32 = rand_range(0, screen_height / cell_size);
-    let food: Food = Food {
-        .x = 10,
-        .y = 20,
-        .is_alive = true,
-    };
-    return food;
-}
-
 pub fn main() s32 {
     srand(time(0));
+
+    let background_color = Color {
+        .r = 40,
+        .g = 44,
+        .b = 52,
+        .a = 255,
+    };
+
+    let player_color = Color {
+        .r = 90,
+        .g = 157,
+        .b = 51,
+        .a = 255,
+    };
+
+    let player_body_color = Color {
+        .r = 57,
+        .g = 137,
+        .b = 52,
+        .a = 255,
+    };
+
+    let food_color = Color {
+        .r = 255,
+        .g = 0,
+        .b = 0,
+        .a = 255,
+    };
 
     // KEYCODES
     let key_w: s32 = 87;
@@ -180,96 +138,170 @@ pub fn main() s32 {
     let key_d: s32 = 68;
     let key_a: s32 = 65;
 
-    let screen_width = 1920;
-    let screen_height = 1080;
+    let GAMEPAD_BUTTON_LEFT_FACE_UP = 1;
+    let GAMEPAD_BUTTON_LEFT_FACE_RIGHT = 2;
+    let GAMEPAD_BUTTON_LEFT_FACE_DOWN = 3;
+    let GAMEPAD_BUTTON_LEFT_FACE_LEFT = 4;
 
     let CELL_SIZE: s32 = 32;
+    let screen_width = 40 * CELL_SIZE;
+    let screen_height = 25 * CELL_SIZE;
 
+    let DIRECTION_UP: u8 = 0;
+    let DIRECTION_DOWN: u8 = 1;
+    let DIRECTION_LEFT: u8 = 2;
+    let DIRECTION_RIGHT: u8 = 3;
 
     // PLAYER
-    let player: Player = Player_new();
+    let player_x: s32  = screen_width / (2 * CELL_SIZE);
+    let player_y: s32 = screen_height / (2 * CELL_SIZE);
+    let player_body: [32; u8] = [0;32];
+    let player_body_x: [32; s32] = [0;32];
+    let player_body_y: [32; s32] = [0;32];
+    let player_body_index: s32 = 0;
+    let player_last_moved: f32 = 0.0;
+    let player_speed: f32 = 0.2;
+    let player_direction: u8 = DIRECTION_RIGHT;
 
-    // debug_int(120, player.x);
-    // debug_int(121, player.y);
-    // debug_float(108, player.last_moved);
-    // debug_float(115, player.speed);
-    // debug_u8(100, player.direction);
 
-    let direction = Direction_new();
 
     // FOOD
-    let food: Food = Food_new(CELL_SIZE, screen_width, screen_height, CELL_SIZE);
+    let food_x: s32 = rand_range(0, screen_width / CELL_SIZE);
+    let food_y: s32 = rand_range(0, screen_height / CELL_SIZE);
 
     let title: [25; u8] = #"raylib c-flat snake demo\0"#;
     init_window(screen_width, screen_height, &title);
 
     let text: [8; u8] = #"Score: \0"#;
+    let score: [2; u8]  = #"0\0"#;
 
     set_target_fps(60);
     while !window_should_close() {
-        // --------------------------------------------
+        // --------------UPDATE--------------
         let delta = get_frame_time();
 
         if is_key_pressed(key_w) {
-            player.direction = direction.up;
+            player_direction = DIRECTION_UP;
         }
+        if is_gamepad_button_pressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP) {
+            player_direction = DIRECTION_UP;
+        }
+
         if is_key_pressed(key_s) {
-            player.direction = direction.down;
+            player_direction = DIRECTION_DOWN;
         }
+        if is_gamepad_button_pressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN) {
+            player_direction = DIRECTION_DOWN;
+        }
+
         if is_key_pressed(key_d) {
-            player.direction = direction.right;
+            player_direction = DIRECTION_RIGHT;
         }
+        if is_gamepad_button_pressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) {
+            player_direction = DIRECTION_RIGHT;
+        }
+
         if is_key_pressed(key_a) {
-            player.direction = direction.left;
+            player_direction = DIRECTION_LEFT;
+        }
+        if is_gamepad_button_pressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT) {
+            player_direction = DIRECTION_LEFT;
         }
 
-        player.last_moved = player.last_moved + delta;
+        player_last_moved = player_last_moved + delta;
 
-        if player.last_moved > player.speed {
-            if player.direction == direction.up {
-                player.y = player.y - 1;
-            } else if player.direction == direction.down {
-                player.y = player.y + 1;
-            } else if player.direction == direction.right {
-                player.x = player.x + 1;
-            } else if player.direction == direction.left {
-                player.x = player.x - 1;
+        if player_last_moved > player_speed {
+            let is_collided = playerIsCollidingWithFood(player_x, player_y, food_x, food_y);
+            let mut prev_x = player_x;
+            let mut prev_y = player_y;
+
+            if player_direction == DIRECTION_UP and player_y == 0 {
+                player_y = (screen_height / CELL_SIZE) - 1;
+            } else if player_direction == DIRECTION_UP {
+                player_y = player_y - 1;
+            } else if player_direction == DIRECTION_DOWN {
+                player_y = (player_y + 1) % (screen_height / CELL_SIZE);
+            } else if player_direction == DIRECTION_RIGHT {
+                player_x = (player_x + 1) % (screen_width / CELL_SIZE);
+            } else if player_direction == DIRECTION_LEFT and player_x == 0 {
+                player_x = (screen_width / CELL_SIZE) - 1;
+            } else if player_direction == DIRECTION_LEFT {
+                player_x = player_x - 1;
             }
-            player.last_moved = 0.0;
+
+            player_last_moved = 0.0;
+
+
+            if is_collided {
+                player_body[player_body_index] = 1;
+                player_body_x[player_body_index] = prev_x;
+                player_body_y[player_body_index] = prev_y;
+                player_body_index = player_body_index + 1;
+                food_x = rand_range(0, screen_width / CELL_SIZE);
+                food_y = rand_range(0, screen_width / CELL_SIZE);
+                // score[0] = score[0] + 1;
+                // food_color.r = rand_range(0, 256);
+                // food_color.g = rand_range(0, 256);
+                // food_color.b = rand_range(0, 256);
+            }
+
+
+            let mut body_index_1 = 0;
+            while body_index_1 < player_body_index {
+                let current_x = player_body_x[body_index_1];
+                let current_y = player_body_y[body_index_1];
+                player_body_x[body_index_1] = prev_x;
+                player_body_y[body_index_1] = prev_y;
+                prev_x = current_x;
+                prev_y = current_y;
+                body_index_1 = body_index_1 + 1;
+            }
+
+
         }
 
-        if food.is_alive and playerIsCollidingWithFood(player.x, player.y, food.x, food.y) {
-            food.is_alive = false;
-        }
-
-        // --------------------------------------------
+        // ---------------DRAW---------------
 
         begin_drawing();
-        clear_background(0xFF_FF_FF_FF);
+        clear_background(background_color);
 
-        draw_text(&text, 10, 10, 30, 0xFF_00_00_00);
-
-        debug_int(120, player.x);
-        debug_float(108, player.last_moved);
-        // debug_int(121, player.y);
-
+        // FOOD
+        let fx = food_x * CELL_SIZE;
+        let fy = food_y * CELL_SIZE;
         draw_rectangle(
-            player.x * CELL_SIZE,
-            player.y * CELL_SIZE,
+            fx,
+            fy,
             CELL_SIZE,
             CELL_SIZE,
-            0xFF_00_28_28,
+            food_color
         );
 
-        if food.is_alive {
+        // PLAYER
+        draw_rectangle(
+            player_x * CELL_SIZE,
+            player_y * CELL_SIZE,
+            CELL_SIZE,
+            CELL_SIZE,
+            player_color
+        );
+
+        let mut body_index = 0;
+        while body_index < player_body_index {
+            let bx = player_body_x[body_index] * CELL_SIZE;
+            let by = player_body_y[body_index] * CELL_SIZE;
             draw_rectangle(
-                food.x * CELL_SIZE,
-                food.y * CELL_SIZE,
+                bx,
+                by,
                 CELL_SIZE,
                 CELL_SIZE,
-                0xFF_FF_00_FF,
+                player_body_color
             );
+            body_index = body_index + 1;
         }
+
+
+        draw_text(&text, 10, 10, 30, 0xFF_00_00_00);
+        draw_text(&score, 120, 10, 30, 0xFF_00_00_00);
 
         end_drawing();
     }

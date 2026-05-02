@@ -34,3 +34,7 @@ crate-type = ["cdylib", "rlib"]
 [[bin]]
 name = "cflat"
 path = "src/main.rs"
+
+[profile.dev]
+opt-level = 0
+debug = true

@@ -125,8 +125,10 @@ impl SymbolTableBuilder {
         });
     }
 
-    fn walk_struct_expr(&mut self, _: &ast::ExprStruct) {
-        todo!("walk_expr_struct");
+    fn walk_struct_expr(&mut self, expr: &ast::ExprStruct) {
+        for field in expr.init_fields.iter() {
+            self.walk_expr(&field.expr);
+        }
     }
 
     fn walk_block(&mut self, block: &ast::ExprBlock) {
