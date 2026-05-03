@@ -222,6 +222,12 @@ fn block_pass(
                 ctx.local_function_variables
                     .add(function_name, inot.src.clone());
             }
+            crate::ir::Instruction::Cast(icast) => {
+                ctx.local_function_variables
+                    .add(function_name, icast.des.clone());
+                ctx.local_function_variables
+                    .add(function_name, icast.src.clone());
+            }
         }
     }
 }

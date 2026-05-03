@@ -261,6 +261,14 @@ pub enum Instruction {
     // Integer → float conversions
     Cvtsi2ss(Location, Location),
     Cvtsi2sd(Location, Location),
+    // Float → float conversions
+    Cvtss2sd(Location, Location),
+    Cvtsd2ss(Location, Location),
+    // Float → int conversions (truncating toward zero)
+    Cvttss2si(Location, Location),
+    Cvttsd2si(Location, Location),
+    // Sign-extending move
+    Movsx(Location, Location),
     // Integer division (rdx:rax implicit)
     Cqo,
     Idiv(Location),
@@ -317,6 +325,11 @@ impl std::fmt::Display for Instruction {
             Self::Ucomisd(dst, src) => write!(f, "  ucomisd {dst}, {src}"),
             Self::Cvtsi2ss(dst, src) => write!(f, "  cvtsi2ss {dst}, {src}"),
             Self::Cvtsi2sd(dst, src) => write!(f, "  cvtsi2sd {dst}, {src}"),
+            Self::Cvtss2sd(dst, src) => write!(f, "  cvtss2sd {dst}, {src}"),
+            Self::Cvtsd2ss(dst, src) => write!(f, "  cvtsd2ss {dst}, {src}"),
+            Self::Cvttss2si(dst, src) => write!(f, "  cvttss2si {dst}, {src}"),
+            Self::Cvttsd2si(dst, src) => write!(f, "  cvttsd2si {dst}, {src}"),
+            Self::Movsx(dst, src) => write!(f, "  movsx {dst}, {src}"),
             Self::Cqo => write!(f, "  cqo"),
             Self::Idiv(src) => write!(f, "  idiv {src}"),
         }
@@ -950,6 +963,46 @@ impl Assembler {
         self.push_to(
             self.current_section,
             Instruction::Cvtsi2sd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn cvtss2sd(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Cvtss2sd(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn cvtsd2ss(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Cvtsd2ss(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn cvttss2si(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Cvttss2si(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn cvttsd2si(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Cvttsd2si(dst.into(), src.into()),
+        );
+        self
+    }
+
+    pub fn movsx(&mut self, dst: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Movsx(dst.into(), src.into()),
         );
         self
     }

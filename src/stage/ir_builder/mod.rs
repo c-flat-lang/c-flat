@@ -12,7 +12,7 @@ use bitbox::ir::{
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
     ExprBlock, ExprCall, ExprDecl, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot, ExprReturn,
-    ExprStruct, ExprWhile, Litral, Struct,
+    ExprStruct, ExprTypeCast, ExprWhile, Litral, Struct,
 };
 
 #[derive(Debug, Default)]
@@ -199,6 +199,7 @@ impl Lowerable for Expr {
             Expr::AddressOf(expr) => expr.lower(assembler, ctx),
             Expr::Not(expr) => expr.lower(assembler, ctx),
             Expr::Grouping(expr) => expr.lower(assembler, ctx),
+            Expr::TypeCast(expr) => expr.lower(assembler, ctx),
         }
     }
 }
@@ -838,6 +839,35 @@ impl Lowerable for ExprGrouping {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         let des = self.expr.lower(assembler, ctx)?;
+        Some(des)
+    }
+}
+
+impl Lowerable for ExprTypeCast {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let src_var = self.expr.lower(assembler, ctx)?;
+        let des_ty = self.target_type.as_bitbox_type();
+        let src_ty = src_var.ty.clone();
+        let des = assembler.var(des_ty.clone());
+        let cast_kind = match (des_ty, src_ty) {
+            (Type::Signed(_), Type::Unsigned(_)) => ir::CastKind::UnsignedToSigned,
+            (Type::Unsigned(_), Type::Signed(_)) => ir::CastKind::SignedToUnsigned,
+            (Type::Float(_), Type::Signed(_)) => ir::CastKind::IntToFloat,
+            (Type::Float(_), Type::Unsigned(_)) => ir::CastKind::IntToFloat,
+            (Type::Signed(_), Type::Float(_)) => ir::CastKind::FloatToInt,
+            (Type::Unsigned(_), Type::Float(_)) => ir::CastKind::FloatToInt,
+            (dst, src) if dst == src => ir::CastKind::NoOp,
+            _ => unimplemented!(
+                "Unsupported cast from {:?} to {:?}",
+                src_var.ty,
+                self.target_type
+            ),
+        };
+        assembler.cast(des.clone(), src_var, cast_kind);
         Some(des)
     }
 }

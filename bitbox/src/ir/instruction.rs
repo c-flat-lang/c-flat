@@ -78,6 +78,8 @@ pub enum Instruction {
     /// `@not bool : <des>, <src>`
     /// Logical NOT: des = !src
     Not(INot),
+    /// `@cast <kind> <type> : <des>, <src>`
+    Cast(ICast),
 }
 
 impl fmt::Display for Instruction {
@@ -111,6 +113,7 @@ impl fmt::Display for Instruction {
             Self::Loop(iloop) => write!(f, "{iloop}"),
             Self::Ref(iref) => write!(f, "{iref}"),
             Self::Not(inot) => write!(f, "{inot}"),
+            Self::Cast(icast) => write!(f, "{icast}"),
         }
     }
 }
@@ -823,5 +826,85 @@ impl fmt::Display for INot {
 impl From<INot> for Instruction {
     fn from(i: INot) -> Self {
         Instruction::Not(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CastKind {
+    Truncate,
+    ZeroExtend,
+    SignExtend,
+    UnsignedToSigned,
+    SignedToUnsigned,
+    FloatToInt,
+    IntToFloat,
+    BitCast,
+    NoOp,
+}
+
+impl fmt::Display for CastKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let kind = match self {
+            Self::Truncate => "truncate",
+            Self::ZeroExtend => "zero-extend",
+            Self::SignExtend => "sign-extend",
+            Self::UnsignedToSigned => "unsigned-to-signed",
+            Self::SignedToUnsigned => "signed-to-unsigned",
+            Self::FloatToInt => "float-to-int",
+            Self::IntToFloat => "int-to-float",
+            Self::BitCast => "bitcast",
+            Self::NoOp => "noop",
+        };
+        write!(f, "{}", kind)
+    }
+}
+
+/// `@cast <type> : <des>, <src>, <kind>`
+/// Casts `src` to `type` using the specified `kind` of cast, and stores the result in `des`.
+/// `kind` can be one of:
+/// - `truncate`: to a smaller type (e.g. s32 to s8)
+/// - `zero-extend `: to a larger type (e.g. s32 to s64)
+/// - `sign-extend`: to a larger type (e.g. s32 to s64)
+/// - `unsigned-to-signed`: from an unsigned type to a signed type of the same size (e.g. u32 to s32)
+/// - `signed-to-unsigned`: from a signed type to an unsigned type of the same
+/// - `float-to-int`: from a floating point type to an integer type (e.g. f32 to s32)
+/// - `int-to-float`: from an integer type to a floating point type (e.g. s32 to f32)
+/// - `bitcast`: reinterpret the bits as another type (e.g. s32 to f32)
+/// Example:
+/// `@cast u8 : small, large, truncate `
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ICast {
+    pub kind: CastKind,
+    pub des: Variable,
+    pub src: Variable,
+}
+
+impl ICast {
+    pub fn new(des: impl Into<Variable>, src: impl Into<Variable>, kind: CastKind) -> Self {
+        Self {
+            kind,
+            des: des.into(),
+            src: src.into(),
+        }
+    }
+}
+
+impl fmt::Display for ICast {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}, {}",
+            Paint::blue("@cast"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_var(&self.src),
+            Paint::yellow(&self.kind),
+        )
+    }
+}
+
+impl From<ICast> for Instruction {
+    fn from(i: ICast) -> Self {
+        Instruction::Cast(i)
     }
 }

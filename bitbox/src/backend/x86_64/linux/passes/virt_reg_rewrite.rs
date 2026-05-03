@@ -159,6 +159,11 @@ fn map_locations(
         Instruction::Ucomisd(a, b) => Instruction::Ucomisd(rw(a), rw(b)),
         Instruction::Cvtsi2ss(a, b) => Instruction::Cvtsi2ss(rw(a), rw(b)),
         Instruction::Cvtsi2sd(a, b) => Instruction::Cvtsi2sd(rw(a), rw(b)),
+        Instruction::Cvtss2sd(a, b) => Instruction::Cvtss2sd(rw(a), rw(b)),
+        Instruction::Cvtsd2ss(a, b) => Instruction::Cvtsd2ss(rw(a), rw(b)),
+        Instruction::Cvttss2si(a, b) => Instruction::Cvttss2si(rw(a), rw(b)),
+        Instruction::Cvttsd2si(a, b) => Instruction::Cvttsd2si(rw(a), rw(b)),
+        Instruction::Movsx(a, b) => Instruction::Movsx(rw(a), rw(b)),
         Instruction::Idiv(a) => Instruction::Idiv(rw(a)),
         other => other,
     }
