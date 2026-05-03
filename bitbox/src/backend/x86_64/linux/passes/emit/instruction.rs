@@ -6,8 +6,8 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 };
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf,
-    ILt, IMul, INot, IRef, IRem, IReturn, ISub,
+    CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte,
+    IJump, IJumpIf, ILt, IMul, INot, IRef, IRem, IReturn, ISub,
 };
 use crate::ir::{AbiChunk, Operand, Type};
 
@@ -1399,6 +1399,155 @@ impl Lower<X86_64LinuxLowerContext<'_>> for INot {
         let out = target.assembler.alloc.vreg::<Reg64>();
         target.assembler.movezx(out, flag_reg);
         target.assembler.alloc.store_variable(&self.des, out);
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
+    type Output = ();
+    fn lower(
+        &self,
+        _ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering cast");
+        let src = Operand::Variable(self.src.clone()).lower(_ctx, target)?;
+        let src_val = target.assembler.materialize_value(&src);
+        let src_ty = self.src.ty.clone();
+        let dst_ty = self.des.ty.clone();
+
+        match self.kind {
+            // ── Sign-extend: smaller signed → larger signed ─────────────────
+            CastKind::SignExtend => {
+                let dst_reg = target.assembler.alloc.vreg::<Reg64>();
+                let sized_src = match src_ty.size() {
+                    1 => src_val.cast_to::<Reg8>(),
+                    2 => src_val.cast_to::<Reg16>(),
+                    4 => src_val.cast_to::<Reg32>(),
+                    _ => src_val,
+                };
+                target.assembler.movsx(dst_reg, sized_src);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(dst_reg));
+            }
+
+            // ── Zero-extend: smaller unsigned/bool → larger type ─────────────
+            CastKind::ZeroExtend => {
+                let dst_reg = target.assembler.alloc.vreg::<Reg64>();
+                let sized_src = match src_ty.size() {
+                    1 => src_val.cast_to::<Reg8>(),
+                    2 => src_val.cast_to::<Reg16>(),
+                    4 => src_val.cast_to::<Reg32>(),
+                    _ => src_val,
+                };
+                target.assembler.movezx(dst_reg, sized_src);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(dst_reg));
+            }
+
+            // ── Truncate: larger int → smaller int ───────────────────────────
+            CastKind::Truncate => {
+                let dst_reg = target.assembler.alloc.vreg::<Reg64>();
+                // mov the full value, then narrow the register reference for the output.
+                target.assembler.mov(dst_reg, src_val);
+                let narrowed = match dst_ty.size() {
+                    1 => dst_reg.cast_to::<Reg8>(),
+                    2 => dst_reg.cast_to::<Reg16>(),
+                    4 => dst_reg.cast_to::<Reg32>(),
+                    _ => dst_reg,
+                };
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(narrowed));
+            }
+
+            // ── Int → Float ──────────────────────────────────────────────────
+            CastKind::IntToFloat => {
+                let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                // cvtsi2ss/cvtsi2sd expect a 32- or 64-bit GP register source.
+                let gp_src = match src_ty.size() {
+                    8 => src_val,
+                    _ => src_val.cast_to::<Reg32>(),
+                };
+                match &dst_ty {
+                    Type::Float(32) => target.assembler.cvtsi2ss(Location::Reg(xmm), gp_src),
+                    Type::Float(64) => target.assembler.cvtsi2sd(Location::Reg(xmm), gp_src),
+                    _ => panic!(
+                        "ICast IntToFloat: destination must be Float, got {:?}",
+                        dst_ty
+                    ),
+                };
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(xmm));
+            }
+
+            // ── Float → Int (truncating toward zero) ─────────────────────────
+            CastKind::FloatToInt => {
+                let dst_reg = target.assembler.alloc.vreg::<Reg64>();
+                let gp_dst = match dst_ty.size() {
+                    8 => dst_reg,
+                    _ => dst_reg.cast_to::<Reg32>(),
+                };
+                match &src_ty {
+                    Type::Float(32) => target.assembler.cvttss2si(gp_dst, src_val),
+                    Type::Float(64) => target.assembler.cvttsd2si(gp_dst, src_val),
+                    _ => panic!("ICast FloatToInt: source must be Float, got {:?}", src_ty),
+                };
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(dst_reg));
+            }
+
+            // ── Float width conversion ────────────────────────────────────────
+            CastKind::BitCast
+                if matches!((&src_ty, &dst_ty), (Type::Float(32), Type::Float(64))) =>
+            {
+                let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.cvtss2sd(Location::Reg(xmm), src_val);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(xmm));
+            }
+            CastKind::BitCast
+                if matches!((&src_ty, &dst_ty), (Type::Float(64), Type::Float(32))) =>
+            {
+                let xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.cvtsd2ss(Location::Reg(xmm), src_val);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(xmm));
+            }
+
+            // ── Signed ↔ Unsigned reinterpret (same bit width, no-op) ────────
+            CastKind::UnsignedToSigned
+            | CastKind::SignedToUnsigned
+            | CastKind::BitCast
+            | CastKind::NoOp => {
+                let dst_reg = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(dst_reg, src_val);
+                let narrowed = match dst_ty.size() {
+                    1 => dst_reg.cast_to::<Reg8>(),
+                    2 => dst_reg.cast_to::<Reg16>(),
+                    4 => dst_reg.cast_to::<Reg32>(),
+                    _ => dst_reg,
+                };
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(narrowed));
+            }
+        }
+
         Ok(())
     }
 }

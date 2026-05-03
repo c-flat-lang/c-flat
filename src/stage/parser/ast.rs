@@ -311,34 +311,51 @@ pub enum Expr {
     AddressOf(ExprAddressOf),
     Not(ExprNot),
     Grouping(ExprGrouping),
+    TypeCast(ExprTypeCast),
 }
 
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Self::Return(expr_return) => expr_return.span(),
-            Self::Struct(expr_struct) => expr_struct.span(),
-            Self::Declare(expr_decl) => expr_decl.span(),
-            Self::Assignment(expr_assignment) => expr_assignment.span(),
+            Self::Return(expr) => expr.span(),
+            Self::Struct(expr) => expr.span(),
+            Self::Declare(expr) => expr.span(),
+            Self::Assignment(expr) => expr.span(),
             Self::Litral(litral) => litral.span(),
-            Self::Call(expr_call) => expr_call.span(),
-            Self::Binary(expr_binary) => expr_binary.span(),
-            Self::While(expr_while) => expr_while.span(),
+            Self::Call(expr) => expr.span(),
+            Self::Binary(expr) => expr.span(),
+            Self::While(expr) => expr.span(),
             Self::Identifier(token) => token.span.clone(),
-            Self::IfElse(expr_if_else) => expr_if_else.span(),
+            Self::IfElse(expr) => expr.span(),
             Self::MemberAccess(expr) => expr.span(),
             Self::Array(expr) => expr.span(),
             Self::ArrayIndex(expr) => expr.span(),
             Self::ArrayRepeat(expr) => expr.span(),
-            Self::Block(block) => block.span(),
+            Self::Block(expr) => expr.span(),
             Self::AddressOf(expr) => expr.span(),
             Self::Not(expr) => expr.span(),
-            Self::Grouping(grouping) => grouping.span(),
+            Self::Grouping(expr) => expr.span(),
+            Self::TypeCast(expr) => expr.span(),
         }
     }
 
     pub fn is_addressable(&self) -> bool {
         matches!(self, Expr::Identifier(..) | Expr::ArrayIndex(..))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprTypeCast {
+    pub as_token: Token,
+    pub expr: Box<Expr>,
+    pub target_type: Type,
+}
+
+impl ExprTypeCast {
+    pub fn span(&self) -> Span {
+        let start = self.as_token.span.start;
+        let end = self.expr.span().end;
+        start..end
     }
 }
 

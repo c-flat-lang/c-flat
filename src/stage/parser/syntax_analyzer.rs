@@ -440,7 +440,7 @@ impl Parser {
 
     fn parse_comparison(&mut self) -> Result<ast::Expr> {
         use TokenKind::*;
-        let mut left = self.parse_term()?;
+        let mut left = self.parse_type_casting()?;
         while let Some(op) = self.lexer.next_if(one_of(&[
             Greater,
             Less,
@@ -449,13 +449,30 @@ impl Parser {
             EqualEqual,
             BangEqual,
         ])) {
-            let right = self.parse_term()?;
+            let right = self.parse_type_casting()?;
             let binary_expr = ast::ExprBinary {
                 left: Box::new(left),
                 op,
                 right: Box::new(right),
             };
             left = ast::Expr::Binary(binary_expr);
+        }
+        Ok(left)
+    }
+
+    fn parse_type_casting(&mut self) -> Result<ast::Expr> {
+        let mut left = self.parse_term()?;
+        while let Some(op) = self
+            .lexer
+            .next_if(one_of(&[TokenKind::Keyword(Keyword::As)]))
+        {
+            let target_type = self.parse_type()?;
+            let binary_expr = ast::ExprTypeCast {
+                expr: Box::new(left),
+                target_type,
+                as_token: op,
+            };
+            left = ast::Expr::TypeCast(binary_expr)
         }
         Ok(left)
     }

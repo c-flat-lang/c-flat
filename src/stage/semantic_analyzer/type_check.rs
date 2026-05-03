@@ -205,6 +205,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Struct(expr) => self.walk_expr_struct(expr),
             ast::Expr::While(expr) => self.walk_expr_while(expr),
             ast::Expr::Grouping(expr_grouping) => self.walk_expr(&mut expr_grouping.expr),
+            ast::Expr::TypeCast(expr_cast) => expr_cast.target_type.clone(),
         }
     }
 
@@ -284,14 +285,19 @@ impl<'st> TypeChecker<'st> {
         }
     }
 
-    fn walk_expr_call(&mut self, expr: &ast::ExprCall) -> ast::Type {
+    fn walk_expr_call(&mut self, expr: &mut ast::ExprCall) -> ast::Type {
         let ast::Expr::Identifier(ident) = &expr.caller.as_ref() else {
             panic!("Caller must be an identifier");
         };
 
-        let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()) else {
+        let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()).cloned() else {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
+
+        for arg in expr.args.iter_mut() {
+            self.walk_expr(arg);
+        }
+
         symbol.ty.clone()
     }
 

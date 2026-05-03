@@ -2,9 +2,9 @@ use crate::{
     ir::{
         BasicBlock, BlockId, Instruction, Variable,
         instruction::{
-            IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte,
-            IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IRem,
-            IReturn, ISub, IXOr,
+            IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt,
+            IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef,
+            IRem, IReturn, ISub, IXOr,
         },
     },
     passes::{DebugPass, PassOutput},
@@ -307,6 +307,15 @@ impl LivenessAnalysis for INot {
     }
 }
 
+impl LivenessAnalysis for ICast {
+    fn uses(&self) -> Vec<Variable> {
+        vec![self.src.clone()]
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![self.des.clone()]
+    }
+}
+
 impl crate::ir::Instruction {
     pub fn uses(&self) -> Vec<Variable> {
         match self {
@@ -338,6 +347,7 @@ impl crate::ir::Instruction {
             Self::Loop(i) => i.uses(),
             Self::Ref(i) => i.uses(),
             Self::Not(i) => i.uses(),
+            Self::Cast(i) => i.uses(),
         }
     }
 
@@ -371,6 +381,7 @@ impl crate::ir::Instruction {
             Self::Loop(i) => i.defines(),
             Self::Ref(i) => i.defines(),
             Self::Not(i) => i.defines(),
+            Self::Cast(i) => i.defines(),
         }
     }
 }

@@ -2,9 +2,9 @@ use crate::ir::{
     BasicBlock, BlockId, Constant, ExternDecl, Function, Import, Instruction, Module, Operand,
     Type, Variable, Visibility,
     instruction::{
-        IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse,
-        IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub,
-        IXOr, Label,
+        CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt,
+        IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IRem,
+        IReturn, ISub, IXOr, Label,
     },
 };
 
@@ -219,8 +219,15 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
+    /// `@not <type> : <des>, <src>`
     pub fn not(&mut self, des: Variable, src: Variable) -> &mut Self {
         self.push_instruction(INot::new(des, src));
+        self
+    }
+
+    /// @cast <type> : <des>, <src>, <dest_ty>
+    pub fn cast(&mut self, des: Variable, src: Variable, cast_kind: CastKind) -> &mut Self {
+        self.push_instruction(ICast::new(des, src, cast_kind));
         self
     }
 

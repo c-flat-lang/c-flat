@@ -158,7 +158,11 @@ impl SymbolTableBuilder {
             Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
             Expr::Return(..) => todo!(),
             Expr::Litral(..) => {}
-            Expr::Array(..) => todo!(),
+            Expr::Array(expr_array) => {
+                for expr in expr_array.elements.iter() {
+                    self.walk_expr(expr);
+                }
+            }
             Expr::ArrayIndex(expr) => {
                 self.walk_expr(&expr.expr);
                 self.walk_expr(&expr.index);
@@ -171,6 +175,7 @@ impl SymbolTableBuilder {
             Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
             Expr::Not(expr) => self.walk_expr(&expr.expr),
             Expr::Grouping(expr_grouping) => self.walk_expr(&expr_grouping.expr),
+            Expr::TypeCast(cast) => self.walk_expr(&cast.expr),
         }
     }
 
