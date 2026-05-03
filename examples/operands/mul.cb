@@ -1,0 +1,14 @@
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
+fn printnumber(n: s32) void {
+    write_int(n);
+    write_char(10);
+}
+
+pub fn main() void {
+    let a: s32 = 10;
+    let b: s32 = 5;
+
+    printnumber(a * b);
+}
