@@ -109,6 +109,116 @@ fn compute_local_out_bound(blocks: &[BasicBlock]) -> HashMap<BlockId, Vec<BlockI
     out_bound
 }
 
+/// Handles the case where the then-branch spans multiple consecutive blocks and the
+/// then-block is therefore NOT a direct predecessor of the merge block.
+///
+/// Pattern: `cond` ends with `@jumpif cond_var, %then.*` + `@jump %merge_label`.
+/// All blocks between `then.*` and `merge_label` (exclusive) become the then-branch.
+fn try_raise_if_else_multi_block_in_blocks(blocks: &mut Vec<BasicBlock>) -> bool {
+    let label_to_idx: HashMap<&str, usize> = blocks
+        .iter()
+        .enumerate()
+        .map(|(i, b)| (b.label.as_str(), i))
+        .collect();
+
+    for cond_idx in 0..blocks.len() {
+        let Some((Instruction::JumpIf(jif), Instruction::Jump(ij))) = blocks[cond_idx]
+            .instructions
+            .last_chunk::<2>()
+            .map(|chunk| (chunk[0].clone(), chunk[1].clone()))
+        else {
+            continue;
+        };
+
+        let then_label = jif.label.clone();
+        let merge_label = ij.label.clone();
+
+        let is_then = then_label.starts_with("then.")
+            || then_label.starts_with("then_")
+            || then_label == "then";
+        if !is_then {
+            continue;
+        }
+
+        let Some(&then_idx) = label_to_idx.get(then_label.as_str()) else {
+            continue;
+        };
+        let Some(&merge_idx) = label_to_idx.get(merge_label.as_str()) else {
+            continue;
+        };
+
+        // Require strict ordering: cond < then < merge
+        if then_idx <= cond_idx || merge_idx <= then_idx {
+            continue;
+        }
+
+        let cond_result = if let Operand::Variable(v) = &jif.cond {
+            v.clone()
+        } else {
+            continue;
+        };
+
+        // Build cond instructions (strip trailing JumpIf + Jump)
+        let mut cond_insts = blocks[cond_idx].instructions.clone();
+        cond_insts.pop(); // Jump
+        cond_insts.pop(); // JumpIf
+
+        // Build then_branch: all blocks from then_idx up to (but not including) merge_idx
+        let then_branch: Vec<BasicBlock> = blocks[then_idx..merge_idx]
+            .iter()
+            .cloned()
+            .map(|mut bb| {
+                // Strip trailing jump to the merge block
+                if let Some(Instruction::Jump(j)) = bb.instructions.last()
+                    && j.label == merge_label
+                {
+                    bb.instructions.pop();
+                }
+                bb
+            })
+            .collect();
+
+        let merge_block_insts = blocks[merge_idx].instructions.clone();
+        let result = if let Some(Instruction::Phi(iphi)) = merge_block_insts.first() {
+            Some(iphi.des.clone())
+        } else {
+            None
+        };
+        let mut after_merge = merge_block_insts;
+        if result.is_some() && !after_merge.is_empty() {
+            after_merge.remove(0);
+        }
+
+        let iifelse = IIfElse {
+            cond: vec![BasicBlock {
+                id: BlockId(0),
+                label: String::new(),
+                instructions: cond_insts,
+            }],
+            cond_result,
+            then_branch,
+            else_branch: vec![],
+            result,
+        };
+
+        let mut new_insts = vec![Instruction::IfElse(iifelse)];
+        new_insts.extend(after_merge);
+
+        blocks[cond_idx].instructions = new_insts;
+
+        // Remove then-branch blocks and merge block (highest index first)
+        let mut to_remove: Vec<usize> = (then_idx..=merge_idx).collect();
+        to_remove.sort_unstable_by(|a, b| b.cmp(a));
+        for &r in &to_remove {
+            blocks.remove(r);
+        }
+
+        renumber_local_blocks(blocks);
+        return true;
+    }
+    false
+}
+
 /// Attempts to raise the first if-else pattern found in a local `Vec<BasicBlock>`.
 /// Returns `true` if an if-else was successfully raised.
 fn try_raise_if_else_in_blocks(blocks: &mut Vec<BasicBlock>) -> bool {
@@ -275,7 +385,8 @@ fn try_raise_if_else_in_blocks(blocks: &mut Vec<BasicBlock>) -> bool {
         renumber_local_blocks(blocks);
         return true;
     }
-    false
+    // Fall back to the multi-block then-branch strategy.
+    try_raise_if_else_multi_block_in_blocks(blocks)
 }
 
 fn renumber_local_blocks(blocks: &mut [BasicBlock]) {

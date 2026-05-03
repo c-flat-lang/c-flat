@@ -4,10 +4,10 @@ use super::Wasm32LowerContext;
 use crate::backend::Lower;
 
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump,
-    IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IReturn, ISub, IXOr,
+    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse,
+    IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IRef, IRem, IReturn, ISub, IXOr,
 };
-use crate::ir::{BasicBlock, Instruction, Type};
+use crate::ir::{BasicBlock, Instruction, Operand, Type};
 
 fn branch_terminates(blocks: &[BasicBlock]) -> bool {
     blocks.iter().any(|b| {
@@ -28,9 +28,9 @@ impl Lower<Wasm32LowerContext<'_>> for IAdd {
         self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_add(),
-            ValType::I64 => todo!("@gt i64"),
-            ValType::F32 => todo!("@gt f32"),
-            ValType::F64 => todo!("@gt f64"),
+            ValType::I64 => target.assembler.i64_add(),
+            ValType::F32 => target.assembler.f32_add(),
+            ValType::F64 => target.assembler.f64_add(),
             ValType::V128 => todo!("@gt v128"),
             ValType::Ref(_) => todo!("@gt ref"),
         };
@@ -63,6 +63,36 @@ impl Lower<Wasm32LowerContext<'_>> for ISub {
             ValType::F64 => todo!("@gt f64"),
             ValType::V128 => todo!("@gt v128"),
             ValType::Ref(_) => todo!("@gt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IDiv {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_div_s(),
+            ValType::I64 => target.assembler.i64_div_s(),
+            ValType::F32 => target.assembler.f32_div(),
+            ValType::F64 => target.assembler.f64_div(),
+            ValType::V128 => todo!("@div v128"),
+            ValType::Ref(_) => todo!("@div ref"),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -114,21 +144,28 @@ impl Lower<Wasm32LowerContext<'_>> for IAssign {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
+        self.src.lower(ctx, target)?;
+
+        let variables = ctx.local_function_variables.get(&target.function_name);
+        let Some(idx) = variables.iter().position(|v| v.name == self.des.name) else {
+            panic!(
+                "@assign des variable {:?} not found in {:?}",
+                self.des, target.function_name
+            );
+        };
         match self.des.ty.clone().into() {
             ValType::I32 => {
-                let variables = ctx.local_function_variables.get(&target.function_name);
-                let Some(idx) = variables.iter().position(|v| v.name == self.des.name) else {
-                    panic!(
-                        "@assign des variable {:?} not found in {:?}",
-                        self.des, target.function_name
-                    );
-                };
-                self.src.lower(ctx, target)?;
                 target.assembler.local_set(idx as u32);
             }
-            ValType::I64 => todo!("@assign i64"),
-            ValType::F32 => todo!("@assign f32"),
-            ValType::F64 => todo!("@assign f64"),
+            ValType::I64 => {
+                target.assembler.local_set(idx as u32);
+            }
+            ValType::F32 => {
+                target.assembler.local_set(idx as u32);
+            }
+            ValType::F64 => {
+                target.assembler.local_set(idx as u32);
+            }
             ValType::V128 => todo!("@assign v128"),
             ValType::Ref(_) => todo!("@assign ref"),
         }
@@ -267,17 +304,35 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
         self.ptr.lower(ctx, target)?;
         target.assembler.i32_add();
 
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_load(wasm_encoder::MemArg {
-                offset: 0,
-                align: 2,
-                memory_index: 0,
-            }),
-            ValType::I64 => todo!("@gt i64"),
-            ValType::F32 => todo!("@gt f32"),
-            ValType::F64 => todo!("@gt f64"),
-            ValType::V128 => todo!("@gt v128"),
-            ValType::Ref(_) => todo!("@gt ref"),
+        // Use narrow loads for sub-32-bit types so we don't read past the field.
+        let memarg_byte = wasm_encoder::MemArg {
+            offset: 0,
+            align: 0,
+            memory_index: 0,
+        };
+        let memarg_word = wasm_encoder::MemArg {
+            offset: 0,
+            align: 1,
+            memory_index: 0,
+        };
+        let memarg_dword = wasm_encoder::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        };
+        match &self.des.ty {
+            Type::Unsigned(1..=8) => target.assembler.i32_load8_u(memarg_byte),
+            Type::Signed(1..=8) => target.assembler.i32_load8_s(memarg_byte),
+            Type::Unsigned(9..=16) => target.assembler.i32_load16_u(memarg_word),
+            Type::Signed(9..=16) => target.assembler.i32_load16_s(memarg_word),
+            _ => match self.des.ty.clone().into() {
+                ValType::I32 => target.assembler.i32_load(memarg_dword),
+                ValType::I64 => todo!("@gt i64"),
+                ValType::F32 => todo!("@gt f32"),
+                ValType::F64 => todo!("@gt f64"),
+                ValType::V128 => todo!("@gt v128"),
+                ValType::Ref(_) => todo!("@gt ref"),
+            },
         };
 
         let variables = ctx.local_function_variables.get(&target.function_name);
@@ -296,9 +351,24 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        let ty = match self.addr.ty.clone() {
-            Type::Array(_, ty) => *ty,
-            ty => ty,
+        // For struct field access, look up the field type from the struct definition
+        // (not the value type — integer literals default to s32 even for u8 fields).
+        // For arrays, the element type already gives the correct stride.
+        let ty = match &self.addr.ty {
+            Type::Array(_, elem_ty) => *elem_ty.clone(),
+            Type::Struct(s) => {
+                // Struct field index is always a compile-time constant.
+                if let Operand::ConstantInt(ref c) = self.index {
+                    let idx: usize = c.value.parse().unwrap_or(0);
+                    s.fields
+                        .get(idx)
+                        .map(|(_, t)| t.clone())
+                        .unwrap_or(Type::Signed(32))
+                } else {
+                    Type::Signed(32)
+                }
+            }
+            ty => ty.clone(),
         };
         self.index.lower(ctx, target)?;
         target.assembler.i32_const(ty.size());
@@ -308,17 +378,26 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
         target.assembler.i32_add();
 
         self.value.lower(ctx, target)?;
-        match ty.into() {
-            ValType::I32 => target.assembler.i32_store(wasm_encoder::MemArg {
-                offset: 0,
-                align: 2,
-                memory_index: 0,
-            }),
-            ValType::I64 => todo!("@gt i64"),
-            ValType::F32 => todo!("@gt f32"),
-            ValType::F64 => todo!("@gt f64"),
-            ValType::V128 => todo!("@gt v128"),
-            ValType::Ref(_) => todo!("@gt ref"),
+        // Use narrow stores for sub-32-bit fields so we don't corrupt adjacent bytes.
+        let memarg_byte = wasm_encoder::MemArg {
+            offset: 0,
+            align: 0,
+            memory_index: 0,
+        };
+        let memarg_word = wasm_encoder::MemArg {
+            offset: 0,
+            align: 1,
+            memory_index: 0,
+        };
+        let memarg_dword = wasm_encoder::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        };
+        match ty.size() {
+            1 => target.assembler.i32_store8(memarg_byte),
+            2 => target.assembler.i32_store16(memarg_word),
+            _ => target.assembler.i32_store(memarg_dword),
         };
         Ok(())
     }
@@ -425,9 +504,9 @@ impl Lower<Wasm32LowerContext<'_>> for IGt {
         self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_gt_s(),
-            ValType::I64 => todo!("@gt i64"),
-            ValType::F32 => todo!("@gt f32"),
-            ValType::F64 => todo!("@gt f64"),
+            ValType::I64 => target.assembler.i64_gt_s(),
+            ValType::F32 => target.assembler.f32_gt(),
+            ValType::F64 => target.assembler.f64_gt(),
             ValType::V128 => todo!("@gt v128"),
             ValType::Ref(_) => todo!("@gt ref"),
         };
@@ -470,6 +549,39 @@ impl Lower<Wasm32LowerContext<'_>> for IGte {
             panic!("Variable {:?} not found", self.des);
         };
         target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IRem {
+    type Output = ();
+
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
+
+        match &self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_rem_s(),
+            ValType::I64 => target.assembler.i64_rem_s(),
+            ValType::F32 => todo!("@rem f32"),
+            ValType::F64 => todo!("@rem f64"),
+            ValType::V128 => todo!("@rem v128"),
+            ValType::Ref(_) => todo!("@rem ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+
         Ok(())
     }
 }
@@ -665,6 +777,61 @@ impl Lower<Wasm32LowerContext<'_>> for ILoop {
 
         target.assembler.end(); // end loop
         target.assembler.end(); // end block
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for IRef {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        let variables = ctx.local_function_variables.get(&target.function_name);
+        let Some(src_idx) = variables.iter().position(|v| v.name == self.src.name) else {
+            panic!("ref: src variable {:?} not found", self.src);
+        };
+        let Some(des_idx) = variables.iter().position(|v| v.name == self.des.name) else {
+            panic!("ref: des variable {:?} not found", self.des);
+        };
+
+        match &self.src.ty {
+            // Arrays and structs are already represented as i32 linear memory addresses
+            // (the result of IAlloc), so @ref is just copying that address.
+            Type::Array(_, _) | Type::Struct(_) => {
+                target.assembler.local_get(src_idx as u32);
+                target.assembler.local_set(des_idx as u32);
+            }
+            // Scalar locals don't live in linear memory. Spill to the bump-pointer heap
+            // so we can hand out a real address.
+            _ => {
+                let size = self.src.ty.size();
+                // des = heap_ptr  (save the address we're about to use)
+                target.assembler.global_get(0);
+                target.assembler.local_tee(des_idx as u32);
+                // store the value at [heap_ptr]
+                target.assembler.local_get(src_idx as u32);
+                match self.src.ty.clone().into() {
+                    ValType::I32 => target.assembler.i32_store(wasm_encoder::MemArg {
+                        offset: 0,
+                        align: 2,
+                        memory_index: 0,
+                    }),
+                    ValType::I64 => todo!("@ref spill i64"),
+                    ValType::F32 => todo!("@ref spill f32"),
+                    ValType::F64 => todo!("@ref spill f64"),
+                    ValType::V128 => todo!("@ref spill v128"),
+                    ValType::Ref(_) => todo!("@ref spill ref"),
+                };
+                // bump heap pointer
+                target.assembler.global_get(0);
+                target.assembler.i32_const(size);
+                target.assembler.i32_add();
+                target.assembler.global_set(0);
+            }
+        }
+
         Ok(())
     }
 }

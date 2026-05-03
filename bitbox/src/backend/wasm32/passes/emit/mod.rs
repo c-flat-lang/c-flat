@@ -6,7 +6,7 @@ use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::{DebugPass, Pass, PassOutput};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
-    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, ImportSection,
+    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, Ieee32, ImportSection,
     InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection, ValType,
 };
 
@@ -42,6 +42,9 @@ impl Pass for EmitWasm32Pass {
                 shared: false,
                 page_size_log2: None,
             });
+            module
+                .export_section
+                .export("memory", ExportKind::Memory, 0);
             module.global_section.global(
                 GlobalType {
                     val_type: ValType::I32,
@@ -50,6 +53,9 @@ impl Pass for EmitWasm32Pass {
                 },
                 &ConstExpr::i32_const(0),
             );
+            module
+                .export_section
+                .export("__stack_pointer", ExportKind::Global, 0);
         }
 
         // Emit all extern function declarations as wasm imports.
@@ -296,7 +302,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::XOr(ixor) => ixor.lower(ctx, target)?,
             ir::Instruction::Gt(igt) => igt.lower(ctx, target)?,
             ir::Instruction::Gte(igte) => igte.lower(ctx, target)?,
-            ir::Instruction::Rem(..) => todo!("@rem"),
+            ir::Instruction::Rem(irem) => irem.lower(ctx, target)?,
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
@@ -307,10 +313,10 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ),
             ir::Instruction::Return(ireturn) => ireturn.lower(ctx, target)?,
             ir::Instruction::Sub(isub) => isub.lower(ctx, target)?,
-            ir::Instruction::Div(..) => todo!("@div"),
+            ir::Instruction::Div(idiv) => idiv.lower(ctx, target)?,
             ir::Instruction::IfElse(iifelse) => iifelse.lower(ctx, target)?,
             ir::Instruction::Loop(iloop) => iloop.lower(ctx, target)?,
-            ir::Instruction::Ref(..) => todo!("@ref"),
+            ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(..) => todo!("@cast"),
         }
@@ -331,7 +337,11 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
                     target.assembler.i32_const(constant.parse::<i32>()?);
                 }
                 ValType::I64 => todo!("@const_i64"),
-                ValType::F32 => todo!("@const_f32"),
+                ValType::F32 => {
+                    let value = constant.parse::<f32>()?;
+                    let ieee = Ieee32::new(value.to_bits());
+                    target.assembler.f32_const(ieee);
+                }
                 ValType::F64 => todo!("@const_f64"),
                 ValType::V128 => todo!("@const_v128"),
                 ValType::Ref(_) => todo!("@const_ref"),
