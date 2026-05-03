@@ -10,6 +10,8 @@ wasm-bindgen = {version = "0.2.105", optional = true}
 js-sys = {version = "0.3.82", optional = true}
 report = { version = "0.1.0", path = "report" }
 runtime = { version = "0.1.0", path = "runtime", optional = true }
+web-sys = { version = "0.3.97", features = ["console"], optional = true }
+console_error_panic_hook = { version = "0.1.7", optional = true }
 
 
 [dev-dependencies]
@@ -23,8 +25,9 @@ members = ["bitbeat", "bitbox", "report", "runtime"]
 debug = []
 wasm-runtime = ["runtime"]
 default = []
-wasm = ["wasm-bindgen", "js-sys", "bitbox/wasm"]
+wasm = ["wasm-bindgen", "js-sys", "bitbox/wasm", "web-sys", "console_error_panic_hook"]
 uuids = ["bitbox/uuids"]
+web-sys = ["dep:web-sys"]
 
 [lib]
 name = "cflat"

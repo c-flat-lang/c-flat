@@ -13,34 +13,35 @@ use wasm_bindgen::prelude::*;
 
 #[cfg(feature = "wasm")]
 pub fn front_end_compiler(src: &str, cli_options: Cli) -> Result<bitbox::ir::Module> {
+    console_error_panic_hook::set_once();
     let tokens = stage::lexer::Lexer.run(src);
 
     if let Some(DebugMode::Token) = cli_options.debug_mode() {
         for token in &tokens {
-            // eprintln!("{:?}", token);
+            let string = format!("{:?}", token);
+            web_sys::console::log_1(&string.into());
         }
-        //std::process::exit(0);
     }
 
     let mut ast = stage::parser::Parser::default().run(tokens)?;
 
     if let Some(DebugMode::Ast) = cli_options.debug_mode() {
-        // eprintln!("{:#?}", ast);test_text_mode
-        // std::process::exit(0);
+        let string = format!("{:#?}", ast);
+        web_sys::console::log_1(&string.into());
     }
 
     let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode() {
-        // eprintln!("{:#?}", symbol_table);
-        // std::process::exit(0);
+        let string = format!("{:#?}", symbol_table);
+        web_sys::console::log_1(&string.into());
     }
 
     let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
 
     if let Some(DebugMode::Ir) = cli_options.debug_mode() {
-        // eprintln!("{}", module);
-        // std::process::exit(0);
+        let string = format!("{}", module);
+        web_sys::console::log_1(&string.into());
     }
 
     Ok(module)
@@ -55,7 +56,8 @@ pub fn compile_source(
     let mut module = match front_end_compiler(&source, cli_options.clone()) {
         Ok(module) => module,
         Err(err) => {
-            println!("{:?}", err);
+            let string = format!("{:?}", err);
+            web_sys::console::log_1(&string.into());
             return Err(JsValue::from_str(
                 &err.report(&cli_options.file_path(), source),
             ));
@@ -75,8 +77,10 @@ pub fn compile_source(
             };
             Ok(js_sys::Uint8Array::from(&bytes[..]))
         }
-        Err(error) => Err(JsValue::from_str(&error.to_string())),
-        _ => unimplemented!(),
+        Err(error) => {
+            web_sys::console::log_1(&"ERROR:".into());
+            Err(JsValue::from_str(&error.to_string()))
+        }
     }
 }
 
