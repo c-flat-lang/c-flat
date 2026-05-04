@@ -1,0 +1,4 @@
+- Mozilla [Docs](https://developer.mozilla.org/en-US/docs/WebAssembly/Reference) on WebAssembly are pretty helpful.
+- [Table](https://pengowray.github.io/wasm-ops) of WASM instructions
+- Good [Docs](https://github.com/sunfishcode/wasm-reference-manual/blob/master/WebAssembly.md) on explainging the Sections of a wasm file.
+- If you know nothing about wasm I would check [this](https://danielmangum.com/posts/every-byte-wasm-module) out.
