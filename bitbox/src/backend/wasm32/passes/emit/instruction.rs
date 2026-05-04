@@ -352,7 +352,7 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         // For struct field access, look up the field type from the struct definition
-        // (not the value type — integer literals default to s32 even for u8 fields).
+        // (not the value type, integer literals default to s32 even for u8 fields).
         // For arrays, the element type already gives the correct stride.
         let ty = match &self.addr.ty {
             Type::Array(_, elem_ty) => *elem_ty.clone(),

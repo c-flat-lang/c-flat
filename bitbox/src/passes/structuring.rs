@@ -296,6 +296,12 @@ fn try_raise_if_else_in_blocks(blocks: &mut Vec<BasicBlock>) -> bool {
             continue;
         };
         let cond_idx = blocks.iter().position(|b| b.id == cond_id).unwrap();
+
+        // An elif-chain block (labeled "else.*") can serve dual purpose: it IS the else-branch
+        // of an outer if AND the cond of the inner if. Exclude it from else_branch here.
+        else_ids.retain(|&id| id != cond_id);
+        let has_else = !else_ids.is_empty();
+
         let merge_block = blocks[m_idx].clone();
 
         let mut cond_block = blocks[cond_idx].clone();
@@ -480,6 +486,11 @@ fn try_raise_if_else(func: &mut Function, ctx: &crate::backend::Context) -> bool
             continue;
         };
         let cond_idx = func.blocks.iter().position(|b| b.id == cond_id).unwrap();
+
+        // An elif-chain block (labeled "else.*") can serve dual purpose: it IS the else-branch
+        // of an outer if AND the cond of the inner if. Exclude it from else_branch here.
+        else_ids.retain(|&id| id != cond_id);
+        let has_else = !else_ids.is_empty();
 
         let mut cond_block = func.blocks[cond_idx].clone();
 

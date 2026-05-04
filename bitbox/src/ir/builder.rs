@@ -87,6 +87,20 @@ impl<'a> AssemblerBuilder<'a> {
         format!("{}.{}", label.into(), uuid::Uuid::new_v4())
     }
 
+    /// Returns a shared label ID string to be used for all four labels of a single
+    /// if-else (cond/then/else/merge), so the structuring pass can match them by N.
+    #[cfg(not(feature = "uuids"))]
+    pub fn next_label_id(&mut self) -> String {
+        let num = self.label_counter;
+        self.label_counter += 1;
+        num.to_string()
+    }
+
+    #[cfg(feature = "uuids")]
+    pub fn next_label_id(&mut self) -> String {
+        uuid::Uuid::new_v4().to_string()
+    }
+
     #[cfg(not(feature = "uuids"))]
     pub fn with_counter(&mut self, counter: usize) -> &mut Self {
         self.counter = counter;

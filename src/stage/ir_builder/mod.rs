@@ -380,10 +380,11 @@ impl Lowerable for ExprIfElse {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let condition_label = assembler.create_label_id("cond");
-        let then_label = assembler.create_label_id("then");
-        let else_label = assembler.create_label_id("else");
-        let merge_label = assembler.create_label_id("merge");
+        let id = assembler.next_label_id();
+        let condition_label = format!("cond.{id}");
+        let then_label = format!("then.{id}");
+        let else_label = format!("else.{id}");
+        let merge_label = format!("merge.{id}");
 
         let result_var = if self.ty == ast::Type::Void {
             None
