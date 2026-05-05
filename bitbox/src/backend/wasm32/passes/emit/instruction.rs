@@ -4,8 +4,8 @@ use super::Wasm32LowerContext;
 use crate::backend::Lower;
 
 use crate::ir::instruction::{
-    IAdd, IAlloc, IAnd, IAssign, ICall, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse,
-    IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IRef, IRem, IReturn, ISub, IXOr,
+    IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte,
+    IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IRef, IRem, IReturn, ISub, IXOr,
 };
 use crate::ir::{BasicBlock, Instruction, Operand, Type};
 
@@ -862,6 +862,38 @@ impl Lower<Wasm32LowerContext<'_>> for INot {
             panic!("Variable {:?} not found", self.des);
         };
         target.assembler.local_set(des_idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for ICast {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.src.lower(ctx, target)?;
+
+        match self.kind {
+            crate::ir::CastKind::Truncate => todo!("Truncate"),
+            crate::ir::CastKind::ZeroExtend => todo!("ZeroExtend"),
+            crate::ir::CastKind::SignExtend => todo!("SignExtend"),
+            crate::ir::CastKind::UnsignedToSigned => todo!("UnsignedToSigned"),
+            crate::ir::CastKind::SignedToUnsigned => {
+                let src_bytes = self.src.ty.size();
+                let target_bytes = self.des.ty.size();
+                if target_bytes > src_bytes {
+                    target.assembler.i64_extend_i32_u();
+                    return Ok(());
+                }
+                target.assembler.i32_trunc_sat_f64_u();
+            }
+            crate::ir::CastKind::FloatToInt => todo!("FloatToInt"),
+            crate::ir::CastKind::IntToFloat => todo!("IntToFloat"),
+            crate::ir::CastKind::BitCast => todo!("BitCast"),
+            crate::ir::CastKind::NoOp => todo!("NoOp"),
+        }
         Ok(())
     }
 }

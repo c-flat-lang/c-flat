@@ -318,7 +318,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Loop(iloop) => iloop.lower(ctx, target)?,
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
-            ir::Instruction::Cast(..) => todo!("@cast"),
+            ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
         }
         Ok(())
     }
