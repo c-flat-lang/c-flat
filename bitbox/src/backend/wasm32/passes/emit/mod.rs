@@ -173,6 +173,49 @@ impl From<ir::Type> for ValType {
     }
 }
 
+/// Recursively collect the names of variables that are the *destination* of a comparison
+/// instruction (`@gt`, `@gte`, `@lt`, `@cmp`).  In WASM, all comparison instructions
+/// produce an `i32` (0/1) regardless of operand type, so these locals must be `i32`.
+fn collect_cmp_result_vars(blocks: &[ir::BasicBlock]) -> std::collections::HashSet<String> {
+    let mut set = std::collections::HashSet::new();
+    for block in blocks {
+        for inst in &block.instructions {
+            collect_cmp_result_in_inst(inst, &mut set);
+        }
+    }
+    set
+}
+
+fn collect_cmp_result_in_inst(inst: &ir::Instruction, set: &mut std::collections::HashSet<String>) {
+    match inst {
+        ir::Instruction::Gt(i) => {
+            set.insert(i.des.name.clone());
+        }
+        ir::Instruction::Gte(i) => {
+            set.insert(i.des.name.clone());
+        }
+        ir::Instruction::Lt(i) => {
+            set.insert(i.des.name.clone());
+        }
+        ir::Instruction::Cmp(i) => {
+            set.insert(i.des.name.clone());
+        }
+        ir::Instruction::IfElse(ife) => {
+            for inner in [&ife.cond, &ife.then_branch, &ife.else_branch] {
+                let inner_set = collect_cmp_result_vars(inner);
+                set.extend(inner_set);
+            }
+        }
+        ir::Instruction::Loop(lp) => {
+            for inner in [&lp.cond, &lp.body] {
+                let inner_set = collect_cmp_result_vars(inner);
+                set.extend(inner_set);
+            }
+        }
+        _ => {}
+    }
+}
+
 impl From<ir::Type> for BlockType {
     fn from(value: ir::Type) -> BlockType {
         match value {
@@ -229,22 +272,24 @@ impl Lower<EmitWasm32Pass> for ir::Function {
                 .skip(params_length)
                 .cloned()
                 .collect::<Vec<_>>();
-            let mut locals: HashMap<ValType, u32> = HashMap::new();
-            for var in local_variables {
-                if var.ty == Type::Void {
-                    continue;
-                }
-                let ty = var.ty.clone().into();
-                locals
-                    .entry(ty)
-                    .and_modify(|count| *count += 1)
-                    .or_insert(1);
-            }
-
-            let locals = locals.iter().fold(Vec::new(), |mut acc, (ty, count)| {
-                acc.push((*count, *ty));
-                acc
-            });
+            // Declare each local individually in their original order so that
+            // `local.get/set` indices (which mirror the position in
+            // `local_function_variables`) stay correct.
+            // Comparison instructions (gt/gte/lt/cmp) always produce i32 in WASM
+            // regardless of operand type, so override those locals to i32.
+            let cmp_vars = collect_cmp_result_vars(&self.blocks);
+            let locals: Vec<(u32, ValType)> = local_variables
+                .iter()
+                .filter(|var| var.ty != Type::Void)
+                .map(|var| {
+                    let ty = if cmp_vars.contains(&var.name) {
+                        ValType::I32
+                    } else {
+                        var.ty.clone().into()
+                    };
+                    (1u32, ty)
+                })
+                .collect();
             let mut f = WasmFunction::new(locals);
             let mut instructions = f.instructions();
 
@@ -318,7 +363,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Loop(iloop) => iloop.lower(ctx, target)?,
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
-            ir::Instruction::Cast(..) => todo!("@cast"),
+            ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
         }
         Ok(())
     }
@@ -334,7 +379,14 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
         match self {
             ir::Operand::ConstantInt(constant) => match constant.ty.clone().into() {
                 ValType::I32 => {
-                    target.assembler.i32_const(constant.parse::<i32>()?);
+                    // Unsigned 32-bit constants (e.g. 0xFF000000 color values) exceed i32::MAX
+                    // when stored as decimal strings, so parse as u32 and bit-cast to i32.
+                    let value: i32 = if matches!(constant.ty, ir::Type::Unsigned(_)) {
+                        constant.parse::<u32>()? as i32
+                    } else {
+                        constant.parse::<i32>()?
+                    };
+                    target.assembler.i32_const(value);
                 }
                 ValType::I64 => todo!("@const_i64"),
                 ValType::F32 => {
