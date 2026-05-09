@@ -1,13 +1,12 @@
 use crate::stage::lexer::token::{Keyword, Span, Token, TokenKind};
-use crate::stage::parser::ast::Type;
+use crate::stage::parser::ast::{Type, TypeKind};
 use report::ReportBuilder;
 pub use report::{Report, Result};
 
 #[derive(Debug)]
 pub struct ErrorMissMatchedType {
-    pub span: Span,
     pub found: Type,
-    pub expected: Type,
+    pub expected: TypeKind,
     #[cfg(feature = "debug")]
     pub compiler_line: String,
 }
@@ -15,7 +14,7 @@ pub struct ErrorMissMatchedType {
 impl Report for ErrorMissMatchedType {
     fn report(&self, filename: &str, src: &str) -> String {
         let mut report =
-            ReportBuilder::new(filename, src, &self.span).with_message("mismatched type");
+            ReportBuilder::new(filename, src, &self.found.span).with_message("mismatched type");
         #[cfg(not(feature = "debug"))]
         {
             report = report.with_note(format!(
@@ -36,7 +35,6 @@ impl Report for ErrorMissMatchedType {
 
 #[derive(Debug)]
 pub struct ErrorUnsupportedBinaryOp {
-    pub span: Span,
     pub lhs: Type,
     pub rhs: Type,
     pub op: Token,
@@ -44,7 +42,7 @@ pub struct ErrorUnsupportedBinaryOp {
 
 impl Report for ErrorUnsupportedBinaryOp {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.span)
+        ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
             .with_message("unsupported binary operator")
             .build()
     }

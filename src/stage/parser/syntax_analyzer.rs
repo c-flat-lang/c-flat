@@ -241,24 +241,33 @@ impl Parser {
     }
 
     fn parse_type(&mut self) -> Result<ast::Type> {
+        // let ref_keyword = self.consume(TokenKind::Keyword(Keyword::Ref)).ok();
+        // let mut_keyword = self.consume(TokenKind::Keyword(Keyword::Mut)).ok();
+
         let Some(tok) = self.lexer.next() else {
             return Err(Box::new(ErrorUnexpectedEndOfInput));
         };
+
         match tok.kind {
             TokenKind::Identifier => token_as_type(&tok),
             TokenKind::Star => {
                 let ty = self.parse_type()?;
-                Ok(ast::Type::Pointer(Box::new(ty)))
+                let span = tok.span.start..ty.span.end;
+                Ok(ast::Type {
+                    kind: ast::TypeKind::Pointer(Box::new(ty)),
+                    span,
+                })
             }
             TokenKind::LeftBracket => {
                 let count = self.consume(TokenKind::Number)?;
                 self.consume(TokenKind::Semicolon)?;
                 let ty = self.parse_type()?;
-                self.consume(TokenKind::RightBracket)?;
-                Ok(ast::Type::Array(
-                    count.lexeme.parse().unwrap(),
-                    Box::new(ty),
-                ))
+                let closing_bracket = self.consume(TokenKind::RightBracket)?;
+                let span = tok.span.start..closing_bracket.span.end;
+                Ok(ast::Type {
+                    kind: ast::TypeKind::Array(count.lexeme.parse().unwrap(), Box::new(ty)),
+                    span,
+                })
             }
             _ => Err(Box::new(ErrorExpectedType { found: tok })),
         }
@@ -387,7 +396,10 @@ impl Parser {
             then_branch,
             else_token,
             else_branch,
-            ty: ast::Type::Void,
+            ty: ast::Type {
+                kind: ast::TypeKind::Void,
+                span: 0..1,
+            },
         };
         Ok(ast::Expr::IfElse(if_else_expr))
     }
@@ -526,7 +538,10 @@ impl Parser {
                     open_bracket: left_bracket,
                     index: Box::new(index),
                     close_bracket: right_bracket,
-                    ty: ast::Type::Void,
+                    ty: ast::Type {
+                        kind: ast::TypeKind::Void,
+                        span: 0..1,
+                    },
                 };
                 expr = ast::Expr::ArrayIndex(array_index);
             } else if self.peek(TokenKind::Dot) {
@@ -671,7 +686,10 @@ impl Parser {
                 open_bracket,
                 elements: vec![],
                 close_bracket,
-                ty: ast::Type::Void,
+                ty: ast::Type {
+                    kind: ast::TypeKind::Void,
+                    span: 0..1,
+                },
             }));
         }
 
@@ -688,7 +706,10 @@ impl Parser {
                 semicolon,
                 value: Box::new(first),
                 close_bracket,
-                ty: ast::Type::Void,
+                ty: ast::Type {
+                    kind: ast::TypeKind::Void,
+                    span: 0..1,
+                },
             }));
         }
 
@@ -712,7 +733,10 @@ impl Parser {
             elements,
             // Set to Void because we don't know the type of the array.
             // We will sent when we type check.
-            ty: ast::Type::Void,
+            ty: ast::Type {
+                kind: ast::TypeKind::Void,
+                span: 0..1,
+            },
             close_bracket,
         }))
     }
@@ -732,25 +756,50 @@ fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type> {
         }
     };
     match token.lexeme.as_str() {
-        "void" => return Ok(ast::Type::Void),
-        "bool" => return Ok(ast::Type::Bool),
+        "void" => {
+            return Ok(ast::Type {
+                kind: ast::TypeKind::Void,
+                span: token.span.clone(),
+            });
+        }
+        "bool" => {
+            return Ok(ast::Type {
+                kind: ast::TypeKind::Bool,
+                span: token.span.clone(),
+            });
+        }
         _ => (),
     }
     let Some((prefix, number)) = parse_type(&token.lexeme) else {
         if token.kind == TokenKind::Identifier {
-            return Ok(ast::Type::Name(token.lexeme.clone()));
+            return Ok(ast::Type {
+                kind: ast::TypeKind::Name(token.lexeme.clone()),
+                span: token.span.clone(),
+            });
         }
         return Err(Box::new(ErrorExpectedType {
             found: token.clone(),
         }));
     };
     match prefix {
-        "u" => Ok(ast::Type::UnsignedNumber(number.parse().unwrap())),
-        "s" => Ok(ast::Type::SignedNumber(number.parse().unwrap())),
-        "f" => Ok(ast::Type::Float(number.parse().unwrap())),
+        "u" => Ok(ast::Type {
+            kind: ast::TypeKind::UnsignedNumber(number.parse().unwrap()),
+            span: token.span.clone(),
+        }),
+        "s" => Ok(ast::Type {
+            kind: ast::TypeKind::SignedNumber(number.parse().unwrap()),
+            span: token.span.clone(),
+        }),
+        "f" => Ok(ast::Type {
+            kind: ast::TypeKind::Float(number.parse().unwrap()),
+            span: token.span.clone(),
+        }),
         "*" => {
             let ty = token_as_type(&Token::new(TokenKind::Number, number, token.span.clone()))?;
-            Ok(ast::Type::Pointer(Box::new(ty)))
+            Ok(ast::Type {
+                kind: ast::TypeKind::Pointer(Box::new(ty)),
+                span: token.span.clone(),
+            })
         }
         _ => Err(Box::new(ErrorExpectedType {
             found: token.clone(),
