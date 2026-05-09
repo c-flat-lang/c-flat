@@ -97,15 +97,18 @@ impl SymbolTableBuilder {
         self.table.push(Symbol {
             name: struct_def.name.lexeme.clone(),
             kind: SymbolKind::Struct,
-            ty: ast::Type::Struct(ast::StructType {
-                name: struct_def.name.lexeme.clone(),
-                fields: struct_def
-                    .fields
-                    .iter()
-                    .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
-                    .collect(),
-                packed: false,
-            }),
+            ty: ast::Type {
+                kind: ast::TypeKind::Struct(ast::StructType {
+                    name: struct_def.name.lexeme.clone(),
+                    fields: struct_def
+                        .fields
+                        .iter()
+                        .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
+                        .collect(),
+                    packed: false,
+                }),
+                span: struct_def.span(),
+            },
             is_mutable: false,
             visibility: struct_def.visibility,
             fields: Some(
@@ -186,7 +189,13 @@ impl SymbolTableBuilder {
     }
 
     fn walk_expr_declare(&mut self, expr: &ast::ExprDecl) {
-        let ty = expr.ty.as_ref().map_or(ast::Type::Void, |ty| ty.clone());
+        let ty = expr.ty.as_ref().map_or(
+            ast::Type {
+                kind: ast::TypeKind::Void,
+                span: expr.span(),
+            },
+            |ty| ty.clone(),
+        );
         let symbol = Symbol {
             name: expr.ident.lexeme.clone(),
             kind: SymbolKind::Variable,
@@ -465,6 +474,10 @@ mod tests {
     use crate::stage::Stage;
     use pretty_assertions::assert_eq;
 
+    fn create_ty(kind: ast::TypeKind) -> ast::Type {
+        ast::Type { kind, span: 0..1 }
+    }
+
     fn create_symbol(
         name: &str,
         kind: SymbolKind,
@@ -486,24 +499,42 @@ mod tests {
     fn test_insert_and_lookup() {
         let mut table = SymbolTable::default();
 
-        let sym = create_symbol("x", SymbolKind::Variable, ast::Type::SignedNumber(32), true);
+        let sym = create_symbol(
+            "x",
+            SymbolKind::Variable,
+            create_ty(ast::TypeKind::SignedNumber(32)),
+            true,
+        );
         table.push(sym.clone());
 
         let found = table.get("x");
         assert!(found.is_some());
-        assert_eq!(found.unwrap().ty, ast::Type::SignedNumber(32));
+        assert_eq!(
+            found.unwrap().ty,
+            create_ty(ast::TypeKind::SignedNumber(32))
+        );
     }
 
     #[test]
     fn test_scope_enter_exit() {
         let mut table = SymbolTable::default();
 
-        let sym1 = create_symbol("x", SymbolKind::Variable, ast::Type::SignedNumber(32), true);
+        let sym1 = create_symbol(
+            "x",
+            SymbolKind::Variable,
+            create_ty(ast::TypeKind::SignedNumber(32)),
+            true,
+        );
         table.push(sym1.clone());
 
         table.enter_scope(&sym1.name);
 
-        let sym2 = create_symbol("y", SymbolKind::Variable, ast::Type::Bool, false);
+        let sym2 = create_symbol(
+            "y",
+            SymbolKind::Variable,
+            create_ty(ast::TypeKind::Bool),
+            false,
+        );
         table.push(sym2);
 
         assert!(table.get("y").is_some());
@@ -518,22 +549,32 @@ mod tests {
     fn test_variable_shadowing() {
         let mut table = SymbolTable::default();
 
-        let sym1 = create_symbol("x", SymbolKind::Variable, ast::Type::SignedNumber(32), true);
+        let sym1 = create_symbol(
+            "x",
+            SymbolKind::Variable,
+            create_ty(ast::TypeKind::SignedNumber(32)),
+            true,
+        );
         table.push(sym1.clone());
 
         table.enter_scope(&sym1.name);
 
-        let sym2 = create_symbol("x", SymbolKind::Variable, ast::Type::Bool, false);
+        let sym2 = create_symbol(
+            "x",
+            SymbolKind::Variable,
+            create_ty(ast::TypeKind::Bool),
+            false,
+        );
         table.push(sym2.clone());
 
         let found = table.get("x").unwrap();
-        assert_eq!(found.ty, ast::Type::Bool);
+        assert_eq!(found.ty, create_ty(ast::TypeKind::Bool));
         assert!(!found.is_mutable);
 
         table.exit_scope();
 
         let found = table.get("x").unwrap();
-        assert_eq!(found.ty, ast::Type::SignedNumber(32));
+        assert_eq!(found.ty, create_ty(ast::TypeKind::SignedNumber(32)));
         assert!(found.is_mutable);
     }
 
@@ -567,12 +608,21 @@ mod tests {
             Some(&Symbol {
                 name: "add".to_string(),
                 kind: SymbolKind::Function,
-                ty: ast::Type::SignedNumber(32),
+                ty: ast::Type {
+                    kind: ast::TypeKind::SignedNumber(32),
+                    span: 32..35,
+                },
                 is_mutable: false,
                 visibility: ast::Visibility::Private,
                 params: Some(vec![
-                    ast::Type::SignedNumber(32),
-                    ast::Type::SignedNumber(32)
+                    ast::Type {
+                        kind: ast::TypeKind::SignedNumber(32),
+                        span: 19..22
+                    },
+                    ast::Type {
+                        kind: ast::TypeKind::SignedNumber(32),
+                        span: 27..30
+                    },
                 ]),
                 ..Default::default()
             })
@@ -587,10 +637,10 @@ mod tests {
         let func_symbol = Symbol {
             name: "do_something".to_string(),
             kind: SymbolKind::Function,
-            ty: ast::Type::Void,
+            ty: create_ty(ast::TypeKind::Void),
             is_mutable: false,
             visibility: ast::Visibility::Public,
-            params: Some(vec![ast::Type::Bool]),
+            params: Some(vec![create_ty(ast::TypeKind::Bool)]),
             ..Default::default()
         };
 
@@ -599,10 +649,10 @@ mod tests {
         let func_symbol1 = Symbol {
             name: "another_function".to_string(),
             kind: SymbolKind::Function,
-            ty: ast::Type::Void,
+            ty: create_ty(ast::TypeKind::Void),
             is_mutable: false,
             visibility: ast::Visibility::Public,
-            params: Some(vec![ast::Type::Bool]),
+            params: Some(vec![create_ty(ast::TypeKind::Bool)]),
             ..Default::default()
         };
 
@@ -621,6 +671,12 @@ mod tests {
         let symbol = symbol.unwrap();
         assert_eq!(symbol.name, "do_something");
         assert_eq!(symbol.kind, SymbolKind::Function);
-        assert_eq!(symbol.params, Some(vec![ast::Type::Bool]));
+        assert_eq!(
+            symbol
+                .params
+                .as_ref()
+                .map(|t| t.iter().map(|t| &t.kind).collect()),
+            Some(vec![&ast::TypeKind::Bool])
+        );
     }
 }

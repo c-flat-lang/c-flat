@@ -2,7 +2,7 @@
 
 use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
 use crate::stage::lexer::token::Span;
-use crate::stage::parser::ast::{self, Expr, StructType, Type};
+use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
 pub struct TypeResolver<'st> {
@@ -26,7 +26,7 @@ impl<'st> TypeResolver<'st> {
             .collect();
 
         for (_, _, ty) in symbols.iter_mut() {
-            self.walk_type(ty, Span::default());
+            self.walk_type(ty);
         }
 
         for (path, name, ty) in symbols {
@@ -58,22 +58,19 @@ impl<'st> TypeResolver<'st> {
 
     fn walk_extern_function(&mut self, extern_function: &mut ast::ExternFunction) {
         // FIX: span is incorrect
-        self.walk_type(
-            &mut extern_function.return_type,
-            extern_function.fn_token.span.clone(),
-        );
+        self.walk_type(&mut extern_function.return_type);
         let span = extern_function.binding_name.span.clone();
         for ty in extern_function.params.iter_mut() {
-            self.walk_type(ty, span.clone());
+            self.walk_type(ty);
         }
     }
 
     fn walk_function(&mut self, function: &mut ast::Function) {
         // FIX: span is incorrect
-        self.walk_type(&mut function.return_type, function.fn_token.span.clone());
+        self.walk_type(&mut function.return_type);
         for param in function.params.iter_mut() {
             let span = param.name.span.clone();
-            self.walk_type(&mut param.ty, span);
+            self.walk_type(&mut param.ty);
         }
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         self.walk_block(&mut function.body);
@@ -122,7 +119,7 @@ impl<'st> TypeResolver<'st> {
         let Some(ty) = &mut expr_decl.ty else {
             return;
         };
-        self.walk_type(ty, span);
+        self.walk_type(ty);
     }
 
     fn walk_expr_assignment(&mut self, expr_assignment: &mut ast::ExprAssignment) {
@@ -171,7 +168,7 @@ impl<'st> TypeResolver<'st> {
 
     fn walk_expr_array(&mut self, expr_array: &mut ast::ExprArray) {
         let span = expr_array.span().clone();
-        self.walk_type(&mut expr_array.ty, span);
+        self.walk_type(&mut expr_array.ty);
         for expr in expr_array.elements.iter_mut() {
             self.walk_expr(expr);
         }
@@ -181,14 +178,14 @@ impl<'st> TypeResolver<'st> {
         self.walk_expr(&mut expr_array_index.expr);
         self.walk_expr(&mut expr_array_index.index);
         let span = expr_array_index.span().clone();
-        self.walk_type(&mut expr_array_index.ty, span);
+        self.walk_type(&mut expr_array_index.ty);
     }
 
     fn walk_expr_array_repeat(&mut self, expr_array_repeat: &mut ast::ExprArrayRepeat) {
         self.walk_expr(&mut expr_array_repeat.count);
         self.walk_expr(&mut expr_array_repeat.value);
         let span = expr_array_repeat.span().clone();
-        self.walk_type(&mut expr_array_repeat.ty, span);
+        self.walk_type(&mut expr_array_repeat.ty);
     }
 
     fn walk_expr_block(&mut self, block: &mut ast::ExprBlock) {
@@ -212,33 +209,31 @@ impl<'st> TypeResolver<'st> {
 
     fn walk_struct_def(&mut self, struct_def: &mut ast::Struct) {
         for field in struct_def.fields.iter_mut() {
-            let span = field.span().clone();
-            self.walk_type(&mut field.ty, span);
+            self.walk_type(&mut field.ty);
         }
     }
 
-    fn walk_type(&mut self, ty: &mut Type, span: Span) {
+    fn walk_type(&mut self, ty: &mut Type) {
         let found = ty.clone();
-        match ty {
-            Type::Bool
-            | Type::UnsignedNumber(_)
-            | Type::SignedNumber(_)
-            | Type::Float(_)
-            | Type::Void => {}
-            Type::Array(_, ty) => self.walk_type(ty, span),
-            Type::Pointer(ty) => self.walk_type(ty, span),
-            Type::Struct(struct_type) => {
+        match &mut ty.kind {
+            TypeKind::Bool
+            | TypeKind::UnsignedNumber(_)
+            | TypeKind::SignedNumber(_)
+            | TypeKind::Float(_)
+            | TypeKind::Void => {}
+            TypeKind::Array(_, ty) => self.walk_type(ty),
+            TypeKind::Pointer(ty) => self.walk_type(ty),
+            TypeKind::Struct(struct_type) => {
                 for (_, ty) in struct_type.fields.iter_mut() {
-                    self.walk_type(ty, span.clone());
+                    self.walk_type(ty);
                 }
             }
-            Type::Enum(_) => todo!("Enum"),
-            Type::Name(name) => {
+            TypeKind::Enum(_) => todo!("Enum"),
+            TypeKind::Name(name) => {
                 let Some(symbol) = self.symbol_table.get(name) else {
                     self.errors.push(Box::new(ErrorMissMatchedType {
-                        span,
                         found,
-                        expected: Type::Name(name.clone()),
+                        expected: TypeKind::Name(name.clone()),
                         #[cfg(feature = "debug")]
                         compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
                     }));

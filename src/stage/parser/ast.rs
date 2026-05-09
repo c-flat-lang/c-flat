@@ -3,84 +3,105 @@ use bitbox::text::semantic_analyzer::Symbol;
 
 use crate::stage::lexer::token::{Span, Token};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub enum Type {
-    Bool,
-    UnsignedNumber(u8),
-    SignedNumber(u8),
-    Float(u8),
-    Array(usize, Box<Self>),
-    Pointer(Box<Self>),
-    Struct(StructType),
-    Enum(String),
-    Name(String),
-    #[default]
-    Void,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Type {
+    pub kind: TypeKind,
+    pub span: Span,
 }
 
-impl Type {
-    pub fn as_bitbox_type(&self) -> bitbox::ir::Type {
-        match self {
-            Self::Bool => bitbox::ir::Type::Unsigned(32),
-            Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
-            Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
-            Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
-            Self::Array(size, ty) => {
-                bitbox::ir::Type::Array(*size, Box::new(ty.clone().as_bitbox_type()))
-            }
-            Self::Pointer(inner) => {
-                bitbox::ir::Type::Pointer(Box::new(inner.clone().as_bitbox_type()))
-            }
-            Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
-                name: struct_type.name.clone(),
-                fields: struct_type
-                    .fields
-                    .iter()
-                    .map(|(name, ty)| (name.clone(), ty.as_bitbox_type()))
-                    .collect(),
-                packed: struct_type.packed,
-            }),
-            Self::Enum(name) => todo!("{name}"),
-            Self::Name(_) => unreachable!("Bro you screwed up"),
-            Self::Void => bitbox::ir::Type::Void,
-        }
-    }
-
-    pub(crate) fn size(&self) -> usize {
-        match self {
-            Type::Bool => 1,
-            Type::UnsignedNumber(bytes) | Type::SignedNumber(bytes) | Type::Float(bytes) => {
-                (*bytes as usize) / 8
-            }
-            Type::Array(count, ty) => count * ty.size(),
-            Type::Pointer(_) => 64,
-            Type::Struct(struct_type) => {
-                let mut size = 0;
-                for (_, ty) in &struct_type.fields {
-                    size += ty.size();
-                }
-                size
-            }
-            Type::Enum(_) => todo!("Size of enum"),
-            Type::Name(..) => unreachable!("Bro you screwed up"),
-            Type::Void => 0,
+impl Default for Type {
+    fn default() -> Self {
+        Self {
+            kind: TypeKind::default(),
+            span: 0..1,
         }
     }
 }
 
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.kind)
+    }
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub enum TypeKind {
+    Array(usize, Box<Type>),
+    Bool,
+    Enum(String),
+    Float(u8),
+    Name(String),
+    Pointer(Box<Type>),
+    SignedNumber(u8),
+    Struct(StructType),
+    UnsignedNumber(u8),
+    #[default]
+    Void,
+}
+
+impl TypeKind {
+    pub fn as_bitbox_type(&self) -> bitbox::ir::Type {
         match self {
-            Type::Bool => write!(f, "bool"),
-            Type::UnsignedNumber(n) => write!(f, "u{}", n),
-            Type::SignedNumber(n) => write!(f, "s{}", n),
-            Type::Float(n) => write!(f, "f{}", n),
-            Type::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
-            Type::Pointer(ty) => write!(f, "*{}", ty),
-            Type::Struct(symbol) => write!(f, "{}", symbol.name),
-            Type::Enum(name) => write!(f, "{}", name),
-            Type::Name(name) => write!(f, "{}", name),
-            Type::Void => write!(f, "void"),
+            Self::Array(size, ty) => {
+                bitbox::ir::Type::Array(*size, Box::new(ty.kind.clone().as_bitbox_type()))
+            }
+            Self::Bool => bitbox::ir::Type::Unsigned(32),
+            Self::Enum(name) => todo!("{name}"),
+            Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
+            Self::Name(_) => unreachable!("Bro you screwed up"),
+            Self::Pointer(inner) => {
+                bitbox::ir::Type::Pointer(Box::new(inner.kind.clone().as_bitbox_type()))
+            }
+            Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
+            Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
+                name: struct_type.name.clone(),
+                fields: struct_type
+                    .fields
+                    .iter()
+                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type()))
+                    .collect(),
+                packed: struct_type.packed,
+            }),
+            Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
+            Self::Void => bitbox::ir::Type::Void,
+        }
+    }
+
+    pub(crate) fn size(&self) -> usize {
+        match self {
+            Self::Array(count, ty) => count * ty.kind.size(),
+            Self::Bool => 1,
+            Self::Enum(_) => todo!("Size of enum"),
+            Self::Name(..) => unreachable!("Bro you screwed up"),
+            Self::Pointer(_) => 64,
+            Self::Struct(struct_type) => {
+                let mut size = 0;
+                for (_, ty) in &struct_type.fields {
+                    size += ty.kind.size();
+                }
+                size
+            }
+            Self::UnsignedNumber(bytes) | Self::SignedNumber(bytes) | Self::Float(bytes) => {
+                (*bytes as usize) / 8
+            }
+            Self::Void => 0,
+        }
+    }
+}
+
+impl std::fmt::Display for TypeKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
+            Self::Bool => write!(f, "bool"),
+            Self::Float(n) => write!(f, "f{}", n),
+            Self::Enum(name) => write!(f, "{}", name),
+            Self::Name(name) => write!(f, "{}", name),
+            Self::Pointer(ty) => write!(f, "*{}", ty),
+            Self::SignedNumber(n) => write!(f, "s{}", n),
+            Self::Struct(symbol) => write!(f, "{}", symbol.name),
+            Self::UnsignedNumber(n) => write!(f, "u{}", n),
+            Self::Void => write!(f, "void"),
         }
     }
 }
@@ -109,7 +130,7 @@ impl StructType {
         // padding is needed cause of the order
         let mut size = 0;
         for (_, ty) in &self.fields {
-            size += ty.size();
+            size += ty.kind.size();
         }
         size
     }
