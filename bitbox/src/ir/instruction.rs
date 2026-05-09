@@ -870,8 +870,8 @@ impl fmt::Display for CastKind {
 /// - `float-to-int`: from a floating point type to an integer type (e.g. f32 to s32)
 /// - `int-to-float`: from an integer type to a floating point type (e.g. s32 to f32)
 /// - `bitcast`: reinterpret the bits as another type (e.g. s32 to f32)
-/// Example:
-/// `@cast u8 : small, large, truncate `
+///   Example:
+///   `@cast u8 : small, large, truncate `
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ICast {
     pub kind: CastKind,

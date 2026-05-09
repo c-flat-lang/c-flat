@@ -235,12 +235,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                                     target.assembler.mov(chunk, Location::Stack(src));
                                     let off = target.assembler.alloc.vreg::<Reg64>();
                                     target.assembler.mov(off, (i * 8) as i64);
-                                    target.assembler.store_indexed(
-                                        ptr_reg.into(),
-                                        off.into(),
-                                        1,
-                                        chunk.into(),
-                                    );
+                                    target.assembler.store_indexed(ptr_reg, off, 1, chunk);
                                 }
                                 if remainder > 0 {
                                     let src = Stack {
@@ -256,10 +251,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                                                 .assembler
                                                 .mov(tmp.cast_to::<Reg8>(), Location::Stack(src));
                                             target.assembler.store_indexed(
-                                                ptr_reg.into(),
-                                                off.into(),
+                                                ptr_reg,
+                                                off,
                                                 1,
-                                                tmp.cast_to::<Reg8>().into(),
+                                                tmp.cast_to::<Reg8>(),
                                             );
                                         }
                                         2 => {
@@ -267,10 +262,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                                                 .assembler
                                                 .mov(tmp.cast_to::<Reg16>(), Location::Stack(src));
                                             target.assembler.store_indexed(
-                                                ptr_reg.into(),
-                                                off.into(),
+                                                ptr_reg,
+                                                off,
                                                 1,
-                                                tmp.cast_to::<Reg16>().into(),
+                                                tmp.cast_to::<Reg16>(),
                                             );
                                         }
                                         3 | 4 => {
@@ -278,20 +273,15 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                                                 .assembler
                                                 .mov(tmp.cast_to::<Reg32>(), Location::Stack(src));
                                             target.assembler.store_indexed(
-                                                ptr_reg.into(),
-                                                off.into(),
+                                                ptr_reg,
+                                                off,
                                                 1,
-                                                tmp.cast_to::<Reg32>().into(),
+                                                tmp.cast_to::<Reg32>(),
                                             );
                                         }
                                         _ => {
                                             target.assembler.mov(tmp, Location::Stack(src));
-                                            target.assembler.store_indexed(
-                                                ptr_reg.into(),
-                                                off.into(),
-                                                1,
-                                                tmp.into(),
-                                            );
+                                            target.assembler.store_indexed(ptr_reg, off, 1, tmp);
                                         }
                                     }
                                 }
@@ -747,7 +737,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
                     target.assembler.lea(addr_reg, Location::Stack(slot));
                     let rdi: Reg64 = target.assembler.arg_regs(0).expect("no RDI");
                     moves.push(ArgMove {
-                        src: Location::Reg(addr_reg.into()),
+                        src: Location::Reg(addr_reg),
                         dst: Location::Reg(rdi.into()),
                         kind: MoveKind::Gp,
                     });
