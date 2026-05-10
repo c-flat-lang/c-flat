@@ -98,6 +98,8 @@ impl SymbolTableBuilder {
             name: struct_def.name.lexeme.clone(),
             kind: SymbolKind::Struct,
             ty: ast::Type {
+                // We set None here cause we dont know if it is mutable at the call site.
+                mut_token: None,
                 kind: ast::TypeKind::Struct(ast::StructType {
                     name: struct_def.name.lexeme.clone(),
                     fields: struct_def
@@ -193,6 +195,7 @@ impl SymbolTableBuilder {
             ast::Type {
                 kind: ast::TypeKind::Void,
                 span: expr.span(),
+                ..Default::default()
             },
             |ty| ty.clone(),
         );
@@ -232,9 +235,8 @@ impl SymbolTableBuilder {
             return;
         }
 
-        self.errors.push(Box::new(ErrorUndefinedSymbol {
-            found: token.clone(),
-        }));
+        self.errors
+            .push(Box::new(ErrorUndefinedSymbol::Token(token.clone())));
     }
 
     fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) {
@@ -475,7 +477,11 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     fn create_ty(kind: ast::TypeKind) -> ast::Type {
-        ast::Type { kind, span: 0..1 }
+        ast::Type {
+            kind,
+            span: 0..1,
+            ..Default::default()
+        }
     }
 
     fn create_symbol(
@@ -611,17 +617,20 @@ mod tests {
                 ty: ast::Type {
                     kind: ast::TypeKind::SignedNumber(32),
                     span: 32..35,
+                    ..Default::default()
                 },
                 is_mutable: false,
                 visibility: ast::Visibility::Private,
                 params: Some(vec![
                     ast::Type {
                         kind: ast::TypeKind::SignedNumber(32),
-                        span: 19..22
+                        span: 19..22,
+                        ..Default::default()
                     },
                     ast::Type {
                         kind: ast::TypeKind::SignedNumber(32),
-                        span: 27..30
+                        span: 27..30,
+                        ..Default::default()
                     },
                 ]),
                 ..Default::default()

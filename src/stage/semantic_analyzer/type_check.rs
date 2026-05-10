@@ -150,6 +150,7 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_struct_def(&mut self, struct_def: &mut ast::Struct) -> ast::Type {
         Type {
+            mut_token: None,
             span: struct_def.span(),
             kind: TypeKind::Struct(StructType {
                 name: struct_def.name.lexeme.clone(),
@@ -167,6 +168,7 @@ impl<'st> TypeChecker<'st> {
         let mut last_type = Type {
             kind: TypeKind::Void,
             span: 0..1,
+            mut_token: None,
         };
 
         let last_index = block.statements.len().saturating_sub(1);
@@ -182,6 +184,7 @@ impl<'st> TypeChecker<'st> {
                 last_type = ty;
             } else if statement.delem.is_some() {
                 last_type = Type {
+                    mut_token: None,
                     kind: TypeKind::Void,
                     span: 0..1,
                 };
@@ -222,6 +225,7 @@ impl<'st> TypeChecker<'st> {
             return Type {
                 kind: TypeKind::Void,
                 span: expr.span(),
+                mut_token: None,
             };
         };
         self.walk_expr(expr)
@@ -286,14 +290,17 @@ impl<'st> TypeChecker<'st> {
             ast::Litral::Integer(_) => self.numeric_hint.clone().unwrap_or(Type {
                 kind: TypeKind::SignedNumber(32),
                 span: expr.span(),
+                mut_token: None,
             }),
             ast::Litral::Float(_) => self.numeric_hint.clone().unwrap_or(Type {
                 kind: TypeKind::Float(32),
                 span: expr.span(),
+                mut_token: None,
             }),
             ast::Litral::Char(_) => Type {
                 kind: TypeKind::UnsignedNumber(8),
                 span: expr.span(),
+                mut_token: None,
             },
             ast::Litral::String(s) => Type {
                 kind: TypeKind::Array(
@@ -301,13 +308,16 @@ impl<'st> TypeChecker<'st> {
                     Box::new(Type {
                         kind: TypeKind::UnsignedNumber(8),
                         span: expr.span(),
+                        mut_token: None,
                     }),
                 ),
                 span: expr.span(),
+                mut_token: None,
             },
             ast::Litral::BoolTrue(_) | ast::Litral::BoolFalse(_) => Type {
                 kind: TypeKind::Bool,
                 span: expr.span(),
+                mut_token: None,
             },
         }
     }
@@ -342,6 +352,7 @@ impl<'st> TypeChecker<'st> {
             return Type {
                 kind: TypeKind::Void,
                 span: left_ty.span,
+                mut_token: None,
             };
         };
         result_ty
@@ -349,12 +360,12 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_identifier(&mut self, expr: &Token) -> ast::Type {
         let Some(symbol) = self.symbol_table.get(expr.lexeme.as_str()) else {
-            self.errors.push(Box::new(ErrorUndefinedSymbol {
-                found: expr.clone(),
-            }));
+            self.errors
+                .push(Box::new(ErrorUndefinedSymbol::Token(expr.clone())));
             return Type {
                 kind: TypeKind::Void,
                 span: expr.span.clone(),
+                mut_token: None,
             };
         };
         symbol.ty.clone()
@@ -387,6 +398,7 @@ impl<'st> TypeChecker<'st> {
         Type {
             kind: TypeKind::Void,
             span: expr.span(),
+            mut_token: None,
         }
     }
 
@@ -408,6 +420,7 @@ impl<'st> TypeChecker<'st> {
         Type {
             kind: TypeKind::Array(size, Box::new(ty)),
             span: expr.span(),
+            mut_token: None,
         }
     }
     fn walk_expr_array_index(&mut self, expr: &mut ast::ExprArrayIndex) -> Type {
@@ -435,6 +448,7 @@ impl<'st> TypeChecker<'st> {
                     Box::new(Type {
                         kind: TypeKind::Void,
                         span: 0..1,
+                        mut_token: None,
                     }),
                 ),
                 #[cfg(feature = "debug")]
@@ -448,8 +462,9 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
         let inner_type = self.walk_expr(&mut expr.expr);
         Type {
-            kind: TypeKind::Pointer(Box::new(inner_type)),
+            kind: TypeKind::Ref(Box::new(inner_type)),
             span: expr.span(),
+            mut_token: None,
         }
     }
 
@@ -458,6 +473,7 @@ impl<'st> TypeChecker<'st> {
         Type {
             kind: TypeKind::Bool,
             span: expr.span(),
+            mut_token: None,
         }
     }
 
@@ -481,6 +497,7 @@ impl<'st> TypeChecker<'st> {
                 Box::new(value_type.clone()),
             ),
             span: expr.span(),
+            mut_token: None,
         };
 
         expr.ty.clone()
@@ -515,12 +532,13 @@ impl<'st> TypeChecker<'st> {
                 Type {
                     kind: TypeKind::SignedNumber(32),
                     span: expr.span(),
+                    mut_token: None,
                 }
             }
             TypeKind::Struct(struct_def) => {
                 self.lookup_struct_member(&struct_def, &member_access.member.lexeme)
             }
-            TypeKind::Pointer(inner) => match &inner.kind {
+            TypeKind::Ref(inner) => match &inner.kind {
                 TypeKind::Struct(struct_def) => {
                     self.lookup_struct_member(struct_def, &member_access.member.lexeme)
                 }
@@ -536,24 +554,28 @@ impl<'st> TypeChecker<'st> {
                 self.numeric_hint = Some(Type {
                     kind: elem_ty.kind.clone(),
                     span: maybe.span.clone(),
+                    mut_token: None,
                 })
             }
             ty @ TypeKind::SignedNumber(_) => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
+                    mut_token: None,
                 })
             }
             ty @ TypeKind::UnsignedNumber(_) => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
+                    mut_token: None,
                 })
             }
             ty @ TypeKind::Float(_) => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
+                    mut_token: None,
                 })
             }
             _ => {}

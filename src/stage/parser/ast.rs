@@ -1,10 +1,12 @@
 #![allow(unused)]
 use bitbox::text::semantic_analyzer::Symbol;
+use std::fmt::Write;
 
 use crate::stage::lexer::token::{Span, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Type {
+    pub mut_token: Option<Token>,
     pub kind: TypeKind,
     pub span: Span,
 }
@@ -12,6 +14,7 @@ pub struct Type {
 impl Default for Type {
     fn default() -> Self {
         Self {
+            mut_token: None,
             kind: TypeKind::default(),
             span: 0..1,
         }
@@ -20,7 +23,8 @@ impl Default for Type {
 
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.kind)
+        let mutable = if self.mut_token.is_some() { "mut " } else { "" };
+        write!(f, "{mutable}{}", self.kind)
     }
 }
 
@@ -31,7 +35,8 @@ pub enum TypeKind {
     Enum(String),
     Float(u8),
     Name(String),
-    Pointer(Box<Type>),
+    NameWithParams(Token, TypeParams),
+    Ref(Box<Type>),
     SignedNumber(u8),
     Struct(StructType),
     UnsignedNumber(u8),
@@ -48,8 +53,18 @@ impl TypeKind {
             Self::Bool => bitbox::ir::Type::Unsigned(32),
             Self::Enum(name) => todo!("{name}"),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
-            Self::Name(_) => unreachable!("Bro you screwed up"),
-            Self::Pointer(inner) => {
+            Self::Name(name) => {
+                unreachable!(
+                    "Type::Name({name}).as_bitbox_type() should be handled in type_resolver"
+                )
+            }
+            Self::NameWithParams(name, params) => {
+                unreachable!(
+                    "Type::Name({}, {params}).as_bitbox_type() should be handled in type_resolver",
+                    name.lexeme
+                )
+            }
+            Self::Ref(inner) => {
                 bitbox::ir::Type::Pointer(Box::new(inner.kind.clone().as_bitbox_type()))
             }
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
@@ -72,8 +87,16 @@ impl TypeKind {
             Self::Array(count, ty) => count * ty.kind.size(),
             Self::Bool => 1,
             Self::Enum(_) => todo!("Size of enum"),
-            Self::Name(..) => unreachable!("Bro you screwed up"),
-            Self::Pointer(_) => 64,
+            Self::Name(name) => {
+                unreachable!("Type::Name({name}).size() should be handled in type_resolver")
+            }
+            Self::NameWithParams(name, params) => {
+                unreachable!(
+                    "Type::Name({}, {params}).size() should be handled in type_resolver",
+                    name.lexeme
+                )
+            }
+            Self::Ref(_) => 64,
             Self::Struct(struct_type) => {
                 let mut size = 0;
                 for (_, ty) in &struct_type.fields {
@@ -97,7 +120,8 @@ impl std::fmt::Display for TypeKind {
             Self::Float(n) => write!(f, "f{}", n),
             Self::Enum(name) => write!(f, "{}", name),
             Self::Name(name) => write!(f, "{}", name),
-            Self::Pointer(ty) => write!(f, "*{}", ty),
+            Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
+            Self::Ref(ty) => write!(f, "ref {ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
             Self::Struct(symbol) => write!(f, "{}", symbol.name),
             Self::UnsignedNumber(n) => write!(f, "u{}", n),
@@ -106,6 +130,25 @@ impl std::fmt::Display for TypeKind {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypeParams {
+    pub params: Vec<Type>,
+}
+
+impl std::fmt::Display for TypeParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut string = String::new();
+        for (idx, param) in self.params.iter().enumerate() {
+            if idx == self.params.len().saturating_sub(1) {
+                write!(&mut string, "{}", param);
+                continue;
+            }
+            write!(&mut string, "{}, ", param);
+        }
+
+        write!(f, "{string}")
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructType {
     pub name: String,

@@ -1,6 +1,8 @@
 #![allow(unused)]
 
-use crate::error::{ErrorMissMatchedType, ErrorUnsupportedBinaryOp, Errors, Report, Result};
+use crate::error::{
+    ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
+};
 use crate::stage::lexer::token::Span;
 use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
@@ -222,7 +224,7 @@ impl<'st> TypeResolver<'st> {
             | TypeKind::Float(_)
             | TypeKind::Void => {}
             TypeKind::Array(_, ty) => self.walk_type(ty),
-            TypeKind::Pointer(ty) => self.walk_type(ty),
+            TypeKind::Ref(ty) => self.walk_type(ty),
             TypeKind::Struct(struct_type) => {
                 for (_, ty) in struct_type.fields.iter_mut() {
                     self.walk_type(ty);
@@ -231,12 +233,19 @@ impl<'st> TypeResolver<'st> {
             TypeKind::Enum(_) => todo!("Enum"),
             TypeKind::Name(name) => {
                 let Some(symbol) = self.symbol_table.get(name) else {
-                    self.errors.push(Box::new(ErrorMissMatchedType {
-                        found,
-                        expected: TypeKind::Name(name.clone()),
-                        #[cfg(feature = "debug")]
-                        compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-                    }));
+                    self.errors
+                        .push(Box::new(ErrorUndefinedSymbol::Type(found)));
+                    return;
+                };
+                *ty = symbol.ty.clone();
+            }
+            TypeKind::NameWithParams(name, params) => {
+                for param in params.params.iter_mut() {
+                    self.walk_type(param);
+                }
+                let Some(symbol) = self.symbol_table.get(&name.lexeme) else {
+                    self.errors
+                        .push(Box::new(ErrorUndefinedSymbol::Type(found)));
                     return;
                 };
                 *ty = symbol.ty.clone();

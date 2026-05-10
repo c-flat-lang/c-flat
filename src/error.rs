@@ -123,9 +123,7 @@ impl Report for ErrorExpectedType {
                 self.found.lexeme
             ))
             .with_lines_above(3)
-            .with_note(
-                "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`",
-            )
+            .with_note("types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`")
             .build()
     }
 }
@@ -189,14 +187,23 @@ impl Report for Errors {
 }
 
 #[derive(Debug)]
-pub struct ErrorUndefinedSymbol {
-    pub found: Token,
+pub enum ErrorUndefinedSymbol {
+    Token(Token),
+    Type(Type),
 }
 
 impl Report for ErrorUndefinedSymbol {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.found.span)
-            .with_message(format!("undefined symbol `{}`", &self.found.lexeme))
+        let span = match self {
+            ErrorUndefinedSymbol::Token(token) => &token.span,
+            ErrorUndefinedSymbol::Type(ty) => &ty.span,
+        };
+        let name = match self {
+            ErrorUndefinedSymbol::Token(token) => &token.lexeme,
+            ErrorUndefinedSymbol::Type(ty) => &ty.to_string(),
+        };
+        ReportBuilder::new(filename, src, &span)
+            .with_message(format!("undefined symbol `{}`", name))
             .build()
     }
 }

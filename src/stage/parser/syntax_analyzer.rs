@@ -5,7 +5,7 @@ use crate::error::{
     ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem, Result,
 };
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
-use crate::stage::parser::ast::{self, ExprMemberAccess};
+use crate::stage::parser::ast::{self, ExprMemberAccess, TypeParams};
 
 pub struct Parser {
     lexer: std::iter::Peekable<std::vec::IntoIter<Token>>,
@@ -241,20 +241,35 @@ impl Parser {
     }
 
     fn parse_type(&mut self) -> Result<ast::Type> {
-        // let ref_keyword = self.consume(TokenKind::Keyword(Keyword::Ref)).ok();
-        // let mut_keyword = self.consume(TokenKind::Keyword(Keyword::Mut)).ok();
-
+        let mut_token = self.consume_if_eq(TokenKind::Keyword(Keyword::Mut));
         let Some(tok) = self.lexer.next() else {
             return Err(Box::new(ErrorUnexpectedEndOfInput));
         };
 
         match tok.kind {
-            TokenKind::Identifier => token_as_type(&tok),
-            TokenKind::Star => {
+            TokenKind::Identifier if self.peek(TokenKind::LeftParen) => {
+                self.consume(TokenKind::LeftParen)?;
+                let mut params = Vec::new();
+                while !self.peek(TokenKind::RightParen) {
+                    let ty = self.parse_type()?;
+                    params.push(ty);
+                    self.consume_if_eq(TokenKind::Comma);
+                }
+                let right_param = self.consume(TokenKind::RightParen)?;
+                let span = mut_token.as_ref().unwrap_or(&tok).span.start..right_param.span.end;
+                Ok(ast::Type {
+                    mut_token,
+                    kind: ast::TypeKind::NameWithParams(tok, TypeParams { params }),
+                    span,
+                })
+            }
+            TokenKind::Identifier => token_as_type(mut_token, &tok),
+            TokenKind::Keyword(Keyword::Ref) => {
                 let ty = self.parse_type()?;
                 let span = tok.span.start..ty.span.end;
                 Ok(ast::Type {
-                    kind: ast::TypeKind::Pointer(Box::new(ty)),
+                    mut_token,
+                    kind: ast::TypeKind::Ref(Box::new(ty)),
                     span,
                 })
             }
@@ -265,6 +280,7 @@ impl Parser {
                 let closing_bracket = self.consume(TokenKind::RightBracket)?;
                 let span = tok.span.start..closing_bracket.span.end;
                 Ok(ast::Type {
+                    mut_token,
                     kind: ast::TypeKind::Array(count.lexeme.parse().unwrap(), Box::new(ty)),
                     span,
                 })
@@ -398,7 +414,7 @@ impl Parser {
             else_branch,
             ty: ast::Type {
                 kind: ast::TypeKind::Void,
-                span: 0..1,
+                ..Default::default()
             },
         };
         Ok(ast::Expr::IfElse(if_else_expr))
@@ -540,7 +556,7 @@ impl Parser {
                     close_bracket: right_bracket,
                     ty: ast::Type {
                         kind: ast::TypeKind::Void,
-                        span: 0..1,
+                        ..Default::default()
                     },
                 };
                 expr = ast::Expr::ArrayIndex(array_index);
@@ -688,7 +704,7 @@ impl Parser {
                 close_bracket,
                 ty: ast::Type {
                     kind: ast::TypeKind::Void,
-                    span: 0..1,
+                    ..Default::default()
                 },
             }));
         }
@@ -708,7 +724,7 @@ impl Parser {
                 close_bracket,
                 ty: ast::Type {
                     kind: ast::TypeKind::Void,
-                    span: 0..1,
+                    ..Default::default()
                 },
             }));
         }
@@ -735,7 +751,7 @@ impl Parser {
             // We will sent when we type check.
             ty: ast::Type {
                 kind: ast::TypeKind::Void,
-                span: 0..1,
+                ..Default::default()
             },
             close_bracket,
         }))
@@ -746,7 +762,7 @@ fn one_of(tokens: &[TokenKind]) -> impl Fn(&Token) -> bool + use<'_> {
     move |token| tokens.contains(&token.kind)
 }
 
-fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type> {
+fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::Type> {
     let parse_type = |input: &'a str| -> Option<(&'a str, &'a str)> {
         let (prefix, rest) = input.split_at(1);
         if prefix.chars().all(char::is_alphabetic) && rest.chars().all(char::is_numeric) {
@@ -760,12 +776,15 @@ fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type> {
             return Ok(ast::Type {
                 kind: ast::TypeKind::Void,
                 span: token.span.clone(),
+                // Maybe this should be an error?
+                mut_token,
             });
         }
         "bool" => {
             return Ok(ast::Type {
                 kind: ast::TypeKind::Bool,
                 span: token.span.clone(),
+                mut_token,
             });
         }
         _ => (),
@@ -775,6 +794,7 @@ fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type> {
             return Ok(ast::Type {
                 kind: ast::TypeKind::Name(token.lexeme.clone()),
                 span: token.span.clone(),
+                ..Default::default()
             });
         }
         return Err(Box::new(ErrorExpectedType {
@@ -785,22 +805,18 @@ fn token_as_type<'a>(token: &'a Token) -> Result<ast::Type> {
         "u" => Ok(ast::Type {
             kind: ast::TypeKind::UnsignedNumber(number.parse().unwrap()),
             span: token.span.clone(),
+            mut_token,
         }),
         "s" => Ok(ast::Type {
             kind: ast::TypeKind::SignedNumber(number.parse().unwrap()),
             span: token.span.clone(),
+            mut_token,
         }),
         "f" => Ok(ast::Type {
             kind: ast::TypeKind::Float(number.parse().unwrap()),
             span: token.span.clone(),
+            mut_token,
         }),
-        "*" => {
-            let ty = token_as_type(&Token::new(TokenKind::Number, number, token.span.clone()))?;
-            Ok(ast::Type {
-                kind: ast::TypeKind::Pointer(Box::new(ty)),
-                span: token.span.clone(),
-            })
-        }
         _ => Err(Box::new(ErrorExpectedType {
             found: token.clone(),
         })),

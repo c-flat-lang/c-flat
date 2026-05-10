@@ -621,6 +621,7 @@ impl Lowerable for ExprDecl {
                 .unwrap_or(&ast::Type {
                     kind: ast::TypeKind::default(),
                     span: expr.span(),
+                    ..Default::default()
                 })
                 .kind
                 .as_bitbox_type()
