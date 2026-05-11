@@ -3,12 +3,12 @@ use super::type_resolver::TypeResolver;
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
 };
-use crate::stage::lexer::token::{Keyword as Kw, Token, TokenKind};
+use crate::stage::lexer::token::{Keyword as Kw, Span, Token, TokenKind};
 use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
 impl Type {
-    pub fn supports_binary_op(&self, op: &TokenKind, other: &Type) -> Option<Type> {
+    pub fn supports_binary_op(&self, op: &TokenKind, other: &Type, span: Span) -> Option<Type> {
         use TokenKind::*;
         match (&self.kind, op, &other.kind) {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
@@ -33,21 +33,21 @@ impl Type {
                 TypeKind::UnsignedNumber(lhs),
                 (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
                 TypeKind::UnsignedNumber(rhs),
-            ) if lhs == rhs => Some(self.clone()),
+            ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::SignedNumber(lhs),
                 (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
                 TypeKind::SignedNumber(rhs),
-            ) if lhs == rhs => Some(self.clone()),
+            ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::Float(lhs),
                 (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
                 TypeKind::Float(rhs),
-            ) if lhs == rhs => Some(self.clone()),
+            ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
 
             // (AND | OR) only work on bools and return bools
             (TypeKind::Bool, (EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or)), TypeKind::Bool) => {
-                Some(other.clone())
+                Some(self.map_kind(|_| TypeKind::Bool))
             }
 
             // (Plus | Minus | Star | Slash) only work on numbers and return the same type
@@ -67,6 +67,10 @@ impl Type {
             //}
             _ => None,
         }
+        .map(|mut t| {
+            t.span = span;
+            t
+        })
     }
 
     fn resolve_overloaded_op(&self, op: &TokenKind, rhs: &str) -> Option<Type> {
@@ -132,12 +136,12 @@ impl<'st> TypeChecker<'st> {
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
         if calulated_return_type.kind != function.return_type.kind {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: calulated_return_type,
-                expected: function.return_type.kind.clone(),
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                calulated_return_type,
+                function.return_type.kind.clone(),
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         }
         function.return_type.clone()
     }
@@ -247,12 +251,12 @@ impl<'st> TypeChecker<'st> {
         let rhs = self.walk_expr(&mut expr.right);
         self.numeric_hint = None;
         if lhs != rhs {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: rhs,
-                expected: lhs.kind.clone(),
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                rhs,
+                lhs.kind.clone(),
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         }
         lhs
     }
@@ -270,12 +274,12 @@ impl<'st> TypeChecker<'st> {
         if let Some(ty) = &expr.ty
             && ty != &value_type
         {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: value_type.clone(),
-                expected: ty.kind.clone(),
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                value_type.clone(),
+                ty.kind.clone(),
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         }
         self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
             if s.ty.kind == TypeKind::Void && s.ty != value_type {
@@ -341,7 +345,7 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_binary(&mut self, expr: &mut ast::ExprBinary) -> ast::Type {
         let left_ty = self.walk_expr(&mut expr.left);
         let right_ty = self.walk_expr(&mut expr.right);
-        let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty);
+        let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span());
         let Some(result_ty) = result_ty else {
             self.errors.push(Box::new(ErrorUnsupportedBinaryOp {
                 lhs: left_ty.clone(),
@@ -374,23 +378,24 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
         let condition = self.walk_expr(&mut expr.condition);
         if !matches!(condition.kind, TypeKind::Bool) {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: condition,
-                expected: TypeKind::Bool,
+            let error = ErrorMissMatchedType::new(
+                condition,
+                TypeKind::Bool,
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            );
+            self.errors.push(Box::new(error));
         }
         let then_branch_type = self.walk_block(&mut expr.then_branch);
         if let Some(else_branch) = expr.else_branch.as_mut() {
             let else_branch_type = self.walk_expr(else_branch);
             if then_branch_type != else_branch_type {
-                self.errors.push(Box::new(ErrorMissMatchedType {
-                    found: then_branch_type.clone(),
-                    expected: else_branch_type.kind.clone(),
+                self.errors.push(Box::new(ErrorMissMatchedType::new(
+                    then_branch_type.clone(),
+                    else_branch_type.kind.clone(),
                     #[cfg(feature = "debug")]
-                    compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-                }));
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
             }
             expr.ty = then_branch_type.clone();
             return then_branch_type;
@@ -408,12 +413,12 @@ impl<'st> TypeChecker<'st> {
         for mut element in expr.elements.iter_mut().skip(1) {
             let other = self.walk_expr(element);
             if ty != other {
-                self.errors.push(Box::new(ErrorMissMatchedType {
-                    found: ty.clone(),
-                    expected: other.kind,
+                self.errors.push(Box::new(ErrorMissMatchedType::new(
+                    ty.clone(),
+                    other.kind,
                     #[cfg(feature = "debug")]
-                    compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-                }));
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
             }
         }
         expr.ty = ty.clone();
@@ -428,22 +433,22 @@ impl<'st> TypeChecker<'st> {
         let index_type = self.walk_expr(&mut expr.index);
         // HACK: This should be of type `usize` later once we have support for pointers
         if index_type.kind != TypeKind::SignedNumber(32) {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: index_type.clone(),
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                index_type.clone(),
                 // HACK: usize
-                expected: TypeKind::SignedNumber(32),
+                TypeKind::SignedNumber(32),
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         }
 
         expr.ty = array_type.clone();
 
         let TypeKind::Array(_, array_type) = array_type.kind else {
             // NOTE: This probably will cause some missleading errors.
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: array_type.clone(),
-                expected: TypeKind::Array(
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                array_type.clone(),
+                TypeKind::Array(
                     0,
                     Box::new(Type {
                         kind: TypeKind::Void,
@@ -452,8 +457,8 @@ impl<'st> TypeChecker<'st> {
                     }),
                 ),
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
             return array_type;
         };
         *array_type
@@ -482,12 +487,12 @@ impl<'st> TypeChecker<'st> {
         let value_type = self.walk_expr(value);
         let count_type = self.walk_expr(count);
         let Expr::Litral(ast::Litral::Integer(count_token)) = &**count else {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: count_type.clone(),
-                expected: TypeKind::SignedNumber(32),
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                count_type.clone(),
+                TypeKind::SignedNumber(32),
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
             return value_type;
         };
 
@@ -506,12 +511,12 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_while(&mut self, expr: &mut ast::ExprWhile) -> Type {
         let condition = self.walk_expr(&mut expr.condition);
         if !matches!(condition.kind, TypeKind::Bool) {
-            self.errors.push(Box::new(ErrorMissMatchedType {
-                found: condition,
-                expected: TypeKind::Bool,
+            self.errors.push(Box::new(ErrorMissMatchedType::new(
+                condition,
+                TypeKind::Bool,
                 #[cfg(feature = "debug")]
-                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
-            }));
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         }
         self.walk_block(&mut expr.body)
     }

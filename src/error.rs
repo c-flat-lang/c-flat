@@ -5,16 +5,37 @@ pub use report::{Report, Result};
 
 #[derive(Debug)]
 pub struct ErrorMissMatchedType {
-    pub found: Type,
-    pub expected: TypeKind,
+    alt_span: Option<Span>,
+    found: Type,
+    expected: TypeKind,
     #[cfg(feature = "debug")]
-    pub compiler_line: String,
+    compiler_line: String,
+}
+
+impl ErrorMissMatchedType {
+    pub fn new(
+        found: Type,
+        expected: TypeKind,
+        #[cfg(feature = "debug")] compiler_line: String,
+    ) -> Self {
+        Self {
+            alt_span: None,
+            found,
+            expected,
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+
+    pub fn alt_span(&mut self, alt_span: Span) {
+        self.alt_span = Some(alt_span);
+    }
 }
 
 impl Report for ErrorMissMatchedType {
     fn report(&self, filename: &str, src: &str) -> String {
-        let mut report =
-            ReportBuilder::new(filename, src, &self.found.span).with_message("mismatched type");
+        let span = self.alt_span.as_ref().unwrap_or(&self.found.span);
+        let mut report = ReportBuilder::new(filename, src, span).with_message("mismatched type");
         #[cfg(not(feature = "debug"))]
         {
             report = report.with_note(format!(
@@ -202,7 +223,7 @@ impl Report for ErrorUndefinedSymbol {
             ErrorUndefinedSymbol::Token(token) => &token.lexeme,
             ErrorUndefinedSymbol::Type(ty) => &ty.to_string(),
         };
-        ReportBuilder::new(filename, src, &span)
+        ReportBuilder::new(filename, src, span)
             .with_message(format!("undefined symbol `{}`", name))
             .build()
     }

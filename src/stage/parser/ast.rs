@@ -4,7 +4,7 @@ use std::fmt::Write;
 
 use crate::stage::lexer::token::{Span, Token};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct Type {
     pub mut_token: Option<Token>,
     pub kind: TypeKind,
@@ -25,6 +25,25 @@ impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mutable = if self.mut_token.is_some() { "mut " } else { "" };
         write!(f, "{mutable}{}", self.kind)
+    }
+}
+
+impl PartialEq<Type> for Type {
+    fn eq(&self, other: &Type) -> bool {
+        self.kind == other.kind
+    }
+}
+
+impl Type {
+    pub fn map_kind<F>(&self, f: F) -> Self
+    where
+        F: FnOnce(&TypeKind) -> TypeKind,
+    {
+        Self {
+            mut_token: self.mut_token.clone(),
+            kind: f(&self.kind),
+            span: self.span.clone(),
+        }
     }
 }
 
