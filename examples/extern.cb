@@ -3,14 +3,14 @@
 //   --target=x86_64-linux \
 //   --link "-L/opt/raylib/release/libs/linux -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
 //   examples/extern.cb
-extern C fn InitWindow as init_window(s32, s32, *[10; u8]) void;
+extern C fn InitWindow as init_window(s32, s32, ref [10; u8]) void;
 extern C fn BeginDrawing as begin_drawing() void;
 extern C fn EndDrawing as end_drawing() void;
 extern C fn CloseWindow as close_window() void;
 extern C fn SetTargetFPS as set_target_fps(s32) void;
 extern C fn WindowShouldClose as window_should_close() bool;
 extern C fn ClearBackground as clear_background(u32) void;
-extern C fn DrawText as draw_text(*[41; u8], s32, s32, s32, s32) void;
+extern C fn DrawText as draw_text(ref [41; u8], s32, s32, s32, s32) void;
 
 pub fn main() s32 {
     let screen_width = 1920;
