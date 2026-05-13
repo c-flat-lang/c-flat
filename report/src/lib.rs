@@ -39,18 +39,37 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
+    #[deprecated(since = "0.1.0", note = "please use `message` instead")]
     pub fn with_message(mut self, message: impl Into<String>) -> Self {
         self.message = message.into();
         self
     }
 
+    #[deprecated(since = "0.1.0", note = "please use `note` instead")]
     pub fn with_note(mut self, note: impl Into<String>) -> Self {
         self.note = Some(note.into());
         self
     }
 
     /// Lines to use above starting [Span]
+    #[deprecated(since = "0.1.0", note = "please use `lives_above` instead")]
     pub fn with_lines_above(mut self, lines_above: usize) -> Self {
+        self.lines_above = lines_above;
+        self
+    }
+
+    pub fn message(&mut self, message: impl Into<String>) -> &mut Self {
+        self.message = message.into();
+        self
+    }
+
+    pub fn note(&mut self, note: impl Into<String>) -> &mut Self {
+        self.note = Some(note.into());
+        self
+    }
+
+    /// Lines to use above starting [Span]
+    pub fn lines_above(&mut self, lines_above: usize) -> &mut Self {
         self.lines_above = lines_above;
         self
     }
