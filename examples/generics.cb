@@ -1,0 +1,37 @@
+extern C fn write_char(u8) void;
+extern C fn write_int(s32) void;
+
+type Slice<(T: type)> struct {
+    items: ref T,
+    length: usize,
+}
+
+fn print(string: ref Slice<(u8)>) void {
+    let mut i: s32 = 0;
+    while i < string.length {
+        write_char(string.items[i]);
+        i = i + 1;
+    }
+}
+
+fn add<(T: type)>(x: T, y: T) T {
+    return x + y;
+}
+
+
+pub fn main() void {
+    // s should turn into Slice<u8> by default but currently the compiler doesnt know about Slice.
+    // For now just manually creating it will do.
+    let s = #"Testing String Passing"#
+    let string: Slice<(u8)> = Slice<(u8)> {
+        items: &s;
+        length: s.len;
+    };
+    print(&string);
+
+    let num0 = add<(s32)>(123, 321);
+    write_int(num0);
+
+    let num1 = add(123, 321);
+    write_int(num);
+}
