@@ -30,7 +30,8 @@ pub fn front_end_compiler(src: &str, cli_options: Cli) -> Result<bitbox::ir::Mod
         web_sys::console::log_1(&string.into());
     }
 
-    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
+    let symbol_table =
+        stage::semantic_analyzer::SemanticAnalyzer::new(cli_option.target).run(&mut ast)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode() {
         let string = format!("{:#?}", symbol_table);
@@ -102,7 +103,8 @@ pub fn front_end_compiler(src: &str, cli_options: &Cli) -> Result<bitbox::ir::Mo
         std::process::exit(0);
     }
 
-    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
+    let symbol_table =
+        stage::semantic_analyzer::SemanticAnalyzer::new(cli_options.target).run(&mut ast)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
         eprintln!("{:#?}", symbol_table);

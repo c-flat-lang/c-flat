@@ -80,6 +80,8 @@ impl Parser {
         matches!(self.lexer.peek(), Some(token) if token.kind == kind)
     }
 
+    /// Consume even if kind does not match, it is up to caller to handle Result.
+    /// If you want to have an conditional consume use `consume_if_eq`.
     fn consume(&mut self, kind: TokenKind) -> Result<Token> {
         match self.lexer.next() {
             Some(token) if token.kind == kind => Ok(token),
@@ -151,6 +153,27 @@ impl Parser {
         let type_token = self.consume(TokenKind::Keyword(Keyword::Type))?;
         let name = self.consume(TokenKind::Identifier)?;
 
+        // TODO: move to a parse method when adding Enum or Union to TypeDef
+        let type_args = 'typed_params_block: {
+            let mut args = Vec::new();
+
+            if self.consume_if_eq(TokenKind::LeftParen).is_none() {
+                break 'typed_params_block args;
+            }
+
+            while !self.peek(TokenKind::RightParen) {
+                let name = self.consume(TokenKind::Identifier)?;
+                self.consume(TokenKind::Colon)?;
+                let ty = self.parse_type()?;
+                args.push(ast::TypeArg { name, ty });
+                self.consume_if_eq(TokenKind::Comma);
+            }
+
+            self.consume(TokenKind::RightParen)?;
+
+            args
+        };
+
         if !self.peek(TokenKind::Keyword(Keyword::Struct)) {
             let Some(token) = self.lexer.next() else {
                 return Err(Box::new(ErrorUnexpectedEndOfInput));
@@ -171,6 +194,7 @@ impl Parser {
             visibility,
             type_token,
             name,
+            type_args,
             struct_token,
             fields,
             open_brace,
@@ -247,6 +271,11 @@ impl Parser {
         };
 
         match tok.kind {
+            TokenKind::Keyword(Keyword::Type) => Ok(ast::Type {
+                mut_token: None,
+                kind: ast::TypeKind::Type,
+                span: tok.span,
+            }),
             TokenKind::Identifier if self.peek(TokenKind::LeftParen) => {
                 self.consume(TokenKind::LeftParen)?;
                 let mut params = Vec::new();
@@ -285,7 +314,11 @@ impl Parser {
                     span,
                 })
             }
-            _ => Err(Box::new(ErrorExpectedType { found: tok })),
+            _ => Err(Box::new(ErrorExpectedType {
+                found: tok,
+                #[cfg(feature = "debug")]
+                compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
+            })),
         }
     }
 
@@ -682,6 +715,25 @@ impl Parser {
     }
 
     fn parse_struct_instantiation(&mut self, name: Token) -> Result<ast::Expr> {
+        // TODO: put this in a parser method
+        let type_params = 'type_params_block: {
+            if self.consume_if_eq(TokenKind::LeftParen).is_none() {
+                break 'type_params_block None;
+            }
+
+            let mut type_params = Vec::new();
+            while !self.peek(TokenKind::RightParen) {
+                let ty = self.parse_type()?;
+                eprintln!("{:?}", ty);
+                type_params.push(ty);
+                self.consume_if_eq(TokenKind::Comma);
+            }
+
+            self.consume(TokenKind::RightParen)?;
+            Some(type_params)
+        };
+        eprintln!("{type_params:?}");
+
         let open_brace = self.consume(TokenKind::LeftBrace)?;
 
         let init_fields = self.parse_struct_init_fields()?;
@@ -689,6 +741,7 @@ impl Parser {
         let close_brace = self.consume(TokenKind::RightBrace)?;
         Ok(ast::Expr::Struct(ast::ExprStruct {
             name,
+            type_params,
             open_brace,
             init_fields,
             close_brace,
@@ -765,7 +818,10 @@ fn one_of(tokens: &[TokenKind]) -> impl Fn(&Token) -> bool + use<'_> {
 fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::Type> {
     let parse_type = |input: &'a str| -> Option<(&'a str, &'a str)> {
         let (prefix, rest) = input.split_at(1);
-        if prefix.chars().all(char::is_alphabetic) && rest.chars().all(char::is_numeric) {
+        if prefix.chars().all(char::is_alphabetic)
+            && rest.chars().all(char::is_numeric)
+            && !rest.is_empty()
+        {
             Some((prefix, rest))
         } else {
             None
@@ -787,6 +843,20 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 mut_token,
             });
         }
+        "usize" => {
+            return Ok(ast::Type {
+                kind: ast::TypeKind::UnsignedTargetPointerNumber,
+                span: token.span.clone(),
+                mut_token,
+            });
+        }
+        "ssize" => {
+            return Ok(ast::Type {
+                kind: ast::TypeKind::SignedTargetPointerNumber,
+                span: token.span.clone(),
+                mut_token,
+            });
+        }
         _ => (),
     }
     let Some((prefix, number)) = parse_type(&token.lexeme) else {
@@ -799,6 +869,8 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
         }
         return Err(Box::new(ErrorExpectedType {
             found: token.clone(),
+            #[cfg(feature = "debug")]
+            compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
         }));
     };
     match prefix {
@@ -819,6 +891,8 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
         }),
         _ => Err(Box::new(ErrorExpectedType {
             found: token.clone(),
+            #[cfg(feature = "debug")]
+            compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
         })),
     }
 }

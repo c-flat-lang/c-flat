@@ -4,6 +4,15 @@ use crate::stage::lexer::token::Token;
 use crate::stage::parser::ast::{self, Expr};
 use std::collections::HashMap;
 
+/// Key: (base symbol name, concrete type args)
+/// Value: an interned ID or resolved concrete Symbol
+pub type InstantiationCache = HashMap<(String, Vec<ast::Type>), ConcreteTypeId>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ConcreteTypeId(pub u32);
+
+pub type ConcreteTypeMap = HashMap<ConcreteTypeId, Symbol>;
+
 #[derive(Debug)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
@@ -94,9 +103,14 @@ impl SymbolTableBuilder {
     }
 
     fn walk_struct_def(&mut self, struct_def: &ast::Struct) {
+        let kind = if struct_def.type_args.is_empty() {
+            SymbolKind::Struct
+        } else {
+            SymbolKind::GenericStruct
+        };
         self.table.push(Symbol {
             name: struct_def.name.lexeme.clone(),
-            kind: SymbolKind::Struct,
+            kind,
             ty: ast::Type {
                 // We set None here cause we dont know if it is mutable at the call site.
                 mut_token: None,
@@ -113,6 +127,7 @@ impl SymbolTableBuilder {
             },
             is_mutable: false,
             visibility: struct_def.visibility,
+            type_args: Some(struct_def.type_args.clone()),
             fields: Some(
                 struct_def
                     .fields
@@ -235,6 +250,13 @@ impl SymbolTableBuilder {
             return;
         }
 
+        #[cfg(feature = "debug")]
+        self.errors.push(Box::new(ErrorUndefinedSymbol::TokenDebug(
+            token.clone(),
+            format!("{} {}:{}", file!(), line!(), column!()),
+        )));
+
+        #[cfg(not(feature = "debug"))]
         self.errors
             .push(Box::new(ErrorUndefinedSymbol::Token(token.clone())));
     }
@@ -298,6 +320,7 @@ pub enum SymbolKind {
     ExternFunction,
     Parameter,
     Struct,
+    GenericStruct,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -315,6 +338,7 @@ pub struct Symbol {
     pub ty: ast::Type,
     pub is_mutable: bool,
     pub visibility: ast::Visibility,
+    pub type_args: Option<Vec<ast::TypeArg>>,
     pub params: Option<Vec<ast::Type>>,
     pub fields: Option<Vec<SymbolField>>,
 }

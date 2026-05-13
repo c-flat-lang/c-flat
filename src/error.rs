@@ -134,6 +134,8 @@ impl Report for ErrorUnexpectedEndOfInput {
 #[derive(Debug)]
 pub struct ErrorExpectedType {
     pub found: Token,
+    #[cfg(feature = "debug")]
+    pub compiler_line: String,
 }
 
 impl Report for ErrorExpectedType {
@@ -144,7 +146,14 @@ impl Report for ErrorExpectedType {
                 self.found.lexeme
             ))
             .with_lines_above(3)
-            .with_note("types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`")
+            .with_note(
+                #[cfg(not(feature = "debug"))]
+                "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`",
+                #[cfg(feature = "debug")]
+                format!("types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`\n{}",
+                    self.compiler_line
+                ).as_str(),
+            )
             .build()
     }
 }
@@ -211,20 +220,40 @@ impl Report for Errors {
 pub enum ErrorUndefinedSymbol {
     Token(Token),
     Type(Type),
+
+    #[cfg(feature = "debug")]
+    TokenDebug(Token, String),
+
+    #[cfg(feature = "debug")]
+    TypeDebug(Type, String),
 }
 
 impl Report for ErrorUndefinedSymbol {
     fn report(&self, filename: &str, src: &str) -> String {
-        let span = match self {
-            ErrorUndefinedSymbol::Token(token) => &token.span,
-            ErrorUndefinedSymbol::Type(ty) => &ty.span,
+        #[allow(unused_variables)]
+        let (span, name, compiler_line) = match self {
+            ErrorUndefinedSymbol::Token(token) => (&token.span, &token.lexeme, None::<&String>),
+            ErrorUndefinedSymbol::Type(ty) => (&ty.span, &ty.to_string(), None),
+
+            #[cfg(feature = "debug")]
+            ErrorUndefinedSymbol::TokenDebug(token, compiler_line) => {
+                (&token.span, &token.lexeme, Some(compiler_line))
+            }
+            #[cfg(feature = "debug")]
+            ErrorUndefinedSymbol::TypeDebug(ty, compiler_line) => {
+                (&ty.span, &ty.to_string(), Some(compiler_line))
+            }
         };
-        let name = match self {
-            ErrorUndefinedSymbol::Token(token) => &token.lexeme,
-            ErrorUndefinedSymbol::Type(ty) => &ty.to_string(),
-        };
-        ReportBuilder::new(filename, src, span)
-            .with_message(format!("undefined symbol `{}`", name))
-            .build()
+
+        #[allow(unused_mut)]
+        let mut report = ReportBuilder::new(filename, src, span)
+            .with_message(format!("undefined symbol `{}`", name));
+
+        #[cfg(feature = "debug")]
+        if let Some(line) = compiler_line {
+            report = report.with_note(format!("undefined symbol `{}`\n{}", name, line));
+        }
+
+        report.build()
     }
 }

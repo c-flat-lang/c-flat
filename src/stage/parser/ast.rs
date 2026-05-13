@@ -4,7 +4,7 @@ use std::fmt::Write;
 
 use crate::stage::lexer::token::{Span, Token};
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Eq, Hash)]
 pub struct Type {
     pub mut_token: Option<Token>,
     pub kind: TypeKind,
@@ -35,6 +35,14 @@ impl PartialEq<Type> for Type {
 }
 
 impl Type {
+    pub fn is_name(&self, expected: &str) -> bool {
+        match &self.kind {
+            TypeKind::Name(name) if name.as_str() == expected => true,
+            TypeKind::Ref(ty) => ty.is_name(expected),
+            _ => false,
+        }
+    }
+
     pub fn map_kind<F>(&self, f: F) -> Self
     where
         F: FnOnce(&TypeKind) -> TypeKind,
@@ -47,18 +55,28 @@ impl Type {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     Array(usize, Box<Type>),
     Bool,
+    /// unimplemented!
     Enum(String),
     Float(u8),
+    /// Simple Custom `Type` with no `TypeArgs`
     Name(String),
+    /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
+    /// Types that have `ref` prefixing them
     Ref(Box<Type>),
     SignedNumber(u8),
+    /// isize
+    SignedTargetPointerNumber,
     Struct(StructType),
+    /// This shows up in `TypeArgs`
+    Type,
     UnsignedNumber(u8),
+    /// usize
+    UnsignedTargetPointerNumber,
     #[default]
     Void,
 }
@@ -87,6 +105,9 @@ impl TypeKind {
                 bitbox::ir::Type::Pointer(Box::new(inner.kind.clone().as_bitbox_type()))
             }
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
+            Self::SignedTargetPointerNumber => {
+                unreachable!("ssize should be handled in type_resolver")
+            }
             Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: struct_type.name.clone(),
                 fields: struct_type
@@ -96,7 +117,18 @@ impl TypeKind {
                     .collect(),
                 packed: struct_type.packed,
             }),
+            Self::Type => unreachable!(
+                // TODO: Replace/Update/Remove message once more understanding is reached.
+                r#"NOTE:
+I believe we will handle this before getting here.
+I believe the idea is to replease Type with what ever the caller is using at comptime.
+This means we may need to generate more then one X Type depending on how many Generic signitures are created.
+                "#
+            ),
             Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
+            Self::UnsignedTargetPointerNumber => {
+                unreachable!("usize should be handled in type_resolver")
+            }
             Self::Void => bitbox::ir::Type::Void,
         }
     }
@@ -116,6 +148,7 @@ impl TypeKind {
                 )
             }
             Self::Ref(_) => 64,
+            Self::SignedTargetPointerNumber => todo!("isize"),
             Self::Struct(struct_type) => {
                 let mut size = 0;
                 for (_, ty) in &struct_type.fields {
@@ -123,9 +156,18 @@ impl TypeKind {
                 }
                 size
             }
+            Self::Type => unreachable!(
+                // TODO: Replace/Update/Remove message once more understanding is reached.
+                r#"NOTE:
+I believe we will handle this before getting here.
+I believe the idea is to replease Type with what ever the caller is using at comptime.
+This means we may need to generate more then one X Type depending on how many Generic signitures are created.
+                "#
+            ),
             Self::UnsignedNumber(bytes) | Self::SignedNumber(bytes) | Self::Float(bytes) => {
                 (*bytes as usize) / 8
             }
+            Self::UnsignedTargetPointerNumber => todo!("usize"),
             Self::Void => 0,
         }
     }
@@ -142,14 +184,19 @@ impl std::fmt::Display for TypeKind {
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
             Self::Ref(ty) => write!(f, "ref {ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
+            Self::SignedTargetPointerNumber => write!(f, "isize"),
             Self::Struct(symbol) => write!(f, "{}", symbol.name),
+            Self::Type => write!(f, "type"),
             Self::UnsignedNumber(n) => write!(f, "u{}", n),
+            Self::UnsignedTargetPointerNumber => write!(f, "usize"),
             Self::Void => write!(f, "void"),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// TODO: rename this to something more suitable
+// TypeParams is kinda missleading here, or is it....
 pub struct TypeParams {
     pub params: Vec<Type>,
 }
@@ -168,7 +215,7 @@ impl std::fmt::Display for TypeParams {
         write!(f, "{string}")
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub name: String,
     pub fields: Vec<(String, Type)>,
@@ -256,6 +303,20 @@ pub struct Use {
     pub path: Vec<Token>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TypeArg {
+    pub name: Token,
+    pub ty: Type,
+}
+
+impl TypeArg {
+    pub fn span(&self) -> Span {
+        let start = self.name.span.start;
+        let end = self.ty.span.end;
+        start..end
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Field {
     pub visibility: Visibility,
@@ -282,6 +343,7 @@ pub struct Struct {
     pub visibility: Visibility,
     pub type_token: Token,
     pub name: Token,
+    pub type_args: Vec<TypeArg>,
     pub struct_token: Token,
     pub fields: Vec<Field>,
     pub open_brace: Token,
@@ -541,6 +603,7 @@ impl InitField {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprStruct {
     pub name: Token,
+    pub type_params: Option<Vec<Type>>,
     pub open_brace: Token,
     pub init_fields: Vec<InitField>,
     pub close_brace: Token,

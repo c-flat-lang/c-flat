@@ -3,20 +3,107 @@
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
 };
-use crate::stage::lexer::token::Span;
-use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
-use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
+use crate::stage::lexer::token::{Span, Token};
+use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind, TypeParams};
+use crate::stage::semantic_analyzer::symbol_table::{
+    ConcreteTypeId, ConcreteTypeMap, InstantiationCache, Symbol, SymbolField, SymbolKind,
+    SymbolTable,
+};
 
 pub struct TypeResolver<'st> {
+    instantiation_cache: InstantiationCache,
+    concrete_type_map: ConcreteTypeMap,
     symbol_table: &'st mut SymbolTable,
     errors: Vec<Box<dyn Report>>,
+    target_pointer_width: u8,
+    instantiation_cache_id_counter: u32,
+}
+
+// HELPERS
+impl TypeResolver<'_> {
+    fn generate_instantiation_cache_id(&mut self) -> ConcreteTypeId {
+        let id = self.instantiation_cache_id_counter;
+        self.instantiation_cache_id_counter += 1;
+        ConcreteTypeId(id)
+    }
+
+    fn cache_type(&mut self, name: impl Into<String>, params: &TypeParams) -> Option<Type> {
+        let name = name.into();
+        let key = (name.clone(), params.params.to_vec());
+
+        // Already interned, nothing to do
+        if self.instantiation_cache.contains_key(&key) {
+            return None;
+        }
+
+        let id = self.generate_instantiation_cache_id();
+        self.instantiation_cache.insert(key, id);
+
+        let Some(generic_sym) = self.symbol_table.get(&name).cloned() else {
+            // error already pushed by walk_type caller
+            return None;
+        };
+
+        // Build the type_param → concrete type substitution map
+        // Example:
+        //   ["T"] + [i32] -> {"T": i32}
+        let type_args = generic_sym.type_args.as_deref().unwrap_or(&[]);
+        let substitution: std::collections::HashMap<String, Type> = type_args
+            .iter()
+            .zip(params.params.iter())
+            .map(|(param, ty)| (param.name.lexeme.clone(), ty.clone()))
+            .collect();
+
+        let concrete_fields = generic_sym
+            .fields
+            .as_deref()
+            .unwrap_or(&[])
+            .iter()
+            .map(|field| SymbolField {
+                name: field.name.clone(),
+                ty: substitute_type(&field.ty, &substitution, self.target_pointer_width),
+                default_value: field.default_value.clone(),
+            })
+            .collect::<Vec<_>>();
+
+        let concrete_symbol = Symbol {
+            name: format!("{}({})", name, params),
+            kind: SymbolKind::Struct,
+            fields: Some(concrete_fields),
+            ty: substitute_type(&generic_sym.ty, &substitution, self.target_pointer_width),
+            binding_name: None,
+            is_mutable: generic_sym.is_mutable,
+            visibility: generic_sym.visibility,
+            type_args: generic_sym.type_args.map(|tr| {
+                tr.iter()
+                    .map(|type_arg| ast::TypeArg {
+                        name: type_arg.name.clone(),
+                        ty: substitute_type(&type_arg.ty, &substitution, self.target_pointer_width),
+                    })
+                    .collect::<Vec<_>>()
+            }),
+            params: generic_sym.params.map(|tr| {
+                tr.iter()
+                    .map(|ty| substitute_type(ty, &substitution, self.target_pointer_width))
+                    .collect::<Vec<_>>()
+            }),
+        };
+
+        let return_type = concrete_symbol.ty.clone();
+        self.concrete_type_map.insert(id, concrete_symbol);
+        Some(return_type)
+    }
 }
 
 impl<'st> TypeResolver<'st> {
-    pub fn new(symbol_table: &'st mut SymbolTable) -> Self {
+    pub fn new(symbol_table: &'st mut SymbolTable, target_pointer_width: u8) -> Self {
         Self {
+            instantiation_cache: InstantiationCache::default(),
+            concrete_type_map: ConcreteTypeMap::default(),
             symbol_table,
             errors: Vec::new(),
+            target_pointer_width,
+            instantiation_cache_id_counter: 0,
         }
     }
 
@@ -24,10 +111,11 @@ impl<'st> TypeResolver<'st> {
         let mut symbols: Vec<_> = self
             .symbol_table
             .iter_all()
+            .filter(|(_, symbol)| symbol.kind != SymbolKind::GenericStruct)
             .map(|(path, symbol)| (path, symbol.name.clone(), symbol.ty.clone()))
             .collect();
 
-        for (_, _, ty) in symbols.iter_mut() {
+        for (scope, name, ty) in symbols.iter_mut() {
             self.walk_type(ty);
         }
 
@@ -210,7 +298,15 @@ impl<'st> TypeResolver<'st> {
     }
 
     fn walk_struct_def(&mut self, struct_def: &mut ast::Struct) {
+        let arg_type_names = struct_def
+            .type_args
+            .iter()
+            .map(|a| &a.name.lexeme)
+            .collect::<Vec<_>>();
         for field in struct_def.fields.iter_mut() {
+            if arg_type_names.iter().any(|name| field.ty.is_name(name)) {
+                continue;
+            }
             self.walk_type(&mut field.ty);
         }
     }
@@ -218,7 +314,9 @@ impl<'st> TypeResolver<'st> {
     fn walk_type(&mut self, ty: &mut Type) {
         let found = ty.clone();
         match &mut ty.kind {
-            TypeKind::Bool
+            TypeKind::Type
+            | TypeKind::Bool
+            | TypeKind::UnsignedNumber(_)
             | TypeKind::UnsignedNumber(_)
             | TypeKind::SignedNumber(_)
             | TypeKind::Float(_)
@@ -232,28 +330,132 @@ impl<'st> TypeResolver<'st> {
             }
             TypeKind::Enum(_) => todo!("Enum"),
             TypeKind::Name(name) => {
-                let Some(symbol) = self.symbol_table.get(name) else {
-                    self.errors
-                        .push(Box::new(ErrorUndefinedSymbol::Type(found)));
+                if let Some(symbol) = self.symbol_table.get(name) {
+                    *ty = symbol.ty.clone();
                     return;
-                };
-                *ty = symbol.ty.clone();
+                }
+
+                #[cfg(feature = "debug")]
+                self.errors.push(Box::new(ErrorUndefinedSymbol::TypeDebug(
+                    found,
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
+
+                #[cfg(not(feature = "debug"))]
+                self.errors
+                    .push(Box::new(ErrorUndefinedSymbol::Type(found)));
             }
             TypeKind::NameWithParams(name, params) => {
-                for param in params.params.iter_mut() {
-                    self.walk_type(param);
-                }
-                let Some(symbol) = self.symbol_table.get(&name.lexeme) else {
-                    self.errors
-                        .push(Box::new(ErrorUndefinedSymbol::Type(found)));
+                if let Some(new_ty) = self.cache_type(&name.lexeme, &params) {
+                    *ty = new_ty;
                     return;
-                };
-                *ty = symbol.ty.clone();
+                }
+
+                // Get cached type when you have already cashed type
+                let key = (name.lexeme.clone(), params.params.to_vec());
+                if let Some(id) = self.instantiation_cache.get(&key) {
+                    if let Some(symbol) = self.concrete_type_map.get(id) {
+                        *ty = symbol.ty.clone();
+                        return;
+                    }
+                }
+
+                #[cfg(feature = "debug")]
+                self.errors.push(Box::new(ErrorUndefinedSymbol::TypeDebug(
+                    found,
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
+
+                #[cfg(not(feature = "debug"))]
+                self.errors
+                    .push(Box::new(ErrorUndefinedSymbol::Type(found)));
+            }
+            kind @ TypeKind::UnsignedTargetPointerNumber => {
+                *kind = TypeKind::UnsignedNumber(self.target_pointer_width);
+            }
+            kind @ TypeKind::SignedTargetPointerNumber => {
+                *kind = TypeKind::SignedNumber(self.target_pointer_width);
             }
         }
     }
 
     fn walk_use(&mut self, r#use: &mut ast::Use) {
         todo!("{:#?}", r#use);
+    }
+}
+
+fn substitute_type(
+    ty: &Type,
+    substitution: &std::collections::HashMap<String, Type>,
+    target_pointer_width: u8,
+) -> Type {
+    match &ty.kind {
+        // A bare name — if it's a type param, replace it
+        TypeKind::Name(name) => {
+            if let Some(concrete) = substitution.get(name.as_str()) {
+                return concrete.clone();
+            }
+            ty.clone()
+        }
+        // Recurse into compound types
+        TypeKind::Ref(inner) => Type {
+            kind: TypeKind::Ref(Box::new(substitute_type(
+                inner,
+                substitution,
+                target_pointer_width,
+            ))),
+            ..ty.clone()
+        },
+        TypeKind::Array(size, inner) => Type {
+            kind: TypeKind::Array(
+                *size,
+                Box::new(substitute_type(inner, substitution, target_pointer_width)),
+            ),
+            ..ty.clone()
+        },
+        TypeKind::NameWithParams(name, params) => {
+            let new_params = params
+                .params
+                .iter()
+                .map(|p| substitute_type(p, substitution, target_pointer_width))
+                .collect();
+            Type {
+                kind: TypeKind::NameWithParams(
+                    name.clone(),
+                    ast::TypeParams { params: new_params },
+                ),
+                ..ty.clone()
+            }
+        }
+        TypeKind::Struct(tstruct) => {
+            let fields = tstruct
+                .fields
+                .iter()
+                .map(|(name, ty)| {
+                    (
+                        name.to_string(),
+                        substitute_type(ty, substitution, target_pointer_width),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            Type {
+                kind: TypeKind::Struct(ast::StructType {
+                    fields,
+                    ..tstruct.clone()
+                }),
+                ..ty.clone()
+            }
+        }
+        TypeKind::UnsignedTargetPointerNumber => Type {
+            kind: TypeKind::UnsignedNumber(target_pointer_width),
+            ..ty.clone()
+        },
+        TypeKind::SignedTargetPointerNumber => Type {
+            kind: TypeKind::SignedNumber(target_pointer_width),
+            ..ty.clone()
+        },
+        // Primitives and anything else — no substitution needed
+        _ => ty.clone(),
     }
 }

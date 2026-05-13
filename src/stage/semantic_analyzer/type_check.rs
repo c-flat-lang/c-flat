@@ -1,5 +1,4 @@
 #![allow(unused)]
-use super::type_resolver::TypeResolver;
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
 };
@@ -96,10 +95,7 @@ impl<'st> TypeChecker<'st> {
         }
     }
 
-    pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
-        let mut resolver = TypeResolver::new(self.symbol_table);
-        resolver.walk_items(ast)?;
-
+    pub fn check(mut self, ast: &mut [ast::Item], target_pointer_width: u8) -> Result<()> {
         for item in ast.iter_mut() {
             self.walk_item(item);
         }
@@ -364,6 +360,12 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_identifier(&mut self, expr: &Token) -> ast::Type {
         let Some(symbol) = self.symbol_table.get(expr.lexeme.as_str()) else {
+            #[cfg(feature = "debug")]
+            self.errors.push(Box::new(ErrorUndefinedSymbol::TokenDebug(
+                expr.clone(),
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
+            #[cfg(not(feature = "debug"))]
             self.errors
                 .push(Box::new(ErrorUndefinedSymbol::Token(expr.clone())));
             return Type {
@@ -630,7 +632,7 @@ mod tests {
                 .build(&mut ast)
                 .unwrap();
         let type_checker = TypeChecker::new(&mut symbol_table);
-        if let Err(errors) = type_checker.check(&mut ast) {
+        if let Err(errors) = type_checker.check(&mut ast, 64) {
             eprintln!("{}", errors.report("type_check.cb", src));
             assert!(false);
         }
