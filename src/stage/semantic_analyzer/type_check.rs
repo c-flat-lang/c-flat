@@ -351,6 +351,8 @@ impl<'st> TypeChecker<'st> {
                 expr.op.clone(),
                 left_ty.clone(),
                 right_ty.clone(),
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
             )));
 
             return Type {

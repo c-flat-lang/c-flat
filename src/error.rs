@@ -59,22 +59,49 @@ pub struct ErrorUnsupportedBinaryOp {
     lhs: Type,
     rhs: Type,
     op: Token,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
 }
 
 impl ErrorUnsupportedBinaryOp {
-    pub fn new(op: Token, lhs: Type, rhs: Type) -> Self {
-        Self { lhs, rhs, op }
+    pub fn new(
+        op: Token,
+        lhs: Type,
+        rhs: Type,
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            lhs,
+            rhs,
+            op,
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
     }
 }
 
 impl Report for ErrorUnsupportedBinaryOp {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
-            .with_message(format!(
-                "unsupported binary operator with {}",
-                self.op.lexeme
-            ))
-            .build()
+        #[cfg(not(feature = "debug"))]
+        {
+            ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
+                .with_message(format!(
+                    "unsupported binary operator with {} {} {}",
+                    self.lhs.kind, self.op.lexeme, self.rhs.kind,
+                ))
+                .build()
+        }
+
+        #[cfg(feature = "debug")]
+        {
+            ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
+                .with_message(format!(
+                    "unsupported binary operator with {} {} {}",
+                    self.lhs.kind, self.op.lexeme, self.rhs.kind,
+                ))
+                .with_note(&self.compiler_line)
+                .build()
+        }
     }
 }
 
