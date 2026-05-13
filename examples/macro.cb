@@ -1,10 +1,93 @@
 // This Example does not compile.
 // Just experimenting with syntax.
 use std::ArrayList;
-use core::macro::{TokenStream, Token};
+use std::os::unix::{syscall4, SYS_WRITE};
+use std::str::format;
+use core::macro::{TokenStream, Token, TokenKind};
 
-proc_macro println(tokens: TokenStream) TokenStream {
-    let output = ArrayList(Token).new();
-    println(tokens);
-    return tokens;
+
+// println!(#"this is a test {}"#, 42);
+
+macro println(tokens: TokenStream) TokenStream {
+    let mut output = ArrayList<(Token)>::new();
+    let file_descriptor = 1;
+
+    // Validate we got at least a format string
+    let first = tokens.peek();
+    if first.is_none() {
+        // Empty println — just write a newline
+        // Expand to: syscall4(SYS_WRITE, 1, "\n".ptr, 1);
+        output.push(Token::ident("syscall4"));
+        output.push(Token::punct("("));
+        output.push(Token::ident("SYS_WRITE"));
+        output.push(Token::punct(","));
+        output.push(Token::literal(file_descriptor));
+        output.push(Token::punct(","));
+        output.push(Token::str_literal("\n"));
+        output.push(Token::punct("."));
+        output.push(Token::ident("ptr"));
+        output.push(Token::punct(","));
+        output.push(Token::literal(1));
+        output.push(Token::punct(")"));
+        output.push(Token::punct(";"));
+        return TokenStream::from(output);
+    }
+
+    // Append a newline to the format string at the token level
+    // by letting format() handle it — we inject "\n" as a suffix
+    // Expand to:
+    // {
+    //     let __println_buf = format(<tokens>, "\n");
+    //     syscall4(SYS_WRITE, 1, __println_buf.ptr, __println_buf.len);
+    // }
+
+    // Opening block
+    output.push(Token::punct("{"));
+
+    // let __println_buf = format(<original tokens>, "\n");
+    output.push(Token::keyword("let"));
+    output.push(Token::ident("__println_buf"));
+    output.push(Token::punct("="));
+    output.push(Token::ident("format"));
+    output.push(Token::punct("("));
+
+    // Drain the original token stream into the format() call
+    while tokens.peek().is_some() {
+        let tok = tokens.next();
+
+        // If this is the format string literal, append \n to it
+        if tok.kind == TokenKind::StringLiteral and tokens.peek().is_none() {
+            // Last token was the format string with no args — bake \n in
+            let with_newline = tok.append_str("\\n");
+            output.push(with_newline);
+        } else {
+            output.push(tok);
+        }
+    }
+
+    // Close format() call
+    output.push(Token::punct(")"));
+    output.push(Token::punct(";"));
+
+    // syscall4(SYS_WRITE, 1, __println_buf.ptr, __println_buf.len);
+    output.push(Token::ident("syscall4"));
+    output.push(Token::punct("("));
+    output.push(Token::ident("SYS_WRITE"));
+    output.push(Token::punct(","));
+    output.push(Token::literal(file_descriptor));
+    output.push(Token::punct(","));
+    output.push(Token::ident("__println_buf"));
+    output.push(Token::punct("."));
+    output.push(Token::ident("ptr"));
+    output.push(Token::punct(","));
+    output.push(Token::ident("__println_buf"));
+    output.push(Token::punct("."));
+    output.push(Token::ident("len"));
+    output.push(Token::punct(")"));
+    output.push(Token::punct(";"));
+
+    // Closing block
+    output.push(Token::punct("}"));
+
+    return TokenStream::from(output);
 }
