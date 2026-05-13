@@ -2,6 +2,7 @@ use crate::stage::lexer::token::{Keyword, Span, Token, TokenKind};
 use crate::stage::parser::ast::{Type, TypeKind};
 use report::ReportBuilder;
 pub use report::{Report, Result};
+use std::fmt::Write;
 
 #[derive(Debug)]
 pub struct ErrorMissMatchedType {
@@ -35,21 +36,24 @@ impl ErrorMissMatchedType {
 impl Report for ErrorMissMatchedType {
     fn report(&self, filename: &str, src: &str) -> String {
         let span = self.alt_span.as_ref().unwrap_or(&self.found.span);
-        let mut report = ReportBuilder::new(filename, src, span).with_message("mismatched type");
-        #[cfg(not(feature = "debug"))]
-        {
-            report = report.with_note(format!(
-                "expected `{}`, found `{}`",
-                self.expected, self.found
-            ));
-        }
+        let mut report = ReportBuilder::new(filename, src, &span);
+        report.message("mismatched type");
+
+        let mut note = String::new();
+        write!(
+            &mut note,
+            "expected `{}`, found `{}`",
+            self.expected, self.found
+        )
+        .expect("Failed to write to note in ErrorExpectedType");
+
         #[cfg(feature = "debug")]
         {
-            report = report.with_note(format!(
-                "expected `{}`, found `{}`\n{}",
-                self.expected, self.found, self.compiler_line
-            ));
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to note in ErrorExpectedType");
         }
+
+        report.note(note);
         report.build()
     }
 }
@@ -82,26 +86,17 @@ impl ErrorUnsupportedBinaryOp {
 
 impl Report for ErrorUnsupportedBinaryOp {
     fn report(&self, filename: &str, src: &str) -> String {
-        #[cfg(not(feature = "debug"))]
-        {
-            ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
-                .with_message(format!(
-                    "unsupported binary operator with {} {} {}",
-                    self.lhs.kind, self.op.lexeme, self.rhs.kind,
-                ))
-                .build()
-        }
-
+        let span = self.lhs.span.start..self.rhs.span.end;
+        let mut report = ReportBuilder::new(filename, src, &span);
+        report.message(format!(
+            "unsupported binary operator with {} {} {}",
+            self.lhs.kind, self.op.lexeme, self.rhs.kind,
+        ));
         #[cfg(feature = "debug")]
         {
-            ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
-                .with_message(format!(
-                    "unsupported binary operator with {} {} {}",
-                    self.lhs.kind, self.op.lexeme, self.rhs.kind,
-                ))
-                .with_note(&self.compiler_line)
-                .build()
+            report.note(&self.compiler_line)
         }
+        report.build()
     }
 }
 
@@ -110,31 +105,52 @@ pub struct ErrorExpectedKeyWord {
     pub span: Span,
     pub actual: Token,
     pub expected: Vec<Keyword>,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
 }
 
 impl ErrorExpectedKeyWord {
-    pub fn new(span: Span, actual: Token, expected: &[Keyword]) -> Self {
+    pub fn new(
+        span: Span,
+        actual: Token,
+        expected: &[Keyword],
+
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
         Self {
             span,
             actual,
             expected: expected.to_vec(),
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
         }
     }
 }
 
 impl Report for ErrorExpectedKeyWord {
     fn report(&self, filename: &str, src: &str) -> String {
+        let mut note = String::new();
+        write!(
+            &mut note,
+            "expected `{}`, found `{}`",
+            self.expected
+                .iter()
+                .map(|k| k.to_string())
+                .collect::<Vec<_>>()
+                .join(", "),
+            self.actual.lexeme,
+        )
+        .expect("Failed to write note in ErrorExpectedKeyWord");
+
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write note in ErrorExpectedKeyWord");
+        }
+
         ReportBuilder::new(filename, src, &self.span)
-            .with_message("expected keyword")
-            .with_note(format!(
-                "expected `{}`, found `{}`",
-                self.expected
-                    .iter()
-                    .map(|k| k.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", "),
-                self.actual.lexeme
-            ))
+            .message("expected keyword")
+            .note(note)
             .build()
     }
 }
