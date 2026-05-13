@@ -112,6 +112,16 @@ pub struct ErrorExpectedKeyWord {
     pub expected: Vec<Keyword>,
 }
 
+impl ErrorExpectedKeyWord {
+    pub fn new(span: Span, actual: Token, expected: &[Keyword]) -> Self {
+        Self {
+            span,
+            actual,
+            expected: expected.to_vec(),
+        }
+    }
+}
+
 impl Report for ErrorExpectedKeyWord {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.span)

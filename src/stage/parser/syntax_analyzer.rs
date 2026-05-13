@@ -155,11 +155,11 @@ impl Parser {
             let Some(token) = self.lexer.next() else {
                 return Err(Box::new(ErrorUnexpectedEndOfInput));
             };
-            return Err(Box::new(ErrorExpectedKeyWord {
-                span: token.span.clone(),
-                actual: token,
-                expected: vec![Keyword::Struct, Keyword::Enum],
-            }));
+            return Err(Box::new(ErrorExpectedKeyWord::new(
+                token.span.clone(),
+                token,
+                &[Keyword::Struct, Keyword::Enum],
+            )));
         }
 
         let struct_token = self.consume(TokenKind::Keyword(Keyword::Struct))?;
