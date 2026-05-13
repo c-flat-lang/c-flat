@@ -347,11 +347,11 @@ impl<'st> TypeChecker<'st> {
         let right_ty = self.walk_expr(&mut expr.right);
         let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span());
         let Some(result_ty) = result_ty else {
-            self.errors.push(Box::new(ErrorUnsupportedBinaryOp {
-                lhs: left_ty.clone(),
-                rhs: right_ty.clone(),
-                op: expr.op.clone(),
-            }));
+            self.errors.push(Box::new(ErrorUnsupportedBinaryOp::new(
+                expr.op.clone(),
+                left_ty.clone(),
+                right_ty.clone(),
+            )));
 
             return Type {
                 kind: TypeKind::Void,

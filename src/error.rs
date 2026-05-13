@@ -56,15 +56,24 @@ impl Report for ErrorMissMatchedType {
 
 #[derive(Debug)]
 pub struct ErrorUnsupportedBinaryOp {
-    pub lhs: Type,
-    pub rhs: Type,
-    pub op: Token,
+    lhs: Type,
+    rhs: Type,
+    op: Token,
+}
+
+impl ErrorUnsupportedBinaryOp {
+    pub fn new(op: Token, lhs: Type, rhs: Type) -> Self {
+        Self { lhs, rhs, op }
+    }
 }
 
 impl Report for ErrorUnsupportedBinaryOp {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &(self.lhs.span.start..self.rhs.span.end))
-            .with_message("unsupported binary operator")
+            .with_message(format!(
+                "unsupported binary operator with {}",
+                self.op.lexeme
+            ))
             .build()
     }
 }
