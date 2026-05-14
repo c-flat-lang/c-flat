@@ -347,11 +347,13 @@ impl<'st> TypeChecker<'st> {
         let right_ty = self.walk_expr(&mut expr.right);
         let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span());
         let Some(result_ty) = result_ty else {
-            self.errors.push(Box::new(ErrorUnsupportedBinaryOp {
-                lhs: left_ty.clone(),
-                rhs: right_ty.clone(),
-                op: expr.op.clone(),
-            }));
+            self.errors.push(Box::new(ErrorUnsupportedBinaryOp::new(
+                expr.op.clone(),
+                left_ty.clone(),
+                right_ty.clone(),
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
 
             return Type {
                 kind: TypeKind::Void,
@@ -364,8 +366,13 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_identifier(&mut self, expr: &Token) -> ast::Type {
         let Some(symbol) = self.symbol_table.get(expr.lexeme.as_str()) else {
-            self.errors
-                .push(Box::new(ErrorUndefinedSymbol::Token(expr.clone())));
+            #[cfg(not(feature = "debug"))]
+            let error = ErrorUndefinedSymbol::Token(expr.clone());
+            #[cfg(feature = "debug")]
+            let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+            #[cfg(feature = "debug")]
+            let error = ErrorUndefinedSymbol::TokenDebug(expr.clone(), compiler_line);
+            self.errors.push(Box::new(error));
             return Type {
                 kind: TypeKind::Void,
                 span: expr.span.clone(),

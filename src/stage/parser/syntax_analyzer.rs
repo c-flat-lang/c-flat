@@ -34,7 +34,10 @@ impl Parser {
         while self.lexer.peek().is_some() {
             let visibility = self.parse_visibility()?;
             let Some(token) = self.lexer.peek() else {
-                return Err(Box::new(ErrorUnexpectedEndOfInput));
+                return Err(Box::new(ErrorUnexpectedEndOfInput::new(
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
             };
 
             match token.kind {
@@ -66,10 +69,12 @@ impl Parser {
                     items.push(ast::Item::Use(ast::Use { use_token, path }));
                 }
                 _ => {
-                    return Err(Box::new(ErrorUnexpectedTopLevelItem {
-                        found: token.clone(),
-                        expected: vec![Keyword::Fn, Keyword::Type, Keyword::Use, Keyword::Const],
-                    }));
+                    return Err(Box::new(ErrorUnexpectedTopLevelItem::new(
+                        token.clone(),
+                        &[Keyword::Fn, Keyword::Type, Keyword::Use, Keyword::Const],
+                        #[cfg(feature = "debug")]
+                        format!("{} {}:{}", file!(), line!(), column!()),
+                    )));
                 }
             }
         }
@@ -83,11 +88,16 @@ impl Parser {
     fn consume(&mut self, kind: TokenKind) -> Result<Token> {
         match self.lexer.next() {
             Some(token) if token.kind == kind => Ok(token),
-            Some(token) => Err(Box::new(ErrorExpectedToken {
-                actual: token,
-                expected: vec![kind],
-            })),
-            None => Err(Box::new(ErrorUnexpectedEndOfInput)),
+            Some(token) => Err(Box::new(ErrorExpectedToken::new(
+                token,
+                &[kind],
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            ))),
+            None => Err(Box::new(ErrorUnexpectedEndOfInput::new(
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            ))),
         }
     }
 
@@ -105,7 +115,10 @@ impl Parser {
                 Ok(ast::Visibility::Public)
             }
             Some(_) => Ok(ast::Visibility::Private),
-            None => Err(Box::new(ErrorUnexpectedEndOfInput)),
+            None => Err(Box::new(ErrorUnexpectedEndOfInput::new(
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            ))),
         }
     }
 
@@ -153,13 +166,18 @@ impl Parser {
 
         if !self.peek(TokenKind::Keyword(Keyword::Struct)) {
             let Some(token) = self.lexer.next() else {
-                return Err(Box::new(ErrorUnexpectedEndOfInput));
+                return Err(Box::new(ErrorUnexpectedEndOfInput::new(
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
             };
-            return Err(Box::new(ErrorExpectedKeyWord {
-                span: token.span.clone(),
-                actual: token,
-                expected: vec![Keyword::Struct, Keyword::Enum],
-            }));
+            return Err(Box::new(ErrorExpectedKeyWord::new(
+                token.span.clone(),
+                token,
+                &[Keyword::Struct, Keyword::Enum],
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         }
 
         let struct_token = self.consume(TokenKind::Keyword(Keyword::Struct))?;
@@ -243,7 +261,10 @@ impl Parser {
     fn parse_type(&mut self) -> Result<ast::Type> {
         let mut_token = self.consume_if_eq(TokenKind::Keyword(Keyword::Mut));
         let Some(tok) = self.lexer.next() else {
-            return Err(Box::new(ErrorUnexpectedEndOfInput));
+            return Err(Box::new(ErrorUnexpectedEndOfInput::new(
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         };
 
         match tok.kind {
@@ -285,7 +306,11 @@ impl Parser {
                     span,
                 })
             }
-            _ => Err(Box::new(ErrorExpectedType { found: tok })),
+            _ => Err(Box::new(ErrorExpectedType::new(
+                tok,
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            ))),
         }
     }
 
@@ -588,10 +613,12 @@ impl Parser {
         }
         let Some(right_paren) = self.lexer.next_if(|tok| tok.kind == TokenKind::RightParen) else {
             let span = args.last().map(|e| e.span()).unwrap_or(left_paren.span);
-            return Err(Box::new(ErrorMissingPairedClosingChar {
+            return Err(Box::new(ErrorMissingPairedClosingChar::new(
                 span,
-                expected: TokenKind::RightParen,
-            }));
+                TokenKind::RightParen,
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         };
         Ok(ast::Expr::Call(ast::ExprCall {
             caller: Box::new(caller),
@@ -603,7 +630,10 @@ impl Parser {
 
     fn parse_primary(&mut self) -> Result<ast::Expr> {
         let Some(token) = self.lexer.next() else {
-            return Err(Box::new(ErrorUnexpectedEndOfInput));
+            return Err(Box::new(ErrorUnexpectedEndOfInput::new(
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
         };
         match token.kind {
             TokenKind::Ampersand => {
@@ -646,9 +676,9 @@ impl Parser {
                     close_paren: right_paren,
                 }))
             }
-            _ => Err(Box::new(ErrorExpectedToken {
-                actual: token,
-                expected: vec![
+            _ => Err(Box::new(ErrorExpectedToken::new(
+                token,
+                &[
                     TokenKind::Number,
                     TokenKind::Float,
                     TokenKind::String,
@@ -658,7 +688,9 @@ impl Parser {
                     TokenKind::Keyword(Keyword::False),
                     TokenKind::LeftBracket,
                 ],
-            })),
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            ))),
         }
     }
 
@@ -797,9 +829,11 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 ..Default::default()
             });
         }
-        return Err(Box::new(ErrorExpectedType {
-            found: token.clone(),
-        }));
+        return Err(Box::new(ErrorExpectedType::new(
+            token.clone(),
+            #[cfg(feature = "debug")]
+            format!("{} {}:{}", file!(), line!(), column!()),
+        )));
     };
     match prefix {
         "u" => Ok(ast::Type {
@@ -817,8 +851,10 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
             span: token.span.clone(),
             mut_token,
         }),
-        _ => Err(Box::new(ErrorExpectedType {
-            found: token.clone(),
-        })),
+        _ => Err(Box::new(ErrorExpectedType::new(
+            token.clone(),
+            #[cfg(feature = "debug")]
+            format!("{} {}:{}", file!(), line!(), column!()),
+        ))),
     }
 }

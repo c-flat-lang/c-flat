@@ -39,18 +39,18 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
-    pub fn with_message(mut self, message: impl Into<String>) -> Self {
+    pub fn message(&mut self, message: impl Into<String>) -> &mut Self {
         self.message = message.into();
         self
     }
 
-    pub fn with_note(mut self, note: impl Into<String>) -> Self {
+    pub fn note(&mut self, note: impl Into<String>) -> &mut Self {
         self.note = Some(note.into());
         self
     }
 
     /// Lines to use above starting [Span]
-    pub fn with_lines_above(mut self, lines_above: usize) -> Self {
+    pub fn lines_above(&mut self, lines_above: usize) -> &mut Self {
         self.lines_above = lines_above;
         self
     }
