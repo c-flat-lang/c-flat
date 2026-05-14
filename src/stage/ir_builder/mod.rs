@@ -4,6 +4,7 @@ use crate::stage::lexer::token::{Keyword, Token, TokenKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbeat::Instruction;
+use bitbox::Target;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
 use bitbox::ir::{
     self, Constant, ConstantInt, Module, Operand, StructType, Type, Variable, Visibility,
@@ -15,13 +16,22 @@ use crate::stage::parser::ast::{
     ExprStruct, ExprTypeCast, ExprWhile, Litral, Struct,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct IRBuilder {
     symbol_table: SymbolTable,
     variable_stack: Vec<Variable>,
+    target: Target,
 }
 
 impl IRBuilder {
+    pub fn new(target: Target) -> Self {
+        Self {
+            symbol_table: SymbolTable::default(),
+            variable_stack: Vec::default(),
+            target,
+        }
+    }
+
     fn push(&mut self, var: Variable) {
         self.variable_stack.push(var);
     }
@@ -51,13 +61,16 @@ impl IRBuilder {
                 params
                     .iter()
                     .map(|param| {
-                        Variable::new(param.name.lexeme.clone(), param.ty.kind.as_bitbox_type())
+                        Variable::new(
+                            param.name.lexeme.clone(),
+                            param.ty.as_bitbox_type(&self.target),
+                        )
                     })
                     .collect(),
             )
-            .with_return_type(return_type.kind.as_bitbox_type());
+            .with_return_type(return_type.as_bitbox_type(&self.target));
 
-        let mut ctx = LoweringContext::new(&mut self.symbol_table);
+        let mut ctx = LoweringContext::new(&mut self.symbol_table, self.target);
 
         for param in function_builder.params.iter() {
             ctx.push(param.clone());
@@ -98,8 +111,11 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
 
                     let declaration = ir::ExternDecl {
                         name: binding_name.lexeme.clone(),
-                        params: params.iter().map(|ty| ty.kind.as_bitbox_type()).collect(),
-                        return_type: return_type.kind.as_bitbox_type(),
+                        params: params
+                            .iter()
+                            .map(|ty| ty.as_bitbox_type(&self.target))
+                            .collect(),
+                        return_type: return_type.as_bitbox_type(&self.target),
                     };
 
                     mb.extern_decl(declaration);
@@ -113,13 +129,15 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
 pub struct LoweringContext<'a> {
     symbol_table: &'a mut SymbolTable,
     variable_stack: Vec<Variable>,
+    target: Target,
 }
 
 impl<'a> LoweringContext<'a> {
-    pub fn new(symbol_table: &'a mut SymbolTable) -> Self {
+    pub fn new(symbol_table: &'a mut SymbolTable, target: Target) -> Self {
         Self {
             symbol_table,
             variable_stack: Vec::new(),
+            target,
         }
     }
 
@@ -235,7 +253,7 @@ impl Lowerable for ExprStruct {
             panic!("Symbol not found {}", self.name.lexeme);
         };
 
-        let ty = symbol.ty.kind.as_bitbox_type();
+        let ty = symbol.ty.as_bitbox_type(&ctx.target);
 
         let ptr = assembler.var(ty.clone());
 
@@ -316,7 +334,7 @@ impl Lowerable for ExprArray {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ty = self.ty.kind.as_bitbox_type();
+        let ty = self.ty.as_bitbox_type(&ctx.target);
         let size = Operand::ConstantInt(ir::ConstantInt::new(
             (self.elements.len() * (ty.size() as usize)).to_string(),
             Type::Signed(32),
@@ -386,7 +404,7 @@ impl Lowerable for ExprIfElse {
         let result_var = if self.ty.kind == ast::TypeKind::Void {
             None
         } else {
-            Some(assembler.var(self.ty.kind.as_bitbox_type()))
+            Some(assembler.var(self.ty.as_bitbox_type(&ctx.target)))
         };
 
         // Condition block
@@ -615,7 +633,7 @@ impl Lowerable for ExprDecl {
         } = self;
 
         let ty = if let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) {
-            symbol.ty.kind.as_bitbox_type()
+            symbol.ty.as_bitbox_type(&ctx.target)
         } else {
             ty.as_ref()
                 .unwrap_or(&ast::Type {
@@ -623,8 +641,7 @@ impl Lowerable for ExprDecl {
                     span: expr.span(),
                     ..Default::default()
                 })
-                .kind
-                .as_bitbox_type()
+                .as_bitbox_type(&ctx.target)
         };
         let Some(src) = expr.lower(assembler, ctx) else {
             panic!("Failed to return variable from expr lowering");
@@ -658,7 +675,7 @@ impl Lowerable for ExprCall {
             .as_ref()
             .unwrap_or(&ident.lexeme)
             .clone();
-        let ty = symbol.ty.kind.as_bitbox_type();
+        let ty = symbol.ty.as_bitbox_type(&ctx.target);
 
         let args: Vec<Operand> = self
             .args
@@ -720,7 +737,7 @@ impl Addressable for ExprArrayIndex {
         let address = Address {
             variable,
             offset,
-            size: ty.kind.size(),
+            size: ty.size(),
         };
         let var = AddressableVar::Address(address);
         Some(var)
@@ -737,11 +754,11 @@ impl Lowerable for ExprArrayRepeat {
             panic!("Expected array type but got {}", self.ty);
         };
         let size = Operand::from(ConstantInt::new(
-            (count * ty.kind.size()).to_string(),
+            (count * ty.size()).to_string(),
             Type::Signed(32),
         ));
-        let ptr = assembler.var(ty.kind.as_bitbox_type());
-        assembler.alloc(ty.kind.as_bitbox_type(), ptr.clone(), size);
+        let ptr = assembler.var(ty.as_bitbox_type(&ctx.target));
+        assembler.alloc(ty.as_bitbox_type(&ctx.target), ptr.clone(), size);
         for index in 0..*count {
             let Some(value) = self.value.lower(assembler, ctx) else {
                 panic!("Failed to return variable from expr lowering in Array");
@@ -855,7 +872,7 @@ impl Lowerable for ExprTypeCast {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         let src_var = self.expr.lower(assembler, ctx)?;
-        let des_ty = self.target_type.kind.as_bitbox_type();
+        let des_ty = self.target_type.as_bitbox_type(&ctx.target);
         let src_ty = src_var.ty.clone();
         let des = assembler.var(des_ty.clone());
         let cast_kind = match (des_ty, src_ty) {
