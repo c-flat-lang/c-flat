@@ -36,7 +36,7 @@ impl ErrorMissMatchedType {
 impl Report for ErrorMissMatchedType {
     fn report(&self, filename: &str, src: &str) -> String {
         let span = self.alt_span.as_ref().unwrap_or(&self.found.span);
-        let mut report = ReportBuilder::new(filename, src, &span);
+        let mut report = ReportBuilder::new(filename, src, span);
         report.message("mismatched type");
 
         let mut note = String::new();
@@ -94,7 +94,7 @@ impl Report for ErrorUnsupportedBinaryOp {
         ));
         #[cfg(feature = "debug")]
         {
-            report.note(&self.compiler_line)
+            report.note(&self.compiler_line);
         }
         report.build()
     }
@@ -114,7 +114,6 @@ impl ErrorExpectedKeyWord {
         span: Span,
         actual: Token,
         expected: &[Keyword],
-
         #[cfg(feature = "debug")] compiler_line: impl Into<String>,
     ) -> Self {
         Self {
@@ -157,99 +156,266 @@ impl Report for ErrorExpectedKeyWord {
 
 #[derive(Debug)]
 pub struct ErrorExpectedToken {
-    pub actual: Token,
-    pub expected: Vec<TokenKind>,
+    actual: Token,
+    expected: Vec<TokenKind>,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorExpectedToken {
+    pub fn new(
+        actual: Token,
+        expected: &[TokenKind],
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            actual,
+            expected: expected.to_vec(),
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
 }
 
 impl Report for ErrorExpectedToken {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.actual.span)
-            .with_message({
-                let expected = self
-                    .expected
-                    .iter()
-                    .map(|k| format!("`{k:?}`"))
-                    .collect::<Vec<_>>();
-                let expected_str = if expected.len() == 1 {
-                    format!("exected {}", expected[0])
-                } else {
-                    format!("expected one of: {}", expected.join(", "))
-                };
-                format!("{}, found `{}`", expected_str, self.actual.lexeme)
-            })
-            .with_lines_above(3)
-            .build()
+        let mut report = ReportBuilder::new(filename, src, &self.actual.span);
+        report.message({
+            let expected = self
+                .expected
+                .iter()
+                .map(|k| format!("`{k:?}`"))
+                .collect::<Vec<_>>();
+            let expected_str = if expected.len() == 1 {
+                format!("exected {}", expected[0])
+            } else {
+                format!("expected one of: {}", expected.join(", "))
+            };
+            format!("{}, found `{}`", expected_str, self.actual.lexeme)
+        });
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
     }
 }
 
 #[derive(Debug)]
+#[cfg(not(feature = "debug"))]
 pub struct ErrorUnexpectedEndOfInput;
+
+#[derive(Debug)]
+#[cfg(feature = "debug")]
+pub struct ErrorUnexpectedEndOfInput {
+    compiler_line: String,
+}
+
+#[allow(clippy::new_without_default)]
+impl ErrorUnexpectedEndOfInput {
+    pub fn new(#[cfg(feature = "debug")] compiler_line: impl Into<String>) -> Self {
+        #[cfg(not(feature = "debug"))]
+        {
+            Self
+        }
+        #[cfg(feature = "debug")]
+        {
+            Self {
+                compiler_line: compiler_line.into(),
+            }
+        }
+    }
+}
 
 impl Report for ErrorUnexpectedEndOfInput {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &Span::default())
-            .with_message("unexpected end of input")
-            .build()
+        let span = src.len().saturating_sub(1)..src.len();
+        let mut report = ReportBuilder::new(filename, src, &span);
+        report.message("unexpected end of input");
+        #[cfg(feature = "debug")]
+        {
+            report.note(&self.compiler_line);
+        }
+        report.build()
     }
 }
 
 #[derive(Debug)]
 pub struct ErrorExpectedType {
-    pub found: Token,
+    found: Token,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorExpectedType {
+    pub fn new(found: Token, #[cfg(feature = "debug")] compiler_line: impl Into<String>) -> Self {
+        Self {
+            found,
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
 }
 
 impl Report for ErrorExpectedType {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.found.span)
-            .with_message(format!(
-                "expected a type definition but found '{}'",
-                self.found.lexeme
-            ))
-            .with_lines_above(3)
-            .with_note("types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`")
-            .build()
+        let mut report = ReportBuilder::new(filename, src, &self.found.span);
+        report.message(format!(
+            "expected a type definition but found '{}'",
+            self.found.lexeme
+        ));
+        report.lines_above(3);
+
+        #[allow(unused_mut)]
+        let mut note =
+            "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`".to_string();
+
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to ErrorExpectedType");
+        }
+
+        report.note(note);
+        report.build()
     }
 }
 
 #[derive(Debug)]
 pub struct ErrorMissingPairedClosingChar {
-    pub span: Span,
-    pub expected: TokenKind,
+    span: Span,
+    expected: TokenKind,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorMissingPairedClosingChar {
+    pub fn new(
+        span: Span,
+        expected: TokenKind,
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            span,
+            expected,
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
 }
 
 impl Report for ErrorMissingPairedClosingChar {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.span)
-            .with_message("missing closing pair")
-            .with_note(format!("expected {:?}", self.expected))
-            .with_lines_above(3)
-            .build()
+        let mut report = ReportBuilder::new(filename, src, &self.span);
+        report.message("missing closing pair");
+        let mut note = String::new();
+
+        write!(&mut note, "expected {:?}", self.expected)
+            .expect("Failed to write debug info to ErrorMissingPairedClosingChar");
+
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to ErrorMissingPairedClosingChar");
+        }
+        report.note(note);
+        report.lines_above(3);
+        report.build()
     }
 }
 
 #[derive(Debug)]
 pub struct ErrorUnexpectedTopLevelItem {
-    pub found: Token,
-    pub expected: Vec<Keyword>,
+    found: Token,
+    expected: Vec<Keyword>,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorUnexpectedTopLevelItem {
+    pub fn new(
+        found: Token,
+        expected: &[Keyword],
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            found,
+            expected: expected.to_vec(),
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
 }
 
 impl Report for ErrorUnexpectedTopLevelItem {
     fn report(&self, filename: &str, src: &str) -> String {
-        ReportBuilder::new(filename, src, &self.found.span)
-            .with_message(format!(
-                "unexpected top level item `{}`",
-                &self.found.lexeme
-            ))
-            .with_note(format!(
-                "expected one of `{}`",
-                self.expected
-                    .iter()
-                    .map(|k| k.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            ))
-            .with_lines_above(3)
-            .build()
+        let mut report = ReportBuilder::new(filename, src, &self.found.span);
+        report.message(format!(
+            "unexpected top level item `{}`",
+            &self.found.lexeme
+        ));
+
+        let mut note = String::new();
+        write!(
+            &mut note,
+            "expected one of `{}`",
+            self.expected
+                .iter()
+                .map(|k| k.to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+        .expect("Failed writing to ErrorUnexpectedTopLevelItem note");
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to ErrorUnexpectedTopLevelItem");
+        }
+
+        report.note(note);
+
+        report.lines_above(3);
+        report.build()
+    }
+}
+
+#[derive(Debug)]
+pub enum ErrorUndefinedSymbol {
+    Token(Token),
+    Type(Type),
+
+    #[cfg(feature = "debug")]
+    TokenDebug(Token, String),
+
+    #[cfg(feature = "debug")]
+    TypeDebug(Type, String),
+}
+
+impl Report for ErrorUndefinedSymbol {
+    fn report(&self, filename: &str, src: &str) -> String {
+        #[allow(unused_variables)]
+        let (span, name, compiler_line) = match self {
+            ErrorUndefinedSymbol::Token(token) => (&token.span, &token.lexeme, None::<&String>),
+            ErrorUndefinedSymbol::Type(ty) => (&ty.span, &ty.to_string(), None),
+
+            #[cfg(feature = "debug")]
+            ErrorUndefinedSymbol::TokenDebug(token, compiler_line) => {
+                (&token.span, &token.lexeme, Some(compiler_line))
+            }
+            #[cfg(feature = "debug")]
+            ErrorUndefinedSymbol::TypeDebug(ty, compiler_line) => {
+                (&ty.span, &ty.to_string(), Some(compiler_line))
+            }
+        };
+
+        let mut report = ReportBuilder::new(filename, src, span);
+        report.message(format!("undefined symbol `{}`", name));
+
+        #[cfg(feature = "debug")]
+        if let Some(line) = compiler_line {
+            report.note(format!("undefined symbol `{}`\n{}", name, line));
+        }
+
+        report.build()
     }
 }
 
@@ -266,27 +432,5 @@ impl Report for Errors {
             final_report.push('\n');
         }
         final_report
-    }
-}
-
-#[derive(Debug)]
-pub enum ErrorUndefinedSymbol {
-    Token(Token),
-    Type(Type),
-}
-
-impl Report for ErrorUndefinedSymbol {
-    fn report(&self, filename: &str, src: &str) -> String {
-        let span = match self {
-            ErrorUndefinedSymbol::Token(token) => &token.span,
-            ErrorUndefinedSymbol::Type(ty) => &ty.span,
-        };
-        let name = match self {
-            ErrorUndefinedSymbol::Token(token) => &token.lexeme,
-            ErrorUndefinedSymbol::Type(ty) => &ty.to_string(),
-        };
-        ReportBuilder::new(filename, src, span)
-            .with_message(format!("undefined symbol `{}`", name))
-            .build()
     }
 }

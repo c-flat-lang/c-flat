@@ -235,8 +235,13 @@ impl SymbolTableBuilder {
             return;
         }
 
-        self.errors
-            .push(Box::new(ErrorUndefinedSymbol::Token(token.clone())));
+        #[cfg(not(feature = "debug"))]
+        let error = ErrorUndefinedSymbol::Token(token.clone());
+        #[cfg(feature = "debug")]
+        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+        #[cfg(feature = "debug")]
+        let error = ErrorUndefinedSymbol::TokenDebug(token.clone(), compiler_line);
+        self.errors.push(Box::new(error));
     }
 
     fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) {

@@ -366,8 +366,13 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_identifier(&mut self, expr: &Token) -> ast::Type {
         let Some(symbol) = self.symbol_table.get(expr.lexeme.as_str()) else {
-            self.errors
-                .push(Box::new(ErrorUndefinedSymbol::Token(expr.clone())));
+            #[cfg(not(feature = "debug"))]
+            let error = ErrorUndefinedSymbol::Token(expr.clone());
+            #[cfg(feature = "debug")]
+            let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+            #[cfg(feature = "debug")]
+            let error = ErrorUndefinedSymbol::TokenDebug(expr.clone(), compiler_line);
+            self.errors.push(Box::new(error));
             return Type {
                 kind: TypeKind::Void,
                 span: expr.span.clone(),

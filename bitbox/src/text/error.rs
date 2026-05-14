@@ -13,8 +13,8 @@ pub struct ErrorMissMatchedType {
 impl Report for ErrorMissMatchedType {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.span)
-            .with_message("mismatched type")
-            .with_note(format!(
+            .message("mismatched type")
+            .note(format!(
                 "expected `{}`, found `{}`",
                 self.expected, self.found
             ))
@@ -33,7 +33,7 @@ pub struct ErrorUnsupportedBinaryOp {
 impl Report for ErrorUnsupportedBinaryOp {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.span)
-            .with_message("unsupported binary operator")
+            .message("unsupported binary operator")
             .build()
     }
 }
@@ -48,8 +48,8 @@ pub struct ErrorExpectedKeyWord {
 impl Report for ErrorExpectedKeyWord {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.span)
-            .with_message("expected keyword")
-            .with_note(format!(
+            .message("expected keyword")
+            .note(format!(
                 "expected `{}`, found `{}`",
                 self.expected
                     .iter()
@@ -101,8 +101,8 @@ impl Report for ErrorExpectedToken {
             }
         };
         ReportBuilder::new(filename, src, &self.actual.span)
-            .with_message(message)
-            .with_lines_above(3)
+            .message(message)
+            .lines_above(3)
             .build()
     }
 }
@@ -113,7 +113,7 @@ pub struct ErrorUnexpectedEndOfInput;
 impl Report for ErrorUnexpectedEndOfInput {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &Span::default())
-            .with_message("unexpected end of input")
+            .message("unexpected end of input")
             .build()
     }
 }
@@ -126,14 +126,12 @@ pub struct ErrorExpectedType {
 impl Report for ErrorExpectedType {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.found.span)
-            .with_message(format!(
+            .message(format!(
                 "expected a type definition but found '{}'",
                 self.found.lexeme
             ))
-            .with_lines_above(3)
-            .with_note(
-                "types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`",
-            )
+            .lines_above(3)
+            .note("types must be defined as `u8`, `s8`, `u16`, `s16`, `u32`, `s32`, `f32`, `*`")
             .build()
     }
 }
@@ -147,9 +145,9 @@ pub struct ErrorMissingPairedClosingChar {
 impl Report for ErrorMissingPairedClosingChar {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.span)
-            .with_message("missing closing pair")
-            .with_note(format!("expected {:?}", self.expected))
-            .with_lines_above(3)
+            .message("missing closing pair")
+            .note(format!("expected {:?}", self.expected))
+            .lines_above(3)
             .build()
     }
 }
@@ -163,11 +161,11 @@ pub struct ErrorUnexpectedTopLevelItem {
 impl Report for ErrorUnexpectedTopLevelItem {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.found.span)
-            .with_message(format!(
+            .message(format!(
                 "unexpected top level item `{}`",
                 &self.found.lexeme
             ))
-            .with_note(format!(
+            .note(format!(
                 "expected one of `{}`",
                 self.expected
                     .iter()
@@ -175,7 +173,7 @@ impl Report for ErrorUnexpectedTopLevelItem {
                     .collect::<Vec<_>>()
                     .join(", ")
             ))
-            .with_lines_above(3)
+            .lines_above(3)
             .build()
     }
 }
@@ -204,7 +202,7 @@ pub struct ErrorUndefinedSymbol {
 impl Report for ErrorUndefinedSymbol {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.found.span)
-            .with_message(format!("undefined symbol `{}`", &self.found.lexeme))
+            .message(format!("undefined symbol `{}`", &self.found.lexeme))
             .build()
     }
 }
@@ -217,7 +215,7 @@ pub struct ErrorMissingSymbol {
 impl Report for ErrorMissingSymbol {
     fn report(&self, filename: &str, src: &str) -> String {
         ReportBuilder::new(filename, src, &self.symbol.span)
-            .with_message(format!("symbol `{}` not found", &self.symbol.lexeme))
+            .message(format!("symbol `{}` not found", &self.symbol.lexeme))
             .build()
     }
 }
