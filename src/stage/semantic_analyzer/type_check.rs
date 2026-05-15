@@ -448,6 +448,11 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_array_index(&mut self, expr: &mut ast::ExprArrayIndex) -> Type {
         let array_type = self.walk_expr(&mut expr.expr);
+        self.maybe_numeric_hint(&ast::Type {
+            mut_token: None,
+            kind: ast::TypeKind::UnsignedTargetPointerNumber,
+            span: expr.index.span(),
+        });
         let index_type = self.walk_expr(&mut expr.index);
         if index_type.kind != TypeKind::UnsignedTargetPointerNumber {
             self.errors.push(Box::new(ErrorMissMatchedType::new(

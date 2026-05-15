@@ -3,7 +3,7 @@
 // --target=x86_64-linux \
 // # this may need to be adjusted depending on where raylib is on your system
 // --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
-// examples/raylib-snake2.cb
+// examples/raylib-snake.cb
 
 // runtime.c
 extern C fn write_int(s32) void;
@@ -135,48 +135,48 @@ pub fn main() s32 {
     };
 
     // KEYCODES
-    let key_w                          : s32       = 87;
-    let key_s                          : s32       = 83;
-    let key_d                          : s32       = 68;
-    let key_a                          : s32       = 65;
-    let key_space                      : s32       = 32;
+    let key_w: s32 = 87;
+    let key_s: s32 = 83;
+    let key_d: s32 = 68;
+    let key_a: s32 = 65;
+    let key_space: s32 = 32;
 
-    let GAMEPAD_BUTTON_LEFT_FACE_UP    : s32       = 1;
-    let GAMEPAD_BUTTON_LEFT_FACE_RIGHT : s32       = 2;
-    let GAMEPAD_BUTTON_LEFT_FACE_DOWN  : s32       = 3;
-    let GAMEPAD_BUTTON_LEFT_FACE_LEFT  : s32       = 4;
+    let GAMEPAD_BUTTON_LEFT_FACE_UP: s32 = 1;
+    let GAMEPAD_BUTTON_LEFT_FACE_RIGHT: s32 = 2;
+    let GAMEPAD_BUTTON_LEFT_FACE_DOWN: s32 = 3;
+    let GAMEPAD_BUTTON_LEFT_FACE_LEFT: s32 = 4;
 
-    let CELL_SIZE                      : s32       = 32;
-    let screen_width                   : s32       = 40 * CELL_SIZE;
-    let screen_height                  : s32       = 25 * CELL_SIZE;
+    let CELL_SIZE: s32 = 32;
+    let screen_width: s32 = 40 * CELL_SIZE;
+    let screen_height: s32 = 25 * CELL_SIZE;
 
-    let DIRECTION_UP                   : u8        = 0;
-    let DIRECTION_DOWN                 : u8        = 1;
-    let DIRECTION_LEFT                 : u8        = 2;
-    let DIRECTION_RIGHT                : u8        = 3;
+    let DIRECTION_UP: u8 = 0;
+    let DIRECTION_DOWN: u8 = 1;
+    let DIRECTION_LEFT: u8 = 2;
+    let DIRECTION_RIGHT: u8 = 3;
 
     // PLAYER
-    let player_x                       : s32       = screen_width / (2 * CELL_SIZE);
-    let player_y                       : s32       = screen_height / (2 * CELL_SIZE);
-    let player_body                    : [32; u8]  = [0;32];
-    let player_body_x                  : [32; s32] = [0;32];
-    let player_body_y                  : [32; s32] = [0;32];
-    let player_body_index              : s32       = 0;
-    let player_last_moved              : f32       = 0.0;
-    let player_speed                   : f32       = 0.2;
-    let player_direction               : u8        = DIRECTION_RIGHT;
+    let player_x: s32 = screen_width / (2 * CELL_SIZE);
+    let player_y: s32 = screen_height / (2 * CELL_SIZE);
+    let player_body: [32; u8] = [0;32];
+    let player_body_x: [32; s32] = [0;32];
+    let player_body_y: [32; s32] = [0;32];
+    let player_body_index: usize = 0;
+    let player_last_moved: f32 = 0.0;
+    let player_speed: f32 = 0.2;
+    let player_direction: u8 = DIRECTION_RIGHT;
 
 
 
     // FOOD
-    let food_x                         : s32       = rand_range(0, screen_width / CELL_SIZE);
-    let food_y                         : s32       = rand_range(0, screen_height / CELL_SIZE);
+    let food_x: s32 = rand_range(0, screen_width / CELL_SIZE);
+    let food_y: s32 = rand_range(0, screen_height / CELL_SIZE);
 
     let title: [25; u8] = #"raylib c-flat snake demo\0"#;
     init_window(screen_width, screen_height, &title);
 
     let text: [8; u8] = #"Score: \0"#;
-    let score: [2; u8]  = #"0\0"#;
+    let score: [2; u8] = #"0\0"#;
 
     set_target_fps(60);
     while !window_should_close() {
@@ -263,7 +263,7 @@ pub fn main() s32 {
             }
 
 
-            let mut body_index_1 = 0;
+            let mut body_index_1: usize = 0;
             while body_index_1 < player_body_index {
                 let current_x = player_body_x[body_index_1];
                 let current_y = player_body_y[body_index_1];
@@ -294,7 +294,7 @@ pub fn main() s32 {
         );
 
         // PLAYER BODY
-        let mut body_index = 0;
+        let mut body_index: usize = 0;
         while body_index < player_body_index {
             let bx = player_body_x[body_index] * CELL_SIZE;
             let by = player_body_y[body_index] * CELL_SIZE;
@@ -316,8 +316,6 @@ pub fn main() s32 {
             CELL_SIZE,
             player_color
         );
-
-
 
         draw_text(&text, 10, 10, 30, 0xFF_00_00_00);
         draw_text(&score, 120, 10, 30, 0xFF_00_00_00);
