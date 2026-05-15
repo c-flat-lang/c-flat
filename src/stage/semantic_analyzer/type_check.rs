@@ -343,8 +343,10 @@ impl<'st> TypeChecker<'st> {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
 
-        for arg in expr.args.iter_mut() {
+        for (arg, ty) in expr.args.iter_mut().zip(&symbol.params.unwrap_or_default()) {
+            self.maybe_numeric_hint(&ty);
             self.walk_expr(arg);
+            self.numeric_hint = None;
         }
 
         symbol.ty.clone()
