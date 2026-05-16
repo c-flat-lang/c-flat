@@ -1,0 +1,74 @@
+                     Tokenizer
+                        Parser
+[
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 4..6,
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: 7..11,
+            },
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                span: 14..17,
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: 18..19,
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: 175..181,
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            Token {
+                                                kind: Number,
+                                                lexeme: "0",
+                                                span: 182..183,
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 183..184,
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: 185..186,
+                },
+            },
+        },
+    ),
+]

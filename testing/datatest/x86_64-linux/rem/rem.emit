@@ -1,0 +1,74 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+main_entry:
+  # @assign s32 : tmp.0_v0, 11
+  # lowering assign
+  # lowering operand
+  mov vreg(1 : Reg64), 11
+  mov vreg(0 : Reg64), vreg(1 : Reg64)
+  # @assign s32 : tmp.1_v0, 2
+  # lowering assign
+  # lowering operand
+  mov vreg(4 : Reg64), 2
+  mov vreg(3 : Reg64), vreg(4 : Reg64)
+  # @rem s32 : tmp.2_v0, tmp.0_v0, tmp.1_v0
+  # lowering rem
+  # lowering operand
+  # lowering operand
+  mov rax, vreg(0 : Reg64)
+  cqo
+  idiv vreg(3 : Reg64)
+  mov vreg(6 : Reg64), rdx
+  # @assign s32 : n_v0, tmp.2_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-4], vreg(6 : Reg32)
+  # @assign s32 : tmp.3_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(10 : Reg64), 10
+  mov vreg(9 : Reg64), vreg(10 : Reg64)
+  # @call write_char(tmp.3_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(9 : Reg32)
+  mov edi, dword ptr [rbp-8]
+  call write_char
+  # @call write_int(n_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-4]
+  call write_int
+  # @assign s32 : tmp.4_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(13 : Reg64), 10
+  mov vreg(12 : Reg64), vreg(13 : Reg64)
+  # @call write_char(tmp.4_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-12], vreg(12 : Reg32)
+  mov edi, dword ptr [rbp-12]
+  call write_char
+exit_main:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

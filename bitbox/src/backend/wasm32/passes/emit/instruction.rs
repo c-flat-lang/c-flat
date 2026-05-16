@@ -1023,6 +1023,17 @@ impl Lower<Wasm32LowerContext<'_>> for ICast {
             crate::ir::CastKind::NoOp => {}
         };
 
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+
+        target.assembler.local_set(idx as u32);
+
         Ok(())
     }
 }

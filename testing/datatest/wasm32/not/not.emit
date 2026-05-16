@@ -1,0 +1,57 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+        LocalFunctionVariables
+              ControlFlowGraph
+                 StructuringIr
+              LivenessAnalysis
+                          Emit(module
+  (type (;0;) (func (param i32)))
+  (type (;1;) (func (param i32)))
+  (type (;2;) (func))
+  (import "core" "write_int" (func (;0;) (type 0)))
+  (import "core" "write_char" (func (;1;) (type 1)))
+  (memory (;0;) 1)
+  (global (;0;) (mut i32) i32.const 0)
+  (export "memory" (memory 0))
+  (export "__stack_pointer" (global 0))
+  (export "main" (func 2))
+  (func (;2;) (type 2)
+    (local i32 i32 i32 i32 i32 i32 i32 i32)
+    i32.const 1
+    local.set 0
+    local.get 0
+    i32.eqz
+    local.set 1
+    local.get 1
+    if ;; label = @1
+      i32.const 10
+      local.set 2
+      local.get 2
+      call 1
+      i32.const 1
+      local.set 3
+      local.get 3
+      call 0
+      i32.const 10
+      local.set 4
+      local.get 4
+      call 1
+    else
+      i32.const 10
+      local.set 5
+      local.get 5
+      call 1
+      i32.const 2
+      local.set 6
+      local.get 6
+      call 0
+      i32.const 10
+      local.set 7
+      local.get 7
+      call 1
+    end
+  )
+)

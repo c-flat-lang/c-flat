@@ -1,0 +1,11 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+        LocalFunctionVariables
+              ControlFlowGraph
+                 StructuringIr
+              LivenessAnalysis
+                          Emit
+                       Running bin/void.wasm
