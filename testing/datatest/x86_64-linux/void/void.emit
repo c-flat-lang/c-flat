@@ -1,0 +1,25 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 0
+  # -- args --
+main_entry:
+exit_main:
+  add rsp, 0
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

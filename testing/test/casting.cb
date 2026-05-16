@@ -3,6 +3,7 @@ extern C fn write_char(u8) void;
 
 pub fn main() void {
     let n: s32 = 97;
+    write_char(10);
     write_int(n);
     write_char(10);
     write_char(n as u8);

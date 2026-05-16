@@ -1,0 +1,21 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+extern write_int (s32) -> void
+extern write_char (u8) -> void
+[31mpublic[0m [31mfunction[0m [35mmain[0m() void{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.0_v0[0m, [33m97[0m
+    [34m@assign[0m [33ms32[0m : [1;36mn_v0[0m, [1;36mtmp.0_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_char[0m([1;36mtmp.1_v0[0m)
+    [34m@call[0m [35mwrite_int[0m([1;36mn_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_char[0m([1;36mtmp.2_v0[0m)
+    [34m@cast[0m [33mu8[0m : [1;36mtmp.3_v0[0m, [1;36mn_v0[0m, [33msigned-to-unsigned[0m
+    [34m@call[0m [35mwrite_char[0m([1;36mtmp.3_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.4_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_char[0m([1;36mtmp.4_v0[0m)
+}

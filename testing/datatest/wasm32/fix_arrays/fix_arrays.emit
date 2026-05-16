@@ -1,0 +1,24 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+        LocalFunctionVariables
+              ControlFlowGraph
+                 StructuringIr
+              LivenessAnalysis
+                          Emit(module
+  (type (;0;) (func (result i32)))
+  (memory (;0;) 1)
+  (global (;0;) (mut i32) i32.const 0)
+  (export "memory" (memory 0))
+  (export "__stack_pointer" (global 0))
+  (export "main" (func 0))
+  (func (;0;) (type 0) (result i32)
+    (local i32)
+    i32.const 0
+    local.set 0
+    local.get 0
+    return
+  )
+)
