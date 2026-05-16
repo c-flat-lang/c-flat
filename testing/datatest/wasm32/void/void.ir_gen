@@ -1,0 +1,8 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+[31mpublic[0m [31mfunction[0m [35mmain[0m() void{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+}

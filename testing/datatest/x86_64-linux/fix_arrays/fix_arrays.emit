@@ -1,0 +1,34 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 0
+  # -- args --
+main_entry:
+  # @assign s32 : tmp.0_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(1 : Reg64), 0
+  mov vreg(0 : Reg64), vreg(1 : Reg64)
+  # @ret s32 : tmp.0_v0
+  # lowering return
+  mov eax, vreg(0 : Reg32)
+  jmp exit_main
+exit_main:
+  add rsp, 0
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

@@ -27,11 +27,7 @@ pub fn run_bitbeat(data: String) -> Result<()> {
     machine.register_module(module);
     machine.spawn("main", "main", &[]);
 
-    let start = std::time::Instant::now();
     machine.run();
-
-    let seconds = start.elapsed().as_secs_f32();
-    println!("Done in {}", seconds);
 
     Ok(())
 }
@@ -48,9 +44,6 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
         if let Some(c) = char::from_u32(a as u32) {
             print!("{}", c);
         }
-    })?;
-    linker.func_wrap("core", "writenl", || {
-        println!();
     })?;
     linker.func_wrap("core", "write_int", |a: i32| {
         print!("{}", a);
@@ -90,23 +83,13 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
     let instance = linker.instantiate(&mut store, &module)?;
     let Ok(main_func) = instance.get_typed_func::<(), i32>(&mut store, "main") else {
         let main_func = instance.get_typed_func::<(), ()>(&mut store, "main")?;
-        let start = std::time::Instant::now();
 
         main_func.call(&mut store, ())?;
 
-        let seconds = start.elapsed().as_secs_f32();
-
-        println!("Done in {}", seconds);
         return Ok(());
     };
 
-    let start = std::time::Instant::now();
-
     let ret = main_func.call(&mut store, ())?;
 
-    let seconds = start.elapsed().as_secs_f32();
-
-    println!("Done in {}", seconds);
-    eprintln!("Return value: {}", ret);
-    Ok(())
+    std::process::exit(ret);
 }

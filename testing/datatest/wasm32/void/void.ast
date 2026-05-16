@@ -1,0 +1,40 @@
+                     Tokenizer
+                        Parser
+[
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 4..6,
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: 7..11,
+            },
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: Void,
+                span: 14..18,
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: 19..20,
+                },
+                statements: [],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: 20..21,
+                },
+            },
+        },
+    ),
+]

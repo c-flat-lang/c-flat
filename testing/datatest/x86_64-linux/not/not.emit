@@ -1,0 +1,118 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 32
+  # -- args --
+main_entry:
+  # @assign u32 : tmp.0_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(1 : Reg64), 1
+  mov vreg(0 : Reg64), vreg(1 : Reg64)
+  # @not u32 : tmp.1_v0, tmp.0_v0
+  # lowering not
+  test vreg(0 : Reg64), vreg(0 : Reg64)
+  sete vreg(3 : Reg8)
+  movzx vreg(4 : Reg64), vreg(3 : Reg8)
+  # @jumpif tmp.1_v0, %then.0
+  # lowering jump if
+  # lowering operand
+  test vreg(4 : Reg64), vreg(4 : Reg64)
+  jnz main_then_0
+  # @jump %else.0
+  # lowering jump if
+  jmp main_else_0
+main_then_0:
+  # @assign s32 : tmp.2_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(7 : Reg64), 10
+  mov vreg(6 : Reg64), vreg(7 : Reg64)
+  # @call write_char(tmp.2_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-4], vreg(6 : Reg32)
+  mov edi, dword ptr [rbp-4]
+  call write_char
+  # @assign s32 : tmp.3_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(10 : Reg64), 1
+  mov vreg(9 : Reg64), vreg(10 : Reg64)
+  # @call write_int(tmp.3_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(9 : Reg32)
+  mov edi, dword ptr [rbp-8]
+  call write_int
+  # @assign s32 : tmp.4_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(13 : Reg64), 10
+  mov vreg(12 : Reg64), vreg(13 : Reg64)
+  # @call write_char(tmp.4_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-12], vreg(12 : Reg32)
+  mov edi, dword ptr [rbp-12]
+  call write_char
+  # @jump %merge.0
+  # lowering jump if
+  jmp main_merge_0
+main_else_0:
+  # @assign s32 : tmp.5_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(16 : Reg64), 10
+  mov vreg(15 : Reg64), vreg(16 : Reg64)
+  # @call write_char(tmp.5_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-16], vreg(15 : Reg32)
+  mov edi, dword ptr [rbp-16]
+  call write_char
+  # @assign s32 : tmp.6_v0, 2
+  # lowering assign
+  # lowering operand
+  mov vreg(19 : Reg64), 2
+  mov vreg(18 : Reg64), vreg(19 : Reg64)
+  # @call write_int(tmp.6_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-20], vreg(18 : Reg32)
+  mov edi, dword ptr [rbp-20]
+  call write_int
+  # @assign s32 : tmp.7_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(22 : Reg64), 10
+  mov vreg(21 : Reg64), vreg(22 : Reg64)
+  # @call write_char(tmp.7_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-24], vreg(21 : Reg32)
+  mov edi, dword ptr [rbp-24]
+  call write_char
+  # @jump %merge.0
+  # lowering jump if
+  jmp main_merge_0
+main_merge_0:
+exit_main:
+  add rsp, 32
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

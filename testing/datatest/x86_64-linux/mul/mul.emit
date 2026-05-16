@@ -1,0 +1,77 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 32
+  # -- args --
+main_entry:
+  # @assign s32 : tmp.0_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(1 : Reg64), 10
+  mov vreg(0 : Reg64), vreg(1 : Reg64)
+  # @assign s32 : a_v0, tmp.0_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-4], vreg(0 : Reg32)
+  # @assign s32 : tmp.1_v0, 5
+  # lowering assign
+  # lowering operand
+  mov vreg(5 : Reg64), 5
+  mov vreg(4 : Reg64), vreg(5 : Reg64)
+  # @assign s32 : b_v0, tmp.1_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(4 : Reg32)
+  # @assign s32 : tmp.2_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(9 : Reg64), 10
+  mov vreg(8 : Reg64), vreg(9 : Reg64)
+  # @call write_char(tmp.2_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-12], vreg(8 : Reg32)
+  mov edi, dword ptr [rbp-12]
+  call write_char
+  # @mul s32 : tmp.3_v0, a_v0, b_v0
+  # lowering mul
+  # lowering operand
+  # lowering operand
+  mov vreg(11 : Reg32), dword ptr [rbp-4]
+  imul vreg(11 : Reg32), dword ptr [rbp-8]
+  # @call write_int(tmp.3_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-16], vreg(11 : Reg32)
+  mov edi, dword ptr [rbp-16]
+  call write_int
+  # @assign s32 : tmp.4_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(14 : Reg64), 10
+  mov vreg(13 : Reg64), vreg(14 : Reg64)
+  # @call write_char(tmp.4_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-20], vreg(13 : Reg32)
+  mov edi, dword ptr [rbp-20]
+  call write_char
+exit_main:
+  add rsp, 32
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---
