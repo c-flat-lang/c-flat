@@ -819,6 +819,20 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 mut_token,
             });
         }
+        "usize" => {
+            return Ok(ast::Type {
+                kind: ast::TypeKind::UnsignedTargetPointerNumber,
+                span: token.span.clone(),
+                mut_token,
+            });
+        }
+        "ssize" => {
+            return Ok(ast::Type {
+                kind: ast::TypeKind::SignedTargetPointerNumber,
+                span: token.span.clone(),
+                mut_token,
+            });
+        }
         _ => (),
     }
     let Some((prefix, number)) = parse_type(&token.lexeme) else {

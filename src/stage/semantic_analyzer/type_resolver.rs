@@ -219,6 +219,8 @@ impl<'st> TypeResolver<'st> {
         let found = ty.clone();
         match &mut ty.kind {
             TypeKind::Bool
+            | TypeKind::SignedTargetPointerNumber
+            | TypeKind::UnsignedTargetPointerNumber
             | TypeKind::UnsignedNumber(_)
             | TypeKind::SignedNumber(_)
             | TypeKind::Float(_)

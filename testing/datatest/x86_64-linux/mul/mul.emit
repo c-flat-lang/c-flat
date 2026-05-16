@@ -8,7 +8,8 @@
               ControlFlowGraph
               LivenessAnalysis
             PhiNodeElimination
-                          Emit.intel_syntax noprefix
+                          Emit
+.intel_syntax noprefix
 .globl main
   # Defining Function main
 main:

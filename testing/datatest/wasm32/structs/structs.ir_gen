@@ -1,0 +1,47 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+extern write_int (s32) -> void
+extern write_char (u8) -> void
+[31mfunction[0m [35minit_list[0m() List{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@alloc[0m [33mList[0m : [1;36mtmp.0_v0[0m, [33m1[0m
+    [34m@alloc[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m8[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m0[0m
+    [34m@elemset[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m0[0m, [1;36mtmp.2_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.3_v0[0m, [33m0[0m
+    [34m@elemset[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m1[0m, [1;36mtmp.3_v0[0m
+    [34m@elemset[0m [33mList[0m : [1;36mtmp.0_v0[0m, [33m0[0m, [1;36mtmp.1_v0[0m
+    [34m@assign[0m [33mList[0m : [1;36mlist_v0[0m, [1;36mtmp.0_v0[0m
+    [34m@ret[0m [33mList[0m : [1;36mlist_v0[0m
+}
+[31mfunction[0m [35mset_list[0m([1;36mlist_v0[0m: [33m*List[0m, [1;36mindex_v0[0m: [33mu32[0m, [1;36mvalue_v0[0m: [33ms32[0m, ) void{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@elemget[0m [33m[2 x s32][0m : [1;36mtmp.0_v0[0m, [1;36mlist_v0[0m, [33m0[0m
+    [34m@elemset[0m [33m[2 x s32][0m : [1;36mtmp.0_v0[0m, [1;36mindex_v0[0m, [1;36mvalue_v0[0m
+}
+[31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@call[0m [33mList[0m : [1;36mtmp.0_v0[0m [35minit_list[0m()
+    [34m@assign[0m [33mList[0m : [1;36mlist_v0[0m, [1;36mtmp.0_v0[0m
+    [34m@elemget[0m [33m[2 x s32][0m : [1;36mtmp.1_v0[0m, [1;36mlist_v0[0m, [33m0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m0[0m
+    [34m@elemget[0m [33ms32[0m : [1;36mtmp.3_v0[0m, [1;36mtmp.1_v0[0m, [1;36mtmp.2_v0[0m
+    [34m@call[0m [35mwrite_int[0m([1;36mtmp.3_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.4_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_char[0m([1;36mtmp.4_v0[0m)
+    [34m@ref[0m [33m*List[0m : [1;36mtmp.5_v0[0m, [1;36mlist_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.6_v0[0m, [33m0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.7_v0[0m, [33m1[0m
+    [34m@call[0m [35mset_list[0m([1;36mtmp.5_v0[0m, [1;36mtmp.6_v0[0m, [1;36mtmp.7_v0[0m)
+    [34m@elemget[0m [33m[2 x s32][0m : [1;36mtmp.8_v0[0m, [1;36mlist_v0[0m, [33m0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.9_v0[0m, [33m0[0m
+    [34m@elemget[0m [33ms32[0m : [1;36mtmp.10_v0[0m, [1;36mtmp.8_v0[0m, [1;36mtmp.9_v0[0m
+    [34m@call[0m [35mwrite_int[0m([1;36mtmp.10_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.11_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_char[0m([1;36mtmp.11_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.12_v0[0m, [33m0[0m
+    [34m@ret[0m [33ms32[0m : [1;36mtmp.12_v0[0m
+}

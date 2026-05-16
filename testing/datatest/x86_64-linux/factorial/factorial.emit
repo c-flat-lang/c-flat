@@ -1,0 +1,165 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit
+.intel_syntax noprefix
+.globl main
+  # Defining Function factorial
+factorial:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+  # arg: n
+  mov dword ptr [rbp-4], edi
+factorial_entry:
+  # @assign s32 : tmp.1_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(2 : Reg64), 1
+  mov vreg(1 : Reg64), vreg(2 : Reg64)
+  # @cmp s32 : tmp.2_v0, n_v0, tmp.1_v0
+  # lowering cmp
+  # lowering operand
+  # lowering operand
+  cmp dword ptr [rbp-4], vreg(1 : Reg32)
+  sete vreg(4 : Reg8)
+  movzx vreg(5 : Reg64), vreg(4 : Reg8)
+  # @jumpif tmp.2_v0, %then.0
+  # lowering jump if
+  # lowering operand
+  test vreg(5 : Reg64), vreg(5 : Reg64)
+  jnz factorial_then_0
+  # @jump %else.0
+  # lowering jump if
+  jmp factorial_else_0
+factorial_then_0:
+  # @assign s32 : tmp.3_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(8 : Reg64), 1
+  mov vreg(7 : Reg64), vreg(8 : Reg64)
+  # @assign s32 : result_v0, tmp.3_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(7 : Reg32)
+  # @assign s32 : tmp.0_v0, result_v0
+  # lowering assign
+  # lowering operand
+  mov vreg(11 : Reg32), dword ptr [rbp-8]
+  # @jump %merge.0
+  # lowering jump if
+  jmp factorial_merge_0
+factorial_else_0:
+  # @assign s32 : tmp.4_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(14 : Reg64), 1
+  mov vreg(13 : Reg64), vreg(14 : Reg64)
+  # @sub s32 : tmp.5_v0, n_v0, tmp.4_v0
+  # lowering sub
+  # lowering operand
+  # lowering operand
+  mov vreg(16 : Reg32), dword ptr [rbp-4]
+  sub vreg(16 : Reg64), vreg(13 : Reg64)
+  # @assign s32 : n_minus_one_v0, tmp.5_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-12], vreg(16 : Reg32)
+  # @call s32 : tmp.6_v0 factorial(n_minus_one_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-12]
+  call factorial
+  mov vreg(19 : Reg64), rax
+  # @assign s32 : recursive_result_v0, tmp.6_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-16], vreg(19 : Reg32)
+  # @mul s32 : tmp.7_v0, n_v0, recursive_result_v0
+  # lowering mul
+  # lowering operand
+  # lowering operand
+  mov vreg(22 : Reg32), dword ptr [rbp-4]
+  imul vreg(22 : Reg32), dword ptr [rbp-16]
+  # @assign s32 : result_v0, tmp.7_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(22 : Reg32)
+  # @assign s32 : tmp.0_v0, result_v0
+  # lowering assign
+  # lowering operand
+  mov vreg(11 : Reg32), dword ptr [rbp-8]
+  # @jump %merge.0
+  # lowering jump if
+  jmp factorial_merge_0
+factorial_merge_0:
+  # @ret s32 : tmp.0_v0
+  # lowering return
+  mov eax, vreg(11 : Reg32)
+  jmp exit_factorial
+exit_factorial:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function factorial ---
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+main_entry:
+  # @assign s32 : tmp.0_v0, 5
+  # lowering assign
+  # lowering operand
+  mov vreg(1 : Reg64), 5
+  mov vreg(0 : Reg64), vreg(1 : Reg64)
+  # @assign s32 : input_v0, tmp.0_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-4], vreg(0 : Reg32)
+  # @call s32 : tmp.1_v0 factorial(input_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-4]
+  call factorial
+  mov vreg(4 : Reg64), rax
+  # @assign s32 : fact_result_v0, tmp.1_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(4 : Reg32)
+  # @call write_int(fact_result_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-8]
+  call write_int
+  # @assign s32 : tmp.2_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(8 : Reg64), 10
+  mov vreg(7 : Reg64), vreg(8 : Reg64)
+  # @call write_char(tmp.2_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-12], vreg(7 : Reg32)
+  mov edi, dword ptr [rbp-12]
+  call write_char
+  # @ret s32 : fact_result_v0
+  # lowering return
+  mov eax, dword ptr [rbp-8]
+  jmp exit_main
+exit_main:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

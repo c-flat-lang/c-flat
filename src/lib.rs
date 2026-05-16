@@ -37,7 +37,8 @@ pub fn front_end_compiler(src: &str, cli_options: Cli) -> Result<bitbox::ir::Mod
         web_sys::console::log_1(&string.into());
     }
 
-    let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
+    let module =
+        stage::ir_builder::IRBuilder::new(cli_options.target()).run((symbol_table, ast))?;
 
     if let Some(DebugMode::Ir) = cli_options.debug_mode() {
         let string = format!("{}", module);
@@ -113,7 +114,7 @@ pub fn front_end_compiler(src: &str, cli_options: &Cli) -> Result<bitbox::ir::Mo
         std::process::exit(0);
     }
 
-    let module = stage::ir_builder::IRBuilder::default().run((symbol_table, ast))?;
+    let module = stage::ir_builder::IRBuilder::new(cli_options.target).run((symbol_table, ast))?;
 
     if let Some(DebugMode::Ir) = cli_options.debug_mode {
         eprintln!("{}", module);

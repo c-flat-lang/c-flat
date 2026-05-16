@@ -13,6 +13,16 @@ impl Type {
         match (&self.kind, op, &other.kind) {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
             (
+                TypeKind::SignedTargetPointerNumber,
+                (Plus | Minus | Star | Slash | Percent),
+                TypeKind::SignedTargetPointerNumber,
+            ) => Some(self.clone()),
+            (
+                TypeKind::UnsignedTargetPointerNumber,
+                (Plus | Minus | Star | Slash | Percent),
+                TypeKind::UnsignedTargetPointerNumber,
+            ) => Some(self.clone()),
+            (
                 TypeKind::UnsignedNumber(lhs),
                 (Plus | Minus | Star | Slash | Percent),
                 TypeKind::UnsignedNumber(rhs),
@@ -29,6 +39,16 @@ impl Type {
             ) if lhs == rhs => Some(self.clone()),
 
             // (EqualEqual | Greater | GreaterEqual | Less | LessEqual) Comparison ops work on numbers and return bools
+            (
+                TypeKind::UnsignedTargetPointerNumber,
+                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                TypeKind::UnsignedTargetPointerNumber,
+            ) => Some(self.map_kind(|_| TypeKind::Bool)),
+            (
+                TypeKind::SignedTargetPointerNumber,
+                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                TypeKind::SignedTargetPointerNumber,
+            ) => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::UnsignedNumber(lhs),
                 (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
@@ -49,22 +69,6 @@ impl Type {
             (TypeKind::Bool, (EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or)), TypeKind::Bool) => {
                 Some(self.map_kind(|_| TypeKind::Bool))
             }
-
-            // (Plus | Minus | Star | Slash) only work on numbers and return the same type
-            (
-                TypeKind::SignedNumber(lhs),
-                (Plus | Minus | Star | Slash),
-                TypeKind::SignedNumber(rhs),
-            ) if lhs == rhs => Some(other.clone()),
-            (TypeKind::Float(lhs), Plus | Minus | Star | Slash, TypeKind::Float(rhs)) => {
-                Some(self.clone())
-            }
-
-            //(Type::Custom(name), op, Type::Custom(rhs)) => {
-            //    // For operator overloading — check user-defined impls
-            //    // e.g., lookup "impl Add for MyType { ... }" in your symbol table maybe
-            //    self.resolve_overloaded_op(op, rhs)
-            //}
             _ => None,
         }
         .map(|mut t| {
@@ -251,12 +255,16 @@ impl<'st> TypeChecker<'st> {
         let rhs = self.walk_expr(&mut expr.right);
         self.numeric_hint = None;
         if lhs != rhs {
-            self.errors.push(Box::new(ErrorMissMatchedType::new(
-                rhs,
-                lhs.kind.clone(),
-                #[cfg(feature = "debug")]
-                format!("{} {}:{}", file!(), line!(), column!()),
-            )));
+            self.errors.push(Box::new({
+                let mut error = ErrorMissMatchedType::new(
+                    rhs,
+                    lhs.kind.clone(),
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                );
+                error.alt_span(expr.left.span());
+                error
+            }));
         }
         lhs
     }
@@ -335,8 +343,10 @@ impl<'st> TypeChecker<'st> {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
 
-        for arg in expr.args.iter_mut() {
+        for (arg, ty) in expr.args.iter_mut().zip(&symbol.params.unwrap_or_default()) {
+            self.maybe_numeric_hint(&ty);
             self.walk_expr(arg);
+            self.numeric_hint = None;
         }
 
         symbol.ty.clone()
@@ -344,7 +354,9 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_binary(&mut self, expr: &mut ast::ExprBinary) -> ast::Type {
         let left_ty = self.walk_expr(&mut expr.left);
+        self.maybe_numeric_hint(&left_ty);
         let right_ty = self.walk_expr(&mut expr.right);
+        self.numeric_hint = None;
         let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span());
         let Some(result_ty) = result_ty else {
             self.errors.push(Box::new(ErrorUnsupportedBinaryOp::new(
@@ -435,15 +447,19 @@ impl<'st> TypeChecker<'st> {
             mut_token: None,
         }
     }
+
     fn walk_expr_array_index(&mut self, expr: &mut ast::ExprArrayIndex) -> Type {
         let array_type = self.walk_expr(&mut expr.expr);
+        self.maybe_numeric_hint(&ast::Type {
+            mut_token: None,
+            kind: ast::TypeKind::UnsignedTargetPointerNumber,
+            span: expr.index.span(),
+        });
         let index_type = self.walk_expr(&mut expr.index);
-        // HACK: This should be of type `usize` later once we have support for pointers
-        if index_type.kind != TypeKind::SignedNumber(32) {
+        if index_type.kind != TypeKind::UnsignedTargetPointerNumber {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 index_type.clone(),
-                // HACK: usize
-                TypeKind::SignedNumber(32),
+                TypeKind::UnsignedTargetPointerNumber,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -542,7 +558,7 @@ impl<'st> TypeChecker<'st> {
                 };
                 *expr = ast::Expr::Litral(ast::Litral::Integer(token));
                 Type {
-                    kind: TypeKind::SignedNumber(32),
+                    kind: TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),
                     mut_token: None,
                 }
@@ -584,6 +600,20 @@ impl<'st> TypeChecker<'st> {
                 })
             }
             ty @ TypeKind::Float(_) => {
+                self.numeric_hint = Some(Type {
+                    kind: ty.clone(),
+                    span: maybe.span.clone(),
+                    mut_token: None,
+                })
+            }
+            ty @ TypeKind::SignedTargetPointerNumber => {
+                self.numeric_hint = Some(Type {
+                    kind: ty.clone(),
+                    span: maybe.span.clone(),
+                    mut_token: None,
+                })
+            }
+            ty @ TypeKind::UnsignedTargetPointerNumber => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),

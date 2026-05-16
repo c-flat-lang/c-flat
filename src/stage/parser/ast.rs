@@ -1,5 +1,5 @@
 #![allow(unused)]
-use bitbox::text::semantic_analyzer::Symbol;
+use bitbox::{Target, text::semantic_analyzer::Symbol};
 use std::fmt::Write;
 
 use crate::stage::lexer::token::{Span, Token};
@@ -45,30 +45,51 @@ impl Type {
             span: self.span.clone(),
         }
     }
+
+    pub fn as_bitbox_type(&self, target: &Target) -> bitbox::ir::Type {
+        let target_pointer_size: u8 = match target {
+            Target::Wasm32 => 32,
+            Target::X86_64Linux => 64,
+            Target::Bitbeat => 64,
+        };
+        self.kind.as_bitbox_type(target_pointer_size)
+    }
+
+    pub fn size(&self) -> usize {
+        self.kind.size()
+    }
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum TypeKind {
     Array(usize, Box<Type>),
     Bool,
+    /// unimplemented!
     Enum(String),
     Float(u8),
+    /// Simple Custom `Type` with no `TypeArgs`
     Name(String),
+    /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
     Ref(Box<Type>),
     SignedNumber(u8),
+    /// isize
+    SignedTargetPointerNumber,
     Struct(StructType),
     UnsignedNumber(u8),
+    /// usize
+    UnsignedTargetPointerNumber,
     #[default]
     Void,
 }
 
 impl TypeKind {
-    pub fn as_bitbox_type(&self) -> bitbox::ir::Type {
+    fn as_bitbox_type(&self, target_pointer_size: u8) -> bitbox::ir::Type {
         match self {
-            Self::Array(size, ty) => {
-                bitbox::ir::Type::Array(*size, Box::new(ty.kind.clone().as_bitbox_type()))
-            }
+            Self::Array(size, ty) => bitbox::ir::Type::Array(
+                *size,
+                Box::new(ty.kind.as_bitbox_type(target_pointer_size)),
+            ),
             Self::Bool => bitbox::ir::Type::Unsigned(32),
             Self::Enum(name) => todo!("{name}"),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
@@ -84,24 +105,26 @@ impl TypeKind {
                 )
             }
             Self::Ref(inner) => {
-                bitbox::ir::Type::Pointer(Box::new(inner.kind.clone().as_bitbox_type()))
+                bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
             }
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
+            Self::SignedTargetPointerNumber => bitbox::ir::Type::Signed(target_pointer_size),
             Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: struct_type.name.clone(),
                 fields: struct_type
                     .fields
                     .iter()
-                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type()))
+                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type(target_pointer_size)))
                     .collect(),
                 packed: struct_type.packed,
             }),
             Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
+            Self::UnsignedTargetPointerNumber => bitbox::ir::Type::Unsigned(target_pointer_size),
             Self::Void => bitbox::ir::Type::Void,
         }
     }
 
-    pub(crate) fn size(&self) -> usize {
+    fn size(&self) -> usize {
         match self {
             Self::Array(count, ty) => count * ty.kind.size(),
             Self::Bool => 1,
@@ -116,6 +139,9 @@ impl TypeKind {
                 )
             }
             Self::Ref(_) => 64,
+            Self::SignedTargetPointerNumber => unreachable!(
+                "ssize or SignedTargetPointerNumber should be handled in type_resolver"
+            ),
             Self::Struct(struct_type) => {
                 let mut size = 0;
                 for (_, ty) in &struct_type.fields {
@@ -126,6 +152,9 @@ impl TypeKind {
             Self::UnsignedNumber(bytes) | Self::SignedNumber(bytes) | Self::Float(bytes) => {
                 (*bytes as usize) / 8
             }
+            Self::UnsignedTargetPointerNumber => unreachable!(
+                "usize or UnsignedTargetPointerNumber should be handled in type_resolver"
+            ),
             Self::Void => 0,
         }
     }
@@ -142,8 +171,10 @@ impl std::fmt::Display for TypeKind {
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
             Self::Ref(ty) => write!(f, "ref {ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
+            Self::SignedTargetPointerNumber => write!(f, "ssize"),
             Self::Struct(symbol) => write!(f, "{}", symbol.name),
             Self::UnsignedNumber(n) => write!(f, "u{}", n),
+            Self::UnsignedTargetPointerNumber => write!(f, "usize"),
             Self::Void => write!(f, "void"),
         }
     }

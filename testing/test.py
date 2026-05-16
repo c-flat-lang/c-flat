@@ -88,7 +88,7 @@ def run_snapshot_tests(
     target: Target,
     debug: DebugInfoAtStage,
     quiet: bool,
-) -> int:
+) -> bool:
     passed = 0
     failed = 0
     updated = 0
@@ -112,20 +112,20 @@ def run_snapshot_tests(
 
         stderr = result.stderr.rstrip()
         stdout = result.stdout.rstrip()
-        program_ouput = stderr + stdout
+        program_output = "\n".join(x for x in [stderr, stdout] if x)
 
         snapshot = snapshot_path(file, target, debug)
 
         if not snapshot.exists():
             if quiet:
-                return 1
+                return False
 
             print("\nNo snapshot found.")
             print("\nProduced output:\n")
-            print(program_ouput)
+            print(program_output)
 
             if ask_yes_no(f"\nCreate snapshot {snapshot.name}?"):
-                snapshot.write_text(program_ouput)
+                snapshot.write_text(program_output)
                 updated += 1
                 print("Snapshot created.")
                 continue
@@ -135,7 +135,7 @@ def run_snapshot_tests(
 
         expected = snapshot.read_text().rstrip()
 
-        if program_ouput == expected:
+        if program_output == expected:
             if not quiet:
                 print("PASS")
             passed += 1
@@ -146,7 +146,7 @@ def run_snapshot_tests(
 
         diff = difflib.unified_diff(
             expected.splitlines(),
-            program_ouput.splitlines(),
+            program_output.splitlines(),
             fromfile="expected",
             tofile="actual",
             lineterm="",
@@ -155,14 +155,15 @@ def run_snapshot_tests(
         if not quiet:
             print("\n".join(diff))
 
-        if not quiet and ask_yes_no(f"\nUpdate snapshot {snapshot.name}?"):
-            snapshot.write_text(program_ouput)
+        if quiet:
+            failed += 1
+        elif ask_yes_no(f"\nUpdate snapshot {snapshot.name}?"):
+            snapshot.write_text(program_output)
             updated += 1
             print("Snapshot updated.")
         else:
             failed += 1
-            if not quiet:
-                print("FAIL")
+            print("FAIL")
 
     if not quiet:
         print("\n========================")
@@ -203,45 +204,45 @@ def compile():
 
 
 def run_test_on_target(target: Target, quiet: bool):
-    run_snapshot_tests(
-        "./testing/test",
-        ["./target/debug/cflat"],
-        target,
-        DebugInfoAtStage.Token,
-        quiet,
-    )
+    results = [
+        run_snapshot_tests(
+            "./testing/test",
+            ["./target/debug/cflat"],
+            target,
+            DebugInfoAtStage.Token,
+            quiet,
+        ),
+        run_snapshot_tests(
+            "./testing/test",
+            ["./target/debug/cflat"],
+            target,
+            DebugInfoAtStage.Ast,
+            quiet,
+        ),
+        run_snapshot_tests(
+            "./testing/test",
+            ["./target/debug/cflat"],
+            target,
+            DebugInfoAtStage.IrGenerator,
+            quiet,
+        ),
+        run_snapshot_tests(
+            "./testing/test",
+            ["./target/debug/cflat"],
+            target,
+            DebugInfoAtStage.Emit,
+            quiet,
+        ),
+        run_snapshot_tests(
+            "./testing/test",
+            ["./target/debug/cflat", "run"],
+            target,
+            DebugInfoAtStage.Nothing,
+            quiet,
+        ),
+    ]
 
-    run_snapshot_tests(
-        "./testing/test",
-        ["./target/debug/cflat"],
-        target,
-        DebugInfoAtStage.Ast,
-        quiet,
-    )
-
-    run_snapshot_tests(
-        "./testing/test",
-        ["./target/debug/cflat"],
-        target,
-        DebugInfoAtStage.IrGenerator,
-        quiet,
-    )
-
-    run_snapshot_tests(
-        "./testing/test",
-        ["./target/debug/cflat"],
-        target,
-        DebugInfoAtStage.Emit,
-        quiet,
-    )
-
-    run_snapshot_tests(
-        "./testing/test",
-        ["./target/debug/cflat", "run"],
-        target,
-        DebugInfoAtStage.Nothing,
-        quiet,
-    )
+    return all(results)
 
 
 def main():
@@ -260,8 +261,14 @@ def main():
         if not args.quiet:
             print("Build failed")
         exit(1)
-    run_test_on_target(Target.wasm32, args.quiet)
-    run_test_on_target(Target.x86_64_linux, args.quiet)
+    results = [
+        run_test_on_target(Target.wasm32, args.quiet),
+        run_test_on_target(Target.x86_64_linux, args.quiet),
+    ]
+
+    success = all(results)
+
+    exit(0 if success else 1)
 
 
 if __name__ == "__main__":

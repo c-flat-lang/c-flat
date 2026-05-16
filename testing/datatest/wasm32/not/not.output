@@ -9,4 +9,5 @@
               LivenessAnalysis
                           Emit
                        Running bin/not.wasm
+
 2
