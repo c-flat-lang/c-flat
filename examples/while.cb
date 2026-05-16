@@ -3,7 +3,7 @@ extern C fn write_char(u8) void;
 
 pub fn main() s32 {
     let mut array: [2; s32] = [ 0; 2 ];
-    let mut i: s32 = 0;
+    let mut i: usize = 0;
     while i < array.len {
         let value = array[i];
         write_int(value);
@@ -12,5 +12,5 @@ pub fn main() s32 {
         write_char(10);
         i = i + 1;
     }
-    return i;
+    return i as s32;
 }
