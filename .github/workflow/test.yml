@@ -1,55 +1,75 @@
 name: C-Flat Test
 
 on:
-  # Build master branch only
   push:
     branches:
       - master
-  # Build pull requests targeting master branch only
+
   pull_request:
     branches:
       - master
 
 jobs:
   test:
-    name: ${{matrix.rust}} on ${{ matrix.os }}
+    name: ${{ matrix.rust }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-2022, macOS-latest]
         rust: [stable, nightly]
-        # Allow failures on nightly, it's just informative
+
         include:
           - rust: stable
             can-fail: false
           - rust: nightly
             can-fail: true
+
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
       - name: Install Rust
-        uses: hecrj/setup-rust-action@master
+        uses: dtolnay/rust-toolchain@master
         with:
-          rust-version: ${{ matrix.rust }}
-          components: rustfmt,clippy
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
+
       - name: Toolchain Information
         run: |
           rustc --version
           rustfmt --version
           rustup --version
           cargo --version
+          python3 --version
+
       - name: Check Formatting
         if: matrix.rust == 'stable'
-        run: cargo fmt --all -- --check
+        run: cargo fmt --all --check
         continue-on-error: ${{ matrix.can-fail }}
+
       - name: Clippy
-        run: cargo clippy -- -D clippy::all
+        run: cargo clippy --workspace --quiet -- -D warnings
         continue-on-error: ${{ matrix.can-fail }}
-      - name: Test Build
-        run: cargo build
+
+      - name: Rust Tests
+        run: cargo test --workspace --quiet
         continue-on-error: ${{ matrix.can-fail }}
-      - name: Run Tests
-        run: cargo test
+
+      - name: Snapshot Tests
+        run: python3 ./testing/test.py --quiet
         continue-on-error: ${{ matrix.can-fail }}
