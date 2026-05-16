@@ -1,27 +1,16 @@
 #!/usr/bin/env python3
 
+import argparse
 import difflib
 from enum import Enum, auto
 import subprocess
 from pathlib import Path
 
-DEFAULT_BUILD_OUTPUT = """
-                     Tokenizer
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-        LocalFunctionVariables
-              ControlFlowGraph
-                 StructuringIr
-              LivenessAnalysis
-                          Emit
-""".strip()
-
 
 class Target(Enum):
     x86_64_linux = auto()
     wasm32 = auto()
+    # We are not testing bitbeat cause it is so far behide
     bitbeat = auto()
 
     def __str__(self):
@@ -98,7 +87,8 @@ def run_snapshot_tests(
     command: list[str],
     target: Target,
     debug: DebugInfoAtStage,
-):
+    quiet: bool,
+) -> int:
     passed = 0
     failed = 0
     updated = 0
@@ -108,8 +98,9 @@ def run_snapshot_tests(
     )
 
     for file in files:
-        print("\n========================")
-        print("Testing:", file)
+        if not quiet:
+            print("\n========================")
+            print("Testing:", file)
 
         result = subprocess.run(
             command
@@ -126,6 +117,8 @@ def run_snapshot_tests(
         snapshot = snapshot_path(file, target, debug)
 
         if not snapshot.exists():
+            if quiet:
+                return 1
 
             print("\nNo snapshot found.")
             print("\nProduced output:\n")
@@ -143,11 +136,13 @@ def run_snapshot_tests(
         expected = snapshot.read_text().rstrip()
 
         if program_ouput == expected:
-            print("PASS")
+            if not quiet:
+                print("PASS")
             passed += 1
             continue
 
-        print("SNAPSHOT DIFFERENCE")
+        if not quiet:
+            print("SNAPSHOT DIFFERENCE")
 
         diff = difflib.unified_diff(
             expected.splitlines(),
@@ -157,25 +152,27 @@ def run_snapshot_tests(
             lineterm="",
         )
 
-        print("\n".join(diff))
+        if not quiet:
+            print("\n".join(diff))
 
-        if ask_yes_no(f"\nUpdate snapshot {snapshot.name}?"):
+        if not quiet and ask_yes_no(f"\nUpdate snapshot {snapshot.name}?"):
             snapshot.write_text(program_ouput)
             updated += 1
             print("Snapshot updated.")
         else:
             failed += 1
-            print("FAIL")
+            if not quiet:
+                print("FAIL")
 
-    print("\n========================")
-    print("Summary")
-    print("========================")
-    print("Passed :", passed)
-    print("Failed :", failed)
-    print("Updated:", updated)
+    if not quiet:
+        print("\n========================")
+        print("Summary")
+        print("========================")
+        print("Passed :", passed)
+        print("Failed :", failed)
+        print("Updated:", updated)
 
-    if failed:
-        exit(1)
+    return failed == 0 and updated == 0
 
 
 def compile():
@@ -205,12 +202,13 @@ def compile():
     return result.returncode == 0
 
 
-def run_test_on_target(target: Target):
+def run_test_on_target(target: Target, quiet: bool):
     run_snapshot_tests(
         "./testing/test",
         ["./target/debug/cflat"],
         target,
         DebugInfoAtStage.Token,
+        quiet,
     )
 
     run_snapshot_tests(
@@ -218,6 +216,7 @@ def run_test_on_target(target: Target):
         ["./target/debug/cflat"],
         target,
         DebugInfoAtStage.Ast,
+        quiet,
     )
 
     run_snapshot_tests(
@@ -225,6 +224,7 @@ def run_test_on_target(target: Target):
         ["./target/debug/cflat"],
         target,
         DebugInfoAtStage.IrGenerator,
+        quiet,
     )
 
     run_snapshot_tests(
@@ -232,6 +232,7 @@ def run_test_on_target(target: Target):
         ["./target/debug/cflat"],
         target,
         DebugInfoAtStage.Emit,
+        quiet,
     )
 
     run_snapshot_tests(
@@ -239,12 +240,29 @@ def run_test_on_target(target: Target):
         ["./target/debug/cflat", "run"],
         target,
         DebugInfoAtStage.Nothing,
+        quiet,
     )
 
 
-if __name__ == "__main__":
+def main():
+    parser = argparse.ArgumentParser(description="Run snapshot tests")
+
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress output and return status only",
+    )
+
+    args = parser.parse_args()
+
     if not compile():
-        print("Build failed")
+        if not args.quiet:
+            print("Build failed")
         exit(1)
-    run_test_on_target(Target.wasm32)
-    run_test_on_target(Target.x86_64_linux)
+    run_test_on_target(Target.wasm32, args.quiet)
+    run_test_on_target(Target.x86_64_linux, args.quiet)
+
+
+if __name__ == "__main__":
+    main()
