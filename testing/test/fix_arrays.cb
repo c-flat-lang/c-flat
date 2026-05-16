@@ -1,9 +1,9 @@
 pub fn main() s32 {
-    // let array: [2; s32] = [0; 2];
-    // let mut i: usize = 0;
-    // while i < array.len {
-    //     array[i] = i;
-    //     i = i + 1;
-    // }
+    let array: [2; s32] = [0; 2];
+    let mut i: usize = 0;
+    while i < array.len {
+        array[i] = i as s32;
+        i = i + 1;
+    }
     return 0;
 }

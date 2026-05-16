@@ -1,0 +1,220 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit
+.intel_syntax noprefix
+.globl main
+  # Defining Function init_list
+init_list:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 48
+  # -- args --
+init_list_entry:
+  # @alloc List : tmp.0_v0, 1
+  # lowering alloc
+  # @alloc s32 : tmp.1_v0, 8
+  # lowering alloc
+  # @assign s32 : tmp.2_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(3 : Reg64), 0
+  mov vreg(2 : Reg64), vreg(3 : Reg64)
+  # @elemset s32 : tmp.1_v0, 0, tmp.2_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(5 : Reg64), 0
+  # lowering operand
+  lea vreg(6 : Reg64), qword ptr [rbp-40]
+  mov [vreg(6 : Reg64) + vreg(5 : Reg64) * 4], vreg(2 : Reg32)
+  # @assign s32 : tmp.3_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(8 : Reg64), 0
+  mov vreg(7 : Reg64), vreg(8 : Reg64)
+  # @elemset s32 : tmp.1_v0, 1, tmp.3_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(10 : Reg64), 1
+  # lowering operand
+  lea vreg(11 : Reg64), qword ptr [rbp-40]
+  mov [vreg(11 : Reg64) + vreg(10 : Reg64) * 4], vreg(7 : Reg32)
+  # @elemset List : tmp.0_v0, 0, tmp.1_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(12 : Reg64), 0
+  # lowering operand
+  lea vreg(13 : Reg64), qword ptr [rbp-8]
+  mov vreg(14 : Reg64), 0
+  mov vreg(15 : Reg64), qword ptr [rbp-40]
+  mov [vreg(13 : Reg64) + vreg(14 : Reg64) * 1], vreg(15 : Reg64)
+  # @assign List : list_v0, tmp.0_v0
+  # lowering assign
+  # @ret List : list_v0
+  # lowering return
+  mov rax, qword ptr [rbp-8]
+  jmp exit_init_list
+exit_init_list:
+  add rsp, 48
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function init_list ---
+  # Defining Function set_list
+set_list:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 32
+  # -- args --
+  # arg: list
+  mov qword ptr [rbp-8], rdi
+  # arg: index
+  mov qword ptr [rbp-16], rsi
+  # arg: value
+  mov dword ptr [rbp-20], edx
+set_list_entry:
+  # @elemget [2 x s32] : tmp.0_v0, list_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(3 : Reg64), 0
+  mov vreg(4 : Reg64), qword ptr [rbp-8]
+  # @elemset [2 x s32] : tmp.0_v0, index_v0, value_v0
+  # lowering elemset
+  # lowering operand
+  # lowering operand
+  mov vreg(6 : Reg64), qword ptr [rbp-16]
+  mov vreg(7 : Reg32), dword ptr [rbp-20]
+  mov [vreg(4 : Reg64) + vreg(6 : Reg64) * 4], vreg(7 : Reg32)
+exit_set_list:
+  add rsp, 32
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function set_list ---
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 48
+  # -- args --
+main_entry:
+  # @call List : tmp.0_v0 init_list()
+  # lowering call
+  call init_list
+  mov qword ptr [rbp-8], rax
+  # @assign List : list_v0, tmp.0_v0
+  # lowering assign
+  # @elemget [2 x s32] : tmp.1_v0, list_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(1 : Reg64), 0
+  # @assign s32 : tmp.2_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(4 : Reg64), 0
+  mov vreg(3 : Reg64), vreg(4 : Reg64)
+  # @elemget s32 : tmp.3_v0, tmp.1_v0, tmp.2_v0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  lea vreg(6 : Reg64), qword ptr [rbp-8]
+  mov vreg(7 : Reg32), [vreg(6 : Reg64) + vreg(3 : Reg64) * 4]
+  # @call write_int(tmp.3_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-12], vreg(7 : Reg32)
+  mov edi, dword ptr [rbp-12]
+  call write_int
+  # @assign s32 : tmp.4_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(10 : Reg64), 10
+  mov vreg(9 : Reg64), vreg(10 : Reg64)
+  # @call write_char(tmp.4_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-16], vreg(9 : Reg32)
+  mov edi, dword ptr [rbp-16]
+  call write_char
+  # @ref *List : tmp.5_v0, list_v0
+  # lowering ref (address-of)
+  lea vreg(12 : Reg64), qword ptr [rbp-8]
+  # @assign s32 : tmp.6_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(15 : Reg64), 0
+  mov vreg(14 : Reg64), vreg(15 : Reg64)
+  # @assign s32 : tmp.7_v0, 1
+  # lowering assign
+  # lowering operand
+  mov vreg(18 : Reg64), 1
+  mov vreg(17 : Reg64), vreg(18 : Reg64)
+  # @call set_list(tmp.5_v0, tmp.6_v0, tmp.7_v0)
+  # lowering call
+  # lowering operand
+  mov qword ptr [rbp-24], vreg(12 : Reg64)
+  # lowering operand
+  mov dword ptr [rbp-28], vreg(14 : Reg32)
+  # lowering operand
+  mov dword ptr [rbp-32], vreg(17 : Reg32)
+  mov rdi, qword ptr [rbp-24]
+  mov esi, dword ptr [rbp-28]
+  mov edx, dword ptr [rbp-32]
+  call set_list
+  # @elemget [2 x s32] : tmp.8_v0, list_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(20 : Reg64), 0
+  # @assign s32 : tmp.9_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(23 : Reg64), 0
+  mov vreg(22 : Reg64), vreg(23 : Reg64)
+  # @elemget s32 : tmp.10_v0, tmp.8_v0, tmp.9_v0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  lea vreg(25 : Reg64), qword ptr [rbp-8]
+  mov vreg(26 : Reg32), [vreg(25 : Reg64) + vreg(22 : Reg64) * 4]
+  # @call write_int(tmp.10_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-36], vreg(26 : Reg32)
+  mov edi, dword ptr [rbp-36]
+  call write_int
+  # @assign s32 : tmp.11_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(29 : Reg64), 10
+  mov vreg(28 : Reg64), vreg(29 : Reg64)
+  # @call write_char(tmp.11_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-40], vreg(28 : Reg32)
+  mov edi, dword ptr [rbp-40]
+  call write_char
+  # @assign s32 : tmp.12_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(32 : Reg64), 0
+  mov vreg(31 : Reg64), vreg(32 : Reg64)
+  # @ret s32 : tmp.12_v0
+  # lowering return
+  mov eax, vreg(31 : Reg32)
+  jmp exit_main
+exit_main:
+  add rsp, 48
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

@@ -7,7 +7,8 @@
               ControlFlowGraph
                  StructuringIr
               LivenessAnalysis
-                          Emit(module
+                          Emit
+(module
   (type (;0;) (func (result i32)))
   (memory (;0;) 1)
   (global (;0;) (mut i32) i32.const 0)
@@ -15,10 +16,72 @@
   (export "__stack_pointer" (global 0))
   (export "main" (func 0))
   (func (;0;) (type 0) (result i32)
-    (local i32)
+    (local i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
+    global.get 0
+    local.tee 0
+    i32.const 8
+    i32.const 4
+    i32.mul
+    i32.add
+    global.set 0
     i32.const 0
-    local.set 0
+    local.set 1
+    i32.const 0
+    i32.const 4
+    i32.mul
     local.get 0
+    i32.add
+    local.get 1
+    i32.store
+    i32.const 0
+    local.set 2
+    i32.const 1
+    i32.const 4
+    i32.mul
+    local.get 0
+    i32.add
+    local.get 2
+    i32.store
+    local.get 0
+    local.set 3
+    i32.const 0
+    local.set 4
+    local.get 4
+    local.set 5
+    block ;; label = @1
+      loop ;; label = @2
+        i32.const 2
+        local.set 6
+        local.get 5
+        local.get 6
+        i32.lt_s
+        local.set 7
+        local.get 7
+        i32.eqz
+        br_if 1 (;@1;)
+        local.get 5
+        local.set 8
+        local.get 5
+        i32.const 4
+        i32.mul
+        local.get 3
+        i32.add
+        local.get 8
+        i32.store
+        i32.const 1
+        local.set 9
+        local.get 5
+        local.get 9
+        i32.add
+        local.set 10
+        local.get 10
+        local.set 5
+        br 0 (;@2;)
+      end
+    end
+    i32.const 0
+    local.set 11
+    local.get 11
     return
   )
 )

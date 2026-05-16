@@ -1,0 +1,590 @@
+                     Tokenizer
+                        Parser
+[
+    ExternFunction(
+        ExternFunction {
+            visibility: Private,
+            extern_token: Token {
+                kind: Keyword(
+                    Extern,
+                ),
+                lexeme: "extern",
+                span: 0..6,
+            },
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 9..11,
+            },
+            calling_convention: Token {
+                kind: Identifier,
+                lexeme: "C",
+                span: 7..8,
+            },
+            binding_name: Token {
+                kind: Identifier,
+                lexeme: "write_int",
+                span: 12..21,
+            },
+            local_name: None,
+            params: [
+                Type {
+                    mut_token: None,
+                    kind: SignedNumber(
+                        32,
+                    ),
+                    span: 22..25,
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: Void,
+                span: 27..31,
+            },
+        },
+    ),
+    ExternFunction(
+        ExternFunction {
+            visibility: Private,
+            extern_token: Token {
+                kind: Keyword(
+                    Extern,
+                ),
+                lexeme: "extern",
+                span: 33..39,
+            },
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 42..44,
+            },
+            calling_convention: Token {
+                kind: Identifier,
+                lexeme: "C",
+                span: 40..41,
+            },
+            binding_name: Token {
+                kind: Identifier,
+                lexeme: "write_char",
+                span: 45..55,
+            },
+            local_name: None,
+            params: [
+                Type {
+                    mut_token: None,
+                    kind: UnsignedNumber(
+                        8,
+                    ),
+                    span: 56..58,
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: Void,
+                span: 60..64,
+            },
+        },
+    ),
+    Function(
+        Function {
+            visibility: Private,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 67..69,
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "fib",
+                span: 70..73,
+            },
+            params: [
+                Param {
+                    name: Token {
+                        kind: Identifier,
+                        lexeme: "n",
+                        span: 74..75,
+                    },
+                    ty: Type {
+                        mut_token: None,
+                        kind: SignedNumber(
+                            32,
+                        ),
+                        span: 77..80,
+                    },
+                },
+                Param {
+                    name: Token {
+                        kind: Identifier,
+                        lexeme: "a",
+                        span: 82..83,
+                    },
+                    ty: Type {
+                        mut_token: None,
+                        kind: SignedNumber(
+                            32,
+                        ),
+                        span: 85..88,
+                    },
+                },
+                Param {
+                    name: Token {
+                        kind: Identifier,
+                        lexeme: "b",
+                        span: 90..91,
+                    },
+                    ty: Type {
+                        mut_token: None,
+                        kind: SignedNumber(
+                            32,
+                        ),
+                        span: 93..96,
+                    },
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                span: 98..101,
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: 102..103,
+                },
+                statements: [
+                    Statement {
+                        expr: IfElse(
+                            ExprIfElse {
+                                if_token: Token {
+                                    kind: Keyword(
+                                        If,
+                                    ),
+                                    lexeme: "if",
+                                    span: 106..108,
+                                },
+                                condition: Binary(
+                                    ExprBinary {
+                                        left: Identifier(
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "n",
+                                                span: 109..110,
+                                            },
+                                        ),
+                                        op: Token {
+                                            kind: EqualEqual,
+                                            lexeme: "==",
+                                            span: 111..113,
+                                        },
+                                        right: Litral(
+                                            Integer(
+                                                Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: 114..115,
+                                                },
+                                            ),
+                                        ),
+                                    },
+                                ),
+                                then_branch: ExprBlock {
+                                    open_brace: Token {
+                                        kind: LeftBrace,
+                                        lexeme: "{",
+                                        span: 116..117,
+                                    },
+                                    statements: [
+                                        Statement {
+                                            expr: Return(
+                                                ExprReturn {
+                                                    return_token: Token {
+                                                        kind: Keyword(
+                                                            Return,
+                                                        ),
+                                                        lexeme: "return",
+                                                        span: 122..128,
+                                                    },
+                                                    expr: Some(
+                                                        Identifier(
+                                                            Token {
+                                                                kind: Identifier,
+                                                                lexeme: "a",
+                                                                span: 129..130,
+                                                            },
+                                                        ),
+                                                    ),
+                                                },
+                                            ),
+                                            delem: Some(
+                                                Token {
+                                                    kind: Semicolon,
+                                                    lexeme: ";",
+                                                    span: 130..131,
+                                                },
+                                            ),
+                                        },
+                                    ],
+                                    close_brace: Token {
+                                        kind: RightBrace,
+                                        lexeme: "}",
+                                        span: 134..135,
+                                    },
+                                },
+                                else_token: None,
+                                else_branch: None,
+                                ty: Type {
+                                    mut_token: None,
+                                    kind: Void,
+                                    span: 0..1,
+                                },
+                            },
+                        ),
+                        delem: None,
+                    },
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: 138..144,
+                                },
+                                expr: Some(
+                                    Call(
+                                        ExprCall {
+                                            caller: Identifier(
+                                                Token {
+                                                    kind: Identifier,
+                                                    lexeme: "fib",
+                                                    span: 145..148,
+                                                },
+                                            ),
+                                            left_paren: Token {
+                                                kind: LeftParen,
+                                                lexeme: "(",
+                                                span: 148..149,
+                                            },
+                                            args: [
+                                                Binary(
+                                                    ExprBinary {
+                                                        left: Identifier(
+                                                            Token {
+                                                                kind: Identifier,
+                                                                lexeme: "n",
+                                                                span: 149..150,
+                                                            },
+                                                        ),
+                                                        op: Token {
+                                                            kind: Minus,
+                                                            lexeme: "-",
+                                                            span: 151..152,
+                                                        },
+                                                        right: Litral(
+                                                            Integer(
+                                                                Token {
+                                                                    kind: Number,
+                                                                    lexeme: "1",
+                                                                    span: 153..154,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    },
+                                                ),
+                                                Identifier(
+                                                    Token {
+                                                        kind: Identifier,
+                                                        lexeme: "b",
+                                                        span: 156..157,
+                                                    },
+                                                ),
+                                                Binary(
+                                                    ExprBinary {
+                                                        left: Identifier(
+                                                            Token {
+                                                                kind: Identifier,
+                                                                lexeme: "a",
+                                                                span: 159..160,
+                                                            },
+                                                        ),
+                                                        op: Token {
+                                                            kind: Plus,
+                                                            lexeme: "+",
+                                                            span: 161..162,
+                                                        },
+                                                        right: Identifier(
+                                                            Token {
+                                                                kind: Identifier,
+                                                                lexeme: "b",
+                                                                span: 163..164,
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            ],
+                                            right_paren: Token {
+                                                kind: RightParen,
+                                                lexeme: ")",
+                                                span: 164..165,
+                                            },
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 165..166,
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: 167..168,
+                },
+            },
+        },
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: 174..176,
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: 177..181,
+            },
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                span: 184..187,
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: 188..189,
+                },
+                statements: [
+                    Statement {
+                        expr: Declare(
+                            ExprDecl {
+                                let_token: Token {
+                                    kind: Keyword(
+                                        Let,
+                                    ),
+                                    lexeme: "let",
+                                    span: 192..195,
+                                },
+                                mutable: false,
+                                ty: None,
+                                ident: Token {
+                                    kind: Identifier,
+                                    lexeme: "value",
+                                    span: 196..201,
+                                },
+                                expr: Call(
+                                    ExprCall {
+                                        caller: Identifier(
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "fib",
+                                                span: 204..207,
+                                            },
+                                        ),
+                                        left_paren: Token {
+                                            kind: LeftParen,
+                                            lexeme: "(",
+                                            span: 207..208,
+                                        },
+                                        args: [
+                                            Litral(
+                                                Integer(
+                                                    Token {
+                                                        kind: Number,
+                                                        lexeme: "55",
+                                                        span: 208..210,
+                                                    },
+                                                ),
+                                            ),
+                                            Litral(
+                                                Integer(
+                                                    Token {
+                                                        kind: Number,
+                                                        lexeme: "0",
+                                                        span: 212..213,
+                                                    },
+                                                ),
+                                            ),
+                                            Litral(
+                                                Integer(
+                                                    Token {
+                                                        kind: Number,
+                                                        lexeme: "1",
+                                                        span: 215..216,
+                                                    },
+                                                ),
+                                            ),
+                                        ],
+                                        right_paren: Token {
+                                            kind: RightParen,
+                                            lexeme: ")",
+                                            span: 216..217,
+                                        },
+                                    },
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 217..218,
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_int",
+                                        span: 221..230,
+                                    },
+                                ),
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: 230..231,
+                                },
+                                args: [
+                                    Identifier(
+                                        Token {
+                                            kind: Identifier,
+                                            lexeme: "value",
+                                            span: 231..236,
+                                        },
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: 236..237,
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 237..238,
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_char",
+                                        span: 241..251,
+                                    },
+                                ),
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: 251..252,
+                                },
+                                args: [
+                                    Litral(
+                                        Integer(
+                                            Token {
+                                                kind: Number,
+                                                lexeme: "10",
+                                                span: 252..254,
+                                            },
+                                        ),
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: 254..255,
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 255..256,
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: 259..265,
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            Token {
+                                                kind: Number,
+                                                lexeme: "0",
+                                                span: 266..267,
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: 267..268,
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: 269..270,
+                },
+            },
+        },
+    ),
+]
