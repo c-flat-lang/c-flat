@@ -178,6 +178,8 @@ impl<'a> Iterator for Tokenizer<'a> {
             '>' if self.peek_char('=') => self.double_char(TokenKind::GreaterEqual, ">="),
             '<' if self.peek_char('=') => self.double_char(TokenKind::LessEqual, "<="),
             '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),
+            '<' if self.peek_char('(') => self.double_char(TokenKind::LeftTypeCradle, "<("),
+            ')' if self.peek_char('>') => self.double_char(TokenKind::RightTypeCradle, ")>"),
             '(' => Some(self.spanned(TokenKind::LeftParen, c)),
             ')' => Some(self.spanned(TokenKind::RightParen, c)),
             '[' => Some(self.spanned(TokenKind::LeftBracket, c)),
