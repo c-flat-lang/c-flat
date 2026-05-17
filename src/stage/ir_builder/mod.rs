@@ -45,6 +45,7 @@ impl IRBuilder {
             visibility,
             fn_token: _,
             name,
+            type_args: _,
             params,
             return_type,
             body,

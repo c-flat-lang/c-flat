@@ -16,6 +16,7 @@
                 lexeme: "main",
                 span: 7..11,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,

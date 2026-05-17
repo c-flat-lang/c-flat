@@ -76,6 +76,7 @@ pub enum TypeKind {
     /// isize
     SignedTargetPointerNumber,
     Struct(StructType),
+    Type,
     UnsignedNumber(u8),
     /// usize
     UnsignedTargetPointerNumber,
@@ -118,6 +119,14 @@ impl TypeKind {
                     .collect(),
                 packed: struct_type.packed,
             }),
+            Self::Type => unreachable!(
+                // TODO: Replace/Update/Remove message once more understanding is reached.
+                r#"NOTE:
+I believe we will handle this before getting here.
+I believe the idea is to replease Type with what ever the caller is using at comptime.
+This means we may need to generate more then one X Type depending on how many Generic signitures are created.
+                "#
+            ),
             Self::UnsignedNumber(bytes) => bitbox::ir::Type::Unsigned(*bytes),
             Self::UnsignedTargetPointerNumber => bitbox::ir::Type::Unsigned(target_pointer_size),
             Self::Void => bitbox::ir::Type::Void,
@@ -149,6 +158,14 @@ impl TypeKind {
                 }
                 size
             }
+            Self::Type => unreachable!(
+                // TODO: Replace/Update/Remove message once more understanding is reached.
+                r#"NOTE:
+I believe we will handle this before getting here.
+I believe the idea is to replease Type with what ever the caller is using at comptime.
+This means we may need to generate more then one X Type depending on how many Generic signitures are created.
+                "#
+            ),
             Self::UnsignedNumber(bytes) | Self::SignedNumber(bytes) | Self::Float(bytes) => {
                 (*bytes as usize) / 8
             }
@@ -173,6 +190,7 @@ impl std::fmt::Display for TypeKind {
             Self::SignedNumber(n) => write!(f, "s{}", n),
             Self::SignedTargetPointerNumber => write!(f, "ssize"),
             Self::Struct(symbol) => write!(f, "{}", symbol.name),
+            Self::Type => write!(f, "type"),
             Self::UnsignedNumber(n) => write!(f, "u{}", n),
             Self::UnsignedTargetPointerNumber => write!(f, "usize"),
             Self::Void => write!(f, "void"),
@@ -313,6 +331,7 @@ pub struct Struct {
     pub visibility: Visibility,
     pub type_token: Token,
     pub name: Token,
+    pub type_params: Option<Vec<(Token, Type)>>,
     pub struct_token: Token,
     pub fields: Vec<Field>,
     pub open_brace: Token,
@@ -337,6 +356,7 @@ pub struct Function {
     pub visibility: Visibility,
     pub fn_token: Token,
     pub name: Token,
+    pub type_args: Option<Vec<(Token, Type)>>,
     pub params: Vec<Param>,
     pub return_type: Type,
     pub body: ExprBlock,
@@ -572,6 +592,7 @@ impl InitField {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprStruct {
     pub name: Token,
+    pub type_args: Option<Vec<Type>>,
     pub open_brace: Token,
     pub init_fields: Vec<InitField>,
     pub close_brace: Token,
@@ -620,6 +641,7 @@ impl ExprAssignment {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprCall {
     pub caller: Box<Expr>,
+    pub type_args: Option<Vec<Type>>,
     pub left_paren: Token,
     pub args: Vec<Expr>,
     pub right_paren: Token,

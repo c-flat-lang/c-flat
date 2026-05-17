@@ -104,6 +104,7 @@
                 lexeme: "factorial",
                 span: 70..79,
             },
+            type_args: None,
             params: [
                 Param {
                     name: Token {
@@ -335,6 +336,7 @@
                                                                                         span: 213..222,
                                                                                     },
                                                                                 ),
+                                                                                type_args: None,
                                                                                 left_paren: Token {
                                                                                     kind: LeftParen,
                                                                                     lexeme: "(",
@@ -477,6 +479,7 @@
                 lexeme: "main",
                 span: 302..306,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
@@ -554,6 +557,7 @@
                                                 span: 352..361,
                                             },
                                         ),
+                                        type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
@@ -595,6 +599,7 @@
                                         span: 372..381,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -634,6 +639,7 @@
                                         span: 398..408,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
