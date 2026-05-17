@@ -22,10 +22,10 @@ fn add<(T: type)>(x: T, y: T) T {
 pub fn main() void {
     // s should turn into Slice<u8> by default but currently the compiler doesnt know about Slice.
     // For now just manually creating it will do.
-    let s = #"Testing String Passing"#
+    let s = #"Testing String Passing"#;
     let string: Slice<(u8)> = Slice<(u8)> {
-        items: &s;
-        length: s.len;
+        .items = &s,
+        .length = s.len,
     };
     print(&string);
 

@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::error::{
     ErrorExpectedKeyWord, ErrorExpectedToken, ErrorExpectedType, ErrorMissingPairedClosingChar,
-    ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem, Result,
+    ErrorUnexpectedEndOfInput, ErrorUnexpectedExpression, ErrorUnexpectedTopLevelItem, Result,
 };
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
 use crate::stage::parser::ast::{self, ExprMemberAccess, TypeParams};
@@ -164,7 +164,9 @@ impl Parser {
         let type_token = self.consume(TokenKind::Keyword(Keyword::Type))?;
         let name = self.consume(TokenKind::Identifier)?;
 
-        if !self.peek(TokenKind::Keyword(Keyword::Struct)) {
+        let type_params = self.parse_type_params()?;
+
+        let Ok(struct_token) = self.consume(TokenKind::Keyword(Keyword::Struct)) else {
             let Some(token) = self.lexer.next() else {
                 return Err(Box::new(ErrorUnexpectedEndOfInput::new(
                     #[cfg(feature = "debug")]
@@ -178,9 +180,8 @@ impl Parser {
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
-        }
+        };
 
-        let struct_token = self.consume(TokenKind::Keyword(Keyword::Struct))?;
         let open_brace = self.consume(TokenKind::LeftBrace)?;
         let fields = self.parse_fields()?;
         let close_brace = self.consume(TokenKind::RightBrace)?;
@@ -189,11 +190,50 @@ impl Parser {
             visibility,
             type_token,
             name,
+            type_params,
             struct_token,
             fields,
             open_brace,
             close_brace,
         }))
+    }
+
+    fn parse_type_params(&mut self) -> Result<Option<Vec<(Token, ast::Type)>>> {
+        let mut args = Vec::new();
+
+        if self.consume_if_eq(TokenKind::LeftTypeCradle).is_none() {
+            return Ok(None);
+        }
+
+        while !self.peek(TokenKind::RightTypeCradle) {
+            let name = self.consume(TokenKind::Identifier)?;
+            self.consume(TokenKind::Colon)?;
+            let ty = self.parse_type()?;
+            args.push((name, ty));
+            self.consume_if_eq(TokenKind::Comma);
+        }
+
+        self.consume(TokenKind::RightTypeCradle)?;
+
+        Ok(Some(args))
+    }
+
+    fn parse_type_args(&mut self) -> Result<Option<Vec<ast::Type>>> {
+        let mut args = Vec::new();
+
+        if self.consume_if_eq(TokenKind::LeftTypeCradle).is_none() {
+            return Ok(None);
+        }
+
+        while !self.peek(TokenKind::RightTypeCradle) {
+            let ty = self.parse_type()?;
+            args.push(ty);
+            self.consume_if_eq(TokenKind::Comma);
+        }
+
+        self.consume(TokenKind::RightTypeCradle)?;
+
+        Ok(Some(args))
     }
 
     fn parse_fields(&mut self) -> Result<Vec<ast::Field>> {
@@ -228,6 +268,7 @@ impl Parser {
     fn parse_function(&mut self, visibility: ast::Visibility) -> Result<ast::Function> {
         let fn_token = self.consume(TokenKind::Keyword(Keyword::Fn))?;
         let name = self.consume(TokenKind::Identifier)?;
+        let type_args = self.parse_type_params()?;
         let params = self.parse_params()?;
         let return_type = self.parse_type()?;
         let body = self.parse_block()?;
@@ -235,6 +276,7 @@ impl Parser {
             visibility,
             fn_token,
             name,
+            type_args,
             params,
             return_type,
             body,
@@ -268,15 +310,15 @@ impl Parser {
         };
 
         match tok.kind {
-            TokenKind::Identifier if self.peek(TokenKind::LeftParen) => {
-                self.consume(TokenKind::LeftParen)?;
+            TokenKind::Identifier if self.peek(TokenKind::LeftTypeCradle) => {
+                self.consume(TokenKind::LeftTypeCradle)?;
                 let mut params = Vec::new();
-                while !self.peek(TokenKind::RightParen) {
+                while !self.peek(TokenKind::RightTypeCradle) {
                     let ty = self.parse_type()?;
                     params.push(ty);
                     self.consume_if_eq(TokenKind::Comma);
                 }
-                let right_param = self.consume(TokenKind::RightParen)?;
+                let right_param = self.consume(TokenKind::RightTypeCradle)?;
                 let span = mut_token.as_ref().unwrap_or(&tok).span.start..right_param.span.end;
                 Ok(ast::Type {
                     mut_token,
@@ -306,6 +348,12 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::Keyword(Keyword::Type) => Ok(ast::Type {
+                kind: ast::TypeKind::Type,
+                span: tok.span,
+                mut_token,
+            }),
+
             _ => Err(Box::new(ErrorExpectedType::new(
                 tok,
                 #[cfg(feature = "debug")]
@@ -565,11 +613,25 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_postfix(&mut self, mut expr: ast::Expr) -> Result<ast::Expr> {
+    fn parse_postfix(
+        &mut self,
+        mut expr: ast::Expr,
+        type_args: Option<&[ast::Type]>,
+    ) -> Result<ast::Expr> {
         loop {
             if self.peek(TokenKind::LeftParen) {
                 let left_paren = self.consume(TokenKind::LeftParen)?;
-                expr = self.finish_call(expr, left_paren)?;
+                expr = self.finish_call(expr, left_paren, type_args)?;
+            } else if self.peek(TokenKind::LeftBrace) && matches!(expr, ast::Expr::Identifier(_)) {
+                let ast::Expr::Identifier(token) = expr else {
+                    return Err(Box::new(ErrorUnexpectedExpression::new(
+                        expr,
+                        &[TokenKind::Identifier],
+                        #[cfg(feature = "debug")]
+                        format!("{} {}:{}", file!(), line!(), column!()),
+                    )));
+                };
+                expr = self.parse_struct_instantiation(token, type_args)?;
             } else if self.peek(TokenKind::LeftBracket) {
                 let left_bracket = self.consume(TokenKind::LeftBracket)?;
                 let index = self.parse_expr()?;
@@ -602,10 +664,16 @@ impl Parser {
 
     fn parse_call(&mut self) -> Result<ast::Expr> {
         let expr = self.parse_primary()?;
-        self.parse_postfix(expr)
+        let type_args = self.parse_type_args()?;
+        self.parse_postfix(expr, type_args.as_deref())
     }
 
-    fn finish_call(&mut self, caller: ast::Expr, left_paren: Token) -> Result<ast::Expr> {
+    fn finish_call(
+        &mut self,
+        caller: ast::Expr,
+        left_paren: Token,
+        type_args: Option<&[ast::Type]>,
+    ) -> Result<ast::Expr> {
         let mut args = vec![];
         while matches!(self.lexer.peek(), Some(token) if token.kind != TokenKind::RightParen) {
             args.push(self.parse_expr()?);
@@ -622,6 +690,7 @@ impl Parser {
         };
         Ok(ast::Expr::Call(ast::ExprCall {
             caller: Box::new(caller),
+            type_args: type_args.map(|t| t.to_vec()),
             left_paren,
             args,
             right_paren,
@@ -655,9 +724,11 @@ impl Parser {
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
             TokenKind::Identifier => {
-                if !self.restrict_struct_literal && self.peek(TokenKind::LeftBrace) {
-                    return self.parse_struct_instantiation(token);
-                }
+                // if !self.restrict_struct_literal
+                //     && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
+                // {
+                //     return self.parse_struct_instantiation(token);
+                // }
                 Ok(ast::Expr::Identifier(token))
             }
             TokenKind::Keyword(Keyword::True) => {
@@ -713,7 +784,11 @@ impl Parser {
         Ok(fields)
     }
 
-    fn parse_struct_instantiation(&mut self, name: Token) -> Result<ast::Expr> {
+    fn parse_struct_instantiation(
+        &mut self,
+        name: Token,
+        type_args: Option<&[ast::Type]>,
+    ) -> Result<ast::Expr> {
         let open_brace = self.consume(TokenKind::LeftBrace)?;
 
         let init_fields = self.parse_struct_init_fields()?;
@@ -721,6 +796,7 @@ impl Parser {
         let close_brace = self.consume(TokenKind::RightBrace)?;
         Ok(ast::Expr::Struct(ast::ExprStruct {
             name,
+            type_args: type_args.map(|t| t.to_vec()),
             open_brace,
             init_fields,
             close_brace,
@@ -797,6 +873,9 @@ fn one_of(tokens: &[TokenKind]) -> impl Fn(&Token) -> bool + use<'_> {
 fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::Type> {
     let parse_type = |input: &'a str| -> Option<(&'a str, &'a str)> {
         let (prefix, rest) = input.split_at(1);
+        if rest.is_empty() {
+            return None;
+        }
         if prefix.chars().all(char::is_alphabetic) && rest.chars().all(char::is_numeric) {
             Some((prefix, rest))
         } else {

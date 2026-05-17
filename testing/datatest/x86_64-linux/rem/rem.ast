@@ -104,6 +104,7 @@
                 lexeme: "main",
                 span: 74..78,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
@@ -181,6 +182,7 @@
                                         span: 112..122,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -222,6 +224,7 @@
                                         span: 132..141,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -261,6 +264,7 @@
                                         span: 150..160,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",

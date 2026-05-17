@@ -214,6 +214,7 @@ impl SymbolTableBuilder {
     fn walk_expr_call(&mut self, expr: &ast::ExprCall) {
         let ast::ExprCall {
             caller,
+            type_args: _,
             left_paren: _,
             args,
             right_paren: _,

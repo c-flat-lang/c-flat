@@ -1,8 +1,54 @@
 use crate::stage::lexer::token::{Keyword, Span, Token, TokenKind};
-use crate::stage::parser::ast::{Type, TypeKind};
+use crate::stage::parser::ast::{Expr, Type, TypeKind};
 use report::ReportBuilder;
 pub use report::{Report, Result};
 use std::fmt::Write;
+
+#[derive(Debug)]
+pub struct ErrorUnexpectedExpression {
+    expr: Expr,
+    expected: Vec<TokenKind>,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorUnexpectedExpression {
+    pub fn new(
+        expr: Expr,
+        expected: &[TokenKind],
+        #[cfg(feature = "debug")] compiler_line: String,
+    ) -> Self {
+        Self {
+            expr,
+            expected: expected.to_vec(),
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+}
+
+impl Report for ErrorUnexpectedExpression {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let span = self.expr.span();
+        let mut report = ReportBuilder::new(filename, src, &span);
+        report.message({
+            let expected = self
+                .expected
+                .iter()
+                .map(|k| format!("`{k:?}`"))
+                .collect::<Vec<_>>();
+            if expected.len() == 1 {
+                format!("exected {}", expected[0])
+            } else {
+                format!("expected one of: {}", expected.join(", "))
+            }
+        });
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
+    }
+}
 
 #[derive(Debug)]
 pub struct ErrorMissMatchedType {

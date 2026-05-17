@@ -104,6 +104,7 @@
                 lexeme: "fib",
                 span: 70..73,
             },
+            type_args: None,
             params: [
                 Param {
                     name: Token {
@@ -271,6 +272,7 @@
                                                     span: 145..148,
                                                 },
                                             ),
+                                            type_args: None,
                                             left_paren: Token {
                                                 kind: LeftParen,
                                                 lexeme: "(",
@@ -375,6 +377,7 @@
                 lexeme: "main",
                 span: 177..181,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
@@ -416,6 +419,7 @@
                                                 span: 204..207,
                                             },
                                         ),
+                                        type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
@@ -477,6 +481,7 @@
                                         span: 221..230,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -516,6 +521,7 @@
                                         span: 241..251,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",

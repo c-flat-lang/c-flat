@@ -344,7 +344,7 @@ impl<'st> TypeChecker<'st> {
         };
 
         for (arg, ty) in expr.args.iter_mut().zip(&symbol.params.unwrap_or_default()) {
-            self.maybe_numeric_hint(&ty);
+            self.maybe_numeric_hint(ty);
             self.walk_expr(arg);
             self.numeric_hint = None;
         }

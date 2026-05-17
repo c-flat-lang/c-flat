@@ -105,6 +105,7 @@
                     lexeme: "List",
                     span: 72..76,
                 },
+                type_params: None,
                 struct_token: Token {
                     kind: Keyword(
                         Struct,
@@ -170,6 +171,7 @@
                 lexeme: "init_list",
                 span: 110..119,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
@@ -217,6 +219,7 @@
                                             lexeme: "List",
                                             span: 148..152,
                                         },
+                                        type_args: None,
                                         open_brace: Token {
                                             kind: LeftBrace,
                                             lexeme: "{",
@@ -353,6 +356,7 @@
                 lexeme: "set_list",
                 span: 194..202,
             },
+            type_args: None,
             params: [
                 Param {
                     name: Token {
@@ -509,6 +513,7 @@
                 lexeme: "main",
                 span: 290..294,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
@@ -558,6 +563,7 @@
                                                 span: 322..331,
                                             },
                                         ),
+                                        type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
@@ -591,6 +597,7 @@
                                         span: 337..346,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -672,6 +679,7 @@
                                         span: 364..374,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -713,6 +721,7 @@
                                         span: 382..390,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -779,6 +788,7 @@
                                         span: 407..416,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
@@ -860,6 +870,7 @@
                                         span: 434..444,
                                     },
                                 ),
+                                type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",

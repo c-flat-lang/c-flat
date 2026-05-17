@@ -219,11 +219,12 @@ impl<'st> TypeResolver<'st> {
         let found = ty.clone();
         match &mut ty.kind {
             TypeKind::Bool
-            | TypeKind::SignedTargetPointerNumber
-            | TypeKind::UnsignedTargetPointerNumber
-            | TypeKind::UnsignedNumber(_)
-            | TypeKind::SignedNumber(_)
             | TypeKind::Float(_)
+            | TypeKind::SignedNumber(_)
+            | TypeKind::SignedTargetPointerNumber
+            | TypeKind::Type
+            | TypeKind::UnsignedNumber(_)
+            | TypeKind::UnsignedTargetPointerNumber
             | TypeKind::Void => {}
             TypeKind::Array(_, ty) => self.walk_type(ty),
             TypeKind::Ref(ty) => self.walk_type(ty),

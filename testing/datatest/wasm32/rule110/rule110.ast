@@ -60,6 +60,7 @@
                 lexeme: "rule110",
                 span: 210..217,
             },
+            type_args: None,
             params: [
                 Param {
                     name: Token {
@@ -1314,6 +1315,7 @@
                 lexeme: "main",
                 span: 622..626,
             },
+            type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
@@ -2253,6 +2255,7 @@
                                                                                         span: 1068..1075,
                                                                                     },
                                                                                 ),
+                                                                                type_args: None,
                                                                                 left_paren: Token {
                                                                                     kind: LeftParen,
                                                                                     lexeme: "(",
@@ -2525,6 +2528,7 @@
                                                                                                     span: 1228..1238,
                                                                                                 },
                                                                                             ),
+                                                                                            type_args: None,
                                                                                             left_paren: Token {
                                                                                                 kind: LeftParen,
                                                                                                 lexeme: "(",
@@ -2652,6 +2656,7 @@
                                                                                                     span: 1308..1318,
                                                                                                 },
                                                                                             ),
+                                                                                            type_args: None,
                                                                                             left_paren: Token {
                                                                                                 kind: LeftParen,
                                                                                                 lexeme: "(",
@@ -2856,6 +2861,7 @@
                                                             span: 1414..1424,
                                                         },
                                                     ),
+                                                    type_args: None,
                                                     left_paren: Token {
                                                         kind: LeftParen,
                                                         lexeme: "(",
