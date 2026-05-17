@@ -917,7 +917,7 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
     let Some((prefix, number)) = parse_type(&token.lexeme) else {
         if token.kind == TokenKind::Identifier {
             return Ok(ast::Type {
-                kind: ast::TypeKind::Name(token.lexeme.clone()),
+                kind: ast::TypeKind::Name(token.clone()),
                 span: token.span.clone(),
                 ..Default::default()
             });

@@ -176,7 +176,11 @@
             return_type: Type {
                 mut_token: None,
                 kind: Name(
-                    "List",
+                    Token {
+                        kind: Identifier,
+                        lexeme: "List",
+                        span: 122..126,
+                    },
                 ),
                 span: 122..126,
             },
@@ -202,7 +206,11 @@
                                     Type {
                                         mut_token: None,
                                         kind: Name(
-                                            "List",
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "List",
+                                                span: 141..145,
+                                            },
                                         ),
                                         span: 141..145,
                                     },
@@ -370,7 +378,11 @@
                             Type {
                                 mut_token: None,
                                 kind: Name(
-                                    "List",
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "List",
+                                        span: 213..217,
+                                    },
                                 ),
                                 span: 213..217,
                             },
@@ -544,7 +556,11 @@
                                     Type {
                                         mut_token: None,
                                         kind: Name(
-                                            "List",
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "List",
+                                                span: 315..319,
+                                            },
                                         ),
                                         span: 315..319,
                                     },
