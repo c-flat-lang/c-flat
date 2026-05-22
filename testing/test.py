@@ -14,7 +14,6 @@ from dataclasses import dataclass
 class Test:
     filename: str
     output: str
-    debug_info_at_stage: DebugInfoAtStage
     target: Target
 
 
@@ -137,7 +136,6 @@ def run_snapshot_tests(
         test = Test(
             filename=file.name,
             output=snapshot.name,
-            debug_info_at_stage=debug,
             target=target,
         )
 
