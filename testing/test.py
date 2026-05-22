@@ -10,20 +10,6 @@ from pathlib import Path
 from dataclasses import dataclass
 
 
-@dataclass
-class Test:
-    filename: str
-    output: str
-    target: Target
-
-
-@dataclass
-class TestResult:
-    passed: list[Test]
-    failed: list[Test]
-    updated: list[Test]
-
-
 class Target(Enum):
     x86_64_linux = auto()
     wasm32 = auto()
@@ -72,6 +58,20 @@ class DebugInfoAtStage(Enum):
                 return "-ir"
             case self.Emit:
                 return "--dump-after=emit"
+
+
+@dataclass
+class Test:
+    filename: str
+    output: str
+    target: Target
+
+
+@dataclass
+class TestResult:
+    passed: list[Test]
+    failed: list[Test]
+    updated: list[Test]
 
 
 def ask_yes_no(prompt: str) -> bool:
