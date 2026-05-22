@@ -65,7 +65,7 @@ jobs:
         continue-on-error: ${{ matrix.can-fail }}
 
       - name: Rust Tests
-        run: cargo test --workspace --quiet
+        run: cargo test --workspace -- --nocapture
         continue-on-error: ${{ matrix.can-fail }}
 
       - name: Snapshot Tests
