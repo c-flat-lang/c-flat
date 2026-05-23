@@ -9,7 +9,8 @@ fn main() {
 
     let src = std::fs::read_to_string(&cli_options.file_path)
         .expect("Could not read file")
-        .replace("\r\n", "\n");
+        .replace("\r\n", "\n")
+        .replace("\r", "\n");
     let tokens = lex(&src);
 
     if matches!(cli_options.debug_mode, Some(cli::DebugMode::Token)) {
