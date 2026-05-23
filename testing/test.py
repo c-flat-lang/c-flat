@@ -8,6 +8,7 @@ from enum import Enum, auto
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
+import platform
 
 
 class Target(Enum):
@@ -24,6 +25,18 @@ class Target(Enum):
                 return "wasm32"
             case self.bitbeat:
                 return "bitbeat"
+
+    def can_run(self):
+        platform_name = platform.system()
+        match self:
+            case self.x86_64_linux if platform_name == "Linux":
+                return False
+            case self.wasm32:  #  doesnt matter can always run
+                return True
+            case self.bitbeat:  # same
+                return True
+            case _:
+                return False
 
 
 class DebugInfoAtStage(Enum):
@@ -118,6 +131,10 @@ def run_snapshot_tests(
         if not quiet:
             print("\n========================")
             print("Testing:", file)
+
+        if not target.can_run() and debug == DebugInfoAtStage.Nothing:
+            # Skipped!
+            continue
 
         result = subprocess.run(
             command
