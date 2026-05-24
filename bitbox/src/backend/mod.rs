@@ -104,14 +104,14 @@ impl Default for CompilerResult {
 }
 
 impl CompilerResult {
-    pub fn save_to_file(&self, path: &str, link: &[String]) {
+    pub fn save_to_file(&self, path: &std::path::Path, link: &[String]) {
         if !std::path::Path::new("bin").exists() {
             std::fs::create_dir("bin").expect("Failed to create bin directory");
         }
         match self {
             Self::Wasm32(bytes) => std::fs::write(path, bytes).expect("Failed to write Wasm file"),
             Self::X86_64(asm) => {
-                let asm_path = format!("{}.s", path);
+                let asm_path = path.with_extension("s");
                 std::fs::write(&asm_path, asm.as_bytes()).expect("Failed to write assembly file");
                 let runtime_src = include_str!("../../../runtime.c");
                 if !std::path::Path::new("bin/runtime.c").exists() {

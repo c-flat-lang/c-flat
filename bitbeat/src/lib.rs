@@ -271,7 +271,7 @@ impl Module {
         self.functions.get(name).cloned()
     }
 
-    pub fn save_to_file(&self, path: &str) {
+    pub fn save_to_file(&self, path: &std::path::Path) {
         let data = ron::ser::to_string_pretty(self, PrettyConfig::default())
             .expect("Failed to serialize module");
         std::fs::write(path, data).expect("Failed to write module to file");

@@ -40,11 +40,13 @@ fn main() {
     match compiler_output {
         Ok(PassOutput::Nothing) if cli_options.run => {
             let path = compiler.file_output_path();
+            let Some(path) = path.as_path().to_str() else {
+                panic!("Failed to create string from path");
+            };
             eprintln!("{: >30} {}", "Running", path);
             match cli_options.target {
                 #[cfg(feature = "wasm-runtime")]
-                cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path.as_str())
-                {
+                cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path) {
                     Ok(()) => {}
                     Err(err) => {
                         eprintln!("{}", err);
@@ -60,8 +62,7 @@ fn main() {
                 }
 
                 cflat::Target::X86_64Linux => {
-                    let cmd_result =
-                        std::process::Command::new(format!("./{}", path.as_str())).spawn();
+                    let cmd_result = std::process::Command::new(format!("./{}", path)).spawn();
                     match cmd_result {
                         Ok(_) => {}
                         Err(e) => {
