@@ -12,10 +12,11 @@ macro_rules! snapshot {
         #[test]
         fn $name() {
             let contents = include_str!($path);
+            let contents = contents.replace("\r\n", "\n");
             let mut settings = insta::Settings::clone_current();
             settings.set_snapshot_path("testdata/output/");
             settings.bind(|| {
-                insta::assert_snapshot!(snapshot_parsing(contents));
+                insta::assert_snapshot!(snapshot_parsing(&contents));
             });
         }
     };
