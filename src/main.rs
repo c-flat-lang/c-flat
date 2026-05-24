@@ -2,7 +2,7 @@ use bitbox::passes::DebugPass;
 use cflat::Cli;
 
 use cflat::front_end_compiler;
-#[cfg(feature = "default")]
+
 fn main() {
     use bitbox::passes::PassOutput;
 
@@ -11,6 +11,11 @@ fn main() {
         eprintln!("Error reading file {}: {}", cli_options.file_path, err);
         std::process::exit(1);
     });
+    let source = if cli_options.unix_newlines {
+        source.replace("\r\n", "\n")
+    } else {
+        source
+    };
 
     let mut module = match front_end_compiler(&source, &cli_options) {
         Ok(module) => module,

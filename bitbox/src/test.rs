@@ -56,7 +56,8 @@ macro_rules! snapshot {
     ($target:expr, $pass:expr, $name:tt, $path:tt) => {
         #[test]
         fn $name() {
-            let contents = include_str!($path).replace("\r\n", "\n");
+            let contents = include_str!($path);
+            let contents = contents.replace("\r\n", "\n");
             let mut settings = insta::Settings::clone_current();
             settings.set_snapshot_path("testdata/output/");
             settings.bind(|| {
@@ -68,7 +69,8 @@ macro_rules! snapshot {
         #[test]
         #[ignore = $reason]
         fn $name() {
-            let contents = include_str!($path).replace("\r\n", "\n");
+            let contents = include_str!($path);
+            let contents = contents.replace("\r\n", "\n");
             let mut settings = insta::Settings::clone_current();
             settings.set_snapshot_path("testdata/output/");
             settings.bind(|| {

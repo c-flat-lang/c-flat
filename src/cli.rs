@@ -24,6 +24,7 @@ pub struct Cli {
     pub file_path: String,
     pub run: bool,
     pub link: Option<String>,
+    pub unix_newlines: bool,
 }
 
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
@@ -37,6 +38,8 @@ impl Cli {
             run: false,
             #[cfg(not(feature = "wasm"))]
             link: None,
+            #[cfg(not(feature = "wasm"))]
+            unix_newlines: false,
         }
     }
 
@@ -73,6 +76,7 @@ impl Cli {
         let mut debug_mode = None;
         let mut target = Target::default();
         let mut link = None;
+        let mut unix_newlines = false;
 
         let i = 0;
         while i < args.len() {
@@ -80,6 +84,12 @@ impl Cli {
 
             if arg == "run" {
                 run = true;
+                args.remove(i);
+                continue;
+            }
+
+            if arg == "--unix-newlines" {
+                unix_newlines = true;
                 args.remove(i);
                 continue;
             }
@@ -132,6 +142,7 @@ impl Cli {
             file_path,
             run,
             link,
+            unix_newlines,
         }
     }
 }
@@ -167,19 +178,19 @@ fn unknown_arg(arg: &str) -> ! {
 #[cfg_attr(feature = "wasm", wasm_bindgen)]
 #[derive(Debug, Clone, Copy)]
 pub enum DebugMode {
-    Token,
     Ast,
-    SymbolTable,
-    TypeChecker,
-    Ir,
-    LoweredIr,
-    Emit,
     ControlFlowGraph,
-    LivenessAnalysis,
     DetectLoops,
-    PhiNodeElimination,
+    Emit,
+    Ir,
+    LivenessAnalysis,
     LocalFunctionVariables,
+    LoweredIr,
+    PhiNodeElimination,
     StructuringIr,
+    SymbolTable,
+    Token,
+    TypeChecker,
     VirtRegRewrite,
 }
 

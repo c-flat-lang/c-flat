@@ -139,7 +139,7 @@ def run_snapshot_tests(
         result = subprocess.run(
             command
             + ([debug.as_arg()] if debug != DebugInfoAtStage.Nothing else [])
-            + [f"--target={target}", str(file)],
+            + ["--unix-newlines", f"--target={target}", str(file)],
             capture_output=True,
             text=True,
         )
@@ -296,6 +296,9 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if not args.quiet:
+        print("Build...")
 
     if not compile():
         if not args.quiet:
