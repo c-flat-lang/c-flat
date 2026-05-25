@@ -2,7 +2,7 @@ use bitbox::passes::DebugPass;
 use cflat::Cli;
 
 use cflat::front_end_compiler;
-#[cfg(feature = "default")]
+
 fn main() {
     use bitbox::passes::PassOutput;
 
@@ -11,6 +11,11 @@ fn main() {
         eprintln!("Error reading file {}: {}", cli_options.file_path, err);
         std::process::exit(1);
     });
+    let source = if cli_options.unix_newlines {
+        source.replace("\r\n", "\n")
+    } else {
+        source
+    };
 
     let mut module = match front_end_compiler(&source, &cli_options) {
         Ok(module) => module,
@@ -40,11 +45,13 @@ fn main() {
     match compiler_output {
         Ok(PassOutput::Nothing) if cli_options.run => {
             let path = compiler.file_output_path();
+            let Some(path) = path.as_path().to_str() else {
+                panic!("Failed to create string from path");
+            };
             eprintln!("{: >30} {}", "Running", path);
             match cli_options.target {
                 #[cfg(feature = "wasm-runtime")]
-                cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path.as_str())
-                {
+                cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path) {
                     Ok(()) => {}
                     Err(err) => {
                         eprintln!("{}", err);
@@ -60,8 +67,7 @@ fn main() {
                 }
 
                 cflat::Target::X86_64Linux => {
-                    let cmd_result =
-                        std::process::Command::new(format!("./{}", path.as_str())).spawn();
+                    let cmd_result = std::process::Command::new(format!("./{}", path)).spawn();
                     match cmd_result {
                         Ok(_) => {}
                         Err(e) => {

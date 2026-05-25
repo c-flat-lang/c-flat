@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
+import itertools
+import functools
 import argparse
 import difflib
 from enum import Enum, auto
 import subprocess
 from pathlib import Path
+from dataclasses import dataclass
+import platform
 
 
 class Target(Enum):
@@ -21,6 +25,18 @@ class Target(Enum):
                 return "wasm32"
             case self.bitbeat:
                 return "bitbeat"
+
+    def can_run(self):
+        platform_name = platform.system()
+        match self:
+            case self.x86_64_linux if platform_name == "Linux":
+                return False
+            case self.wasm32:  #  doesnt matter can always run
+                return True
+            case self.bitbeat:  # same
+                return True
+            case _:
+                return False
 
 
 class DebugInfoAtStage(Enum):
@@ -57,6 +73,20 @@ class DebugInfoAtStage(Enum):
                 return "--dump-after=emit"
 
 
+@dataclass
+class Test:
+    filename: str
+    output: str
+    target: Target
+
+
+@dataclass
+class TestResult:
+    passed: list[Test]
+    failed: list[Test]
+    updated: list[Test]
+
+
 def ask_yes_no(prompt: str) -> bool:
     while True:
         answer = input(f"{prompt} [y/n]: ").strip().lower()
@@ -88,10 +118,10 @@ def run_snapshot_tests(
     target: Target,
     debug: DebugInfoAtStage,
     quiet: bool,
-) -> bool:
-    passed = 0
-    failed = 0
-    updated = 0
+) -> TestResult:
+    passed = []
+    failed = []
+    updated = []
 
     files = sorted(
         f for f in Path(test_dir).iterdir() if f.is_file() and f.suffix != ".output"
@@ -102,35 +132,46 @@ def run_snapshot_tests(
             print("\n========================")
             print("Testing:", file)
 
+        if not target.can_run() and debug == DebugInfoAtStage.Nothing:
+            # Skipped!
+            continue
+
         result = subprocess.run(
             command
             + ([debug.as_arg()] if debug != DebugInfoAtStage.Nothing else [])
-            + [f"--target={target}", str(file)],
+            + ["--unix-newlines", f"--target={target}", str(file)],
             capture_output=True,
             text=True,
         )
 
-        stderr = result.stderr.rstrip()
-        stdout = result.stdout.rstrip()
+        stderr = result.stderr.rstrip().replace("\\", "/")
+        stdout = result.stdout.rstrip().replace("\\", "/")
         program_output = "\n".join(x for x in [stderr, stdout] if x)
 
         snapshot = snapshot_path(file, target, debug)
 
-        if not snapshot.exists():
-            if quiet:
-                return False
+        test = Test(
+            filename=file.name,
+            output=snapshot.name,
+            target=target,
+        )
 
+        if quiet and not snapshot.exists():
+            failed.append(test)
+            continue
+
+        elif not snapshot.exists():
             print("\nNo snapshot found.")
             print("\nProduced output:\n")
             print(program_output)
 
             if ask_yes_no(f"\nCreate snapshot {snapshot.name}?"):
                 snapshot.write_text(program_output)
-                updated += 1
+                updated.append(test)
                 print("Snapshot created.")
                 continue
 
-            failed += 1
+            failed.append(test)
             continue
 
         expected = snapshot.read_text().rstrip()
@@ -138,7 +179,7 @@ def run_snapshot_tests(
         if program_output == expected:
             if not quiet:
                 print("PASS")
-            passed += 1
+            passed.append(test)
             continue
 
         if not quiet:
@@ -156,24 +197,16 @@ def run_snapshot_tests(
             print("\n".join(diff))
 
         if quiet:
-            failed += 1
+            failed.append(test)
         elif ask_yes_no(f"\nUpdate snapshot {snapshot.name}?"):
             snapshot.write_text(program_output)
-            updated += 1
+            updated.append(test)
             print("Snapshot updated.")
         else:
-            failed += 1
+            failed.append(test)
             print("FAIL")
 
-    if not quiet:
-        print("\n========================")
-        print("Summary")
-        print("========================")
-        print("Passed :", passed)
-        print("Failed :", failed)
-        print("Updated:", updated)
-
-    return failed == 0 and updated == 0
+    return TestResult(passed, failed, updated)
 
 
 def compile():
@@ -203,7 +236,7 @@ def compile():
     return result.returncode == 0
 
 
-def run_test_on_target(target: Target, quiet: bool):
+def run_test_on_target(target: Target, quiet: bool) -> TestResult:
     results = [
         run_snapshot_tests(
             "./testing/test",
@@ -242,7 +275,14 @@ def run_test_on_target(target: Target, quiet: bool):
         ),
     ]
 
-    return all(results)
+    return functools.reduce(flatten_test_resuts, results, TestResult([], [], []))
+
+
+def flatten_test_resuts(acc: TestResult, r: TestResult):
+    acc.passed = list(itertools.chain(acc.passed, r.passed))
+    acc.failed = list(itertools.chain(acc.failed, r.failed))
+    acc.updated = list(itertools.chain(acc.updated, r.updated))
+    return acc
 
 
 def main():
@@ -257,6 +297,9 @@ def main():
 
     args = parser.parse_args()
 
+    if not args.quiet:
+        print("Build...")
+
     if not compile():
         if not args.quiet:
             print("Build failed")
@@ -266,9 +309,26 @@ def main():
         run_test_on_target(Target.x86_64_linux, args.quiet),
     ]
 
-    success = all(results)
+    result = functools.reduce(flatten_test_resuts, results, TestResult([], [], []))
 
-    exit(0 if success else 1)
+    if not args.quiet:
+        print("\n========================")
+        print("Summary")
+        print("========================")
+        for test in result.passed:
+            print(f"passed '{test.filename}' -> '{test.output}' {test.target}")
+        for test in result.updated:
+            print(f"updated '{test.filename}' -> '{test.output}' {test.target}")
+        for test in result.failed:
+            print(f"failed '{test.filename}' -> '{test.output}' {test.target}")
+        print("\n========================")
+        print("TLDR Summary")
+        print("========================")
+        print("Passed: ", len(result.passed))
+        print("Updated: ", len(result.updated))
+        print("Failed: ", len(result.failed))
+
+    exit(1 if len(result.failed) > 0 else 0)
 
 
 if __name__ == "__main__":

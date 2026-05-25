@@ -104,15 +104,17 @@ impl Compiler {
         self
     }
 
-    pub fn file_output_path(&self) -> String {
-        let path = self
-            .src_path
-            .rsplit_once('/')
-            .map(|(dir, file)| (dir.to_string(), file.to_string()))
-            .unwrap_or_else(|| ("".to_string(), self.src_path.to_string()))
-            .1;
-        let file_with_extention = self.target.get_new_path(&path);
-        format!("bin/{file_with_extention}")
+    pub fn file_output_path(&self) -> std::path::PathBuf {
+        let file_name = std::path::Path::new(&self.src_path)
+            .file_name()
+            .and_then(|os| os.to_str())
+            .unwrap_or(&self.src_path);
+
+        let file_with_extension = self.target.get_new_path(file_name);
+
+        let mut out = std::path::PathBuf::from("bin");
+        out.push(file_with_extension);
+        out
     }
 
     pub fn run(&mut self, module: &mut ir::Module) -> Result<PassOutput, error::Error> {
@@ -132,7 +134,7 @@ impl Compiler {
         {
             if self.save_to_file {
                 let path = self.file_output_path();
-                compiler_result.save_to_file(&path, &self.link);
+                compiler_result.save_to_file(path.as_path(), &self.link);
             }
         }
         Ok(PassOutput::Nothing)

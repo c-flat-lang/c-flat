@@ -130,12 +130,18 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_delimiter(&mut self) -> Token {
-        while self.next_if(|value| value == '\n').is_some() {}
+        while self
+            .next_if(|value| value == '\n' || value == '\r')
+            .is_some()
+        {}
         self.spanned(TokenKind::Delimiter, "\\n")
     }
 
     fn parser_char_delemiter(&mut self, kind: TokenKind, char: char) -> Option<Token> {
-        while self.next_if(|value| value == '\n').is_some() {}
+        while self
+            .next_if(|value| value == '\n' || value == '\r')
+            .is_some()
+        {}
         Some(self.spanned(kind, char.to_string()))
     }
 
@@ -166,7 +172,7 @@ impl<'a> Lexer<'a> {
 
     fn comment(&mut self) -> Option<Token> {
         while let Some(value) = self.next() {
-            if value == '\n' {
+            if value == '\n' || value == '\r' {
                 break;
             }
         }
@@ -177,7 +183,7 @@ impl<'a> Lexer<'a> {
         match self.next() {
             Some(value @ '0'..='9') => Some(self.parse_number(value)),
             Some(value) if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
-            Some('\n') => Some(self.parse_delimiter()),
+            Some('\r' | '\n') => Some(self.parse_delimiter()),
             Some(value) if value.is_ascii_whitespace() => self.skip_char(),
             Some('#') if self.peek('"') => Some(self.parse_string()),
             Some('/') if self.peek('/') => self.comment(),
@@ -188,9 +194,13 @@ impl<'a> Lexer<'a> {
             Some('+') => Some(self.spanned(TokenKind::Plus, '+')),
             Some('(') => Some(self.spanned(TokenKind::LeftParen, '(')),
             Some(')') => Some(self.spanned(TokenKind::RightParen, ')')),
-            Some('{') if self.peek('\n') => self.parser_char_delemiter(TokenKind::LeftBrace, '{'),
+            Some('{') if self.peek('\r') || self.peek('\n') => {
+                self.parser_char_delemiter(TokenKind::LeftBrace, '{')
+            }
             Some('{') => Some(self.spanned(TokenKind::LeftBrace, '{')),
-            Some('}') if self.peek('\n') => self.parser_char_delemiter(TokenKind::RightBrace, '}'),
+            Some('}') if self.peek('\r') || self.peek('\n') => {
+                self.parser_char_delemiter(TokenKind::RightBrace, '}')
+            }
             Some('}') => Some(self.spanned(TokenKind::RightBrace, '}')),
             Some('[') => Some(self.spanned(TokenKind::LeftBracket, '[')),
             Some(']') => Some(self.spanned(TokenKind::RightBracket, ']')),
@@ -201,7 +211,7 @@ impl<'a> Lexer<'a> {
             Some('.') => Some(self.spanned(TokenKind::Dot, '.')),
             Some('*') => Some(self.spanned(TokenKind::Star, '*')),
             Some(value) => Some(self.spanned(TokenKind::InvalidToken, value)),
-            None => None,
+            _ => None,
         }
     }
 }
