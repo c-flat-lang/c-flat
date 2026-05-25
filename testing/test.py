@@ -144,8 +144,8 @@ def run_snapshot_tests(
             text=True,
         )
 
-        stderr = result.stderr.rstrip()
-        stdout = result.stdout.rstrip()
+        stderr = result.stderr.rstrip().replace("\\", "/")
+        stdout = result.stdout.rstrip().replace("\\", "/")
         program_output = "\n".join(x for x in [stderr, stdout] if x)
 
         snapshot = snapshot_path(file, target, debug)
