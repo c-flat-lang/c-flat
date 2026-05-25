@@ -622,16 +622,18 @@ impl Parser {
             if self.peek(TokenKind::LeftParen) {
                 let left_paren = self.consume(TokenKind::LeftParen)?;
                 expr = self.finish_call(expr, left_paren, type_args)?;
-            } else if self.peek(TokenKind::LeftBrace) && matches!(expr, ast::Expr::Identifier(_)) {
-                let ast::Expr::Identifier(token) = expr else {
-                    return Err(Box::new(ErrorUnexpectedExpression::new(
-                        expr,
-                        &[TokenKind::Identifier],
-                        #[cfg(feature = "debug")]
-                        format!("{} {}:{}", file!(), line!(), column!()),
-                    )));
-                };
-                expr = self.parse_struct_instantiation(token, type_args)?;
+            // This cause more problems. To add in generic syntax we will need to implement a pratt
+            // parser.
+            // } else if self.peek(TokenKind::LeftBrace) && matches!(expr, ast::Expr::Identifier(_)) {
+            //     let ast::Expr::Identifier(token) = expr else {
+            //         return Err(Box::new(ErrorUnexpectedExpression::new(
+            //             expr,
+            //             &[TokenKind::Identifier],
+            //             #[cfg(feature = "debug")]
+            //             format!("{} {}:{}", file!(), line!(), column!()),
+            //         )));
+            //     };
+            //     expr = self.parse_struct_instantiation(token, type_args)?;
             } else if self.peek(TokenKind::LeftBracket) {
                 let left_bracket = self.consume(TokenKind::LeftBracket)?;
                 let index = self.parse_expr()?;
@@ -724,11 +726,12 @@ impl Parser {
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
             TokenKind::Identifier => {
-                // if !self.restrict_struct_literal
-                //     && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
-                // {
-                //     return self.parse_struct_instantiation(token);
-                // }
+                if !self.restrict_struct_literal
+                    && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
+                {
+                    let type_args = self.parse_type_args()?;
+                    return self.parse_struct_instantiation(token, type_args.as_deref());
+                }
                 Ok(ast::Expr::Identifier(token))
             }
             TokenKind::Keyword(Keyword::True) => {
