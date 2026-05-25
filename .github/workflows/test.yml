@@ -77,5 +77,5 @@ jobs:
         continue-on-error: ${{ matrix.can-fail }}
 
       - name: Snapshot Tests
-        run: python3 python3 ./testing/test.py --quiet
+        run: python3 python ./testing/test.py --quiet
         continue-on-error: ${{ matrix.can-fail }}
