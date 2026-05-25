@@ -1,0 +1,95 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+        LocalFunctionVariables
+              ControlFlowGraph
+                 StructuringIr
+              LivenessAnalysis
+                          Emit
+(module
+  (type (;0;) (func (param i32)))
+  (type (;1;) (func (param i32)))
+  (type (;2;) (func (param i32 i32) (result i32)))
+  (type (;3;) (func (param i32 i32) (result i32)))
+  (type (;4;) (func (result i32)))
+  (import "core" "write_int" (func (;0;) (type 0)))
+  (import "core" "write_char" (func (;1;) (type 1)))
+  (memory (;0;) 1)
+  (global (;0;) (mut i32) i32.const 0)
+  (export "memory" (memory 0))
+  (export "__stack_pointer" (global 0))
+  (export "main" (func 4))
+  (func (;2;) (type 2) (param i32 i32) (result i32)
+    (local i32 i32)
+    local.get 0
+    local.get 1
+    i32.gt_s
+    local.set 2
+    local.get 2
+    if ;; label = @1
+      local.get 0
+      local.set 3
+    else
+      local.get 1
+      local.set 3
+    end
+    local.get 3
+    return
+  )
+  (func (;3;) (type 3) (param i32 i32) (result i32)
+    (local i32 i32)
+    local.get 0
+    local.get 1
+    i32.lt_s
+    local.set 2
+    local.get 2
+    if ;; label = @1
+      local.get 0
+      local.set 3
+    else
+      local.get 1
+      local.set 3
+    end
+    local.get 3
+    return
+  )
+  (func (;4;) (type 4) (result i32)
+    (local i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
+    i32.const 123
+    local.set 0
+    local.get 0
+    local.set 1
+    i32.const 205
+    local.set 2
+    local.get 2
+    local.set 3
+    local.get 1
+    local.get 3
+    call 3
+    local.set 4
+    local.get 4
+    local.set 5
+    local.get 5
+    call 0
+    i32.const 10
+    local.set 6
+    local.get 6
+    call 1
+    local.get 1
+    local.get 3
+    call 2
+    local.set 7
+    local.get 7
+    call 0
+    i32.const 10
+    local.set 8
+    local.get 8
+    call 1
+    i32.const 0
+    local.set 9
+    local.get 9
+    return
+  )
+)

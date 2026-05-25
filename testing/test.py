@@ -315,10 +315,13 @@ def main():
         print("\n========================")
         print("Summary")
         print("========================")
+        print("=========PASSED=========")
         for test in result.passed:
             print(f"passed '{test.filename}' -> '{test.output}' {test.target}")
+        print("=========UPDATED========")
         for test in result.updated:
             print(f"updated '{test.filename}' -> '{test.output}' {test.target}")
+        print("=========FAILED=========")
         for test in result.failed:
             print(f"failed '{test.filename}' -> '{test.output}' {test.target}")
         print("\n========================")
