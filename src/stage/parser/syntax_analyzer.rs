@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::error::{
     ErrorExpectedKeyWord, ErrorExpectedToken, ErrorExpectedType, ErrorMissingPairedClosingChar,
-    ErrorUnexpectedEndOfInput, ErrorUnexpectedExpression, ErrorUnexpectedTopLevelItem, Result,
+    ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem, Result,
 };
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
 use crate::stage::parser::ast::{self, ExprMemberAccess, TypeParams};
