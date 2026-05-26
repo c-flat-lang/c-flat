@@ -467,7 +467,10 @@ impl<'st> TypeChecker<'st> {
 
         expr.ty = array_type.clone();
 
-        let TypeKind::Array(_, array_type) = array_type.kind else {
+        let (TypeKind::Array(_, array_type) | TypeKind::Slice(array_type)) =
+            &array_type.de_ref().kind
+        else {
+            eprintln!("{}", array_type.kind);
             // NOTE: This probably will cause some missleading errors.
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 array_type.clone(),
@@ -484,7 +487,7 @@ impl<'st> TypeChecker<'st> {
             )));
             return array_type;
         };
-        *array_type
+        *array_type.clone()
     }
 
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
@@ -566,10 +569,20 @@ impl<'st> TypeChecker<'st> {
             TypeKind::Struct(struct_def) => {
                 self.lookup_struct_member(&struct_def, &member_access.member.lexeme)
             }
+            TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
+                kind: TypeKind::UnsignedTargetPointerNumber,
+                span: expr.span(),
+                mut_token: None,
+            },
             TypeKind::Ref(inner) => match &inner.kind {
                 TypeKind::Struct(struct_def) => {
                     self.lookup_struct_member(struct_def, &member_access.member.lexeme)
                 }
+                TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
+                    kind: TypeKind::UnsignedTargetPointerNumber,
+                    span: expr.span(),
+                    mut_token: None,
+                },
                 _ => unimplemented!("Handle member access for non struct pointer types"),
             },
             _ => unimplemented!("Handle member access for non array types"),

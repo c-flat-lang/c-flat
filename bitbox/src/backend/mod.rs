@@ -154,12 +154,14 @@ pub struct Context {
     pub liveness: crate::passes::liveness::LivenessAnalysisInfo,
     pub local_function_variables: crate::passes::local_function_variables::LocalFunctionVariables,
     pub output: Output,
+    pub target: Target,
 }
 
 impl Context {
     pub(crate) fn new(target: &Target) -> Self {
         Self {
             output: Output::new(target),
+            target: *target,
             ..Default::default()
         }
     }

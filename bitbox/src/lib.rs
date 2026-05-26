@@ -26,17 +26,25 @@ pub enum Target {
 impl Target {
     pub fn backend(&self) -> Box<dyn backend::Backend> {
         match self {
-            Target::Wasm32 => Box::new(backend::wasm32::Wasm32Backend),
-            Target::X86_64Linux => Box::new(backend::x86_64::linux::X86_64LinuxBackend),
-            Target::Bitbeat => Box::new(backend::bitbeat::BitbeatBackend),
+            Self::Wasm32 => Box::new(backend::wasm32::Wasm32Backend),
+            Self::X86_64Linux => Box::new(backend::x86_64::linux::X86_64LinuxBackend),
+            Self::Bitbeat => Box::new(backend::bitbeat::BitbeatBackend),
+        }
+    }
+
+    pub fn target_pointer_size(&self) -> u8 {
+        match self {
+            Self::Wasm32 => 32,
+            Self::X86_64Linux => 64,
+            Self::Bitbeat => 64,
         }
     }
 
     fn get_new_path(&self, src_path: &str) -> String {
         let extension = match self {
-            Target::Wasm32 => ".wasm",
-            Target::X86_64Linux => "",
-            Target::Bitbeat => ".bb",
+            Self::Wasm32 => ".wasm",
+            Self::X86_64Linux => "",
+            Self::Bitbeat => ".bb",
         };
         let path = src_path.rsplit_once('.').unwrap().0;
         format!("{}{}", path, extension)
@@ -61,9 +69,9 @@ impl std::str::FromStr for Target {
 impl std::fmt::Display for Target {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Target::Bitbeat => "bitbeat",
-            Target::Wasm32 => "wasm32",
-            Target::X86_64Linux => "x86_64-linux",
+            Self::Bitbeat => "bitbeat",
+            Self::Wasm32 => "wasm32",
+            Self::X86_64Linux => "x86_64-linux",
         })
     }
 }

@@ -68,7 +68,7 @@ impl<'a> ReportBuilder<'a> {
             .lines()
             .enumerate()
             .skip(starting_row_above)
-            .take(self.row.saturating_sub(1))
+            .take(self.lines_above.min(starting_row_above))
         {
             writeln!(&mut report, "{:<3}| {}", idx, line).expect("failed to write line");
         }

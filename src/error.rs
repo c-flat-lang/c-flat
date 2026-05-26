@@ -38,7 +38,7 @@ impl Report for ErrorUnexpectedExpression {
                 .map(|k| format!("`{k:?}`"))
                 .collect::<Vec<_>>();
             if expected.len() == 1 {
-                format!("exected {}", expected[0])
+                format!("expected {}", expected[0])
             } else {
                 format!("expected one of: {}", expected.join(", "))
             }
@@ -233,7 +233,7 @@ impl Report for ErrorExpectedToken {
                 .map(|k| format!("`{k:?}`"))
                 .collect::<Vec<_>>();
             let expected_str = if expected.len() == 1 {
-                format!("exected {}", expected[0])
+                format!("expected {}", expected[0])
             } else {
                 format!("expected one of: {}", expected.join(", "))
             };

@@ -7,7 +7,7 @@ use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte,
     IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IRef, IRem, IReturn, ISub, IXOr,
 };
-use crate::ir::{BasicBlock, Instruction, Operand, Type};
+use crate::ir::{BasicBlock, Instruction, Type};
 
 fn branch_terminates(blocks: &[BasicBlock]) -> bool {
     blocks.iter().any(|b| {
@@ -180,10 +180,6 @@ impl Lower<Wasm32LowerContext<'_>> for IAlloc {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        // 1. Get heap pointer
-        target.assembler.global_get(0);
-
-        // 2. Store it as the variable (array base)
         let Some(ptr_idx) = ctx
             .local_function_variables
             .get(&target.function_name)
@@ -193,19 +189,25 @@ impl Lower<Wasm32LowerContext<'_>> for IAlloc {
             panic!("Variable {:?} not found", self.des);
         };
 
+        target.assembler.global_get(0);
         target.assembler.local_tee(ptr_idx as u32);
 
-        // 3. Compute allocation size: size * element_size
-        self.size.lower(ctx, target)?; // length
-        target.assembler.i32_const(self.des.ty.size()); // element size
-        target.assembler.i32_mul(); // total bytes
+        match &self.des.ty {
+            Type::Struct(s) => {
+                target.assembler.i32_const(s.size(&ctx.target));
+                target.assembler.i32_add();
+            }
+            _ => {
+                self.size.lower(ctx, target)?;
+                target
+                    .assembler
+                    .i32_const(self.des.ty.element_size(&ctx.target));
+                target.assembler.i32_mul();
+                target.assembler.i32_add();
+            }
+        }
 
-        // 4. heap_ptr + size
-        target.assembler.i32_add();
-
-        // 5. Update heap pointer
         target.assembler.global_set(0);
-
         Ok(())
     }
 }
@@ -292,19 +294,79 @@ impl Lower<Wasm32LowerContext<'_>> for ICopy {
 
 impl Lower<Wasm32LowerContext<'_>> for IElemGet {
     type Output = ();
+
     fn lower(
         &self,
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.index.lower(ctx, target)?;
-        target.assembler.i32_const(self.des.ty.size());
-        target.assembler.i32_mul();
+        match self.ptr.ty() {
+            Some(Type::Struct(s)) => {
+                let idx = self
+                    .index
+                    .as_const_usize()
+                    .expect("struct indexing must be constant");
+
+                let field_offset: i32 = s.fields[..idx]
+                    .iter()
+                    .map(|(_, ty)| ty.size(&ctx.target))
+                    .sum();
+
+                target.assembler.i32_const(field_offset);
+            }
+
+            Some(Type::Array(_, elem)) => {
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(elem.size(&ctx.target));
+                target.assembler.i32_mul();
+            }
+
+            Some(Type::Pointer(inner)) => match inner.as_ref() {
+                Type::Struct(s) => {
+                    let idx = self
+                        .index
+                        .as_const_usize()
+                        .expect("struct indexing must be constant");
+
+                    let field_offset: i32 = s.fields[..idx]
+                        .iter()
+                        .map(|(_, ty)| ty.size(&ctx.target))
+                        .sum();
+
+                    target.assembler.i32_const(field_offset);
+                }
+
+                ty => {
+                    self.index.lower(ctx, target)?;
+                    target.assembler.i32_const(ty.size(&ctx.target));
+                    target.assembler.i32_mul();
+                }
+            },
+
+            Some(Type::Unsigned(1..=8) | Type::Signed(1..=8)) => {
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(1);
+                target.assembler.i32_mul();
+            }
+
+            Some(Type::Unsigned(9..=16) | Type::Signed(9..=16)) => {
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(2);
+                target.assembler.i32_mul();
+            }
+
+            Some(Type::Unsigned(_) | Type::Signed(_)) => {
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(4);
+                target.assembler.i32_mul();
+            }
+
+            ty => panic!("bad elemget {ty:?}"),
+        }
 
         self.ptr.lower(ctx, target)?;
         target.assembler.i32_add();
 
-        // Use narrow loads for sub-32-bit types so we don't read past the field.
         let memarg_byte = wasm_encoder::MemArg {
             offset: 0,
             align: 0,
@@ -320,18 +382,20 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
             align: 2,
             memory_index: 0,
         };
+
         match &self.des.ty {
             Type::Unsigned(1..=8) => target.assembler.i32_load8_u(memarg_byte),
             Type::Signed(1..=8) => target.assembler.i32_load8_s(memarg_byte),
             Type::Unsigned(9..=16) => target.assembler.i32_load16_u(memarg_word),
             Type::Signed(9..=16) => target.assembler.i32_load16_s(memarg_word),
+
             _ => match self.des.ty.clone().into() {
                 ValType::I32 => target.assembler.i32_load(memarg_dword),
-                ValType::I64 => todo!("@gt i64"),
-                ValType::F32 => todo!("@gt f32"),
-                ValType::F64 => todo!("@gt f64"),
-                ValType::V128 => todo!("@gt v128"),
-                ValType::Ref(_) => todo!("@gt ref"),
+                ValType::I64 => todo!("@elemget i64"),
+                ValType::F32 => todo!("@elemget f32"),
+                ValType::F64 => todo!("@elemget f64"),
+                ValType::V128 => todo!("@elemget v128"),
+                ValType::Ref(_) => todo!("@elemget ref"),
             },
         };
 
@@ -339,6 +403,7 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
         let Some(idx) = variables.iter().position(|v| v.name == self.des.name) else {
             panic!("Variable {:?} not found", self);
         };
+
         target.assembler.local_set(idx as u32);
         Ok(())
     }
@@ -351,34 +416,6 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        // For struct field access, look up the field type from the struct definition
-        // (not the value type, integer literals default to s32 even for u8 fields).
-        // For arrays, the element type already gives the correct stride.
-        let ty = match &self.addr.ty {
-            Type::Array(_, elem_ty) => *elem_ty.clone(),
-            Type::Struct(s) => {
-                // Struct field index is always a compile-time constant.
-                if let Operand::ConstantInt(ref c) = self.index {
-                    let idx: usize = c.value.parse().unwrap_or(0);
-                    s.fields
-                        .get(idx)
-                        .map(|(_, t)| t.clone())
-                        .unwrap_or(Type::Signed(32))
-                } else {
-                    Type::Signed(32)
-                }
-            }
-            ty => ty.clone(),
-        };
-        self.index.lower(ctx, target)?;
-        target.assembler.i32_const(ty.size());
-        target.assembler.i32_mul();
-
-        self.addr.lower(ctx, target)?;
-        target.assembler.i32_add();
-
-        self.value.lower(ctx, target)?;
-        // Use narrow stores for sub-32-bit fields so we don't corrupt adjacent bytes.
         let memarg_byte = wasm_encoder::MemArg {
             offset: 0,
             align: 0,
@@ -394,11 +431,113 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
             align: 2,
             memory_index: 0,
         };
-        match ty.size() {
-            1 => target.assembler.i32_store8(memarg_byte),
-            2 => target.assembler.i32_store16(memarg_word),
-            _ => target.assembler.i32_store(memarg_dword),
-        };
+
+        match &self.addr.ty {
+            Type::Struct(s) => {
+                let idx = self
+                    .index
+                    .as_const_usize()
+                    .expect("struct field index must be constant");
+                let field_offset: i32 = s.fields[..idx]
+                    .iter()
+                    .map(|(_, ty)| ty.size(&ctx.target))
+                    .sum();
+                let field_ty = s.fields[idx].1.clone();
+
+                self.addr.lower(ctx, target)?;
+                target.assembler.i32_const(field_offset);
+                target.assembler.i32_add();
+                self.value.lower(ctx, target)?;
+
+                match field_ty.size(&ctx.target) {
+                    1 => target.assembler.i32_store8(memarg_byte),
+                    2 => target.assembler.i32_store16(memarg_word),
+                    _ => target.assembler.i32_store(memarg_dword),
+                };
+            }
+            Type::Array(_, elem_ty) => {
+                let elem_ty = *elem_ty.clone();
+
+                self.addr.lower(ctx, target)?;
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(elem_ty.size(&ctx.target));
+                target.assembler.i32_mul();
+                target.assembler.i32_add();
+                self.value.lower(ctx, target)?;
+
+                match elem_ty.size(&ctx.target) {
+                    1 => target.assembler.i32_store8(memarg_byte),
+                    2 => target.assembler.i32_store16(memarg_word),
+                    _ => target.assembler.i32_store(memarg_dword),
+                };
+            }
+            Type::Pointer(inner) => match inner.as_ref() {
+                Type::Struct(s) => {
+                    let idx = self
+                        .index
+                        .as_const_usize()
+                        .expect("struct field index must be constant");
+                    let field_offset: i32 = s.fields[..idx]
+                        .iter()
+                        .map(|(_, ty)| ty.size(&ctx.target))
+                        .sum();
+                    let field_ty = s.fields[idx].1.clone();
+
+                    self.addr.lower(ctx, target)?;
+                    target.assembler.i32_const(field_offset);
+                    target.assembler.i32_add();
+                    self.value.lower(ctx, target)?;
+
+                    match field_ty.size(&ctx.target) {
+                        1 => target.assembler.i32_store8(memarg_byte),
+                        2 => target.assembler.i32_store16(memarg_word),
+                        _ => target.assembler.i32_store(memarg_dword),
+                    };
+                }
+                elem_ty => {
+                    self.addr.lower(ctx, target)?;
+                    self.index.lower(ctx, target)?;
+                    target.assembler.i32_const(elem_ty.size(&ctx.target));
+                    target.assembler.i32_mul();
+                    target.assembler.i32_add();
+                    self.value.lower(ctx, target)?;
+
+                    match elem_ty.size(&ctx.target) {
+                        1 => target.assembler.i32_store8(memarg_byte),
+                        2 => target.assembler.i32_store16(memarg_word),
+                        _ => target.assembler.i32_store(memarg_dword),
+                    };
+                }
+            },
+            Type::Unsigned(1..=8) | Type::Signed(1..=8) => {
+                self.addr.lower(ctx, target)?;
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(1);
+                target.assembler.i32_mul();
+                target.assembler.i32_add();
+                self.value.lower(ctx, target)?;
+                target.assembler.i32_store8(memarg_byte);
+            }
+            Type::Unsigned(9..=16) | Type::Signed(9..=16) => {
+                self.addr.lower(ctx, target)?;
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(2);
+                target.assembler.i32_mul();
+                target.assembler.i32_add();
+                self.value.lower(ctx, target)?;
+                target.assembler.i32_store16(memarg_word);
+            }
+            Type::Unsigned(_) | Type::Signed(_) => {
+                self.addr.lower(ctx, target)?;
+                self.index.lower(ctx, target)?;
+                target.assembler.i32_const(4);
+                target.assembler.i32_mul();
+                target.assembler.i32_add();
+                self.value.lower(ctx, target)?;
+                target.assembler.i32_store(memarg_dword);
+            }
+            ty => panic!("bad elemset {ty:?}"),
+        }
         Ok(())
     }
 }
@@ -797,20 +936,16 @@ impl Lower<Wasm32LowerContext<'_>> for IRef {
         };
 
         match &self.src.ty {
-            // Arrays and structs are already represented as i32 linear memory addresses
-            // (the result of IAlloc), so @ref is just copying that address.
-            Type::Array(_, _) | Type::Struct(_) => {
+            // Arrays, structs, and pointers are already i32 linear-memory addresses;
+            // @ref just copies the address without spilling.
+            Type::Array(_, _) | Type::Struct(_) | Type::Pointer(_) => {
                 target.assembler.local_get(src_idx as u32);
                 target.assembler.local_set(des_idx as u32);
             }
-            // Scalar locals don't live in linear memory. Spill to the bump-pointer heap
-            // so we can hand out a real address.
             _ => {
-                let size = self.src.ty.size();
-                // des = heap_ptr  (save the address we're about to use)
+                let size = self.src.ty.size(&ctx.target);
                 target.assembler.global_get(0);
                 target.assembler.local_tee(des_idx as u32);
-                // store the value at [heap_ptr]
                 target.assembler.local_get(src_idx as u32);
                 match self.src.ty.clone().into() {
                     ValType::I32 => target.assembler.i32_store(wasm_encoder::MemArg {
@@ -824,14 +959,12 @@ impl Lower<Wasm32LowerContext<'_>> for IRef {
                     ValType::V128 => todo!("@ref spill v128"),
                     ValType::Ref(_) => todo!("@ref spill ref"),
                 };
-                // bump heap pointer
                 target.assembler.global_get(0);
                 target.assembler.i32_const(size);
                 target.assembler.i32_add();
                 target.assembler.global_set(0);
             }
         }
-
         Ok(())
     }
 }
@@ -875,8 +1008,8 @@ impl Lower<Wasm32LowerContext<'_>> for ICast {
     ) -> Result<Self::Output, crate::error::Error> {
         self.src.lower(ctx, target)?;
 
-        let src_bytes = self.src.ty.size();
-        let dst_bytes = self.des.ty.size();
+        let src_bytes = self.src.ty.size(&ctx.target);
+        let dst_bytes = self.des.ty.size(&ctx.target);
         let src_in_i64 = src_bytes > 4;
         let dst_in_i64 = dst_bytes > 4;
 
