@@ -263,6 +263,7 @@ impl<'st> TypeResolver<'st> {
                 };
                 *ty = symbol.ty.clone();
             }
+            TypeKind::Slice(ty) => self.walk_type(ty),
         }
     }
 

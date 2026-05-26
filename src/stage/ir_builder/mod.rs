@@ -1,25 +1,20 @@
-#![allow(unused)]
 use super::Stage;
-use crate::stage::lexer::token::{Keyword, Token, TokenKind};
+use crate::stage::lexer::token::{Keyword, TokenKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
-use bitbeat::Instruction;
 use bitbox::Target;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
-use bitbox::ir::{
-    self, Constant, ConstantInt, Module, Operand, StructType, Type, Variable, Visibility,
-};
+use bitbox::ir::{self, ConstantInt, Module, Operand, StructType, Type, Variable, Visibility};
 
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
     ExprBlock, ExprCall, ExprDecl, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot, ExprReturn,
-    ExprStruct, ExprTypeCast, ExprWhile, Litral, Struct,
+    ExprStruct, ExprTypeCast, ExprWhile, Litral,
 };
 
 #[derive(Debug)]
 pub struct IRBuilder {
     symbol_table: SymbolTable,
-    variable_stack: Vec<Variable>,
     target: Target,
 }
 
@@ -27,17 +22,8 @@ impl IRBuilder {
     pub fn new(target: Target) -> Self {
         Self {
             symbol_table: SymbolTable::default(),
-            variable_stack: Vec::default(),
             target,
         }
-    }
-
-    fn push(&mut self, var: Variable) {
-        self.variable_stack.push(var);
-    }
-
-    fn pop(&mut self) -> Option<Variable> {
-        self.variable_stack.pop()
     }
 
     fn build_function(&mut self, function: ast::Function, mb: &mut ModuleBuilder) {
@@ -103,7 +89,6 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
                 Item::Use(u) => self.build_use(u),
                 Item::ExternFunction(extern_function) => {
                     let ast::ExternFunction {
-                        visibility,
                         binding_name,
                         params,
                         return_type,
@@ -158,7 +143,6 @@ impl<'a> LoweringContext<'a> {
 pub struct Address {
     variable: Variable,
     offset: Variable,
-    size: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -337,7 +321,7 @@ impl Lowerable for ExprArray {
     ) -> Option<Variable> {
         let ty = self.ty.as_bitbox_type(&ctx.target);
         let size = Operand::ConstantInt(ir::ConstantInt::new(
-            (self.elements.len() * (ty.size() as usize)).to_string(),
+            (self.elements.len() * (ty.size(&ctx.target) as usize)).to_string(),
             Type::Signed(32),
         ));
         let ptr = assembler.var(ty.clone());
@@ -510,7 +494,7 @@ impl Lowerable for Litral {
     fn lower(
         &self,
         assembler: &mut AssemblerBuilder,
-        ctx: &mut LoweringContext,
+        _ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         match self {
             ast::Litral::String(token) => {
@@ -667,7 +651,7 @@ impl Lowerable for ExprCall {
             panic!("Caller must be an identifier");
         };
 
-        let Some(symbol) = ctx.symbol_table.get(&ident.lexeme) else {
+        let Some(symbol) = ctx.symbol_table.get(&ident.lexeme).cloned() else {
             panic!("Symbol not found {}", ident.lexeme);
         };
 
@@ -677,11 +661,68 @@ impl Lowerable for ExprCall {
             .unwrap_or(&ident.lexeme)
             .clone();
         let ty = symbol.ty.as_bitbox_type(&ctx.target);
-
         let args: Vec<Operand> = self
             .args
             .iter()
-            .filter_map(|arg| arg.lower(assembler, ctx).map(|var| var.into()))
+            .zip(symbol.params.unwrap_or_default().iter())
+            .filter_map(|(arg, param_ty)| {
+                let var = arg.lower(assembler, ctx)?;
+
+                match (&var.ty.de_ref(), &param_ty.de_ref().kind) {
+                    (Type::Array(len, elem), ast::TypeKind::Slice(_)) => {
+                        // Pass pointer to the first element and length for array-to-slice coercion
+                        let data_ptr = assembler.var(Type::Pointer(elem.clone()));
+                        assembler.ref_of(data_ptr.clone(), var.clone());
+
+                        // HACK: Probably should check the calling convention and only do this for extern functions, but for now we just check if the symbol is an extern function
+                        if symbol.kind == crate::stage::semantic_analyzer::symbol_table::SymbolKind::ExternFunction {
+                            return Some(data_ptr.into());
+                        }
+
+                        let len_var = assembler.var(Type::Signed(32));
+                        assembler.assign(
+                            len_var.clone(),
+                            Operand::ConstantInt(ConstantInt::new(
+                                len.to_string(),
+                                Type::Signed(32),
+                            )),
+                        );
+
+                        let slice_struct_ty = Type::Struct(StructType {
+                            name: format!("slice_{elem:?}"),
+                            packed: false,
+                            fields: vec![
+                                ("data".into(), Type::Pointer(elem.clone())),
+                                ("len".into(), Type::Signed(ctx.target.target_pointer_size())),
+                            ],
+                        });
+
+                        let slice_val = assembler.var(slice_struct_ty.clone());
+
+                        assembler.alloc(
+                            slice_struct_ty.clone(),
+                            slice_val.clone(),
+                            Operand::const_signed(slice_struct_ty.size(&ctx.target).to_string(), ctx.target.target_pointer_size()),
+                        );
+
+                        assembler.elemset(
+                            slice_val.clone(),
+                            Operand::const_signed("0", 32),
+                            Operand::from(data_ptr),
+                        );
+                        assembler.elemset(
+                            slice_val.clone(),
+                            Operand::const_signed("1", 32),
+                            Operand::from(len_var),
+                        );
+
+                        let slice_ptr = assembler.var(Type::Pointer(Box::new(slice_struct_ty)));
+                        assembler.ref_of(slice_ptr.clone(), slice_val);
+                        Some(slice_ptr.into())
+                    }
+                    _ => Some(var.into()),
+                }
+            })
             .collect();
 
         let des_var = if ty == Type::Void {
@@ -703,18 +744,61 @@ impl Lowerable for ExprArrayIndex {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let Some(ptr) = self.expr.lower(assembler, ctx) else {
-            panic!("Failed to return variable from expr lowering");
-        };
-        let Some(index) = self.index.lower(assembler, ctx) else {
-            panic!("Failed to return variable from expr lowering");
-        };
-        let Type::Array(_, ty) = ptr.ty.clone() else {
-            panic!("Expected array type");
-        };
-        let des = assembler.var(*ty);
-        assembler.elemget(des.clone(), ptr, index);
-        Some(des)
+        let ptr = self.expr.lower(assembler, ctx)?;
+        let index = self.index.lower(assembler, ctx)?;
+
+        match &ptr.ty {
+            // [T; N]
+            Type::Array(_, elem_ty) => {
+                let dst = assembler.var(*elem_ty.clone());
+                assembler.elemget(dst.clone(), ptr, index);
+                Some(dst)
+            }
+
+            // &[T]
+            Type::Pointer(inner)
+                if matches!(
+                    **inner,
+                    Type::Struct(ref s)
+                    if s.name.starts_with("slice_")
+                ) =>
+            {
+                let Type::Struct(slice_struct) = inner.de_ref() else {
+                    unreachable!()
+                };
+                let (_, data_ty) = slice_struct.fields[0].clone();
+                let (_, len_ty) = slice_struct.fields[1].clone();
+
+                // load .data
+                let data_index =
+                    Operand::ConstantInt(ConstantInt::new(0.to_string(), Type::Signed(32)));
+                let data = assembler.var(data_ty);
+                assembler.elemget(data.clone(), ptr.clone(), data_index);
+
+                // load .len
+                let len_index =
+                    Operand::ConstantInt(ConstantInt::new(1.to_string(), Type::Signed(32)));
+                let len = assembler.var(len_ty);
+                assembler.elemget(len, ptr.clone(), len_index);
+
+                // assembler.bounds_check(index.clone(), len);
+
+                let elem_ty = match data.ty {
+                    Type::Pointer(ref elem) => (**elem).clone(),
+                    ty => unreachable!("{ty:#?}"),
+                };
+
+                let dst = assembler.var(elem_ty);
+
+                assembler.elemget(dst.clone(), data, index);
+
+                Some(dst)
+            }
+
+            other => {
+                panic!("Cannot index {:?}", other)
+            }
+        }
     }
 }
 
@@ -732,14 +816,10 @@ impl Addressable for ExprArrayIndex {
             panic!("Failed to return variable from ExprArrayIndex index lowering");
         };
 
-        let ast::TypeKind::Array(_, ty) = &self.ty.kind else {
+        let ast::TypeKind::Array(_, _) = &self.ty.kind else {
             panic!("Expected array type but got {}", self.ty);
         };
-        let address = Address {
-            variable,
-            offset,
-            size: ty.size(),
-        };
+        let address = Address { variable, offset };
         let var = AddressableVar::Address(address);
         Some(var)
     }
@@ -755,7 +835,7 @@ impl Lowerable for ExprArrayRepeat {
             panic!("Expected array type but got {}", self.ty);
         };
         let size = Operand::from(ConstantInt::new(
-            (count * ty.size()).to_string(),
+            (count * ty.size(&ctx.target)).to_string(),
             Type::Signed(32),
         ));
         let ptr = assembler.var(ty.as_bitbox_type(&ctx.target));
@@ -816,7 +896,7 @@ impl Lowerable for ExprWhile {
             .with_label_counter(label_counter);
 
         loop_assembler.create_block("loop_body");
-        let then_block_result = self.body.lower(&mut loop_assembler, ctx);
+        let _then_block_result = self.body.lower(&mut loop_assembler, ctx);
 
         #[cfg(not(feature = "uuids"))]
         assembler

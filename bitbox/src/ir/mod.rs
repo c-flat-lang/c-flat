@@ -1,3 +1,5 @@
+use crate::Target;
+
 pub mod builder;
 pub mod instruction;
 
@@ -94,32 +96,42 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn size(&self) -> i32 {
+    pub fn size(&self, target: &Target) -> i32 {
         match self {
             Self::Unsigned(bits) => *bits as i32 / 8,
             Self::Signed(bits) => *bits as i32 / 8,
             Self::Float(bits) => *bits as i32 / 8,
-            Self::Pointer(..) => 64,
-            Self::Array(size, ty) => ty.size() * (*size as i32),
-            Self::Struct(s) => s.size(),
+            Self::Pointer(..) => (target.target_pointer_size() as i32) / 8, // will add target pointer size later
+            Self::Array(size, ty) => ty.size(target) * (*size as i32),
+            Self::Struct(s) => s.size(target),
             Self::Void => 0,
         }
     }
 
-    pub fn element_size(&self) -> i32 {
+    pub fn element_size(&self, target: &Target) -> i32 {
         match self {
             Self::Unsigned(bits) => *bits as i32 / 8,
             Self::Signed(bits) => *bits as i32 / 8,
             Self::Float(bits) => *bits as i32 / 8,
-            Self::Pointer(..) => 64,
-            Self::Array(_, ty) => ty.element_size(),
-            Self::Struct(s) => s.size(),
+            Self::Pointer(..) => 32 / 8, // will add target pointer size later
+            Self::Array(_, ty) => ty.element_size(target),
+            Self::Struct(s) => s.size(target),
             Self::Void => 0,
         }
     }
 
     pub fn is_ptr(&self) -> bool {
         matches!(self, Self::Pointer(_))
+    }
+
+    pub fn de_ref(&self) -> &Self {
+        let mut ty = self;
+
+        while let Self::Pointer(inner) = &ty {
+            ty = inner;
+        }
+
+        ty
     }
 }
 
@@ -155,19 +167,22 @@ pub enum AbiChunk {
 
 impl StructType {
     /// Total byte size of this struct (sum of all field sizes, no padding yet).
-    pub fn size(&self) -> i32 {
-        self.fields.iter().map(|(_, ty)| ty.size()).sum()
+    pub fn size(&self, target: &Target) -> i32 {
+        self.fields.iter().map(|(_, ty)| ty.size(target)).sum()
     }
 
     /// Byte offset of field at position `idx` within the struct.
-    pub fn field_offset(&self, idx: usize) -> i32 {
-        self.fields[..idx].iter().map(|(_, ty)| ty.size()).sum()
+    pub fn field_offset(&self, idx: usize, target: &Target) -> i32 {
+        self.fields[..idx]
+            .iter()
+            .map(|(_, ty)| ty.size(target))
+            .sum()
     }
 
     /// Returns the SysV AMD64 ABI chunks for passing this struct in registers.
     /// Returns None if the struct is > 16 bytes (MEMORY class — must be passed by pointer).
-    pub fn abi_chunks(&self) -> Option<Vec<AbiChunk>> {
-        let size = self.size();
+    pub fn abi_chunks(&self, target: &Target) -> Option<Vec<AbiChunk>> {
+        let size = self.size(target);
         if size > 16 {
             return None;
         }
@@ -180,7 +195,7 @@ impl StructType {
                 Type::Float(_) => {}                        // SSE stays
                 _ => chunks[chunk_idx] = AbiChunk::Integer, // INTEGER dominates
             }
-            byte_offset += field_ty.size() as usize;
+            byte_offset += field_ty.size(target) as usize;
         }
         Some(chunks)
     }
@@ -333,6 +348,14 @@ impl Operand {
             Operand::ConstantInt(c) => Some(&c.ty),
             Operand::Variable(v) => Some(&v.ty),
             Operand::None => None,
+        }
+    }
+
+    pub(crate) fn as_const_usize(&self) -> Option<usize> {
+        if let Operand::ConstantInt(c) = self {
+            c.parse::<usize>().ok()
+        } else {
+            None
         }
     }
 }

@@ -106,7 +106,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
         // SysV MEMORY class: if this function returns a struct > 16 bytes, the caller passes a
         // hidden return pointer in RDI as the implicit first argument.
         let returns_memory_class =
-            matches!(&self.return_type, Type::Struct(s) if s.abi_chunks().is_none());
+            matches!(&self.return_type, Type::Struct(s) if s.abi_chunks(&ctx.target).is_none());
         if returns_memory_class {
             let hidden_slot = target
                 .assembler
@@ -125,7 +125,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
             target.assembler.comment(format!("arg: {}", arg.name));
             match &arg.ty {
                 Type::Struct(s) => {
-                    match s.abi_chunks() {
+                    match s.abi_chunks(&ctx.target) {
                         Some(chunks) => {
                             for (chunk_idx, chunk) in chunks.iter().enumerate() {
                                 let chunk_dst = Stack {

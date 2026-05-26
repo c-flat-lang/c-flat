@@ -25,9 +25,7 @@
     (local i32 i32 i32 i32 i32)
     global.get 0
     local.tee 0
-    i32.const 1
     i32.const 8
-    i32.mul
     i32.add
     global.set 0
     global.get 0
@@ -39,26 +37,24 @@
     global.set 0
     i32.const 0
     local.set 2
+    local.get 1
     i32.const 0
     i32.const 4
     i32.mul
-    local.get 1
     i32.add
     local.get 2
     i32.store
     i32.const 0
     local.set 3
+    local.get 1
     i32.const 1
     i32.const 4
     i32.mul
-    local.get 1
     i32.add
     local.get 3
     i32.store
-    i32.const 0
-    i32.const 8
-    i32.mul
     local.get 0
+    i32.const 0
     i32.add
     local.get 1
     i32.store
@@ -70,16 +66,14 @@
   (func (;3;) (type 3) (param i32 i32 i32)
     (local i32)
     i32.const 0
-    i32.const 8
-    i32.mul
     local.get 0
     i32.add
     i32.load
     local.set 3
+    local.get 3
     local.get 1
     i32.const 4
     i32.mul
-    local.get 3
     i32.add
     local.get 2
     i32.store
@@ -91,8 +85,6 @@
     local.get 0
     local.set 1
     i32.const 0
-    i32.const 8
-    i32.mul
     local.get 1
     i32.add
     i32.load
@@ -123,8 +115,6 @@
     local.get 8
     call 3
     i32.const 0
-    i32.const 8
-    i32.mul
     local.get 1
     i32.add
     i32.load

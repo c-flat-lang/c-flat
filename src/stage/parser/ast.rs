@@ -47,16 +47,21 @@ impl Type {
     }
 
     pub fn as_bitbox_type(&self, target: &Target) -> bitbox::ir::Type {
-        let target_pointer_size: u8 = match target {
-            Target::Wasm32 => 32,
-            Target::X86_64Linux => 64,
-            Target::Bitbeat => 64,
-        };
-        self.kind.as_bitbox_type(target_pointer_size)
+        self.kind.as_bitbox_type(target.target_pointer_size())
     }
 
-    pub fn size(&self) -> usize {
-        self.kind.size()
+    pub fn size(&self, target: &Target) -> usize {
+        self.kind.size(target.target_pointer_size())
+    }
+
+    pub fn de_ref(&self) -> &Type {
+        let mut ty = self;
+
+        while let TypeKind::Ref(inner) = &ty.kind {
+            ty = inner;
+        }
+
+        ty
     }
 }
 
@@ -75,6 +80,7 @@ pub enum TypeKind {
     SignedNumber(u8),
     /// isize
     SignedTargetPointerNumber,
+    Slice(Box<Type>),
     Struct(StructType),
     Type,
     UnsignedNumber(u8),
@@ -109,6 +115,22 @@ impl TypeKind {
                 bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
             }
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
+            Self::Slice(inner) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
+                name: format!("slice_{}", inner),
+                packed: false,
+                fields: vec![
+                    (
+                        "data".into(),
+                        bitbox::ir::Type::Pointer(Box::new(
+                            inner.kind.as_bitbox_type(target_pointer_size),
+                        )),
+                    ),
+                    (
+                        "len".into(),
+                        bitbox::ir::Type::Unsigned(target_pointer_size),
+                    ),
+                ],
+            }),
             Self::SignedTargetPointerNumber => bitbox::ir::Type::Signed(target_pointer_size),
             Self::Struct(struct_type) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: struct_type.name.clone(),
@@ -133,9 +155,9 @@ This means we may need to generate more then one X Type depending on how many Ge
         }
     }
 
-    fn size(&self) -> usize {
+    fn size(&self, target_pointer_size: u8) -> usize {
         match self {
-            Self::Array(count, ty) => count * ty.kind.size(),
+            Self::Array(count, ty) => count * ty.kind.size(target_pointer_size),
             Self::Bool => 1,
             Self::Enum(_) => todo!("Size of enum"),
             Self::Name(name) => {
@@ -151,10 +173,14 @@ This means we may need to generate more then one X Type depending on how many Ge
             Self::SignedTargetPointerNumber => unreachable!(
                 "ssize or SignedTargetPointerNumber should be handled in type_resolver"
             ),
+            Self::Slice(_) => {
+                let ptr = target_pointer_size as usize / 8;
+                ptr + ptr // data ptr + len
+            }
             Self::Struct(struct_type) => {
                 let mut size = 0;
                 for (_, ty) in &struct_type.fields {
-                    size += ty.kind.size();
+                    size += ty.kind.size(target_pointer_size);
                 }
                 size
             }
@@ -189,6 +215,7 @@ impl std::fmt::Display for TypeKind {
             Self::Ref(ty) => write!(f, "ref {ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
             Self::SignedTargetPointerNumber => write!(f, "ssize"),
+            Self::Slice(ty) => write!(f, "[{ty}]"),
             Self::Struct(symbol) => write!(f, "{}", symbol.name),
             Self::Type => write!(f, "type"),
             Self::UnsignedNumber(n) => write!(f, "u{}", n),
@@ -225,7 +252,7 @@ pub struct StructType {
 }
 
 impl StructType {
-    pub fn size(&self) -> usize {
+    pub fn size(&self, target: &Target) -> usize {
         // TODO: alignment is needed
         // s32 -> 4 padding of 4
         // 264 -> 8
@@ -241,7 +268,7 @@ impl StructType {
         // padding is needed cause of the order
         let mut size = 0;
         for (_, ty) in &self.fields {
-            size += ty.kind.size();
+            size += ty.size(target);
         }
         size
     }

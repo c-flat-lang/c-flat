@@ -336,6 +336,16 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::LeftBracket if self.peek(TokenKind::Identifier) => {
+                let ty = self.parse_type()?;
+                let right_brace = self.consume(TokenKind::RightBracket)?;
+                let span = tok.span.start..right_brace.span.end;
+                Ok(ast::Type {
+                    mut_token,
+                    kind: ast::TypeKind::Slice(Box::new(ty)),
+                    span,
+                })
+            }
             TokenKind::LeftBracket => {
                 let count = self.consume(TokenKind::Number)?;
                 self.consume(TokenKind::Semicolon)?;
