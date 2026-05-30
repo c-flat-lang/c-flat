@@ -108,13 +108,26 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Setg(a)
         | Instruction::Setge(a)
         | Instruction::Setl(a)
+        | Instruction::Setle(a)
         | Instruction::Seta(a)
         | Instruction::Setae(a)
         | Instruction::Setb(a)
         | Instruction::Idiv(a) => {
             f(a);
         }
-        _ => {}
+        Instruction::Call(..)
+        | Instruction::Comment(..)
+        | Instruction::DefineLabel(..)
+        | Instruction::Jmp(..)
+        | Instruction::Jnz(..)
+        | Instruction::Jz(..)
+        | Instruction::Ret
+        | Instruction::Cvtss2sd(..)
+        | Instruction::Cvtsd2ss(..)
+        | Instruction::Cvttss2si(..)
+        | Instruction::Cvttsd2si(..)
+        | Instruction::Movsx(..)
+        | Instruction::Cqo => {}
     }
 }
 
@@ -141,6 +154,7 @@ fn map_locations(
         Instruction::Setg(a) => Instruction::Setg(rw(a)),
         Instruction::Setge(a) => Instruction::Setge(rw(a)),
         Instruction::Setl(a) => Instruction::Setl(rw(a)),
+        Instruction::Setle(a) => Instruction::Setle(rw(a)),
         Instruction::Seta(a) => Instruction::Seta(rw(a)),
         Instruction::Setae(a) => Instruction::Setae(rw(a)),
         Instruction::Setb(a) => Instruction::Setb(rw(a)),
@@ -165,7 +179,14 @@ fn map_locations(
         Instruction::Cvttsd2si(a, b) => Instruction::Cvttsd2si(rw(a), rw(b)),
         Instruction::Movsx(a, b) => Instruction::Movsx(rw(a), rw(b)),
         Instruction::Idiv(a) => Instruction::Idiv(rw(a)),
-        other => other,
+        Instruction::Call(..)
+        | Instruction::Comment(..)
+        | Instruction::DefineLabel(..)
+        | Instruction::Jmp(..)
+        | Instruction::Jnz(..)
+        | Instruction::Jz(..)
+        | Instruction::Ret
+        | Instruction::Cqo => instr,
     }
 }
 
