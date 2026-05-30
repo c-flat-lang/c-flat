@@ -1,5 +1,10 @@
 # C-flat
 
+<details>
+<summary>[bitbox](./bitbox/README.md)</summary>
+C-flat language backend, targeting wasm32, x86_64-linux
+</details>
+
 C-flat is a strongly typed programming language inspired by modern languages like Rust, Zig, Go and many other languages. This is a passion project that I’m developing for fun, without any rush, and with an open mind about its evolution. None of the syntax is set in stone—it could change at any moment as I explore new ideas and refine the language.
 
 ## Why C-flat?
