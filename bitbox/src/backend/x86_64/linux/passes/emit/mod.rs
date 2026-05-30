@@ -320,6 +320,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
+            ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
             ir::Instruction::NoOp(..) => todo!(),
             ir::Instruction::Or(..) => todo!("or"),

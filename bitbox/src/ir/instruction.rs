@@ -45,6 +45,9 @@ pub enum Instruction {
     /// `@lt <type> : <des>, <lhs>, <rhs>`
     /// `@lt u1 : is_one, n, 1`
     Lt(ILt),
+    /// `@lte <type> : <des>, <lhs>, <rhs>`
+    /// `@lte u1 : is_one, n, 1`
+    Lte(ILte),
     /// @jump <label>
     /// @jump %recursive_case
     Jump(IJump),
@@ -101,6 +104,7 @@ impl fmt::Display for Instruction {
             Self::Gte(igte) => write!(f, "{igte}"),
             Self::Rem(irem) => write!(f, "{irem}"),
             Self::Lt(ilt) => write!(f, "{ilt}"),
+            Self::Lte(ilte) => write!(f, "{ilte}"),
             Self::Assign(iassign) => write!(f, "{iassign}"),
             Self::Alloc(ialloc) => write!(f, "{ialloc}"),
             Self::Call(icall) => write!(f, "{icall}"),
@@ -284,6 +288,15 @@ create_binary_instruction!(
     ILt,
     Lt,
     "lt"
+);
+create_binary_instruction!(
+    "`@lte <type> : <des>, <lhs>, <rhs>`
+
+`@lte u1 : is_one, n, 1`
+",
+    ILte,
+    Lte,
+    "lte"
 );
 
 #[derive(Debug, Clone, PartialEq, Eq)]

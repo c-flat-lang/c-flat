@@ -3,8 +3,8 @@ use crate::ir::{
     Type, Variable, Visibility,
     instruction::{
         CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt,
-        IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IRem,
-        IReturn, ISub, IXOr, Label,
+        IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi, IRef,
+        IRem, IReturn, ISub, IXOr, Label,
     },
 };
 
@@ -339,6 +339,14 @@ impl<'a> AssemblerBuilder<'a> {
         let lhs = lhs.into();
         let rhs = rhs.into();
         self.push_instruction(ILt::new(des, lhs, rhs));
+        self
+    }
+
+    /// `@lte <type> : <des>, <lhs>, <rhs>`
+    pub fn lte(&mut self, des: Variable, lhs: Variable, rhs: Variable) -> &mut Self {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(ILte::new(des, lhs, rhs));
         self
     }
 

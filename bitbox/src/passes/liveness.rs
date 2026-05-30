@@ -3,8 +3,8 @@ use crate::{
         BasicBlock, BlockId, Instruction, Variable,
         instruction::{
             IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt,
-            IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef,
-            IRem, IReturn, ISub, IXOr,
+            IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi,
+            IRef, IRem, IReturn, ISub, IXOr,
         },
     },
     passes::{DebugPass, PassOutput},
@@ -42,7 +42,7 @@ macro_rules! liveness_ops {
 }
 
 liveness_ops!(
-    IAdd, ISub, IMul, IDiv, ICmp, IGt, IGte, IRem, ILt, IAnd, IOr, IXOr
+    IAdd, ISub, IMul, IDiv, ICmp, IGt, IGte, IRem, ILt, ILte, IAnd, IOr, IXOr
 );
 
 impl LivenessAnalysis for IAssign {
@@ -335,6 +335,7 @@ impl crate::ir::Instruction {
             Self::Gte(i) => i.uses(),
             Self::Rem(i) => i.uses(),
             Self::Lt(i) => i.uses(),
+            Self::Lte(i) => i.uses(),
             Self::Jump(i) => i.uses(),
             Self::JumpIf(i) => i.uses(),
             Self::Load(i) => i.uses(),
@@ -369,6 +370,7 @@ impl crate::ir::Instruction {
             Self::Gte(i) => i.defines(),
             Self::Rem(i) => i.defines(),
             Self::Lt(i) => i.defines(),
+            Self::Lte(i) => i.defines(),
             Self::Jump(i) => i.defines(),
             Self::JumpIf(i) => i.defines(),
             Self::Load(i) => i.defines(),
