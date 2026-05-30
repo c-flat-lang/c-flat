@@ -365,6 +365,7 @@ impl Lowerable for ExprBinary {
             TokenKind::Less => assembler.lt(des.clone(), lhs, rhs),
             TokenKind::EqualEqual => assembler.eq(des.clone(), lhs, rhs),
             TokenKind::GreaterEqual => assembler.gte(des.clone(), lhs, rhs),
+            TokenKind::LessEqual => assembler.lte(des.clone(), lhs, rhs),
             TokenKind::Keyword(Keyword::And) => assembler.and(des.clone(), lhs, rhs),
             TokenKind::Keyword(Keyword::Or) => assembler.or(des.clone(), lhs, rhs),
             TokenKind::Percent => assembler.rem(des.clone(), lhs, rhs),

@@ -350,6 +350,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Gte(igte) => igte.lower(ctx, target)?,
             ir::Instruction::Rem(irem) => irem.lower(ctx, target)?,
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
+            ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             ir::Instruction::Load(iload) => iload.lower(ctx, target)?,

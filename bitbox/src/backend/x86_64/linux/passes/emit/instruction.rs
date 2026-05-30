@@ -7,7 +7,7 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
     CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte,
-    IJump, IJumpIf, ILt, IMul, INot, IRef, IRem, IReturn, ISub,
+    IJump, IJumpIf, ILt, ILte, IMul, INot, IRef, IRem, IReturn, ISub,
 };
 use crate::ir::{AbiChunk, Operand, Type};
 
@@ -527,6 +527,42 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
             _ => {
                 target.assembler.cmp(lhs.clone(), rhs.clone());
                 target.assembler.setl(flag);
+            }
+        }
+        target.assembler.movezx(out, flag);
+        target.assembler.alloc.store_variable(&self.des, out);
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ILte {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering lt");
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+        let flag = target.assembler.alloc.vreg::<Reg8>();
+        let out = target.assembler.alloc.vreg::<Reg64>();
+        match self.lhs.ty() {
+            Some(Type::Float(32)) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomiss(Location::Reg(lhs_xmm), rhs);
+                target.assembler.setb(flag);
+            }
+            Some(Type::Float(64)) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomisd(Location::Reg(lhs_xmm), rhs);
+                target.assembler.setb(flag);
+            }
+            _ => {
+                target.assembler.cmp(lhs.clone(), rhs.clone());
+                target.assembler.setle(flag);
             }
         }
         target.assembler.movezx(out, flag);

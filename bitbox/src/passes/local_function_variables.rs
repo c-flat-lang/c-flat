@@ -150,6 +150,9 @@ fn block_pass(
             crate::ir::Instruction::Lt(ilt) => ctx
                 .local_function_variables
                 .add(function_name, ilt.des.clone()),
+            crate::ir::Instruction::Lte(ilte) => ctx
+                .local_function_variables
+                .add(function_name, ilte.des.clone()),
             crate::ir::Instruction::Load(iload) => ctx
                 .local_function_variables
                 .add(function_name, iload.des.clone()),

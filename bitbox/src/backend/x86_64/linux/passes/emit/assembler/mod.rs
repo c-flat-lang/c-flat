@@ -237,6 +237,7 @@ pub enum Instruction {
     Setg(Location),
     Setge(Location),
     Setl(Location),
+    Setle(Location),
     Seta(Location),
     Setae(Location),
     Setb(Location),
@@ -304,6 +305,7 @@ impl std::fmt::Display for Instruction {
             Self::Setg(dst) => write!(f, "  setg {dst}"),
             Self::Setge(dst) => write!(f, "  setge {dst}"),
             Self::Setl(dst) => write!(f, "  setl {dst}"),
+            Self::Setle(dst) => write!(f, "  setle {dst}"),
             Self::Seta(dst) => write!(f, "  seta {dst}"),
             Self::Setae(dst) => write!(f, "  setae {dst}"),
             Self::Setb(dst) => write!(f, "  setb {dst}"),
@@ -764,6 +766,13 @@ impl Assembler {
         let src = src.into();
         debug_assert!(!matches!(src, Location::Imm(_)));
         self.push_to(self.current_section, Instruction::Setl(src));
+        self
+    }
+
+    pub fn setle(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        debug_assert!(!matches!(src, Location::Imm(_)));
+        self.push_to(self.current_section, Instruction::Setle(src));
         self
     }
 

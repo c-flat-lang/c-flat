@@ -5,7 +5,8 @@ use crate::backend::Lower;
 
 use crate::ir::instruction::{
     IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt, IGte,
-    IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INot, IOr, IRef, IRem, IReturn, ISub, IXOr,
+    IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INot, IOr, IRef, IRem, IReturn, ISub,
+    IXOr,
 };
 use crate::ir::{BasicBlock, Instruction, Type};
 
@@ -736,11 +737,41 @@ impl Lower<Wasm32LowerContext<'_>> for ILt {
         self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_lt_s(),
-            ValType::I64 => todo!("@gt i64"),
-            ValType::F32 => todo!("@gt f32"),
-            ValType::F64 => todo!("@gt f64"),
-            ValType::V128 => todo!("@gt v128"),
-            ValType::Ref(_) => todo!("@gt ref"),
+            ValType::I64 => todo!("@lt i64"),
+            ValType::F32 => todo!("@lt f32"),
+            ValType::F64 => todo!("@lt f64"),
+            ValType::V128 => todo!("@lt v128"),
+            ValType::Ref(_) => todo!("@lt ref"),
+        };
+        let Some(idx) = ctx
+            .local_function_variables
+            .get(&target.function_name)
+            .iter()
+            .position(|v| v.name == self.des.name)
+        else {
+            panic!("Variable {:?} not found", self.des);
+        };
+        target.assembler.local_set(idx as u32);
+        Ok(())
+    }
+}
+
+impl Lower<Wasm32LowerContext<'_>> for ILte {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut Wasm32LowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        self.lhs.lower(ctx, target)?;
+        self.rhs.lower(ctx, target)?;
+        match self.des.ty.clone().into() {
+            ValType::I32 => target.assembler.i32_le_s(),
+            ValType::I64 => target.assembler.i64_le_s(),
+            ValType::F32 => target.assembler.f32_le(),
+            ValType::F64 => target.assembler.f64_le(),
+            ValType::V128 => todo!("@lte v128"),
+            ValType::Ref(_) => todo!("@lte ref"),
         };
         let Some(idx) = ctx
             .local_function_variables
