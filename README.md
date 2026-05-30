@@ -1,7 +1,7 @@
 # C-flat
 
 <details>
-<summary>[bitbox](./bitbox/README.md)</summary>
+<summary><a href="./bitbox/README.md">bitbox</a></summary>
 C-flat language backend, targeting wasm32, x86_64-linux
 </details>
 
