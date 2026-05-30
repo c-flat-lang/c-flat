@@ -7,7 +7,7 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
     CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte,
-    IJump, IJumpIf, ILt, ILte, IMul, INot, IRef, IRem, IReturn, ISub,
+    IJump, IJumpIf, ILt, ILte, IMul, INot, IOr, IRef, IRem, IReturn, ISub,
 };
 use crate::ir::{AbiChunk, Operand, Type};
 
@@ -610,6 +610,50 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IMul {
                     .store_variable(&self.des, Location::Reg(lhs_reg));
             }
         }
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IOr {
+    type Output = ();
+
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<(), crate::error::Error> {
+        target.assembler.comment("lowering logical or");
+
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        let out = target.assembler.alloc.vreg::<Reg64>();
+
+        let true_lbl = &format!(
+            "or_true_{}_{}_{}",
+            target.function_name, target.block_id.0, target.instr_index
+        );
+        let done_lbl = &format!(
+            "or_done_{}_{}_{}",
+            target.function_name, target.block_id.0, target.instr_index
+        );
+
+        target.assembler.test(lhs.clone(), lhs);
+        target.assembler.jnz(true_lbl);
+
+        target.assembler.test(rhs.clone(), rhs);
+        target.assembler.jnz(true_lbl);
+
+        target.assembler.mov(out, 0);
+        target.assembler.jmp(done_lbl);
+
+        target.assembler.define_label(true_lbl);
+        target.assembler.mov(out, 1);
+
+        target.assembler.define_label(done_lbl);
+
+        target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
     }
@@ -1298,44 +1342,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICmp {
         Ok(())
     }
 }
-
-// impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
-//     type Output = ();
-//
-//     fn lower(
-//         &self,
-//         ctx: &mut crate::backend::Context,
-//         target: &mut X86_64LinuxLowerContext<'_>,
-//     ) -> Result<(), crate::error::Error> {
-//         let mut asm = target
-//             .assembler
-//             .emit(super::assembler::FunctionSection::Body);
-//         asm.comment("lowering bitwise and");
-//
-//         let lhs = self.lhs.lower(ctx, target)?;
-//         let rhs = self.rhs.lower(ctx, target)?;
-//
-//         let dst = asm.alloc.alloc_temp_reg::<Reg64>();
-//
-//         asm.mov(dst.clone(), lhs);
-//         asm.and(dst.clone(), rhs);
-//
-//         asm.alloc.store_variable(&self.des, dst);
-//         debug_assert!(
-//             target
-//                 .assembler
-//                 .alloc
-//                 .used_registers
-//                 .iter()
-//                 .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-//             "IBitwiseAnd {}:{}:{} Temp register leaked across instruction boundary",
-//             file!(),
-//             line!(),
-//             column!()
-//         );
-//         Ok(())
-//     }
-// }
 
 impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
     type Output = ();

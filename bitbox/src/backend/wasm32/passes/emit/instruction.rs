@@ -584,11 +584,11 @@ impl Lower<Wasm32LowerContext<'_>> for IOr {
         self.rhs.lower(ctx, target)?;
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_or(),
-            ValType::I64 => todo!("@gt i64"),
-            ValType::F32 => todo!("@gt f32"),
-            ValType::F64 => todo!("@gt f64"),
-            ValType::V128 => todo!("@gt v128"),
-            ValType::Ref(_) => todo!("@gt ref"),
+            ValType::I64 => target.assembler.i64_or(),
+            ValType::F32 => unreachable!("@or f32"),
+            ValType::F64 => unreachable!("@or f64"),
+            ValType::V128 => unreachable!("@or v128"),
+            ValType::Ref(_) => unimplemented!("@or ref"),
         };
         let Some(idx) = ctx
             .local_function_variables

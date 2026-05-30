@@ -323,7 +323,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
             ir::Instruction::NoOp(..) => todo!(),
-            ir::Instruction::Or(..) => todo!("or"),
+            ir::Instruction::Or(ior) => ior.lower(ctx, target)?,
             ir::Instruction::Phi(..) | ir::Instruction::Loop(..) | ir::Instruction::IfElse(..) => {
                 unreachable!(
                     "Lowering pass should be used before x86_64 emit pass {:?}",
