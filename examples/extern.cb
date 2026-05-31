@@ -16,8 +16,8 @@ pub fn main() s32 {
     let screen_width = 1920;
     let screen_height = 1080;
 
-    let title = #"raylib-cb\0"#;
-    let text = #"Congrats! You created your first window in c-flat boiiii\0"#
+    let title = "raylib-cb\0";
+    let text = "Congrats! You created your first window in c-flat boiiii\0"
     init_window(screen_width, screen_height, &title);
 
     set_target_fps(60);

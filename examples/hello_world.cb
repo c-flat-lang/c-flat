@@ -10,5 +10,5 @@ fn println(string: ref [u8]) void {
 }
 
 pub fn main() void {
-    println(&#"Hello, World!"#);
+    println(&"Hello, World!");
 }

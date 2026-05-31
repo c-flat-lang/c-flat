@@ -172,11 +172,11 @@ pub fn main() s32 {
     let food_x: s32 = rand_range(0, screen_width / CELL_SIZE);
     let food_y: s32 = rand_range(0, screen_height / CELL_SIZE);
 
-    let title = #"raylib c-flat snake demo\0"#;
+    let title = "raylib c-flat snake demo\0";
     init_window(screen_width, screen_height, &title);
 
-    let text = #"Score: \0"#;
-    let score = #"0\0"#;
+    let text = "Score: \0";
+    let score = "0\0";
 
     set_target_fps(60);
     while !window_should_close() {
