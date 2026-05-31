@@ -90,7 +90,9 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Ucomiss(a, b)
         | Instruction::Ucomisd(a, b)
         | Instruction::Cvtsi2ss(a, b)
-        | Instruction::Cvtsi2sd(a, b) => {
+        | Instruction::Cvtsi2sd(a, b)
+        | Instruction::Sar(a, b)
+        | Instruction::Shr(a, b) => {
             f(a);
             f(b);
             for loc in [a, b] {
@@ -179,6 +181,8 @@ fn map_locations(
         Instruction::Cvttsd2si(a, b) => Instruction::Cvttsd2si(rw(a), rw(b)),
         Instruction::Movsx(a, b) => Instruction::Movsx(rw(a), rw(b)),
         Instruction::Idiv(a) => Instruction::Idiv(rw(a)),
+        Instruction::Sar(a, b) => Instruction::Sar(rw(a), rw(b)),
+        Instruction::Shr(a, b) => Instruction::Shr(rw(a), rw(b)),
         Instruction::Call(..)
         | Instruction::Comment(..)
         | Instruction::DefineLabel(..)

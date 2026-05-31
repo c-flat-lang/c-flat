@@ -8,6 +8,8 @@ pub struct VReg {
     pub kind: RegKind,
 }
 
+// FIXME: when casting to a reg typically you would want the same reg like Reg64::Rax → Reg8::Al and
+// not some random register.
 impl VReg {
     pub fn as_reg64(self) -> Self {
         Self {

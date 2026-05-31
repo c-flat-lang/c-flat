@@ -2,9 +2,9 @@ use crate::{
     ir::{
         BasicBlock, BlockId, Instruction, Variable,
         instruction::{
-            IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt,
-            IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi,
-            IRef, IRem, IReturn, ISub, IXOr,
+            IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp, ICopy,
+            IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte,
+            IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub, IXOr,
         },
     },
     passes::{DebugPass, PassOutput},
@@ -42,7 +42,21 @@ macro_rules! liveness_ops {
 }
 
 liveness_ops!(
-    IAdd, ISub, IMul, IDiv, ICmp, IGt, IGte, IRem, ILt, ILte, IAnd, IOr, IXOr
+    IAdd,
+    ISub,
+    IMul,
+    IDiv,
+    ICmp,
+    IGt,
+    IGte,
+    IRem,
+    ILt,
+    ILte,
+    IAnd,
+    IOr,
+    IXOr,
+    IBitShiftRight,
+    IBitWiseAnd,
 );
 
 impl LivenessAnalysis for IAssign {
@@ -349,6 +363,8 @@ impl crate::ir::Instruction {
             Self::Ref(i) => i.uses(),
             Self::Not(i) => i.uses(),
             Self::Cast(i) => i.uses(),
+            Self::BitShiftRight(i) => i.uses(),
+            Self::BitWiseAnd(i) => i.uses(),
         }
     }
 
@@ -384,6 +400,8 @@ impl crate::ir::Instruction {
             Self::Ref(i) => i.defines(),
             Self::Not(i) => i.defines(),
             Self::Cast(i) => i.defines(),
+            Self::BitShiftRight(i) => i.defines(),
+            Self::BitWiseAnd(i) => i.defines(),
         }
     }
 }

@@ -175,6 +175,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             '#' if self.peek_char('\'') => Some(self.parse_char()),
             '#' if self.peek_char('"') => Some(self.parse_raw_string()),
             '=' if self.peek_char('=') => self.double_char(TokenKind::EqualEqual, "=="),
+            '>' if self.peek_char('>') => self.double_char(TokenKind::BitShiftRight, ">>"),
             '>' if self.peek_char('=') => self.double_char(TokenKind::GreaterEqual, ">="),
             '<' if self.peek_char('=') => self.double_char(TokenKind::LessEqual, "<="),
             '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),

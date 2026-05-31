@@ -2,9 +2,9 @@ use crate::ir::{
     BasicBlock, BlockId, Constant, ExternDecl, Function, Import, Instruction, Module, Operand,
     Type, Variable, Visibility,
     instruction::{
-        CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt,
-        IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi, IRef,
-        IRem, IReturn, ISub, IXOr, Label,
+        CastKind, IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp,
+        IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte,
+        IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub, IXOr, Label,
     },
 };
 
@@ -242,6 +242,28 @@ impl<'a> AssemblerBuilder<'a> {
     /// @cast <type> : <des>, <src>, <dest_ty>
     pub fn cast(&mut self, des: Variable, src: Variable, cast_kind: CastKind) -> &mut Self {
         self.push_instruction(ICast::new(des, src, cast_kind));
+        self
+    }
+
+    /// `@bsr <type> : <des>, <lhs>, <rhs>`
+    pub fn bsr(
+        &mut self,
+        des: impl Into<Variable>,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        self.push_instruction(IBitShiftRight::new(des.into(), lhs.into(), rhs.into()));
+        self
+    }
+
+    /// `@bwand <type> : <des>, <lhs>, <rhs>`
+    pub fn bwand(
+        &mut self,
+        des: impl Into<Variable>,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        self.push_instruction(IBitWiseAnd::new(des.into(), lhs.into(), rhs.into()));
         self
     }
 

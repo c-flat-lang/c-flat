@@ -26,6 +26,7 @@ pub enum TokenKind {
     Ampersand,
     Bang,
     BangEqual,
+    BitShiftRight,
     Char,
     Colon,
     Comma,

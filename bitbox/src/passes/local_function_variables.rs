@@ -231,6 +231,14 @@ fn block_pass(
                 ctx.local_function_variables
                     .add(function_name, icast.src.clone());
             }
+            crate::ir::Instruction::BitShiftRight(ibsr) => {
+                ctx.local_function_variables
+                    .add(function_name, ibsr.des.clone());
+            }
+            crate::ir::Instruction::BitWiseAnd(ibwand) => {
+                ctx.local_function_variables
+                    .add(function_name, ibwand.des.clone());
+            }
         }
     }
 }
