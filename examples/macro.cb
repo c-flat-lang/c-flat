@@ -6,7 +6,7 @@ use std::str::format;
 use core::macro::{TokenStream, Token, TokenKind};
 
 
-// @println(#"this is a test {}"#, 42);
+// @println("this is a test {}", 42);h
 
 macro println(tokens: TokenStream) TokenStream {
     let mut output = ArrayList<(Token)>::new();

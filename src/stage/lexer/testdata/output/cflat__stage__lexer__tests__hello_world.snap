@@ -78,12 +78,12 @@ pub fn main() void {
             ^ Token { kind: RightParen, lexeme: ")", span: 214..215 }
               ^^^^ Token { kind: Identifier, lexeme: "void", span: 216..220 }
                    ^ Token { kind: LeftBrace, lexeme: "{", span: 221..222 }
-    println(&#"Hello, World!"#);
+    println(&"Hello, World!");
     ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 227..234 }
            ^ Token { kind: LeftParen, lexeme: "(", span: 234..235 }
             ^ Token { kind: Ampersand, lexeme: "&", span: 235..236 }
-             ^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!", span: 236..253 }
-                              ^ Token { kind: RightParen, lexeme: ")", span: 253..254 }
-                               ^ Token { kind: Semicolon, lexeme: ";", span: 254..255 }
+             ^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!", span: 236..251 }
+                            ^ Token { kind: RightParen, lexeme: ")", span: 251..252 }
+                             ^ Token { kind: Semicolon, lexeme: ";", span: 252..253 }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 256..257 }
+^ Token { kind: RightBrace, lexeme: "}", span: 254..255 }
