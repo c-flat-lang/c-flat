@@ -5,6 +5,7 @@ use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbox::Target;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
 use bitbox::ir::{self, ConstantInt, Module, Operand, StructType, Type, Variable, Visibility};
+use std::str::FromStr;
 
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
@@ -541,11 +542,9 @@ impl Lowerable for Litral {
                 Some(var)
             }
             ast::Litral::Char(token) => {
-                let Some(c) =
-                    crate::stage::semantic_analyzer::type_check::SmallestCharInt::from_str(
-                        &token.lexeme,
-                    )
-                else {
+                let Ok(c) = crate::stage::semantic_analyzer::type_check::SmallestCharInt::from_str(
+                    &token.lexeme,
+                ) else {
                     panic!("failed to get the SmallestCharInt for {}", token.lexeme)
                 };
                 let bytes = match c {
@@ -557,7 +556,7 @@ impl Lowerable for Litral {
                 let var = assembler.var(ty);
                 assembler.assign(
                     var.clone(),
-                    Operand::const_unsigned(&c.value().to_string(), bytes),
+                    Operand::const_unsigned(c.value().to_string(), bytes),
                 );
                 Some(var)
             }

@@ -1,4 +1,6 @@
 #![allow(unused)]
+use std::str::FromStr;
+
 use super::type_resolver::TypeResolver;
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
@@ -311,9 +313,9 @@ impl<'st> TypeChecker<'st> {
             }),
             ast::Litral::Char(token) => {
                 let bytes = match SmallestCharInt::from_str(&token.lexeme) {
-                    Some(SmallestCharInt::U8(_)) => 8,
-                    Some(SmallestCharInt::U16(_)) => 16,
-                    Some(SmallestCharInt::U32(_)) => 32,
+                    Ok(SmallestCharInt::U8(_)) => 8,
+                    Ok(SmallestCharInt::U16(_)) => 16,
+                    Ok(SmallestCharInt::U32(_)) => 32,
                     _ => panic!("not a char"),
                 };
 
@@ -677,25 +679,28 @@ pub enum SmallestCharInt {
 }
 
 impl SmallestCharInt {
-    pub fn from_str(s: &str) -> Option<Self> {
-        let ch = s.chars().next()?;
-
-        let code = ch as u32;
-
-        if code <= u8::MAX as u32 {
-            Some(SmallestCharInt::U8(code as u8))
-        } else if code <= u16::MAX as u32 {
-            Some(SmallestCharInt::U16(code as u16))
-        } else {
-            Some(SmallestCharInt::U32(code))
-        }
-    }
-
     pub fn value(&self) -> u32 {
         match self {
             SmallestCharInt::U8(v) => *v as u32,
             SmallestCharInt::U16(v) => *v as u32,
             SmallestCharInt::U32(v) => *v,
+        }
+    }
+}
+
+impl FromStr for SmallestCharInt {
+    type Err = ();
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let ch = s.chars().next().ok_or(())?;
+
+        let code = ch as u32;
+
+        if code <= u8::MAX as u32 {
+            Ok(SmallestCharInt::U8(code as u8))
+        } else if code <= u16::MAX as u32 {
+            Ok(SmallestCharInt::U16(code as u16))
+        } else {
+            Ok(SmallestCharInt::U32(code))
         }
     }
 }
