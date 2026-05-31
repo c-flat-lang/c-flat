@@ -89,6 +89,33 @@ impl<'a> Tokenizer<'a> {
         self.spanned(kind, lexeme)
     }
 
+    fn parse_raw_string(&mut self) -> Token {
+        self.next_char();
+        let mut lexeme = String::new();
+
+        loop {
+            while let Some(value) = self.next_char_if(|value| value != '\n') {
+                lexeme.push(value);
+            }
+            lexeme.push(self.next_char().expect("should just be a new line"));
+            while self
+                .next_char_if(|value| matches!(value, ' ' | '\t'))
+                .is_some()
+            {}
+            if self.peek_char('\\') {
+                self.next_char();
+                if self.peek_char('\\') {
+                    self.next_char();
+                    continue;
+                }
+                panic!("Expected another \\");
+            }
+            break;
+        }
+
+        self.spanned(TokenKind::String, lexeme)
+    }
+
     fn parse_string(&mut self) -> Token {
         let mut lexeme = String::new();
         while let Some(value) = self.next_char() {
@@ -175,6 +202,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),
             '<' if self.peek_char('(') => self.double_char(TokenKind::LeftTypeCradle, "<("),
             ')' if self.peek_char('>') => self.double_char(TokenKind::RightTypeCradle, ")>"),
+            '\\' if self.peek_char('\\') => Some(self.parse_raw_string()),
             '"' => Some(self.parse_string()),
             '\'' => Some(self.parse_char()),
             '(' => Some(self.spanned(TokenKind::LeftParen, c)),
