@@ -357,7 +357,7 @@ impl Lowerable for ExprBinary {
 
         let des = assembler.var(lhs.ty.clone()); // Or infer type
         match self.op.kind {
-            TokenKind::Ampersand => assembler.bsr(des.clone(), lhs, rhs),
+            TokenKind::Ampersand => assembler.bwand(des.clone(), lhs, rhs),
             TokenKind::BitShiftRight => assembler.bsr(des.clone(), lhs, rhs),
             TokenKind::EqualEqual => assembler.eq(des.clone(), lhs, rhs),
             TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
