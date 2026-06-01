@@ -1585,6 +1585,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
     }
 }
 
+// FIXME: ECX is needed for this instruction in x86.  We do not have a way to allocate a specific
+// register. Maybe we just need to not use this register or maybe we need a way to do ↑
 impl Lower<X86_64LinuxLowerContext<'_>> for IBitShiftRight {
     type Output = ();
     fn lower(
