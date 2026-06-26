@@ -707,7 +707,7 @@ impl Lowerable for ExprCall {
                             name: format!("slice_{elem:?}"),
                             packed: false,
                             fields: vec![
-                                ("data".into(), Type::Pointer(dbg!(elem).clone())),
+                                ("data".into(), Type::Pointer(elem.clone())),
                                 ("len".into(), Type::Signed(ctx.target.target_pointer_size())),
                             ],
                         });

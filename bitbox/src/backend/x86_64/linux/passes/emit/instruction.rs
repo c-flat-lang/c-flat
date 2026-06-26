@@ -1652,11 +1652,27 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ISyscall {
             PhysReg::R9,
         ];
 
-        for (index, arg) in self.args.iter().enumerate() {
-            let location = arg.lower(ctx, target)?;
+        let mut spilled_args: Vec<Location> = Vec::new();
+        for arg in &self.args {
+            let value = arg.lower(ctx, target)?;
+            let spilled = if let Location::Reg(_) = &value {
+                if let Some(ty) = arg.ty() {
+                    let stack = target.assembler.alloc.alloc_stack(ty, 1);
+                    target.assembler.mov(Location::Stack(stack), value.clone());
+                    Location::Stack(stack)
+                } else {
+                    value
+                }
+            } else {
+                value
+            };
+            spilled_args.push(spilled);
+        }
+
+        for (index, location) in spilled_args.iter().enumerate() {
             target
                 .assembler
-                .materialize_value_into_reg(&location, SYSCALL_REGS[index]);
+                .materialize_value_into_reg(location, SYSCALL_REGS[index]);
         }
 
         target.assembler.syscall();
