@@ -80,45 +80,49 @@ main_start_loop_0:
   # lowering jump if
   jmp main_exit_loop_2
 main_body_loop_1:
-  # @cast s32 : tmp.6_v0, i_v0, unsigned-to-signed
+  # @cast s32 : tmp.7_v0, i_v0, truncate
   # lowering cast
   # lowering operand
   mov vreg(21 : Reg64), qword ptr [rbp-40]
-  mov vreg(22 : Reg64), vreg(21 : Reg64)
+  mov vreg(22 : Reg32), vreg(21 : Reg32)
+  # @cast s32 : tmp.6_v0, tmp.7_v0, unsigned-to-signed
+  # lowering cast
+  # lowering operand
+  mov vreg(24 : Reg64), vreg(22 : Reg64)
   # @elemset [2 x s32] : array_v0, i_v0, tmp.6_v0
   # lowering elemset
   # lowering operand
   # lowering operand
-  lea vreg(24 : Reg64), qword ptr [rbp-32]
-  mov vreg(25 : Reg64), qword ptr [rbp-40]
-  mov [vreg(24 : Reg64) + vreg(25 : Reg64) * 4], vreg(22 : Reg32)
-  # @assign s32 : tmp.7_v0, 1
+  lea vreg(26 : Reg64), qword ptr [rbp-32]
+  mov vreg(27 : Reg64), qword ptr [rbp-40]
+  mov [vreg(26 : Reg64) + vreg(27 : Reg64) * 4], vreg(24 : Reg32)
+  # @assign s32 : tmp.8_v0, 1
   # lowering assign
   # lowering operand
-  mov vreg(27 : Reg64), 1
-  mov vreg(26 : Reg64), vreg(27 : Reg64)
-  # @add u64 : tmp.8_v0, i_v0, tmp.7_v0
+  mov vreg(29 : Reg64), 1
+  mov vreg(28 : Reg64), vreg(29 : Reg64)
+  # @add u64 : tmp.9_v0, i_v0, tmp.8_v0
   # lowering add
   # lowering operand
   # lowering operand
-  mov vreg(29 : Reg64), qword ptr [rbp-40]
-  add vreg(29 : Reg64), vreg(26 : Reg64)
-  # @assign u64 : i_v0, tmp.8_v0
+  mov vreg(31 : Reg64), qword ptr [rbp-40]
+  add vreg(31 : Reg64), vreg(28 : Reg64)
+  # @assign u64 : i_v0, tmp.9_v0
   # lowering assign
   # lowering operand
-  mov qword ptr [rbp-40], vreg(29 : Reg64)
+  mov qword ptr [rbp-40], vreg(31 : Reg64)
   # @jump %start_lo
   # lowering jump if
   jmp main_start_loop_0
 main_exit_loop_2:
-  # @assign s32 : tmp.9_v0, 0
+  # @assign s32 : tmp.10_v0, 0
   # lowering assign
   # lowering operand
-  mov vreg(33 : Reg64), 0
-  mov vreg(32 : Reg64), vreg(33 : Reg64)
-  # @ret s32 : tmp.9_v0
+  mov vreg(35 : Reg64), 0
+  mov vreg(34 : Reg64), vreg(35 : Reg64)
+  # @ret s32 : tmp.10_v0
   # lowering return
-  mov eax, vreg(32 : Reg32)
+  mov eax, vreg(34 : Reg32)
   jmp exit_main
 exit_main:
   add rsp, 48
