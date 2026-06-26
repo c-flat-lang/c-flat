@@ -1,14 +1,49 @@
 extern C fn write_char(u8) void;
+extern C fn write_s32(s32) void;
+
+// fn println(string: ref [u8]) void {
+//     let mut i: usize = 0;
+//     while i < string.len {
+//         write_char(string[i]);
+//         i = i + 1;
+//     }
+//     write_char(10);
+// }
 
 fn println(string: ref [u8]) void {
-    let mut i: usize = 0;
-    while i < string.len {
-        write_char(string[i]);
-        i = i + 1;
-    }
-    write_char(10);
+    syscall3(
+        1,            // SYS_write
+        1,            // stdout
+        string.data,  // pointer to bytes
+        string.len    // length
+    );
+
+    let nl: [2; u8] = ['"', '\n'];
+    syscall3(
+        1,
+        1,
+        &nl,
+        2
+    );
+
+    // let nl2: [2; u8] = ['"', '\n'];
+    // syscall3(
+    //     1,
+    //     1,
+    //     &nl2,
+    //     2
+    // );
 }
 
 pub fn main() void {
     println(&"Hello, World!");
+
+    // let args: [4; s32] = [10;4];
+    //
+    // let mut i: usize = 0;
+    // while i < args.len {
+    //     write_s32(args[i]);
+    //     write_char('\n');
+    //     i = i + 1;
+    // }
 }

@@ -3,7 +3,9 @@
 use std::collections::HashMap;
 
 use crate::{
-    backend::x86_64::linux::passes::emit::assembler::{CastableReg, PhysReg, Reg, Stack, VReg},
+    backend::x86_64::linux::passes::emit::assembler::{
+        CastableReg, PhysReg, Reg, RegConstraint, Stack, VReg,
+    },
     ir::{Type, Variable},
 };
 
@@ -63,7 +65,12 @@ impl Allocator {
     {
         let id = self.next_alloc_id;
         self.next_alloc_id += 1;
-        VReg { id, kind: T::KIND }.into()
+        VReg {
+            id,
+            kind: T::KIND,
+            constraint: RegConstraint::None,
+        }
+        .into()
     }
 
     pub fn reg<T>(&mut self) -> Reg
