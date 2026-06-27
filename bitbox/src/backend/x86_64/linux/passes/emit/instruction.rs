@@ -1642,7 +1642,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ISyscall {
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering syscall");
-        const SYSCALL_REGS: &'static [PhysReg] = &[
+        const SYSCALL_REGS: &[PhysReg] = &[
             PhysReg::Rax,
             PhysReg::Rdi,
             PhysReg::Rsi,
