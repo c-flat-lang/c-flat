@@ -496,7 +496,11 @@ pub struct ScopedReport {
 }
 
 impl ScopedReport {
-    pub fn new(filename: impl Into<String>, source: impl Into<String>, inner: Box<dyn Report>) -> Self {
+    pub fn new(
+        filename: impl Into<String>,
+        source: impl Into<String>,
+        inner: Box<dyn Report>,
+    ) -> Self {
         Self {
             filename: filename.into(),
             source: source.into(),
