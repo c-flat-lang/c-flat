@@ -86,24 +86,34 @@ pub fn compile_source(
 }
 
 #[cfg(not(feature = "wasm"))]
-pub fn front_end_compiler(src: &str, cli_options: &Cli) -> Result<bitbox::ir::Module> {
-    let tokens = stage::lexer::Lexer.run(src);
+pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
+    use crate::stage::parser::ast::Item;
+    use std::path::Path;
+
+    let entry = Path::new(&cli_options.file_path);
+    let loader = stage::module_loader::ModuleLoader::new(cli_options.unix_newlines);
+    let mut program = loader.load(entry)?;
 
     if let Some(DebugMode::Token) = cli_options.debug_mode {
-        for token in &tokens {
-            eprintln!("{:?}", token);
+        for module in &program.modules {
+            eprintln!("=== {} ===", module.path.display());
+            for token in stage::lexer::Lexer.run(&module.source) {
+                eprintln!("{:?}", token);
+            }
         }
         std::process::exit(0);
     }
 
-    let mut ast = stage::parser::Parser::default().run(tokens)?;
-
     if let Some(DebugMode::Ast) = cli_options.debug_mode {
-        eprintln!("{:#?}", ast);
+        for module in &program.modules {
+            eprintln!("=== {} ===", module.path.display());
+            eprintln!("{:#?}", module.items);
+        }
         std::process::exit(0);
     }
 
-    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
+    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default()
+        .analyze_program(&mut program.modules)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
         eprintln!("{:#?}", symbol_table);
@@ -113,6 +123,15 @@ pub fn front_end_compiler(src: &str, cli_options: &Cli) -> Result<bitbox::ir::Mo
     if let Some(DebugMode::TypeChecker) = cli_options.debug_mode {
         std::process::exit(0);
     }
+
+    // Compile every reachable module's items as one program. v1 uses a flat
+    // namespace, so top level names must be unique across modules.
+    // Easiest solution for now, at lest until true namespace separation can be implemented.
+    let ast: Vec<Item> = program
+        .modules
+        .into_iter()
+        .flat_map(|module| module.items)
+        .collect();
 
     let module = stage::ir_builder::IRBuilder::new(cli_options.target).run((symbol_table, ast))?;
 

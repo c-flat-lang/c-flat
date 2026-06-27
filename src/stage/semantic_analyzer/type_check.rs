@@ -129,12 +129,16 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_extern_function(&self, extern_function: &mut ast::ExternFunction) -> Type {
-        // For now we just assume extern functions are always correct since we have no way to verify them
+        // Assume extern functions are always correct since we have no way to verify them 🤷
         extern_function.return_type.clone()
     }
 
-    fn walk_use(&mut self, item: &ast::Use) -> ast::Type {
-        todo!()
+    fn walk_use(&mut self, _item: &ast::Use) -> ast::Type {
+        Type {
+            kind: TypeKind::Void,
+            span: 0..1,
+            mut_token: None,
+        }
     }
 
     fn walk_function(&mut self, function: &mut ast::Function) -> ast::Type {
@@ -218,6 +222,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
+            ast::Expr::Path(expr) => self.walk_expr_path(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
             ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
             ast::Expr::MemberAccess(..) => self.walk_expr_member_access(expr),
@@ -346,11 +351,13 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_call(&mut self, expr: &mut ast::ExprCall) -> ast::Type {
-        let ast::Expr::Identifier(ident) = &expr.caller.as_ref() else {
-            panic!("Caller must be an identifier");
+        let name = match expr.caller.as_ref() {
+            ast::Expr::Identifier(ident) => ident.lexeme.clone(),
+            ast::Expr::Path(path) => path.leaf().lexeme.clone(),
+            _ => panic!("Caller must be an identifier or path"),
         };
 
-        let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()).cloned() else {
+        let Some(symbol) = self.symbol_table.get(name.as_str()).cloned() else {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
 
@@ -399,6 +406,18 @@ impl<'st> TypeChecker<'st> {
             return Type {
                 kind: TypeKind::Void,
                 span: expr.span.clone(),
+                mut_token: None,
+            };
+        };
+        symbol.ty.clone()
+    }
+
+    fn walk_expr_path(&mut self, path: &ast::ExprPath) -> ast::Type {
+        let leaf = path.leaf();
+        let Some(symbol) = self.symbol_table.get(leaf.lexeme.as_str()) else {
+            return Type {
+                kind: TypeKind::Void,
+                span: leaf.span.clone(),
                 mut_token: None,
             };
         };

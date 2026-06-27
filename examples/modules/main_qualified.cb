@@ -1,0 +1,12 @@
+extern C fn write_int(s32) void;
+extern C fn write_char(u8) void;
+
+// Whole-module import: access items through the module namespace `math::`.
+use math;
+
+pub fn main() s32 {
+    let result = math::add(40, 2);
+    write_int(result);
+    write_char(10);
+    return 0;
+}

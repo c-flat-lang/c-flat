@@ -463,6 +463,7 @@ pub enum Expr {
     Binary(ExprBinary),
     While(ExprWhile),
     Identifier(Token),
+    Path(ExprPath),
     IfElse(ExprIfElse),
     MemberAccess(ExprMemberAccess),
     Array(ExprArray),
@@ -487,6 +488,7 @@ impl Expr {
             Self::Binary(expr) => expr.span(),
             Self::While(expr) => expr.span(),
             Self::Identifier(token) => token.span.clone(),
+            Self::Path(expr) => expr.span(),
             Self::IfElse(expr) => expr.span(),
             Self::MemberAccess(expr) => expr.span(),
             Self::Array(expr) => expr.span(),
@@ -731,6 +733,30 @@ impl ExprIfElse {
             .map(|b| b.span().end)
             .unwrap_or(self.then_branch.close_brace.span.end);
         start..end
+    }
+}
+
+/// A `::` qualified path used in expression position, `math::add` or
+/// `foo::bar::baz`. The segments preserve their source tokens for spans and
+/// error reporting.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprPath {
+    pub segments: Vec<Token>,
+}
+
+impl ExprPath {
+    pub fn span(&self) -> Span {
+        let start = self.segments.first().map(|t| t.span.start).unwrap_or(0);
+        let end = self.segments.last().map(|t| t.span.end).unwrap_or(start);
+        start..end
+    }
+
+    /// The final segment, which names the item being referred to. v1 resolves a
+    /// path to this segment within the flat program namespace.
+    pub fn leaf(&self) -> &Token {
+        self.segments
+            .last()
+            .expect("ExprPath must have at least one segment")
     }
 }
 
