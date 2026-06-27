@@ -535,9 +535,15 @@ impl Lowerable for Litral {
                 Some(ptr)
             }
             ast::Litral::Integer(token) => {
-                let ty = Type::Signed(32);
+                let fits_i32 = token.lexeme.replace('_', "").parse::<i32>().is_ok();
+                let bits = if fits_i32 { 32 } else { 64 };
+                let ty = if fits_i32 {
+                    Type::Signed(32)
+                } else {
+                    Type::Unsigned(64)
+                };
                 let var = assembler.var(ty);
-                assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, 32));
+                assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, bits));
                 Some(var)
             }
             ast::Litral::Float(token) => {
@@ -755,8 +761,8 @@ impl Lowerable for ExprCall {
         ]
         .contains(&callee.as_str())
         {
-            assembler.syscall(args);
-            return None;
+            assembler.syscall(des_var.clone(), args);
+            return des_var;
         }
 
         assembler.call(des_var.clone(), callee, &args);
@@ -1036,6 +1042,10 @@ impl Lowerable for ExprTypeCast {
                 Ordering::Greater => ir::CastKind::SignExtend,
                 Ordering::Less => ir::CastKind::Truncate,
             },
+            (Type::Pointer(_), Type::Unsigned(_))
+            | (Type::Pointer(_), Type::Signed(_))
+            | (Type::Unsigned(_), Type::Pointer(_))
+            | (Type::Signed(_), Type::Pointer(_)) => ir::CastKind::BitCast,
             (dst, src) if dst == src => ir::CastKind::NoOp,
             _ => unimplemented!("Unsupported cast from {:?} to {:?}", src_var.ty, des.ty),
         };

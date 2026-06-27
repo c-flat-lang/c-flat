@@ -497,11 +497,18 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
-    pub fn syscall<T>(&mut self, args: impl IntoIterator<Item = T>) -> &mut Self
+    /// @syscall <type> : <des> <num>, <args…>
+    /// `des` is the optional variable that receives the syscall's return value
+    /// (the Linux ABI returns it in `rax`).
+    pub fn syscall<T>(
+        &mut self,
+        des: Option<Variable>,
+        args: impl IntoIterator<Item = T>,
+    ) -> &mut Self
     where
         T: Into<Operand>,
     {
-        let instruction = ISyscall::new(args);
+        let instruction = ISyscall::new(des, args);
         self.push_instruction(instruction);
         self
     }

@@ -163,7 +163,7 @@ impl<'a> Tokenizer<'a> {
             }
             value.push(c);
         }
-        let number = i64::from_str_radix(&value[2..], 16).unwrap();
+        let number = u64::from_str_radix(&value[2..], 16).unwrap();
         value = number.to_string();
         Some(self.spanned(TokenKind::Number, value))
     }
@@ -178,7 +178,7 @@ impl<'a> Tokenizer<'a> {
             }
             value.push(c);
         }
-        let number = i64::from_str_radix(&value[2..], 2).unwrap();
+        let number = u64::from_str_radix(&value[2..], 2).unwrap();
         value = number.to_string();
         Some(self.spanned(TokenKind::Number, value))
     }

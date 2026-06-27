@@ -34,7 +34,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
             Operand::ConstantInt(constant) => match constant.ty {
                 Type::Signed(_) | Type::Unsigned(_) => {
                     let reg = target.assembler.alloc.vreg::<Reg64>();
-                    target.assembler.mov(reg, constant.parse::<i64>()?);
+                    let imm = constant
+                        .parse::<i64>()
+                        .or_else(|_| constant.parse::<u64>().map(|u| u as i64))?;
+                    target.assembler.mov(reg, imm);
                     Ok(reg.into())
                 }
                 Type::Float(32) => {
@@ -1742,6 +1745,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ISyscall {
         }
 
         target.assembler.syscall();
+
+        // Return Value
+        if let Some(variable) = &self.des {
+            let reg = target.assembler.alloc.vreg::<Reg64>();
+            target.assembler.mov(reg, Reg64::Rax);
+            target.assembler.alloc.store_variable(variable, reg);
+        }
 
         Ok(())
     }
