@@ -341,7 +341,10 @@ impl LivenessAnalysis for ISyscall {
         vars
     }
     fn defines(&self) -> Vec<Variable> {
-        vec![]
+        let Some(v) = self.des.as_ref() else {
+            return vec![];
+        };
+        vec![v.clone()]
     }
 }
 

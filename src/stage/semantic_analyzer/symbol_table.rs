@@ -44,7 +44,7 @@ impl Default for SymbolTableBuilder {
         for argc in 1..=6 {
             table.push(create_symbol(
                 &format!("syscall{}", argc),
-                ast::TypeKind::Void,
+                ast::TypeKind::UnsignedTargetPointerNumber,
                 std::iter::repeat_with(usize_ty).take(argc + 1).collect(),
             ));
         }

@@ -1005,17 +1005,21 @@ impl From<IBitWiseAnd> for Instruction {
     }
 }
 
+/// @syscall <num>, <args…>
+/// @syscall <type> : <des> <num>, <args…>   (when the result is captured)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ISyscall {
+    pub des: Option<Variable>,
     pub args: Vec<Operand>,
 }
 
 impl ISyscall {
-    pub fn new<T>(args: impl IntoIterator<Item = T>) -> Self
+    pub fn new<T>(des: Option<Variable>, args: impl IntoIterator<Item = T>) -> Self
     where
         T: Into<Operand>,
     {
         Self {
+            des,
             args: args.into_iter().map(Into::into).collect(),
         }
     }
@@ -1023,47 +1027,23 @@ impl ISyscall {
 
 impl fmt::Display for ISyscall {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.args.as_slice() {
-            [num, arg1] => write!(
+        let args_str = self
+            .args
+            .iter()
+            .map(|a| format!("{}", color_op(a)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        if let Some(dest) = &self.des {
+            return write!(
                 f,
-                "{} {}, {}",
+                "{} {:<5} : {} {}",
                 Paint::blue("@syscall"),
-                color_op(num),
-                color_op(arg1),
-            ),
-            [num, arg1, arg2] => write!(
-                f,
-                "{} {}, {}, {}",
-                Paint::blue("@syscall"),
-                color_op(num),
-                color_op(arg1),
-                color_op(arg2),
-            ),
-            [num, arg1, arg2, arg3] => {
-                write!(
-                    f,
-                    "{} {}, {}, {}, {}",
-                    Paint::blue("@syscall"),
-                    color_op(num),
-                    color_op(arg1),
-                    color_op(arg2),
-                    color_op(arg3),
-                )
-            }
-            [num, arg1, arg2, arg3, arg4] => {
-                write!(
-                    f,
-                    "{} {}, {}, {}, {}, {}",
-                    Paint::blue("@syscall"),
-                    color_op(num),
-                    color_op(arg1),
-                    color_op(arg2),
-                    color_op(arg3),
-                    color_op(arg4),
-                )
-            }
-            _ => unreachable!("syscall {}", self.args.len()),
+                Paint::yellow(&dest.ty),
+                color_var(dest),
+                args_str
+            );
         }
+        write!(f, "{} {}", Paint::blue("@syscall"), args_str)
     }
 }
 

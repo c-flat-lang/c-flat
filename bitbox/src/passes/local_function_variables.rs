@@ -1,7 +1,7 @@
 use crate::{
     ir::{
         Variable,
-        instruction::{ICall, IIfElse},
+        instruction::{ICall, IIfElse, ISyscall},
     },
     passes::{DebugPass, PassOutput},
 };
@@ -118,6 +118,12 @@ fn block_pass(
                 .local_function_variables
                 .add(function_name, ialloc.des.clone()),
             crate::ir::Instruction::Call(ICall {
+                des: Some(variable),
+                ..
+            }) => ctx
+                .local_function_variables
+                .add(function_name, variable.clone()),
+            crate::ir::Instruction::Syscall(ISyscall {
                 des: Some(variable),
                 ..
             }) => ctx
