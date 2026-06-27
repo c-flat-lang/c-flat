@@ -54,26 +54,30 @@ main_entry:
   mov dword ptr [rbp-12], vreg(7 : Reg32)
   mov edi, dword ptr [rbp-12]
   call write_char
-  # @cast u8 : tmp.3_v0, n_v0, signed-to-unsigned
+  # @cast s8 : tmp.4_v0, n_v0, truncate
   # lowering cast
   # lowering operand
   mov vreg(10 : Reg32), dword ptr [rbp-4]
-  mov vreg(11 : Reg64), vreg(10 : Reg64)
+  movsx vreg(11 : Reg64), vreg(10 : Reg8)
+  # @cast u8 : tmp.3_v0, tmp.4_v0, signed-to-unsigned
+  # lowering cast
+  # lowering operand
+  mov vreg(13 : Reg64), vreg(11 : Reg64)
   # @call write_char(tmp.3_v0)
   # lowering call
   # lowering operand
-  mov byte ptr [rbp-13], vreg(11 : Reg8)
+  mov byte ptr [rbp-13], vreg(13 : Reg8)
   mov dil, byte ptr [rbp-13]
   call write_char
-  # @assign s32 : tmp.4_v0, 10
+  # @assign s32 : tmp.5_v0, 10
   # lowering assign
   # lowering operand
-  mov vreg(14 : Reg64), 10
-  mov vreg(13 : Reg64), vreg(14 : Reg64)
-  # @call write_char(tmp.4_v0)
+  mov vreg(16 : Reg64), 10
+  mov vreg(15 : Reg64), vreg(16 : Reg64)
+  # @call write_char(tmp.5_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-17], vreg(13 : Reg32)
+  mov dword ptr [rbp-17], vreg(15 : Reg32)
   mov edi, dword ptr [rbp-17]
   call write_char
 exit_main:

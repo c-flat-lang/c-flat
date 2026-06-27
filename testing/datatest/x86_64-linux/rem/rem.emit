@@ -32,10 +32,10 @@ main_entry:
   # lowering rem
   # lowering operand
   # lowering operand
-  mov rax, vreg(0 : Reg64)
-  cqo
+  mov eax, vreg(0 : Reg32)
+  cdq
   idiv vreg(3 : Reg64)
-  mov vreg(6 : Reg64), rdx
+  mov vreg(6 : Reg32), edx
   # @assign s32 : n_v0, tmp.2_v0
   # lowering assign
   # lowering operand

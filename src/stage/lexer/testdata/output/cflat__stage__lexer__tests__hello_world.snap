@@ -2,88 +2,90 @@
 source: src/stage/lexer/tests.rs
 expression: snapshot_lexing(& contents)
 ---
-extern C fn write_char(u8) void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 0..6 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 7..8 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 9..11 }
-            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "write_char", span: 12..22 }
-                      ^ Token { kind: LeftParen, lexeme: "(", span: 22..23 }
-                       ^^ Token { kind: Identifier, lexeme: "u8", span: 23..25 }
-                         ^ Token { kind: RightParen, lexeme: ")", span: 25..26 }
-                           ^^^^ Token { kind: Identifier, lexeme: "void", span: 27..31 }
-                               ^ Token { kind: Semicolon, lexeme: ";", span: 31..32 }
-
 fn println(string: ref [u8]) void {
-^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 34..36 }
-   ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 37..44 }
-          ^ Token { kind: LeftParen, lexeme: "(", span: 44..45 }
-           ^^^^^^ Token { kind: Identifier, lexeme: "string", span: 45..51 }
-                 ^ Token { kind: Colon, lexeme: ":", span: 51..52 }
-                   ^^^ Token { kind: Keyword(Ref), lexeme: "ref", span: 53..56 }
-                       ^ Token { kind: LeftBracket, lexeme: "[", span: 57..58 }
-                        ^^ Token { kind: Identifier, lexeme: "u8", span: 58..60 }
-                          ^ Token { kind: RightBracket, lexeme: "]", span: 60..61 }
-                           ^ Token { kind: RightParen, lexeme: ")", span: 61..62 }
-                             ^^^^ Token { kind: Identifier, lexeme: "void", span: 63..67 }
-                                  ^ Token { kind: LeftBrace, lexeme: "{", span: 68..69 }
-    let mut i: usize = 0;
-    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 74..77 }
-        ^^^ Token { kind: Keyword(Mut), lexeme: "mut", span: 78..81 }
-            ^ Token { kind: Identifier, lexeme: "i", span: 82..83 }
-             ^ Token { kind: Colon, lexeme: ":", span: 83..84 }
-               ^^^^^ Token { kind: Identifier, lexeme: "usize", span: 85..90 }
-                     ^ Token { kind: Equal, lexeme: "=", span: 91..92 }
-                       ^ Token { kind: Number, lexeme: "0", span: 93..94 }
-                        ^ Token { kind: Semicolon, lexeme: ";", span: 94..95 }
-    while i < string.len {
-    ^^^^^ Token { kind: Keyword(While), lexeme: "while", span: 100..105 }
-          ^ Token { kind: Identifier, lexeme: "i", span: 106..107 }
-            ^ Token { kind: Less, lexeme: "<", span: 108..109 }
-              ^^^^^^ Token { kind: Identifier, lexeme: "string", span: 110..116 }
-                    ^ Token { kind: Dot, lexeme: ".", span: 116..117 }
-                     ^^^ Token { kind: Identifier, lexeme: "len", span: 117..120 }
-                         ^ Token { kind: LeftBrace, lexeme: "{", span: 121..122 }
-        write_char(string[i]);
-        ^^^^^^^^^^ Token { kind: Identifier, lexeme: "write_char", span: 131..141 }
-                  ^ Token { kind: LeftParen, lexeme: "(", span: 141..142 }
-                   ^^^^^^ Token { kind: Identifier, lexeme: "string", span: 142..148 }
-                         ^ Token { kind: LeftBracket, lexeme: "[", span: 148..149 }
-                          ^ Token { kind: Identifier, lexeme: "i", span: 149..150 }
-                           ^ Token { kind: RightBracket, lexeme: "]", span: 150..151 }
-                            ^ Token { kind: RightParen, lexeme: ")", span: 151..152 }
-                             ^ Token { kind: Semicolon, lexeme: ";", span: 152..153 }
-        i = i + 1;
-        ^ Token { kind: Identifier, lexeme: "i", span: 162..163 }
-          ^ Token { kind: Equal, lexeme: "=", span: 164..165 }
-            ^ Token { kind: Identifier, lexeme: "i", span: 166..167 }
-              ^ Token { kind: Plus, lexeme: "+", span: 168..169 }
-                ^ Token { kind: Number, lexeme: "1", span: 170..171 }
-                 ^ Token { kind: Semicolon, lexeme: ";", span: 171..172 }
-    }
-    ^ Token { kind: RightBrace, lexeme: "}", span: 177..178 }
-    write_char(10);
-    ^^^^^^^^^^ Token { kind: Identifier, lexeme: "write_char", span: 183..193 }
-              ^ Token { kind: LeftParen, lexeme: "(", span: 193..194 }
-               ^^ Token { kind: Number, lexeme: "10", span: 194..196 }
-                 ^ Token { kind: RightParen, lexeme: ")", span: 196..197 }
-                  ^ Token { kind: Semicolon, lexeme: ";", span: 197..198 }
+^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 0..2 }
+   ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 3..10 }
+          ^ Token { kind: LeftParen, lexeme: "(", span: 10..11 }
+           ^^^^^^ Token { kind: Identifier, lexeme: "string", span: 11..17 }
+                 ^ Token { kind: Colon, lexeme: ":", span: 17..18 }
+                   ^^^ Token { kind: Keyword(Ref), lexeme: "ref", span: 19..22 }
+                       ^ Token { kind: LeftBracket, lexeme: "[", span: 23..24 }
+                        ^^ Token { kind: Identifier, lexeme: "u8", span: 24..26 }
+                          ^ Token { kind: RightBracket, lexeme: "]", span: 26..27 }
+                           ^ Token { kind: RightParen, lexeme: ")", span: 27..28 }
+                             ^^^^ Token { kind: Identifier, lexeme: "void", span: 29..33 }
+                                  ^ Token { kind: LeftBrace, lexeme: "{", span: 34..35 }
+    syscall3(
+    ^^^^^^^^ Token { kind: Identifier, lexeme: "syscall3", span: 40..48 }
+            ^ Token { kind: LeftParen, lexeme: "(", span: 48..49 }
+        1,            // SYS_write
+        ^ Token { kind: Number, lexeme: "1", span: 58..59 }
+         ^ Token { kind: Comma, lexeme: ",", span: 59..60 }
+        1,            // stdout
+        ^ Token { kind: Number, lexeme: "1", span: 93..94 }
+         ^ Token { kind: Comma, lexeme: ",", span: 94..95 }
+        string.data,  // pointer to bytes
+        ^^^^^^ Token { kind: Identifier, lexeme: "string", span: 125..131 }
+              ^ Token { kind: Dot, lexeme: ".", span: 131..132 }
+               ^^^^ Token { kind: Identifier, lexeme: "data", span: 132..136 }
+                   ^ Token { kind: Comma, lexeme: ",", span: 136..137 }
+        string.len    // length
+        ^^^^^^ Token { kind: Identifier, lexeme: "string", span: 167..173 }
+              ^ Token { kind: Dot, lexeme: ".", span: 173..174 }
+               ^^^ Token { kind: Identifier, lexeme: "len", span: 174..177 }
+    );
+    ^ Token { kind: RightParen, lexeme: ")", span: 195..196 }
+     ^ Token { kind: Semicolon, lexeme: ";", span: 196..197 }
+
+    let nl: [1; u8] = ['\n'];
+    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 203..206 }
+        ^^ Token { kind: Identifier, lexeme: "nl", span: 207..209 }
+          ^ Token { kind: Colon, lexeme: ":", span: 209..210 }
+            ^ Token { kind: LeftBracket, lexeme: "[", span: 211..212 }
+             ^ Token { kind: Number, lexeme: "1", span: 212..213 }
+              ^ Token { kind: Semicolon, lexeme: ";", span: 213..214 }
+                ^^ Token { kind: Identifier, lexeme: "u8", span: 215..217 }
+                  ^ Token { kind: RightBracket, lexeme: "]", span: 217..218 }
+                    ^ Token { kind: Equal, lexeme: "=", span: 219..220 }
+                      ^ Token { kind: LeftBracket, lexeme: "[", span: 221..222 }
+                       ^^^^ Token { kind: Char, lexeme: "\\n", span: 222..226 }
+                           ^ Token { kind: RightBracket, lexeme: "]", span: 226..227 }
+                            ^ Token { kind: Semicolon, lexeme: ";", span: 227..228 }
+    syscall3(
+    ^^^^^^^^ Token { kind: Identifier, lexeme: "syscall3", span: 233..241 }
+            ^ Token { kind: LeftParen, lexeme: "(", span: 241..242 }
+        1,   // SYS_write
+        ^ Token { kind: Number, lexeme: "1", span: 251..252 }
+         ^ Token { kind: Comma, lexeme: ",", span: 252..253 }
+        1,   // stdout
+        ^ Token { kind: Number, lexeme: "1", span: 277..278 }
+         ^ Token { kind: Comma, lexeme: ",", span: 278..279 }
+        &nl, // pointer to bytes
+        ^ Token { kind: Ampersand, lexeme: "&", span: 300..301 }
+         ^^ Token { kind: Identifier, lexeme: "nl", span: 301..303 }
+           ^ Token { kind: Comma, lexeme: ",", span: 303..304 }
+        1    // length
+        ^ Token { kind: Number, lexeme: "1", span: 333..334 }
+    );
+    ^ Token { kind: RightParen, lexeme: ")", span: 352..353 }
+     ^ Token { kind: Semicolon, lexeme: ";", span: 353..354 }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 199..200 }
+^ Token { kind: RightBrace, lexeme: "}", span: 355..356 }
 
 pub fn main() void {
-^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: 202..205 }
-    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 206..208 }
-       ^^^^ Token { kind: Identifier, lexeme: "main", span: 209..213 }
-           ^ Token { kind: LeftParen, lexeme: "(", span: 213..214 }
-            ^ Token { kind: RightParen, lexeme: ")", span: 214..215 }
-              ^^^^ Token { kind: Identifier, lexeme: "void", span: 216..220 }
-                   ^ Token { kind: LeftBrace, lexeme: "{", span: 221..222 }
-    println(&#"Hello, World!"#);
-    ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 227..234 }
-           ^ Token { kind: LeftParen, lexeme: "(", span: 234..235 }
-            ^ Token { kind: Ampersand, lexeme: "&", span: 235..236 }
-             ^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!", span: 236..253 }
-                              ^ Token { kind: RightParen, lexeme: ")", span: 253..254 }
-                               ^ Token { kind: Semicolon, lexeme: ";", span: 254..255 }
+^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: 358..361 }
+    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 362..364 }
+       ^^^^ Token { kind: Identifier, lexeme: "main", span: 365..369 }
+           ^ Token { kind: LeftParen, lexeme: "(", span: 369..370 }
+            ^ Token { kind: RightParen, lexeme: ")", span: 370..371 }
+              ^^^^ Token { kind: Identifier, lexeme: "void", span: 372..376 }
+                   ^ Token { kind: LeftBrace, lexeme: "{", span: 377..378 }
+    println(&"Hello, World!");
+    ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 383..390 }
+           ^ Token { kind: LeftParen, lexeme: "(", span: 390..391 }
+            ^ Token { kind: Ampersand, lexeme: "&", span: 391..392 }
+             ^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!", span: 392..407 }
+                            ^ Token { kind: RightParen, lexeme: ")", span: 407..408 }
+                             ^ Token { kind: Semicolon, lexeme: ";", span: 408..409 }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 256..257 }
+^ Token { kind: RightBrace, lexeme: "}", span: 410..411 }

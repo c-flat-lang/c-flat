@@ -122,6 +122,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::Cast(..) => todo!("@cast"),
             crate::ir::Instruction::BitShiftRight(..) => todo!("@bsr"),
             crate::ir::Instruction::BitWiseAnd(..) => todo!("@bwand"),
+            crate::ir::Instruction::Syscall(..) => todo!("@syscall"),
         }
         Ok(())
     }

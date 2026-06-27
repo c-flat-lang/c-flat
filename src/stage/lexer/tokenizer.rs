@@ -90,28 +90,52 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn parse_raw_string(&mut self) -> Token {
-        let mut lexeme = String::from('#');
+        self.next_char();
+        let mut lexeme = String::new();
+
+        loop {
+            while let Some(value) = self.next_char_if(|value| value != '\n') {
+                lexeme.push(value);
+            }
+            lexeme.push(self.next_char().expect("should just be a new line"));
+            while self
+                .next_char_if(|value| matches!(value, ' ' | '\t'))
+                .is_some()
+            {}
+            if self.peek_char('\\') {
+                self.next_char();
+                if self.peek_char('\\') {
+                    self.next_char();
+                    continue;
+                }
+                panic!("Expected another \\");
+            }
+            break;
+        }
+
+        self.spanned(TokenKind::String, lexeme)
+    }
+
+    fn parse_string(&mut self) -> Token {
+        let mut lexeme = String::new();
         while let Some(value) = self.next_char() {
-            lexeme.push(value);
-            if lexeme.ends_with("\"#") {
+            if value == '"' {
                 break;
             }
+            lexeme.push(value);
         }
-        let lexeme = lexeme[2..lexeme.len() - 2]
-            .replace("\\n", "\n")
-            .replace("\\0", "\0");
+        let lexeme = lexeme.replace("\\n", "\n").replace("\\0", "\0");
         self.spanned(TokenKind::String, lexeme)
     }
 
     fn parse_char(&mut self) -> Token {
-        let mut lexeme = String::from('#');
+        let mut lexeme = String::new();
         while let Some(value) = self.next_char() {
-            lexeme.push(value);
-            if lexeme.ends_with("\'#") {
+            if value == '\'' {
                 break;
             }
+            lexeme.push(value);
         }
-        let lexeme = lexeme[2..lexeme.len() - 2].replace("\\n", "\n");
         self.spanned(TokenKind::Char, lexeme)
     }
 
@@ -172,8 +196,6 @@ impl<'a> Iterator for Tokenizer<'a> {
             value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
             value if value.is_ascii_whitespace() => self.skip_char(),
             '/' if self.peek_char('/') => self.skip_line(),
-            '#' if self.peek_char('\'') => Some(self.parse_char()),
-            '#' if self.peek_char('"') => Some(self.parse_raw_string()),
             '=' if self.peek_char('=') => self.double_char(TokenKind::EqualEqual, "=="),
             '>' if self.peek_char('>') => self.double_char(TokenKind::BitShiftRight, ">>"),
             '>' if self.peek_char('=') => self.double_char(TokenKind::GreaterEqual, ">="),
@@ -181,6 +203,9 @@ impl<'a> Iterator for Tokenizer<'a> {
             '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),
             '<' if self.peek_char('(') => self.double_char(TokenKind::LeftTypeCradle, "<("),
             ')' if self.peek_char('>') => self.double_char(TokenKind::RightTypeCradle, ")>"),
+            '\\' if self.peek_char('\\') => Some(self.parse_raw_string()),
+            '"' => Some(self.parse_string()),
+            '\'' => Some(self.parse_char()),
             '(' => Some(self.spanned(TokenKind::LeftParen, c)),
             ')' => Some(self.spanned(TokenKind::RightParen, c)),
             '[' => Some(self.spanned(TokenKind::LeftBracket, c)),

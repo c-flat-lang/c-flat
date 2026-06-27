@@ -139,85 +139,85 @@ pub fn main() s32 {
                         ^^^^ Token { kind: Number, lexeme: "1080", span: 711..715 }
                             ^ Token { kind: Semicolon, lexeme: ";", span: 715..716 }
 
-    let title = #"raylib-cb\0"#;
+    let title = "raylib-cb\0";
     ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 722..725 }
         ^^^^^ Token { kind: Identifier, lexeme: "title", span: 726..731 }
               ^ Token { kind: Equal, lexeme: "=", span: 732..733 }
-                ^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "raylib-cb\0", span: 734..749 }
-                               ^ Token { kind: Semicolon, lexeme: ";", span: 749..750 }
-    let text = #"Congrats! You created your first window in c-flat boiiii\0"#
-    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 755..758 }
-        ^^^^ Token { kind: Identifier, lexeme: "text", span: 759..763 }
-             ^ Token { kind: Equal, lexeme: "=", span: 764..765 }
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Congrats! You created your first window in c-flat boiiii\0", span: 766..828 }
+                ^^^^^^^^^^^^^ Token { kind: String, lexeme: "raylib-cb\0", span: 734..747 }
+                             ^ Token { kind: Semicolon, lexeme: ";", span: 747..748 }
+    let text = "Congrats! You created your first window in c-flat boiiii\0"
+    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 753..756 }
+        ^^^^ Token { kind: Identifier, lexeme: "text", span: 757..761 }
+             ^ Token { kind: Equal, lexeme: "=", span: 762..763 }
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Congrats! You created your first window in c-flat boiiii\0", span: 764..824 }
     init_window(screen_width, screen_height, &title);
-    ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "init_window", span: 833..844 }
-               ^ Token { kind: LeftParen, lexeme: "(", span: 844..845 }
-                ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_width", span: 845..857 }
-                            ^ Token { kind: Comma, lexeme: ",", span: 857..858 }
-                              ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_height", span: 859..872 }
-                                           ^ Token { kind: Comma, lexeme: ",", span: 872..873 }
-                                             ^ Token { kind: Ampersand, lexeme: "&", span: 874..875 }
-                                              ^^^^^ Token { kind: Identifier, lexeme: "title", span: 875..880 }
-                                                   ^ Token { kind: RightParen, lexeme: ")", span: 880..881 }
-                                                    ^ Token { kind: Semicolon, lexeme: ";", span: 881..882 }
+    ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "init_window", span: 829..840 }
+               ^ Token { kind: LeftParen, lexeme: "(", span: 840..841 }
+                ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_width", span: 841..853 }
+                            ^ Token { kind: Comma, lexeme: ",", span: 853..854 }
+                              ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_height", span: 855..868 }
+                                           ^ Token { kind: Comma, lexeme: ",", span: 868..869 }
+                                             ^ Token { kind: Ampersand, lexeme: "&", span: 870..871 }
+                                              ^^^^^ Token { kind: Identifier, lexeme: "title", span: 871..876 }
+                                                   ^ Token { kind: RightParen, lexeme: ")", span: 876..877 }
+                                                    ^ Token { kind: Semicolon, lexeme: ";", span: 877..878 }
 
     set_target_fps(60);
-    ^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "set_target_fps", span: 888..902 }
-                  ^ Token { kind: LeftParen, lexeme: "(", span: 902..903 }
-                   ^^ Token { kind: Number, lexeme: "60", span: 903..905 }
-                     ^ Token { kind: RightParen, lexeme: ")", span: 905..906 }
-                      ^ Token { kind: Semicolon, lexeme: ";", span: 906..907 }
+    ^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "set_target_fps", span: 884..898 }
+                  ^ Token { kind: LeftParen, lexeme: "(", span: 898..899 }
+                   ^^ Token { kind: Number, lexeme: "60", span: 899..901 }
+                     ^ Token { kind: RightParen, lexeme: ")", span: 901..902 }
+                      ^ Token { kind: Semicolon, lexeme: ";", span: 902..903 }
     while !window_should_close() {
-    ^^^^^ Token { kind: Keyword(While), lexeme: "while", span: 912..917 }
-          ^ Token { kind: Bang, lexeme: "!", span: 918..919 }
-           ^^^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "window_should_close", span: 919..938 }
-                              ^ Token { kind: LeftParen, lexeme: "(", span: 938..939 }
-                               ^ Token { kind: RightParen, lexeme: ")", span: 939..940 }
-                                 ^ Token { kind: LeftBrace, lexeme: "{", span: 941..942 }
+    ^^^^^ Token { kind: Keyword(While), lexeme: "while", span: 908..913 }
+          ^ Token { kind: Bang, lexeme: "!", span: 914..915 }
+           ^^^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "window_should_close", span: 915..934 }
+                              ^ Token { kind: LeftParen, lexeme: "(", span: 934..935 }
+                               ^ Token { kind: RightParen, lexeme: ")", span: 935..936 }
+                                 ^ Token { kind: LeftBrace, lexeme: "{", span: 937..938 }
         begin_drawing();
-        ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "begin_drawing", span: 951..964 }
-                     ^ Token { kind: LeftParen, lexeme: "(", span: 964..965 }
-                      ^ Token { kind: RightParen, lexeme: ")", span: 965..966 }
-                       ^ Token { kind: Semicolon, lexeme: ";", span: 966..967 }
+        ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "begin_drawing", span: 947..960 }
+                     ^ Token { kind: LeftParen, lexeme: "(", span: 960..961 }
+                      ^ Token { kind: RightParen, lexeme: ")", span: 961..962 }
+                       ^ Token { kind: Semicolon, lexeme: ";", span: 962..963 }
 
         clear_background(0xFF_FF_FF_FF);
-        ^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "clear_background", span: 977..993 }
-                        ^ Token { kind: LeftParen, lexeme: "(", span: 993..994 }
-                         ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4294967295", span: 994..1007 }
-                                      ^ Token { kind: RightParen, lexeme: ")", span: 1007..1008 }
-                                       ^ Token { kind: Semicolon, lexeme: ";", span: 1008..1009 }
+        ^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "clear_background", span: 973..989 }
+                        ^ Token { kind: LeftParen, lexeme: "(", span: 989..990 }
+                         ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4294967295", span: 990..1003 }
+                                      ^ Token { kind: RightParen, lexeme: ")", span: 1003..1004 }
+                                       ^ Token { kind: Semicolon, lexeme: ";", span: 1004..1005 }
         draw_text(&text, 190, 200, 20, 0xFF_00_00_00);
-        ^^^^^^^^^ Token { kind: Identifier, lexeme: "draw_text", span: 1018..1027 }
-                 ^ Token { kind: LeftParen, lexeme: "(", span: 1027..1028 }
-                  ^ Token { kind: Ampersand, lexeme: "&", span: 1028..1029 }
-                   ^^^^ Token { kind: Identifier, lexeme: "text", span: 1029..1033 }
-                       ^ Token { kind: Comma, lexeme: ",", span: 1033..1034 }
-                         ^^^ Token { kind: Number, lexeme: "190", span: 1035..1038 }
-                            ^ Token { kind: Comma, lexeme: ",", span: 1038..1039 }
-                              ^^^ Token { kind: Number, lexeme: "200", span: 1040..1043 }
-                                 ^ Token { kind: Comma, lexeme: ",", span: 1043..1044 }
-                                   ^^ Token { kind: Number, lexeme: "20", span: 1045..1047 }
-                                     ^ Token { kind: Comma, lexeme: ",", span: 1047..1048 }
-                                       ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4278190080", span: 1049..1062 }
-                                                    ^ Token { kind: RightParen, lexeme: ")", span: 1062..1063 }
-                                                     ^ Token { kind: Semicolon, lexeme: ";", span: 1063..1064 }
+        ^^^^^^^^^ Token { kind: Identifier, lexeme: "draw_text", span: 1014..1023 }
+                 ^ Token { kind: LeftParen, lexeme: "(", span: 1023..1024 }
+                  ^ Token { kind: Ampersand, lexeme: "&", span: 1024..1025 }
+                   ^^^^ Token { kind: Identifier, lexeme: "text", span: 1025..1029 }
+                       ^ Token { kind: Comma, lexeme: ",", span: 1029..1030 }
+                         ^^^ Token { kind: Number, lexeme: "190", span: 1031..1034 }
+                            ^ Token { kind: Comma, lexeme: ",", span: 1034..1035 }
+                              ^^^ Token { kind: Number, lexeme: "200", span: 1036..1039 }
+                                 ^ Token { kind: Comma, lexeme: ",", span: 1039..1040 }
+                                   ^^ Token { kind: Number, lexeme: "20", span: 1041..1043 }
+                                     ^ Token { kind: Comma, lexeme: ",", span: 1043..1044 }
+                                       ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4278190080", span: 1045..1058 }
+                                                    ^ Token { kind: RightParen, lexeme: ")", span: 1058..1059 }
+                                                     ^ Token { kind: Semicolon, lexeme: ";", span: 1059..1060 }
 
         end_drawing();
-        ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "end_drawing", span: 1074..1085 }
-                   ^ Token { kind: LeftParen, lexeme: "(", span: 1085..1086 }
-                    ^ Token { kind: RightParen, lexeme: ")", span: 1086..1087 }
-                     ^ Token { kind: Semicolon, lexeme: ";", span: 1087..1088 }
+        ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "end_drawing", span: 1070..1081 }
+                   ^ Token { kind: LeftParen, lexeme: "(", span: 1081..1082 }
+                    ^ Token { kind: RightParen, lexeme: ")", span: 1082..1083 }
+                     ^ Token { kind: Semicolon, lexeme: ";", span: 1083..1084 }
     }
-    ^ Token { kind: RightBrace, lexeme: "}", span: 1093..1094 }
+    ^ Token { kind: RightBrace, lexeme: "}", span: 1089..1090 }
     close_window();
-    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "close_window", span: 1099..1111 }
-                ^ Token { kind: LeftParen, lexeme: "(", span: 1111..1112 }
-                 ^ Token { kind: RightParen, lexeme: ")", span: 1112..1113 }
-                  ^ Token { kind: Semicolon, lexeme: ";", span: 1113..1114 }
+    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "close_window", span: 1095..1107 }
+                ^ Token { kind: LeftParen, lexeme: "(", span: 1107..1108 }
+                 ^ Token { kind: RightParen, lexeme: ")", span: 1108..1109 }
+                  ^ Token { kind: Semicolon, lexeme: ";", span: 1109..1110 }
     return 0;
-    ^^^^^^ Token { kind: Keyword(Return), lexeme: "return", span: 1119..1125 }
-           ^ Token { kind: Number, lexeme: "0", span: 1126..1127 }
-            ^ Token { kind: Semicolon, lexeme: ";", span: 1127..1128 }
+    ^^^^^^ Token { kind: Keyword(Return), lexeme: "return", span: 1115..1121 }
+           ^ Token { kind: Number, lexeme: "0", span: 1122..1123 }
+            ^ Token { kind: Semicolon, lexeme: ";", span: 1123..1124 }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 1129..1130 }
+^ Token { kind: RightBrace, lexeme: "}", span: 1125..1126 }

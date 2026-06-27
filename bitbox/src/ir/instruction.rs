@@ -83,11 +83,12 @@ pub enum Instruction {
     Not(INot),
     /// `@cast <kind> <type> : <des>, <src>`
     Cast(ICast),
-
     /// `@bsr <type> : <des>, <rhs>, <lhs>`
     BitShiftRight(IBitShiftRight),
     /// `@bwand <type> : <des>, <rhs>, <lhs>`
     BitWiseAnd(IBitWiseAnd),
+    /// `@syscall <num>, <arg1>, ...<arg6>`
+    Syscall(ISyscall),
 }
 
 impl fmt::Display for Instruction {
@@ -125,6 +126,7 @@ impl fmt::Display for Instruction {
             Self::Cast(icast) => write!(f, "{icast}"),
             Self::BitShiftRight(ibsr) => write!(f, "{ibsr}"),
             Self::BitWiseAnd(ibwand) => write!(f, "{ibwand}"),
+            Self::Syscall(isyscall) => write!(f, "{isyscall}"),
         }
     }
 }
@@ -1000,5 +1002,73 @@ impl fmt::Display for IBitWiseAnd {
 impl From<IBitWiseAnd> for Instruction {
     fn from(i: IBitWiseAnd) -> Self {
         Instruction::BitWiseAnd(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ISyscall {
+    pub args: Vec<Operand>,
+}
+
+impl ISyscall {
+    pub fn new<T>(args: impl IntoIterator<Item = T>) -> Self
+    where
+        T: Into<Operand>,
+    {
+        Self {
+            args: args.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl fmt::Display for ISyscall {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.args.as_slice() {
+            [num, arg1] => write!(
+                f,
+                "{} {}, {}",
+                Paint::blue("@syscall"),
+                color_op(num),
+                color_op(arg1),
+            ),
+            [num, arg1, arg2] => write!(
+                f,
+                "{} {}, {}, {}",
+                Paint::blue("@syscall"),
+                color_op(num),
+                color_op(arg1),
+                color_op(arg2),
+            ),
+            [num, arg1, arg2, arg3] => {
+                write!(
+                    f,
+                    "{} {}, {}, {}, {}",
+                    Paint::blue("@syscall"),
+                    color_op(num),
+                    color_op(arg1),
+                    color_op(arg2),
+                    color_op(arg3),
+                )
+            }
+            [num, arg1, arg2, arg3, arg4] => {
+                write!(
+                    f,
+                    "{} {}, {}, {}, {}, {}",
+                    Paint::blue("@syscall"),
+                    color_op(num),
+                    color_op(arg1),
+                    color_op(arg2),
+                    color_op(arg3),
+                    color_op(arg4),
+                )
+            }
+            _ => unreachable!("syscall {}", self.args.len()),
+        }
+    }
+}
+
+impl From<ISyscall> for Instruction {
+    fn from(i: ISyscall) -> Self {
+        Instruction::Syscall(i)
     }
 }

@@ -31,7 +31,7 @@ fn add<(T: type)>(x: T, y: T) T {
 pub fn main() void {
     let list: ArrayList<(s32)> = init_array_list<(s32)>();
 
-    let string: [u8] = #"Testing String Passing"#;
+    let string: [u8] = "Testing String Passing";
     print(&string);
 
     let num0 = add<(s32)>(123, 321);

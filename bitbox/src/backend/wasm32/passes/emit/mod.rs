@@ -368,6 +368,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
             ir::Instruction::BitShiftRight(..) => todo!("@bsr"),
             ir::Instruction::BitWiseAnd(..) => todo!("@bwand"),
+            ir::Instruction::Syscall(..) => todo!("@syscall"),
         }
         Ok(())
     }

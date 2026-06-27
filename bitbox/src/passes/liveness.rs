@@ -4,7 +4,7 @@ use crate::{
         instruction::{
             IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp, ICopy,
             IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte,
-            IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub, IXOr,
+            IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub, ISyscall, IXOr,
         },
     },
     passes::{DebugPass, PassOutput},
@@ -330,6 +330,21 @@ impl LivenessAnalysis for ICast {
     }
 }
 
+impl LivenessAnalysis for ISyscall {
+    fn uses(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        for arg in self.args.iter() {
+            if let crate::ir::Operand::Variable(v) = arg {
+                vars.push(v.clone());
+            }
+        }
+        vars
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
 impl crate::ir::Instruction {
     pub fn uses(&self) -> Vec<Variable> {
         match self {
@@ -365,6 +380,7 @@ impl crate::ir::Instruction {
             Self::Cast(i) => i.uses(),
             Self::BitShiftRight(i) => i.uses(),
             Self::BitWiseAnd(i) => i.uses(),
+            Self::Syscall(i) => i.uses(),
         }
     }
 
@@ -402,6 +418,7 @@ impl crate::ir::Instruction {
             Self::Cast(i) => i.defines(),
             Self::BitShiftRight(i) => i.defines(),
             Self::BitWiseAnd(i) => i.defines(),
+            Self::Syscall(i) => i.defines(),
         }
     }
 }

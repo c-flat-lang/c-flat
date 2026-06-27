@@ -1,4 +1,6 @@
 #![allow(unused)]
+use std::str::FromStr;
+
 use super::type_resolver::TypeResolver;
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
@@ -309,11 +311,20 @@ impl<'st> TypeChecker<'st> {
                 span: expr.span(),
                 mut_token: None,
             }),
-            ast::Litral::Char(_) => Type {
-                kind: TypeKind::UnsignedNumber(8),
-                span: expr.span(),
-                mut_token: None,
-            },
+            ast::Litral::Char(token) => {
+                let bytes = match SmallestCharInt::from_str(&token.lexeme) {
+                    Ok(SmallestCharInt::U8(_)) => 8,
+                    Ok(SmallestCharInt::U16(_)) => 16,
+                    Ok(SmallestCharInt::U32(_)) => 32,
+                    v => panic!("not a char {v:?}"),
+                };
+
+                Type {
+                    kind: TypeKind::UnsignedNumber(bytes),
+                    span: expr.span(),
+                    mut_token: None,
+                }
+            }
             ast::Litral::String(s) => Type {
                 kind: TypeKind::Array(
                     s.lexeme.len(),
@@ -574,10 +585,20 @@ impl<'st> TypeChecker<'st> {
                 span: expr.span(),
                 mut_token: None,
             },
+            TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
+                kind: TypeKind::Ref(inner_ty.clone()),
+                span: expr.span(),
+                mut_token: None,
+            },
             TypeKind::Ref(inner) => match &inner.kind {
                 TypeKind::Struct(struct_def) => {
                     self.lookup_struct_member(struct_def, &member_access.member.lexeme)
                 }
+                TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
+                    kind: TypeKind::Ref(inner_ty.clone()),
+                    span: expr.span(),
+                    mut_token: None,
+                },
                 TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
                     kind: TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),
@@ -657,6 +678,57 @@ impl<'st> TypeChecker<'st> {
             );
         };
         field.ty.clone()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SmallestCharInt {
+    U8(u8),
+    U16(u16),
+    U32(u32),
+}
+
+impl SmallestCharInt {
+    pub fn value(&self) -> u32 {
+        match self {
+            SmallestCharInt::U8(v) => *v as u32,
+            SmallestCharInt::U16(v) => *v as u32,
+            SmallestCharInt::U32(v) => *v,
+        }
+    }
+
+    fn parse_char(s: &str) -> std::result::Result<char, char> {
+        match s {
+            "\\n" => Ok('\n'),
+            "\\t" => Ok('\t'),
+            "\\r" => Ok('\r'),
+            "\\0" => Ok('\0'),
+            _ => {
+                let mut chars = s.chars();
+                let ch = chars.next().ok_or('\0')?;
+                if let Some(c) = chars.next() {
+                    return Err(c);
+                }
+                Ok(ch)
+            }
+        }
+    }
+}
+
+impl FromStr for SmallestCharInt {
+    type Err = char;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let ch = SmallestCharInt::parse_char(s)?;
+
+        let code = ch as u32;
+
+        if code <= u8::MAX as u32 {
+            Ok(SmallestCharInt::U8(code as u8))
+        } else if code <= u16::MAX as u32 {
+            Ok(SmallestCharInt::U16(code as u16))
+        } else {
+            Ok(SmallestCharInt::U32(code))
+        }
     }
 }
 
