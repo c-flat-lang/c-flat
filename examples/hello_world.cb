@@ -1,19 +1,4 @@
-fn println(string: ref [u8]) void {
-    syscall3(
-        1,            // SYS_write
-        1,            // stdout
-        string.data,  // pointer to bytes
-        string.len    // length
-    );
-
-    let nl: [1; u8] = ['\n'];
-    syscall3(
-        1,   // SYS_write
-        1,   // stdout
-        &nl, // pointer to bytes
-        1    // length
-    );
-}
+use modules::io::println;
 
 pub fn main() void {
     println(&"Hello, World!");

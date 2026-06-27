@@ -764,6 +764,16 @@ impl Parser {
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
             TokenKind::Identifier => {
+                // Qualified path: `a::b::c`. `::` is two `Colon` tokens.
+                if self.peek(TokenKind::Colon) {
+                    let mut segments = vec![token];
+                    while self.peek(TokenKind::Colon) {
+                        self.consume(TokenKind::Colon)?;
+                        self.consume(TokenKind::Colon)?;
+                        segments.push(self.consume(TokenKind::Identifier)?);
+                    }
+                    return Ok(ast::Expr::Path(ast::ExprPath { segments }));
+                }
                 if !self.restrict_struct_literal
                     && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
                 {

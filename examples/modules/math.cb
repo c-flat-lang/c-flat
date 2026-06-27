@@ -1,0 +1,11 @@
+pub fn add(a: s32, b: s32) s32 {
+    return a + b;
+}
+
+pub fn mul(a: s32, b: s32) s32 {
+    return a * b;
+}
+
+fn secret(x: s32) s32 {
+    return x;
+}

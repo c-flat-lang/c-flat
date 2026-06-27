@@ -72,10 +72,6 @@ impl IRBuilder {
         self.symbol_table.exit_scope();
         mb.function(function_builder.build());
     }
-
-    fn build_use(&mut self, use_: ast::Use) {
-        todo!("{:#?}", use_)
-    }
 }
 
 impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
@@ -87,7 +83,7 @@ impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
             match item {
                 Item::Function(function) => self.build_function(function, &mut mb),
                 Item::Type(_) => {}
-                Item::Use(u) => self.build_use(u),
+                Item::Use(_) => {}
                 Item::ExternFunction(extern_function) => {
                     let ast::ExternFunction {
                         binding_name,
@@ -189,6 +185,13 @@ impl Lowerable for Expr {
                     panic!("Symbol not found {}", ident.lexeme);
                 };
                 ctx.get_variable(&ident.lexeme)
+            }
+            Expr::Path(path) => {
+                let leaf = path.leaf();
+                let Some(_) = ctx.symbol_table.get(&leaf.lexeme) else {
+                    panic!("Symbol not found {}", leaf.lexeme);
+                };
+                ctx.get_variable(&leaf.lexeme)
             }
             Expr::Struct(expr) => expr.lower(assembler, ctx),
             Expr::MemberAccess(expr) => expr.lower(assembler, ctx),
@@ -664,19 +667,17 @@ impl Lowerable for ExprCall {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ast::Expr::Identifier(ident) = self.caller.as_ref() else {
-            panic!("Caller must be an identifier");
+        let name = match self.caller.as_ref() {
+            ast::Expr::Identifier(ident) => &ident.lexeme,
+            ast::Expr::Path(path) => &path.leaf().lexeme,
+            _ => panic!("Caller must be an identifier or path"),
         };
 
-        let Some(symbol) = ctx.symbol_table.get(&ident.lexeme).cloned() else {
-            panic!("Symbol not found {}", ident.lexeme);
+        let Some(symbol) = ctx.symbol_table.get(name).cloned() else {
+            panic!("Symbol not found {}", name);
         };
 
-        let callee = symbol
-            .binding_name
-            .as_ref()
-            .unwrap_or(&ident.lexeme)
-            .clone();
+        let callee = symbol.binding_name.as_ref().unwrap_or(name).clone();
         let ty = symbol.ty.as_bitbox_type(&ctx.target);
         let args: Vec<Operand> = self
             .args
