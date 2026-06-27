@@ -4,6 +4,27 @@ use crate::stage::lexer::token::Token;
 use crate::stage::parser::ast::{self, Expr};
 use std::collections::HashMap;
 
+fn ty(kind: ast::TypeKind) -> ast::Type {
+    ast::Type {
+        mut_token: None,
+        kind,
+        span: 0..1,
+    }
+}
+
+fn create_symbol(name: &str, return_type: ast::TypeKind, args: Vec<ast::TypeKind>) -> Symbol {
+    Symbol {
+        name: name.to_string(),
+        ty: ty(return_type),
+        visibility: ast::Visibility::Public,
+        kind: SymbolKind::Function,
+        is_mutable: false,
+        params: Some(args.into_iter().map(ty).collect()),
+        binding_name: None,
+        fields: None,
+    }
+}
+
 #[derive(Debug)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
@@ -14,6 +35,18 @@ impl Default for SymbolTableBuilder {
     fn default() -> Self {
         let mut table = SymbolTable::default();
         table.enter_scope("global");
+
+        fn usize_ty() -> ast::TypeKind {
+            ast::TypeKind::UnsignedTargetPointerNumber
+        }
+
+        for argc in 1..=6 {
+            table.push(create_symbol(
+                &format!("syscall{}", argc),
+                ast::TypeKind::Void,
+                std::iter::repeat_with(usize_ty).take(argc + 1).collect(),
+            ));
+        }
         table.exit_scope();
 
         Self {

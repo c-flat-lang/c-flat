@@ -4,7 +4,7 @@ use crate::{
         instruction::{
             IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt,
             IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi,
-            IRef, IRem, IReturn, ISub, IXOr,
+            IRef, IRem, IReturn, ISub, ISyscall, IXOr,
         },
     },
     passes::{DebugPass, PassOutput},
@@ -316,6 +316,21 @@ impl LivenessAnalysis for ICast {
     }
 }
 
+impl LivenessAnalysis for ISyscall {
+    fn uses(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        for arg in self.args.iter() {
+            if let crate::ir::Operand::Variable(v) = arg {
+                vars.push(v.clone());
+            }
+        }
+        vars
+    }
+    fn defines(&self) -> Vec<Variable> {
+        vec![]
+    }
+}
+
 impl crate::ir::Instruction {
     pub fn uses(&self) -> Vec<Variable> {
         match self {
@@ -349,6 +364,7 @@ impl crate::ir::Instruction {
             Self::Ref(i) => i.uses(),
             Self::Not(i) => i.uses(),
             Self::Cast(i) => i.uses(),
+            Self::Syscall(i) => i.uses(),
         }
     }
 
@@ -384,6 +400,7 @@ impl crate::ir::Instruction {
             Self::Ref(i) => i.defines(),
             Self::Not(i) => i.defines(),
             Self::Cast(i) => i.defines(),
+            Self::Syscall(i) => i.defines(),
         }
     }
 }

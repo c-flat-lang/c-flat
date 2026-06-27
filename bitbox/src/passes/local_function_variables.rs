@@ -207,6 +207,7 @@ fn block_pass(
                 }
             }
             crate::ir::Instruction::Call(..)
+            | crate::ir::Instruction::Syscall(..)
             | crate::ir::Instruction::NoOp(..)
             | crate::ir::Instruction::Copy(..)
             | crate::ir::Instruction::ElemSet(..)

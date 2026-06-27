@@ -1,0 +1,8 @@
+fn exit(exit_code: u8) void {
+    let ec = exit_code as usize;
+    syscall1(60, ec);
+}
+
+pub fn main() void {
+    exit(101);
+}

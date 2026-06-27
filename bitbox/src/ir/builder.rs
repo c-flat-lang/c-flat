@@ -4,7 +4,7 @@ use crate::ir::{
     instruction::{
         CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt,
         IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi, IRef,
-        IRem, IReturn, ISub, IXOr, Label,
+        IRem, IReturn, ISub, ISyscall, IXOr, Label,
     },
 };
 
@@ -121,6 +121,14 @@ impl<'a> AssemblerBuilder<'a> {
     #[cfg(not(feature = "uuids"))]
     pub fn label_counter(&self) -> usize {
         self.label_counter
+    }
+
+    pub fn is_current_block_empty(&self) -> bool {
+        let Some(block) = self.blocks.last() else {
+            return false;
+        };
+
+        block.instructions.is_empty()
     }
 
     fn push_instruction(&mut self, instruction: impl Into<Instruction>) {
@@ -467,12 +475,13 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
-    pub fn is_current_block_empty(&self) -> bool {
-        let Some(block) = self.blocks.last() else {
-            return false;
-        };
-
-        block.instructions.is_empty()
+    pub fn syscall<T>(&mut self, args: impl IntoIterator<Item = T>) -> &mut Self
+    where
+        T: Into<Operand>,
+    {
+        let instruction = ISyscall::new(args);
+        self.push_instruction(instruction);
+        self
     }
 }
 

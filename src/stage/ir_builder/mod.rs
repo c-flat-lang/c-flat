@@ -747,6 +747,15 @@ impl Lowerable for ExprCall {
             Some(des)
         };
 
+        if [
+            "syscall1", "syscall2", "syscall3", "syscall4", "syscall5", "syscall6",
+        ]
+        .contains(&callee.as_str())
+        {
+            assembler.syscall(args);
+            return None;
+        }
+
         assembler.call(des_var.clone(), callee, &args);
 
         des_var
@@ -967,23 +976,65 @@ impl Lowerable for ExprTypeCast {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
+        use std::cmp::Ordering;
         let src_var = self.expr.lower(assembler, ctx)?;
         let des_ty = self.target_type.as_bitbox_type(&ctx.target);
         let src_ty = src_var.ty.clone();
         let des = assembler.var(des_ty.clone());
         let cast_kind = match (des_ty, src_ty) {
-            (Type::Signed(_), Type::Unsigned(_)) => ir::CastKind::UnsignedToSigned,
-            (Type::Unsigned(_), Type::Signed(_)) => ir::CastKind::SignedToUnsigned,
+            (Type::Signed(des_bits), Type::Unsigned(src_bits)) => match des_bits.cmp(&src_bits) {
+                Ordering::Equal => {
+                    assembler.cast(des.clone(), src_var, ir::CastKind::UnsignedToSigned);
+                    return Some(des);
+                }
+                Ordering::Greater => {
+                    let mid = assembler.var(Type::Unsigned(des_bits));
+                    assembler.cast(mid.clone(), src_var, ir::CastKind::ZeroExtend);
+                    assembler.cast(des.clone(), mid, ir::CastKind::UnsignedToSigned);
+                    return Some(des);
+                }
+                Ordering::Less => {
+                    let mid = assembler.var(Type::Signed(des_bits));
+                    assembler.cast(mid.clone(), src_var, ir::CastKind::Truncate);
+                    assembler.cast(des.clone(), mid, ir::CastKind::UnsignedToSigned);
+                    return Some(des);
+                }
+            },
+            (Type::Unsigned(des_bits), Type::Signed(src_bits)) => match des_bits.cmp(&src_bits) {
+                Ordering::Equal => {
+                    assembler.cast(des.clone(), src_var, ir::CastKind::SignedToUnsigned);
+                    return Some(des);
+                }
+                Ordering::Greater => {
+                    let mid = assembler.var(Type::Signed(des_bits));
+                    assembler.cast(mid.clone(), src_var, ir::CastKind::SignExtend);
+                    assembler.cast(des.clone(), mid, ir::CastKind::SignedToUnsigned);
+                    return Some(des);
+                }
+                Ordering::Less => {
+                    let mid = assembler.var(Type::Signed(des_bits));
+                    assembler.cast(mid.clone(), src_var, ir::CastKind::Truncate);
+                    assembler.cast(des.clone(), mid, ir::CastKind::SignedToUnsigned);
+                    return Some(des);
+                }
+            },
             (Type::Float(_), Type::Signed(_)) => ir::CastKind::IntToFloat,
             (Type::Float(_), Type::Unsigned(_)) => ir::CastKind::IntToFloat,
             (Type::Signed(_), Type::Float(_)) => ir::CastKind::FloatToInt,
             (Type::Unsigned(_), Type::Float(_)) => ir::CastKind::FloatToInt,
+            (Type::Unsigned(src_bytes), Type::Unsigned(des_bytes)) if des_bytes < src_bytes => {
+                ir::CastKind::Truncate
+            }
+            (Type::Unsigned(src_bytes), Type::Unsigned(des_bytes)) if des_bytes > src_bytes => {
+                ir::CastKind::ZeroExtend
+            }
+            (Type::Signed(des_bits), Type::Signed(src_bits)) => match des_bits.cmp(&src_bits) {
+                Ordering::Equal => ir::CastKind::NoOp,
+                Ordering::Greater => ir::CastKind::SignExtend,
+                Ordering::Less => ir::CastKind::Truncate,
+            },
             (dst, src) if dst == src => ir::CastKind::NoOp,
-            _ => unimplemented!(
-                "Unsupported cast from {:?} to {:?}",
-                src_var.ty,
-                self.target_type
-            ),
+            _ => unimplemented!("Unsupported cast from {:?} to {:?}", src_var.ty, des.ty),
         };
         assembler.cast(des.clone(), src_var, cast_kind);
         Some(des)

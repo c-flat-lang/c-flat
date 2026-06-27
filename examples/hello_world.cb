@@ -1,12 +1,18 @@
-extern C fn write_char(u8) void;
-
 fn println(string: ref [u8]) void {
-    let mut i: usize = 0;
-    while i < string.len {
-        write_char(string[i]);
-        i = i + 1;
-    }
-    write_char(10);
+    syscall3(
+        1,            // SYS_write
+        1,            // stdout
+        string.data,  // pointer to bytes
+        string.len    // length
+    );
+
+    let nl: [1; u8] = ['\n'];
+    syscall3(
+        1,   // SYS_write
+        1,   // stdout
+        &nl, // pointer to bytes
+        1    // length
+    );
 }
 
 pub fn main() void {
