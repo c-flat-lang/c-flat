@@ -83,6 +83,10 @@ pub enum Instruction {
     Not(INot),
     /// `@cast <kind> <type> : <des>, <src>`
     Cast(ICast),
+    /// `@bsr <type> : <des>, <rhs>, <lhs>`
+    BitShiftRight(IBitShiftRight),
+    /// `@bwand <type> : <des>, <rhs>, <lhs>`
+    BitWiseAnd(IBitWiseAnd),
     /// `@syscall <num>, <arg1>, ...<arg6>`
     Syscall(ISyscall),
 }
@@ -120,6 +124,8 @@ impl fmt::Display for Instruction {
             Self::Ref(iref) => write!(f, "{iref}"),
             Self::Not(inot) => write!(f, "{inot}"),
             Self::Cast(icast) => write!(f, "{icast}"),
+            Self::BitShiftRight(ibsr) => write!(f, "{ibsr}"),
+            Self::BitWiseAnd(ibwand) => write!(f, "{ibwand}"),
             Self::Syscall(isyscall) => write!(f, "{isyscall}"),
         }
     }
@@ -922,6 +928,80 @@ impl fmt::Display for ICast {
 impl From<ICast> for Instruction {
     fn from(i: ICast) -> Self {
         Instruction::Cast(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IBitShiftRight {
+    pub des: Variable,
+    pub rhs: Operand,
+    pub lhs: Operand,
+}
+
+impl IBitShiftRight {
+    pub fn new(des: impl Into<Variable>, lhs: impl Into<Operand>, rhs: impl Into<Operand>) -> Self {
+        Self {
+            des: des.into(),
+            lhs: lhs.into(),
+            rhs: rhs.into(),
+        }
+    }
+}
+
+impl fmt::Display for IBitShiftRight {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}, {}",
+            Paint::blue("@bsr"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_op(&self.lhs),
+            color_op(&self.rhs),
+        )
+    }
+}
+
+impl From<IBitShiftRight> for Instruction {
+    fn from(i: IBitShiftRight) -> Self {
+        Instruction::BitShiftRight(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IBitWiseAnd {
+    pub des: Variable,
+    pub rhs: Operand,
+    pub lhs: Operand,
+}
+
+impl IBitWiseAnd {
+    pub fn new(des: impl Into<Variable>, rhs: impl Into<Operand>, lhs: impl Into<Operand>) -> Self {
+        Self {
+            des: des.into(),
+            lhs: lhs.into(),
+            rhs: rhs.into(),
+        }
+    }
+}
+
+impl fmt::Display for IBitWiseAnd {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}, {}",
+            Paint::blue("@bsr"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_op(&self.lhs),
+            color_op(&self.rhs),
+        )
+    }
+}
+
+impl From<IBitWiseAnd> for Instruction {
+    fn from(i: IBitWiseAnd) -> Self {
+        Instruction::BitWiseAnd(i)
     }
 }
 

@@ -273,6 +273,8 @@ pub enum Instruction {
     /// Integer division (rdx:rax implicit)
     Cqo,
     Idiv(Location),
+    Shr(Location, Location),
+    Sar(Location, Location),
     /// requires args see [docs](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md#x86_64-64_bit)
     Syscall,
     /// Integer division (docs)[https://www.aldeid.com/wiki/X86-assembly/Instructions/cdq]
@@ -338,6 +340,8 @@ impl std::fmt::Display for Instruction {
             Self::Movsx(dst, src) => write!(f, "  movsx {dst}, {src}"),
             Self::Cqo => write!(f, "  cqo"),
             Self::Idiv(src) => write!(f, "  idiv {src}"),
+            Self::Sar(des, src) => write!(f, "  sar {des}, {src}"),
+            Self::Shr(des, src) => write!(f, "  shr {des}, {src}"),
             Self::Syscall => write!(f, "  syscall"),
             Self::Cdq => write!(f, "  cdq"),
         }
@@ -1049,6 +1053,22 @@ impl Assembler {
 
     pub fn idiv(&mut self, src: impl Into<Location>) -> &mut Self {
         self.push_to(self.current_section, Instruction::Idiv(src.into()));
+        self
+    }
+
+    pub fn shr(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Shr(lhs.into(), rhs.into()),
+        );
+        self
+    }
+
+    pub fn sar(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Sar(lhs.into(), rhs.into()),
+        );
         self
     }
 

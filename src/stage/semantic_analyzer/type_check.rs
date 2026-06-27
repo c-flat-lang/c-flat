@@ -16,27 +16,27 @@ impl Type {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
             (
                 TypeKind::SignedTargetPointerNumber,
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::SignedTargetPointerNumber,
             ) => Some(self.clone()),
             (
                 TypeKind::UnsignedTargetPointerNumber,
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::UnsignedTargetPointerNumber,
             ) => Some(self.clone()),
             (
                 TypeKind::UnsignedNumber(lhs),
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(self.clone()),
             (
                 TypeKind::SignedNumber(lhs),
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::SignedNumber(rhs),
             ) if lhs == rhs => Some(self.clone()),
             (
                 TypeKind::Float(lhs),
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::Float(rhs),
             ) if lhs == rhs => Some(self.clone()),
 

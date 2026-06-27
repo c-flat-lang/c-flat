@@ -358,18 +358,20 @@ impl Lowerable for ExprBinary {
 
         let des = assembler.var(lhs.ty.clone()); // Or infer type
         match self.op.kind {
-            TokenKind::Plus => assembler.add(des.clone(), lhs, rhs),
-            TokenKind::Minus => assembler.sub(des.clone(), lhs, rhs),
-            TokenKind::Star => assembler.mul(des.clone(), lhs, rhs),
-            TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
-            TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
-            TokenKind::Less => assembler.lt(des.clone(), lhs, rhs),
+            TokenKind::Ampersand => assembler.bwand(des.clone(), lhs, rhs),
+            TokenKind::BitShiftRight => assembler.bsr(des.clone(), lhs, rhs),
             TokenKind::EqualEqual => assembler.eq(des.clone(), lhs, rhs),
+            TokenKind::Greater => assembler.gt(des.clone(), lhs, rhs),
             TokenKind::GreaterEqual => assembler.gte(des.clone(), lhs, rhs),
-            TokenKind::LessEqual => assembler.lte(des.clone(), lhs, rhs),
             TokenKind::Keyword(Keyword::And) => assembler.and(des.clone(), lhs, rhs),
             TokenKind::Keyword(Keyword::Or) => assembler.or(des.clone(), lhs, rhs),
+            TokenKind::Less => assembler.lt(des.clone(), lhs, rhs),
+            TokenKind::LessEqual => assembler.lte(des.clone(), lhs, rhs),
+            TokenKind::Minus => assembler.sub(des.clone(), lhs, rhs),
             TokenKind::Percent => assembler.rem(des.clone(), lhs, rhs),
+            TokenKind::Plus => assembler.add(des.clone(), lhs, rhs),
+            TokenKind::Slash => assembler.div(des.clone(), lhs, rhs),
+            TokenKind::Star => assembler.mul(des.clone(), lhs, rhs),
             op => unimplemented!("Operator not implemented {op:?}"),
         };
         Some(des)

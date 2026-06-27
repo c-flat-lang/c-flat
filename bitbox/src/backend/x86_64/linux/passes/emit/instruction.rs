@@ -6,8 +6,9 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 };
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
-    CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte,
-    IJump, IJumpIf, ILt, ILte, IMul, INot, IOr, IRef, IRem, IReturn, ISub, ISyscall,
+    CastKind, IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp, IDiv,
+    IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf, ILt, ILte, IMul, INot, IOr, IRef, IRem, IReturn,
+    ISub, ISyscall,
 };
 use crate::ir::{AbiChunk, Operand, Type};
 
@@ -1628,6 +1629,71 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
                     .alloc
                     .store_variable(&self.des, Location::Reg(narrowed));
             }
+        }
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IBitShiftRight {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering bit shift right");
+        let shift = self.rhs.lower(ctx, target)?;
+        let count_reg = target
+            .assembler
+            .materialize_value_into_reg(&shift, PhysReg::Rcx);
+
+        let value = self.lhs.lower(ctx, target)?;
+        let value_reg = target.assembler.materialize_value(&value);
+
+        match &self.des.ty {
+            Type::Unsigned(..) => {
+                target
+                    .assembler
+                    .shr(value_reg.cast_to::<Reg32>(), count_reg.cast_to::<Reg8>());
+            }
+            Type::Signed(..) => {
+                target
+                    .assembler
+                    .sar(value_reg.cast_to::<Reg32>(), count_reg.cast_to::<Reg8>());
+            }
+            ty => panic!("IBitShiftRight {ty}"),
+        }
+        target
+            .assembler
+            .alloc
+            .store_variable(&self.des, Location::Reg(value_reg));
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IBitWiseAnd {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering bit wise and");
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        match &self.des.ty {
+            Type::Unsigned(..) | Type::Signed(..) => {
+                let lhs_reg = target.assembler.materialize_value(&lhs);
+                target.assembler.and(lhs_reg, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_reg));
+            }
+            ty => panic!("IBitWiseAnd {ty}"),
         }
 
         Ok(())

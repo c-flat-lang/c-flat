@@ -336,6 +336,8 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
+            ir::Instruction::BitShiftRight(ibsr) => ibsr.lower(ctx, target)?,
+            ir::Instruction::BitWiseAnd(ibwand) => ibwand.lower(ctx, target)?,
             ir::Instruction::Syscall(isyscall) => isyscall.lower(ctx, target)?,
         }
         Ok(())

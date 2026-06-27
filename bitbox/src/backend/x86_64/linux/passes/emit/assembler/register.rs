@@ -15,6 +15,8 @@ pub struct VReg {
     pub constraint: RegConstraint,
 }
 
+// FIXME: when casting to a reg typically you would want the same reg like Reg64::Rax → Reg8::Al and
+// not some random register.
 impl VReg {
     pub fn with_constraint(mut self, constraint: RegConstraint) -> Self {
         self.constraint = constraint;

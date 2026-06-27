@@ -197,6 +197,7 @@ impl<'a> Iterator for Tokenizer<'a> {
             value if value.is_ascii_whitespace() => self.skip_char(),
             '/' if self.peek_char('/') => self.skip_line(),
             '=' if self.peek_char('=') => self.double_char(TokenKind::EqualEqual, "=="),
+            '>' if self.peek_char('>') => self.double_char(TokenKind::BitShiftRight, ">>"),
             '>' if self.peek_char('=') => self.double_char(TokenKind::GreaterEqual, ">="),
             '<' if self.peek_char('=') => self.double_char(TokenKind::LessEqual, "<="),
             '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),
