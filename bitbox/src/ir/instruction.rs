@@ -939,7 +939,7 @@ pub struct IBitShiftRight {
 }
 
 impl IBitShiftRight {
-    pub fn new(des: impl Into<Variable>, rhs: impl Into<Operand>, lhs: impl Into<Operand>) -> Self {
+    pub fn new(des: impl Into<Variable>, lhs: impl Into<Operand>, rhs: impl Into<Operand>) -> Self {
         Self {
             des: des.into(),
             lhs: lhs.into(),

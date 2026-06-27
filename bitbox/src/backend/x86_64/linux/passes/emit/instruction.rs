@@ -1644,7 +1644,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IBitShiftRight {
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering bit shift right");
         let shift = self.rhs.lower(ctx, target)?;
-        target
+        let count_reg = target
             .assembler
             .materialize_value_into_reg(&shift, PhysReg::Rcx);
 
@@ -1653,10 +1653,14 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IBitShiftRight {
 
         match &self.des.ty {
             Type::Unsigned(..) => {
-                target.assembler.shr(value_reg.cast_to::<Reg32>(), Reg8::Cl);
+                target
+                    .assembler
+                    .shr(value_reg.cast_to::<Reg32>(), count_reg.cast_to::<Reg8>());
             }
             Type::Signed(..) => {
-                target.assembler.sar(value_reg.cast_to::<Reg32>(), Reg8::Cl);
+                target
+                    .assembler
+                    .sar(value_reg.cast_to::<Reg32>(), count_reg.cast_to::<Reg8>());
             }
             ty => panic!("IBitShiftRight {ty}"),
         }
