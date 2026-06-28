@@ -23,12 +23,14 @@ pub fn front_end_compiler(src: &str, cli_options: Cli) -> Result<bitbox::ir::Mod
         }
     }
 
-    let mut ast = stage::parser::Parser::default().run(tokens)?;
+    let ast = stage::parser::Parser::default().run(tokens)?;
 
     if let Some(DebugMode::Ast) = cli_options.debug_mode() {
         let string = format!("{:#?}", ast);
         web_sys::console::log_1(&string.into());
     }
+
+    let mut ast = stage::monomorphize::Monomorphizer::default().run(ast)?;
 
     let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut ast)?;
 
@@ -87,12 +89,13 @@ pub fn compile_source(
 
 #[cfg(not(feature = "wasm"))]
 pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
+    use crate::error::{Report, ScopedReport};
     use crate::stage::parser::ast::Item;
     use std::path::Path;
 
     let entry = Path::new(&cli_options.file_path);
     let loader = stage::module_loader::ModuleLoader::new(cli_options.unix_newlines);
-    let mut program = loader.load(entry)?;
+    let program = loader.load(entry)?;
 
     if let Some(DebugMode::Token) = cli_options.debug_mode {
         for module in &program.modules {
@@ -112,8 +115,36 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         std::process::exit(0);
     }
 
+    // Spans are byte offsets into a specific module's source; once we flatten we
+    // can only render diagnostics against one source, so use the entry module's.
+    let entry_path = program.modules[0].path.display().to_string();
+    let entry_source = program.modules[0].source.clone();
+    let scope = |err: Box<dyn Report>| -> Box<dyn Report> {
+        Box::new(ScopedReport::new(
+            entry_path.clone(),
+            entry_source.clone(),
+            err,
+        ))
+    };
+
+    // Compile every reachable module's items as one program. v1 uses a flat
+    // namespace, so top level names must be unique across modules.
+    // Easiest solution for now, at lest until true namespace separation can be implemented.
+    let items: Vec<Item> = program
+        .modules
+        .into_iter()
+        .flat_map(|module| module.items)
+        .collect();
+
+    // Lower generics to concrete, monomorphized items before any type checking;
+    // every later stage only ever sees concrete types.
+    let mut items = stage::monomorphize::Monomorphizer::default()
+        .run(items)
+        .map_err(scope)?;
+
     let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default()
-        .analyze_program(&mut program.modules)?;
+        .run(&mut items)
+        .map_err(scope)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
         eprintln!("{:#?}", symbol_table);
@@ -124,16 +155,8 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         std::process::exit(0);
     }
 
-    // Compile every reachable module's items as one program. v1 uses a flat
-    // namespace, so top level names must be unique across modules.
-    // Easiest solution for now, at lest until true namespace separation can be implemented.
-    let ast: Vec<Item> = program
-        .modules
-        .into_iter()
-        .flat_map(|module| module.items)
-        .collect();
-
-    let module = stage::ir_builder::IRBuilder::new(cli_options.target).run((symbol_table, ast))?;
+    let module =
+        stage::ir_builder::IRBuilder::new(cli_options.target).run((symbol_table, items))?;
 
     if let Some(DebugMode::Ir) = cli_options.debug_mode {
         eprintln!("{}", module);

@@ -383,7 +383,7 @@ pub enum TypeDef {
     Struct(Struct),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub visibility: Visibility,
     pub fn_token: Token,
@@ -451,7 +451,7 @@ impl Statement {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Param {
     pub name: Token,
     pub ty: Type,

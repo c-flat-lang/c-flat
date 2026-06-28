@@ -254,15 +254,7 @@ impl<'st> TypeResolver<'st> {
             TypeKind::Enum(_) => todo!("Enum"),
             TypeKind::Name(name) => {
                 if let Some(symbol) = self.symbol_table.get(&name.lexeme) {
-                    if !self.suppress_errors {
-                        #[cfg(not(feature = "debug"))]
-                        let error = ErrorUndefinedSymbol::Type(found);
-                        #[cfg(feature = "debug")]
-                        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
-                        #[cfg(feature = "debug")]
-                        let error = ErrorUndefinedSymbol::TypeDebug(found, compiler_line);
-                        self.errors.push(Box::new(error));
-                    }
+                    *ty = symbol.ty.clone();
                     return;
                 }
 

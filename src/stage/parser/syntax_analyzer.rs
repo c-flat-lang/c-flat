@@ -774,11 +774,21 @@ impl Parser {
                     }
                     return Ok(ast::Expr::Path(ast::ExprPath { segments }));
                 }
-                if !self.restrict_struct_literal
-                    && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
-                {
+
+                if self.peek(TokenKind::LeftTypeCradle) {
                     let type_args = self.parse_type_args()?;
-                    return self.parse_struct_instantiation(token, type_args.as_deref());
+                    if !self.restrict_struct_literal && self.peek(TokenKind::LeftBrace) {
+                        return self.parse_struct_instantiation(token, type_args.as_deref());
+                    }
+                    let left_paren = self.consume(TokenKind::LeftParen)?;
+                    return self.finish_call(
+                        ast::Expr::Identifier(token),
+                        left_paren,
+                        type_args.as_deref(),
+                    );
+                }
+                if !self.restrict_struct_literal && self.peek(TokenKind::LeftBrace) {
+                    return self.parse_struct_instantiation(token, None);
                 }
                 Ok(ast::Expr::Identifier(token))
             }
