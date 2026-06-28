@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use crate::error::{
     ErrorExpectedKeyWord, ErrorExpectedToken, ErrorExpectedType, ErrorMissingPairedClosingChar,
-    ErrorUnexpectedEndOfInput, ErrorUnexpectedExpression, ErrorUnexpectedTopLevelItem, Result,
+    ErrorUnexpectedEndOfInput, ErrorUnexpectedTopLevelItem, Result,
 };
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
 use crate::stage::parser::ast::{self, ExprMemberAccess, TypeParams};
@@ -336,6 +336,16 @@ impl Parser {
                     span,
                 })
             }
+            TokenKind::LeftBracket if self.peek(TokenKind::Identifier) => {
+                let ty = self.parse_type()?;
+                let right_brace = self.consume(TokenKind::RightBracket)?;
+                let span = tok.span.start..right_brace.span.end;
+                Ok(ast::Type {
+                    mut_token,
+                    kind: ast::TypeKind::Slice(Box::new(ty)),
+                    span,
+                })
+            }
             TokenKind::LeftBracket => {
                 let count = self.consume(TokenKind::Number)?;
                 self.consume(TokenKind::Semicolon)?;
@@ -526,13 +536,27 @@ impl Parser {
     }
 
     fn parse_and(&mut self) -> Result<ast::Expr> {
-        let mut left = self.parse_comparison()?;
+        let mut left = self.parse_bitwise()?;
         while let Some(op) = self.next_if_token_kind_eq(TokenKind::Keyword(Keyword::And)) {
             let right = Box::new(self.parse_comparison()?);
             let binary_expr = ast::ExprBinary {
                 left: Box::new(left),
                 right,
                 op,
+            };
+            left = ast::Expr::Binary(binary_expr);
+        }
+        Ok(left)
+    }
+
+    fn parse_bitwise(&mut self) -> Result<ast::Expr> {
+        let mut left = self.parse_comparison()?;
+        while let Some(op) = self.lexer.next_if(one_of(&[TokenKind::Ampersand])) {
+            let right = self.parse_comparison()?;
+            let binary_expr = ast::ExprBinary {
+                left: Box::new(left),
+                op,
+                right: Box::new(right),
             };
             left = ast::Expr::Binary(binary_expr);
         }
@@ -562,7 +586,7 @@ impl Parser {
     }
 
     fn parse_type_casting(&mut self) -> Result<ast::Expr> {
-        let mut left = self.parse_term()?;
+        let mut left = self.parse_bit_shift()?;
         while let Some(op) = self
             .lexer
             .next_if(one_of(&[TokenKind::Keyword(Keyword::As)]))
@@ -574,6 +598,20 @@ impl Parser {
                 as_token: op,
             };
             left = ast::Expr::TypeCast(binary_expr)
+        }
+        Ok(left)
+    }
+
+    fn parse_bit_shift(&mut self) -> Result<ast::Expr> {
+        let mut left = self.parse_term()?;
+        while let Some(op) = self.lexer.next_if(one_of(&[TokenKind::BitShiftRight])) {
+            let right = Box::new(self.parse_term()?);
+            let binary_expr = ast::ExprBinary {
+                left: Box::new(left),
+                right,
+                op,
+            };
+            left = ast::Expr::Binary(binary_expr)
         }
         Ok(left)
     }
@@ -622,16 +660,18 @@ impl Parser {
             if self.peek(TokenKind::LeftParen) {
                 let left_paren = self.consume(TokenKind::LeftParen)?;
                 expr = self.finish_call(expr, left_paren, type_args)?;
-            } else if self.peek(TokenKind::LeftBrace) && matches!(expr, ast::Expr::Identifier(_)) {
-                let ast::Expr::Identifier(token) = expr else {
-                    return Err(Box::new(ErrorUnexpectedExpression::new(
-                        expr,
-                        &[TokenKind::Identifier],
-                        #[cfg(feature = "debug")]
-                        format!("{} {}:{}", file!(), line!(), column!()),
-                    )));
-                };
-                expr = self.parse_struct_instantiation(token, type_args)?;
+            // This cause more problems. To add in generic syntax we will need to implement a pratt
+            // parser.
+            // } else if self.peek(TokenKind::LeftBrace) && matches!(expr, ast::Expr::Identifier(_)) {
+            //     let ast::Expr::Identifier(token) = expr else {
+            //         return Err(Box::new(ErrorUnexpectedExpression::new(
+            //             expr,
+            //             &[TokenKind::Identifier],
+            //             #[cfg(feature = "debug")]
+            //             format!("{} {}:{}", file!(), line!(), column!()),
+            //         )));
+            //     };
+            //     expr = self.parse_struct_instantiation(token, type_args)?;
             } else if self.peek(TokenKind::LeftBracket) {
                 let left_bracket = self.consume(TokenKind::LeftBracket)?;
                 let index = self.parse_expr()?;
@@ -724,11 +764,22 @@ impl Parser {
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),
             TokenKind::Identifier => {
-                // if !self.restrict_struct_literal
-                //     && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
-                // {
-                //     return self.parse_struct_instantiation(token);
-                // }
+                // Qualified path: `a::b::c`. `::` is two `Colon` tokens.
+                if self.peek(TokenKind::Colon) {
+                    let mut segments = vec![token];
+                    while self.peek(TokenKind::Colon) {
+                        self.consume(TokenKind::Colon)?;
+                        self.consume(TokenKind::Colon)?;
+                        segments.push(self.consume(TokenKind::Identifier)?);
+                    }
+                    return Ok(ast::Expr::Path(ast::ExprPath { segments }));
+                }
+                if !self.restrict_struct_literal
+                    && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
+                {
+                    let type_args = self.parse_type_args()?;
+                    return self.parse_struct_instantiation(token, type_args.as_deref());
+                }
                 Ok(ast::Expr::Identifier(token))
             }
             TokenKind::Keyword(Keyword::True) => {

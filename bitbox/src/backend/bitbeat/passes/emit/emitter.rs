@@ -106,6 +106,7 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::Gte(..) => todo!("gte"),
             crate::ir::Instruction::Rem(..) => todo!("rem"),
             crate::ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
+            crate::ir::Instruction::Lte(..) => todo!("lte"),
             crate::ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             crate::ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             crate::ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
@@ -119,6 +120,9 @@ impl Lower<BitbeatLowerContext<'_>> for crate::ir::Instruction {
             crate::ir::Instruction::Ref(..) => todo!("@ref"),
             crate::ir::Instruction::Not(..) => todo!("@not"),
             crate::ir::Instruction::Cast(..) => todo!("@cast"),
+            crate::ir::Instruction::BitShiftRight(..) => todo!("@bsr"),
+            crate::ir::Instruction::BitWiseAnd(..) => todo!("@bwand"),
+            crate::ir::Instruction::Syscall(..) => todo!("@syscall"),
         }
         Ok(())
     }

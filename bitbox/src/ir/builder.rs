@@ -2,9 +2,9 @@ use crate::ir::{
     BasicBlock, BlockId, Constant, ExternDecl, Function, Import, Instruction, Module, Operand,
     Type, Variable, Visibility,
     instruction::{
-        CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt,
-        IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, IMul, INoOp, INot, IOr, IPhi, IRef, IRem,
-        IReturn, ISub, IXOr, Label,
+        CastKind, IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp,
+        IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte,
+        IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub, ISyscall, IXOr, Label,
     },
 };
 
@@ -121,6 +121,14 @@ impl<'a> AssemblerBuilder<'a> {
     #[cfg(not(feature = "uuids"))]
     pub fn label_counter(&self) -> usize {
         self.label_counter
+    }
+
+    pub fn is_current_block_empty(&self) -> bool {
+        let Some(block) = self.blocks.last() else {
+            return false;
+        };
+
+        block.instructions.is_empty()
     }
 
     fn push_instruction(&mut self, instruction: impl Into<Instruction>) {
@@ -245,6 +253,28 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
+    /// `@bsr <type> : <des>, <lhs>, <rhs>`
+    pub fn bsr(
+        &mut self,
+        des: impl Into<Variable>,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        self.push_instruction(IBitShiftRight::new(des.into(), lhs.into(), rhs.into()));
+        self
+    }
+
+    /// `@bwand <type> : <des>, <lhs>, <rhs>`
+    pub fn bwand(
+        &mut self,
+        des: impl Into<Variable>,
+        lhs: impl Into<Operand>,
+        rhs: impl Into<Operand>,
+    ) -> &mut Self {
+        self.push_instruction(IBitWiseAnd::new(des.into(), lhs.into(), rhs.into()));
+        self
+    }
+
     /// `@cmp <type> : <des>, <lhs>, <rhs>`
     /// `@cmp u1 : is_one, n, 1`
     pub fn eq(
@@ -339,6 +369,14 @@ impl<'a> AssemblerBuilder<'a> {
         let lhs = lhs.into();
         let rhs = rhs.into();
         self.push_instruction(ILt::new(des, lhs, rhs));
+        self
+    }
+
+    /// `@lte <type> : <des>, <lhs>, <rhs>`
+    pub fn lte(&mut self, des: Variable, lhs: Variable, rhs: Variable) -> &mut Self {
+        let lhs = lhs.into();
+        let rhs = rhs.into();
+        self.push_instruction(ILte::new(des, lhs, rhs));
         self
     }
 
@@ -459,12 +497,20 @@ impl<'a> AssemblerBuilder<'a> {
         self
     }
 
-    pub fn is_current_block_empty(&self) -> bool {
-        let Some(block) = self.blocks.last() else {
-            return false;
-        };
-
-        block.instructions.is_empty()
+    /// @syscall <type> : <des> <num>, <args…>
+    /// `des` is the optional variable that receives the syscall's return value
+    /// (the Linux ABI returns it in `rax`).
+    pub fn syscall<T>(
+        &mut self,
+        des: Option<Variable>,
+        args: impl IntoIterator<Item = T>,
+    ) -> &mut Self
+    where
+        T: Into<Operand>,
+    {
+        let instruction = ISyscall::new(des, args);
+        self.push_instruction(instruction);
+        self
     }
 }
 

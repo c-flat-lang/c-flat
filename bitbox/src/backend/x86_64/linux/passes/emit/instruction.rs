@@ -2,14 +2,24 @@ use super::X86_64LinuxLowerContext;
 use crate::backend::Lower;
 
 use crate::backend::x86_64::linux::passes::emit::assembler::{
-    Location, MemIndexed, Reg, Reg8, Reg16, Reg32, Reg64, RegKind, Stack, XmmReg,
+    Location, MemIndexed, PhysReg, Reg, Reg8, Reg16, Reg32, Reg64, RegKind, Stack, XmmReg,
 };
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
-    CastKind, IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, IDiv, IElemGet, IElemSet, IGt, IGte,
-    IJump, IJumpIf, ILt, IMul, INot, IRef, IRem, IReturn, ISub,
+    CastKind, IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp, IDiv,
+    IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf, ILt, ILte, IMul, INot, IOr, IRef, IRem, IReturn,
+    ISub, ISyscall,
 };
 use crate::ir::{AbiChunk, Operand, Type};
+
+/// Returns true if a location holds an integer/GP value (not an XMM float value).
+fn is_gp_loc(loc: &Location) -> bool {
+    match loc {
+        Location::Reg(reg) => reg.kind() != RegKind::Xmm,
+        Location::Stack(_) => true,
+        _ => false,
+    }
+}
 
 impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
     type Output = Location;
@@ -24,7 +34,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for Operand {
             Operand::ConstantInt(constant) => match constant.ty {
                 Type::Signed(_) | Type::Unsigned(_) => {
                     let reg = target.assembler.alloc.vreg::<Reg64>();
-                    target.assembler.mov(reg, constant.parse::<i64>()?);
+                    let imm = constant
+                        .parse::<i64>()
+                        .or_else(|_| constant.parse::<u64>().map(|u| u as i64))?;
+                    target.assembler.mov(reg, imm);
                     Ok(reg.into())
                 }
                 Type::Float(32) => {
@@ -170,7 +183,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
     type Output = ();
     fn lower(
         &self,
-        _ctx: &mut crate::backend::Context,
+        ctx: &mut crate::backend::Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering return");
@@ -193,7 +206,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                             Location::Stack(s) => s.offset,
                             _ => panic!("struct return value must be on stack"),
                         };
-                        match s.abi_chunks() {
+                        match s.abi_chunks(&ctx.target) {
                             Some(chunks) => {
                                 for (i, chunk) in chunks.iter().enumerate() {
                                     let chunk_src = Stack {
@@ -222,7 +235,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                                 let ptr_reg = target.assembler.alloc.vreg::<Reg64>();
                                 target.assembler.mov(ptr_reg, Location::Stack(hidden_slot));
 
-                                let size = s.size() as usize;
+                                let size = s.size(&ctx.target) as usize;
                                 let full_qwords = size / 8;
                                 let remainder = size % 8;
 
@@ -374,7 +387,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGt {
                 target.assembler.setg(flag);
             }
         }
-        target.assembler.movezx(out, flag);
+        target.assembler.movzx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
         Ok(())
     }
@@ -410,7 +423,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IGte {
                 target.assembler.setge(flag);
             }
         }
-        target.assembler.movezx(out, flag);
+        target.assembler.movzx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
         Ok(())
     }
@@ -431,16 +444,26 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IRem {
 
         match &self.des.ty {
             Type::Unsigned(bits) => todo!("@rem u{bits}"),
-            Type::Signed(_) => {
-                // cqo/idiv require physical rax and rdx
-                target.assembler.mov(Reg64::Rax, lhs);
-                target.assembler.cqo();
-                // idiv divides rdx:rax by src; remainder → rdx
-                target.assembler.idiv(rhs);
-                // capture rdx (remainder) into a vreg for the destination
-                let result = target.assembler.alloc.vreg::<Reg64>();
-                target.assembler.mov(result, Reg64::Rdx);
-                target.assembler.alloc.store_variable(&self.des, result);
+            Type::Signed(bits) => {
+                match bits {
+                    8 | 16 | 32 => {
+                        target.assembler.mov(Reg32::Eax, lhs);
+                        target.assembler.cdq(); // sign-extends EAX → EDX:EAX
+                        target.assembler.idiv(rhs); // remainder → EDX
+                        let result = target.assembler.alloc.vreg::<Reg32>();
+                        target.assembler.mov(result, Reg32::Edx);
+                        target.assembler.alloc.store_variable(&self.des, result);
+                    }
+                    64 => {
+                        target.assembler.mov(Reg64::Rax, lhs);
+                        target.assembler.cqo(); // sign-extends RAX → RDX:RAX
+                        target.assembler.idiv(rhs); // remainder → RDX
+                        let result = target.assembler.alloc.vreg::<Reg64>();
+                        target.assembler.mov(result, Reg64::Rdx);
+                        target.assembler.alloc.store_variable(&self.des, result);
+                    }
+                    b => panic!("Unsupported signed int width: {b}"),
+                }
             }
             Type::Float(bits) => todo!("@rem f{bits}"),
             ty => panic!("Remainder not supported for type {:?}", ty),
@@ -464,15 +487,25 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IDiv {
         let rhs = self.rhs.lower(ctx, target)?;
 
         match &self.des.ty {
-            Type::Signed(_) => {
-                // cqo sign-extends rax into rdx:rax; idiv src: quotient → rax, remainder → rdx
-                target.assembler.mov(Reg64::Rax, lhs);
-                target.assembler.cqo();
-                target.assembler.idiv(rhs);
-                let result = target.assembler.alloc.vreg::<Reg64>();
-                target.assembler.mov(result, Reg64::Rax);
-                target.assembler.alloc.store_variable(&self.des, result);
-            }
+            Type::Signed(bits) => match bits {
+                8 | 16 | 32 => {
+                    target.assembler.mov(Reg32::Eax, lhs);
+                    target.assembler.cdq();
+                    target.assembler.idiv(rhs);
+                    let result = target.assembler.alloc.vreg::<Reg32>();
+                    target.assembler.mov(result, Reg32::Eax);
+                    target.assembler.alloc.store_variable(&self.des, result);
+                }
+                64 => {
+                    target.assembler.mov(Reg64::Rax, lhs);
+                    target.assembler.cqo();
+                    target.assembler.idiv(rhs);
+                    let result = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.mov(result, Reg64::Rax);
+                    target.assembler.alloc.store_variable(&self.des, result);
+                }
+                b => panic!("Unsupported signed int width: {b}"),
+            },
             Type::Float(32) => {
                 let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
                 target.assembler.movss(lhs_xmm, lhs);
@@ -529,7 +562,43 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILt {
                 target.assembler.setl(flag);
             }
         }
-        target.assembler.movezx(out, flag);
+        target.assembler.movzx(out, flag);
+        target.assembler.alloc.store_variable(&self.des, out);
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ILte {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering lt");
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+        let flag = target.assembler.alloc.vreg::<Reg8>();
+        let out = target.assembler.alloc.vreg::<Reg64>();
+        match self.lhs.ty() {
+            Some(Type::Float(32)) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomiss(Location::Reg(lhs_xmm), rhs);
+                target.assembler.setb(flag);
+            }
+            Some(Type::Float(64)) => {
+                let lhs_xmm = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(Location::Reg(lhs_xmm), lhs);
+                target.assembler.ucomisd(Location::Reg(lhs_xmm), rhs);
+                target.assembler.setb(flag);
+            }
+            _ => {
+                target.assembler.cmp(lhs.clone(), rhs.clone());
+                target.assembler.setle(flag);
+            }
+        }
+        target.assembler.movzx(out, flag);
         target.assembler.alloc.store_variable(&self.des, out);
         Ok(())
     }
@@ -574,6 +643,50 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IMul {
                     .store_variable(&self.des, Location::Reg(lhs_reg));
             }
         }
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IOr {
+    type Output = ();
+
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<(), crate::error::Error> {
+        target.assembler.comment("lowering logical or");
+
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        let out = target.assembler.alloc.vreg::<Reg64>();
+
+        let true_lbl = &format!(
+            "or_true_{}_{}_{}",
+            target.function_name, target.block_id.0, target.instr_index
+        );
+        let done_lbl = &format!(
+            "or_done_{}_{}_{}",
+            target.function_name, target.block_id.0, target.instr_index
+        );
+
+        target.assembler.test(lhs.clone(), lhs);
+        target.assembler.jnz(true_lbl);
+
+        target.assembler.test(rhs.clone(), rhs);
+        target.assembler.jnz(true_lbl);
+
+        target.assembler.mov(out, 0);
+        target.assembler.jmp(done_lbl);
+
+        target.assembler.define_label(true_lbl);
+        target.assembler.mov(out, 1);
+
+        target.assembler.define_label(done_lbl);
+
+        target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
     }
@@ -731,7 +844,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
         // pointer in RDI as the implicit first argument. Allocate space now so we can LEA it.
         let memory_class_ret_slot: Option<Stack> = if let Some(variable) = &self.des {
             if let Type::Struct(s) = &variable.ty {
-                if s.abi_chunks().is_none() {
+                if s.abi_chunks(&ctx.target).is_none() {
                     let slot = target.assembler.alloc.alloc_stack(&variable.ty, 1);
                     let addr_reg = target.assembler.alloc.vreg::<Reg64>();
                     target.assembler.lea(addr_reg, Location::Stack(slot));
@@ -755,7 +868,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
 
         for (src, ty) in &spilled_args {
             match ty.as_ref() {
-                Some(Type::Struct(s)) => match s.abi_chunks() {
+                Some(Type::Struct(s)) => match s.abi_chunks(&ctx.target) {
                     Some(chunks) => {
                         let base_offset = match src {
                             Location::Stack(s) => s.offset,
@@ -912,7 +1025,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
                     target.assembler.alloc.store_variable(variable, xmm);
                 }
                 Type::Struct(s) => {
-                    match s.abi_chunks() {
+                    match s.abi_chunks(&ctx.target) {
                         Some(chunks) => {
                             let stack = target.assembler.alloc.alloc_stack(&variable.ty, 1);
                             for (i, chunk) in chunks.iter().enumerate() {
@@ -998,15 +1111,18 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         let index = self.index.lower(ctx, target)?;
         let value = self.value.lower(ctx, target)?;
 
+        // Materialize base AFTER lowering operands but BEFORE materializing
+        // index/value into registers, so all three are live at the same point.
         let base = target.assembler.materialize_address(&base_ptr);
 
-        // Struct fields: use field_offset with scale=1. Handle float fields with movss/movsd.
+        // Struct fields: use field_offset with scale=1.
         if let Type::Struct(s) = &self.addr.ty {
             let field_idx = match &self.index {
                 Operand::ConstantInt(c) => c.parse::<usize>()?,
                 _ => panic!("IElemSet: dynamic struct field index not supported"),
             };
-            let byte_offset = s.field_offset(field_idx);
+            let byte_offset = s.field_offset(field_idx, &ctx.target);
+            // Materialize offset reg AFTER base so both are live simultaneously.
             let off_reg = target
                 .assembler
                 .materialize_value(&Location::Imm(byte_offset as i64));
@@ -1018,7 +1134,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
 
             match &s.fields[field_idx].1 {
                 Type::Float(32) if matches!(self.value.ty(), Some(Type::Float(_))) => {
-                    // Float value → float field: use movss.
                     let xmm_val = if matches!(&value, Location::Stack(_)) {
                         let xmm = target.assembler.alloc.vreg::<XmmReg>();
                         target.assembler.movss(Location::Reg(xmm), value);
@@ -1029,7 +1144,6 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
                     target.assembler.movss(mem, xmm_val);
                 }
                 Type::Float(64) if matches!(self.value.ty(), Some(Type::Float(_))) => {
-                    // Float value → float field: use movsd.
                     let xmm_val = if matches!(&value, Location::Stack(_)) {
                         let xmm = target.assembler.alloc.vreg::<XmmReg>();
                         target.assembler.movsd(Location::Reg(xmm), value);
@@ -1040,7 +1154,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
                     target.assembler.movsd(mem, xmm_val);
                 }
                 field_ty => {
-                    let store_size = field_ty.size().min(8);
+                    let store_size = field_ty.size(&ctx.target).min(8);
                     let value_reg = if let Location::Stack(s) = &value {
                         let sized_stack = Stack {
                             offset: s.offset,
@@ -1067,7 +1181,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         }
 
         // Array element store: index * element_size stride.
-        let element_size = self.addr.ty.element_size();
+        let element_size = self.addr.ty.element_size(&ctx.target);
+
+        // Materialize index AFTER base so both vregs are live at the same point,
+        // preventing the allocator from assigning them the same physical register.
         let index_reg = target.assembler.materialize_value(&index);
 
         let value_reg = if let Location::Stack(s) = &value {
@@ -1125,16 +1242,16 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
         if matches!(self.des.ty, Type::Array(..) | Type::Struct(..)) {
             let byte_offset: i32 = match (&self.ptr.ty(), &self.index) {
                 (Some(Type::Struct(s)), Operand::ConstantInt(c)) => {
-                    s.field_offset(c.parse::<usize>()?)
+                    s.field_offset(c.parse::<usize>()?, &ctx.target)
                 }
                 (Some(Type::Pointer(inner)), Operand::ConstantInt(c)) => {
                     if let Type::Struct(s) = inner.as_ref() {
-                        s.field_offset(c.parse::<usize>()?)
+                        s.field_offset(c.parse::<usize>()?, &ctx.target)
                     } else {
-                        c.parse::<i32>()? * self.des.ty.size()
+                        c.parse::<i32>()? * self.des.ty.size(&ctx.target)
                     }
                 }
-                (_, Operand::ConstantInt(c)) => c.parse::<i32>()? * self.des.ty.size(),
+                (_, Operand::ConstantInt(c)) => c.parse::<i32>()? * self.des.ty.size(&ctx.target),
                 _ => panic!("IElemGet: dynamic index for aggregate result type not supported"),
             };
             match resolved_base {
@@ -1188,13 +1305,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
                 Operand::ConstantInt(c) => c.parse::<usize>()?,
                 _ => panic!("IElemGet: dynamic struct field index not supported for scalar"),
             };
-            let byte_offset = s.field_offset(field_idx);
+            let byte_offset = s.field_offset(field_idx, &ctx.target);
             let off = target
                 .assembler
                 .materialize_value(&Location::Imm(byte_offset as i64));
             (off, 1i32)
         } else {
-            (index_reg, self.des.ty.size())
+            (index_reg, self.des.ty.size(&ctx.target))
         };
 
         // Float element loads must use movss/movsd (not mov) since XMM regs can't use `mov`.
@@ -1222,7 +1339,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
 
                 // Use the element-sized register variant for the load to avoid
                 // reading adjacent elements (e.g., use r11d for 4-byte loads).
-                let load_reg = match self.des.ty.size() {
+                let load_reg = match self.des.ty.size(&ctx.target) {
                     1 => out.cast_to::<Reg8>(),
                     2 => out.cast_to::<Reg16>(),
                     4 => out.cast_to::<Reg32>(),
@@ -1256,50 +1373,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICmp {
         let flag_reg = target.assembler.alloc.vreg::<Reg8>();
         target.assembler.sete(flag_reg);
         let out = target.assembler.alloc.vreg::<Reg64>();
-        target.assembler.movezx(out, flag_reg);
+        target.assembler.movzx(out, flag_reg);
         target.assembler.alloc.store_variable(&self.des, out);
 
         Ok(())
     }
 }
-
-// impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
-//     type Output = ();
-//
-//     fn lower(
-//         &self,
-//         ctx: &mut crate::backend::Context,
-//         target: &mut X86_64LinuxLowerContext<'_>,
-//     ) -> Result<(), crate::error::Error> {
-//         let mut asm = target
-//             .assembler
-//             .emit(super::assembler::FunctionSection::Body);
-//         asm.comment("lowering bitwise and");
-//
-//         let lhs = self.lhs.lower(ctx, target)?;
-//         let rhs = self.rhs.lower(ctx, target)?;
-//
-//         let dst = asm.alloc.alloc_temp_reg::<Reg64>();
-//
-//         asm.mov(dst.clone(), lhs);
-//         asm.and(dst.clone(), rhs);
-//
-//         asm.alloc.store_variable(&self.des, dst);
-//         debug_assert!(
-//             target
-//                 .assembler
-//                 .alloc
-//                 .used_registers
-//                 .iter()
-//                 .all(|r| { target.assembler.alloc.reg_to_alloc_id.contains_key(r) }),
-//             "IBitwiseAnd {}:{}:{} Temp register leaked across instruction boundary",
-//             file!(),
-//             line!(),
-//             column!()
-//         );
-//         Ok(())
-//     }
-// }
 
 impl Lower<X86_64LinuxLowerContext<'_>> for IAnd {
     type Output = ();
@@ -1387,7 +1466,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for INot {
         // sete al → al=1 if ZF set (i.e. src was 0 = false → NOT = true)
         target.assembler.sete(flag_reg);
         let out = target.assembler.alloc.vreg::<Reg64>();
-        target.assembler.movezx(out, flag_reg);
+        target.assembler.movzx(out, flag_reg);
         target.assembler.alloc.store_variable(&self.des, out);
         Ok(())
     }
@@ -1397,11 +1476,11 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
     type Output = ();
     fn lower(
         &self,
-        _ctx: &mut crate::backend::Context,
+        ctx: &mut crate::backend::Context,
         target: &mut X86_64LinuxLowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         target.assembler.comment("lowering cast");
-        let src = Operand::Variable(self.src.clone()).lower(_ctx, target)?;
+        let src = Operand::Variable(self.src.clone()).lower(ctx, target)?;
         let src_val = target.assembler.materialize_value(&src);
         let src_ty = self.src.ty.clone();
         let dst_ty = self.des.ty.clone();
@@ -1410,7 +1489,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             // ── Sign-extend: smaller signed → larger signed ─────────────────
             CastKind::SignExtend => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
-                let sized_src = match src_ty.size() {
+                let sized_src = match src_ty.size(&ctx.target) {
                     1 => src_val.cast_to::<Reg8>(),
                     2 => src_val.cast_to::<Reg16>(),
                     4 => src_val.cast_to::<Reg32>(),
@@ -1426,13 +1505,13 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             // ── Zero-extend: smaller unsigned/bool → larger type ─────────────
             CastKind::ZeroExtend => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
-                let sized_src = match src_ty.size() {
+                let sized_src = match src_ty.size(&ctx.target) {
                     1 => src_val.cast_to::<Reg8>(),
                     2 => src_val.cast_to::<Reg16>(),
                     4 => src_val.cast_to::<Reg32>(),
                     _ => src_val,
                 };
-                target.assembler.movezx(dst_reg, sized_src);
+                target.assembler.movzx(dst_reg, sized_src);
                 target
                     .assembler
                     .alloc
@@ -1442,25 +1521,42 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             // ── Truncate: larger int → smaller int ───────────────────────────
             CastKind::Truncate => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
-                // mov the full value, then narrow the register reference for the output.
-                target.assembler.mov(dst_reg, src_val);
-                let narrowed = match dst_ty.size() {
-                    1 => dst_reg.cast_to::<Reg8>(),
-                    2 => dst_reg.cast_to::<Reg16>(),
-                    4 => dst_reg.cast_to::<Reg32>(),
-                    _ => dst_reg,
-                };
+                let signed_src = matches!(src_ty, Type::Signed(_));
+                match dst_ty.size(&ctx.target) {
+                    1 => {
+                        if signed_src {
+                            target.assembler.movsx(dst_reg, src_val.cast_to::<Reg8>());
+                        } else {
+                            target.assembler.movzx(dst_reg, src_val.cast_to::<Reg8>());
+                        }
+                    }
+                    2 => {
+                        if signed_src {
+                            target.assembler.movsx(dst_reg, src_val.cast_to::<Reg16>());
+                        } else {
+                            target.assembler.movzx(dst_reg, src_val.cast_to::<Reg16>());
+                        }
+                    }
+                    4 => {
+                        target
+                            .assembler
+                            .mov(dst_reg.cast_to::<Reg32>(), src_val.cast_to::<Reg32>());
+                    }
+                    _ => {
+                        target.assembler.mov(dst_reg, src_val);
+                    }
+                }
                 target
                     .assembler
                     .alloc
-                    .store_variable(&self.des, Location::Reg(narrowed));
+                    .store_variable(&self.des, Location::Reg(dst_reg));
             }
 
             // ── Int → Float ──────────────────────────────────────────────────
             CastKind::IntToFloat => {
                 let xmm = target.assembler.alloc.vreg::<XmmReg>();
                 // cvtsi2ss/cvtsi2sd expect a 32- or 64-bit GP register source.
-                let gp_src = match src_ty.size() {
+                let gp_src = match src_ty.size(&ctx.target) {
                     8 => src_val,
                     _ => src_val.cast_to::<Reg32>(),
                 };
@@ -1481,7 +1577,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             // ── Float → Int (truncating toward zero) ─────────────────────────
             CastKind::FloatToInt => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
-                let gp_dst = match dst_ty.size() {
+                let gp_dst = match dst_ty.size(&ctx.target) {
                     8 => dst_reg,
                     _ => dst_reg.cast_to::<Reg32>(),
                 };
@@ -1525,7 +1621,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             | CastKind::NoOp => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
                 target.assembler.mov(dst_reg, src_val);
-                let narrowed = match dst_ty.size() {
+                let narrowed = match dst_ty.size(&ctx.target) {
                     1 => dst_reg.cast_to::<Reg8>(),
                     2 => dst_reg.cast_to::<Reg16>(),
                     4 => dst_reg.cast_to::<Reg32>(),
@@ -1542,11 +1638,121 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
     }
 }
 
-/// Returns true if a location holds an integer/GP value (not an XMM float value).
-fn is_gp_loc(loc: &Location) -> bool {
-    match loc {
-        Location::Reg(reg) => reg.kind() != RegKind::Xmm,
-        Location::Stack(_) => true,
-        _ => false,
+impl Lower<X86_64LinuxLowerContext<'_>> for IBitShiftRight {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering bit shift right");
+        let shift = self.rhs.lower(ctx, target)?;
+        let count_reg = target
+            .assembler
+            .materialize_value_into_reg(&shift, PhysReg::Rcx);
+
+        let value = self.lhs.lower(ctx, target)?;
+        let value_reg = target.assembler.materialize_value(&value);
+
+        match &self.des.ty {
+            Type::Unsigned(..) => {
+                target
+                    .assembler
+                    .shr(value_reg.cast_to::<Reg32>(), count_reg.cast_to::<Reg8>());
+            }
+            Type::Signed(..) => {
+                target
+                    .assembler
+                    .sar(value_reg.cast_to::<Reg32>(), count_reg.cast_to::<Reg8>());
+            }
+            ty => panic!("IBitShiftRight {ty}"),
+        }
+        target
+            .assembler
+            .alloc
+            .store_variable(&self.des, Location::Reg(value_reg));
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for IBitWiseAnd {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering bit wise and");
+        let lhs = self.lhs.lower(ctx, target)?;
+        let rhs = self.rhs.lower(ctx, target)?;
+
+        match &self.des.ty {
+            Type::Unsigned(..) | Type::Signed(..) => {
+                let lhs_reg = target.assembler.materialize_value(&lhs);
+                target.assembler.and(lhs_reg, rhs);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(lhs_reg));
+            }
+            ty => panic!("IBitWiseAnd {ty}"),
+        }
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ISyscall {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering syscall");
+        const SYSCALL_REGS: &[PhysReg] = &[
+            PhysReg::Rax,
+            PhysReg::Rdi,
+            PhysReg::Rsi,
+            PhysReg::Rdx,
+            PhysReg::R10,
+            PhysReg::R8,
+            PhysReg::R9,
+        ];
+
+        let mut spilled_args: Vec<Location> = Vec::new();
+        for arg in &self.args {
+            let value = arg.lower(ctx, target)?;
+            let spilled = if let Location::Reg(_) = &value {
+                if let Some(ty) = arg.ty() {
+                    let stack = target.assembler.alloc.alloc_stack(ty, 1);
+                    target.assembler.mov(Location::Stack(stack), value.clone());
+                    Location::Stack(stack)
+                } else {
+                    value
+                }
+            } else {
+                value
+            };
+            spilled_args.push(spilled);
+        }
+
+        for (index, location) in spilled_args.iter().enumerate() {
+            target
+                .assembler
+                .materialize_value_into_reg(location, SYSCALL_REGS[index]);
+        }
+
+        target.assembler.syscall();
+
+        // Return Value
+        if let Some(variable) = &self.des {
+            let reg = target.assembler.alloc.vreg::<Reg64>();
+            target.assembler.mov(reg, Reg64::Rax);
+            target.assembler.alloc.store_variable(variable, reg);
+        }
+
+        Ok(())
     }
 }

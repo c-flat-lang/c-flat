@@ -25,13 +25,21 @@ jobs:
             can-fail: true
 
     steps:
+      - name: Toolchain Information
+        run: |
+          rustc --version
+          rustfmt --version
+          rustup --version
+          cargo --version
+          python3 --version
+
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@master
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
@@ -65,9 +73,9 @@ jobs:
         continue-on-error: ${{ matrix.can-fail }}
 
       - name: Rust Tests
-        run: cargo test --workspace --quiet
+        run: cargo test --workspace -- --nocapture
         continue-on-error: ${{ matrix.can-fail }}
 
       - name: Snapshot Tests
-        run: python3 ./testing/test.py --quiet
+        run: python ./testing/test.py --quiet
         continue-on-error: ${{ matrix.can-fail }}

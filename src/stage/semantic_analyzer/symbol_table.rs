@@ -4,30 +4,105 @@ use crate::stage::lexer::token::Token;
 use crate::stage::parser::ast::{self, Expr};
 use std::collections::HashMap;
 
+fn ty(kind: ast::TypeKind) -> ast::Type {
+    ast::Type {
+        mut_token: None,
+        kind,
+        span: 0..1,
+    }
+}
+
+fn create_symbol(name: &str, return_type: ast::TypeKind, args: Vec<ast::TypeKind>) -> Symbol {
+    Symbol {
+        name: name.to_string(),
+        ty: ty(return_type),
+        visibility: ast::Visibility::Public,
+        kind: SymbolKind::Function,
+        is_mutable: false,
+        params: Some(args.into_iter().map(ty).collect()),
+        binding_name: None,
+        fields: None,
+    }
+}
+
 #[derive(Debug)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
     errors: Vec<Box<dyn Report>>,
+    current_source: Option<(String, String)>,
 }
 
 impl Default for SymbolTableBuilder {
     fn default() -> Self {
         let mut table = SymbolTable::default();
         table.enter_scope("global");
+
+        fn usize_ty() -> ast::TypeKind {
+            ast::TypeKind::UnsignedTargetPointerNumber
+        }
+
+        for argc in 1..=6 {
+            table.push(create_symbol(
+                &format!("syscall{}", argc),
+                ast::TypeKind::UnsignedTargetPointerNumber,
+                std::iter::repeat_with(usize_ty).take(argc + 1).collect(),
+            ));
+        }
         table.exit_scope();
 
         Self {
             table,
             errors: Vec::new(),
+            current_source: None,
         }
     }
 }
 
 impl SymbolTableBuilder {
     pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable> {
+        self.collect_signatures(items);
+        self.collect_bodies(items);
+        self.finish()
+    }
+
+    pub fn set_source(&mut self, filename: impl Into<String>, source: impl Into<String>) {
+        self.current_source = Some((filename.into(), source.into()));
+    }
+
+    fn push_error(&mut self, error: Box<dyn Report>) {
+        let error = match &self.current_source {
+            Some((filename, source)) => Box::new(crate::error::ScopedReport::new(
+                filename.clone(),
+                source.clone(),
+                error,
+            )) as Box<dyn Report>,
+            None => error,
+        };
+        self.errors.push(error);
+    }
+
+    pub fn collect_signatures(&mut self, items: &[ast::Item]) {
         for item in items {
-            self.walk_item(item);
+            match item {
+                ast::Item::Function(function) => self.walk_function_signature(function),
+                ast::Item::Type(type_def) => self.walk_type_def(type_def),
+                ast::Item::Use(_) => {}
+                ast::Item::ExternFunction(extern_function) => {
+                    self.walk_extern_function(extern_function)
+                }
+            }
         }
+    }
+
+    pub fn collect_bodies(&mut self, items: &[ast::Item]) {
+        for item in items {
+            if let ast::Item::Function(function) = item {
+                self.walk_function_body(function);
+            }
+        }
+    }
+
+    pub fn finish(self) -> Result<SymbolTable> {
         if !self.errors.is_empty() {
             return Err(Box::new(Errors {
                 errors: self.errors,
@@ -36,28 +111,12 @@ impl SymbolTableBuilder {
         Ok(self.table)
     }
 
-    fn walk_item(&mut self, item: &ast::Item) {
-        match item {
-            ast::Item::Function(function) => self.walk_function(function),
-            ast::Item::Type(type_def) => self.walk_type_def(type_def),
-            ast::Item::Use(r#use) => self.walk_use(r#use),
-            ast::Item::ExternFunction(extern_function) => {
-                self.walk_extern_function(extern_function)
-            }
-        }
-    }
-
-    fn walk_use(&mut self, _: &ast::Use) {
-        todo!()
-    }
-
-    fn walk_function(&mut self, function: &ast::Function) {
+    fn walk_function_signature(&mut self, function: &ast::Function) {
         let ast::Function {
             visibility,
             name,
             params,
             return_type,
-            body,
             ..
         } = function;
 
@@ -70,6 +129,13 @@ impl SymbolTableBuilder {
             params: Some(params.iter().map(|param| param.ty.clone()).collect()),
             ..Default::default()
         });
+    }
+
+    fn walk_function_body(&mut self, function: &ast::Function) {
+        let ast::Function {
+            name, params, body, ..
+        } = function;
+
         self.table.enter_scope(&name.lexeme);
 
         for param in params {
@@ -160,6 +226,7 @@ impl SymbolTableBuilder {
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
+            ast::Expr::Path(expr) => self.walk_expr_path(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
             Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
             Expr::Return(..) => todo!(),
@@ -243,7 +310,24 @@ impl SymbolTableBuilder {
         let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
         #[cfg(feature = "debug")]
         let error = ErrorUndefinedSymbol::TokenDebug(token.clone(), compiler_line);
-        self.errors.push(Box::new(error));
+        self.push_error(Box::new(error));
+    }
+
+    /// A `::`-qualified reference. v1 resolves it to the final segment within the
+    /// flat program namespace; the loader has already verified the import path.
+    fn walk_expr_path(&mut self, path: &ast::ExprPath) {
+        let leaf = path.leaf();
+        if self.table.get(leaf.lexeme.as_str()).is_some() {
+            return;
+        }
+
+        #[cfg(not(feature = "debug"))]
+        let error = ErrorUndefinedSymbol::Token(leaf.clone());
+        #[cfg(feature = "debug")]
+        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+        #[cfg(feature = "debug")]
+        let error = ErrorUndefinedSymbol::TokenDebug(leaf.clone(), compiler_line);
+        self.push_error(Box::new(error));
     }
 
     fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) {

@@ -26,17 +26,25 @@ pub enum Target {
 impl Target {
     pub fn backend(&self) -> Box<dyn backend::Backend> {
         match self {
-            Target::Wasm32 => Box::new(backend::wasm32::Wasm32Backend),
-            Target::X86_64Linux => Box::new(backend::x86_64::linux::X86_64LinuxBackend),
-            Target::Bitbeat => Box::new(backend::bitbeat::BitbeatBackend),
+            Self::Wasm32 => Box::new(backend::wasm32::Wasm32Backend),
+            Self::X86_64Linux => Box::new(backend::x86_64::linux::X86_64LinuxBackend),
+            Self::Bitbeat => Box::new(backend::bitbeat::BitbeatBackend),
+        }
+    }
+
+    pub fn target_pointer_size(&self) -> u8 {
+        match self {
+            Self::Wasm32 => 32,
+            Self::X86_64Linux => 64,
+            Self::Bitbeat => 64,
         }
     }
 
     fn get_new_path(&self, src_path: &str) -> String {
         let extension = match self {
-            Target::Wasm32 => ".wasm",
-            Target::X86_64Linux => "",
-            Target::Bitbeat => ".bb",
+            Self::Wasm32 => ".wasm",
+            Self::X86_64Linux => "",
+            Self::Bitbeat => ".bb",
         };
         let path = src_path.rsplit_once('.').unwrap().0;
         format!("{}{}", path, extension)
@@ -61,9 +69,9 @@ impl std::str::FromStr for Target {
 impl std::fmt::Display for Target {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Target::Bitbeat => "bitbeat",
-            Target::Wasm32 => "wasm32",
-            Target::X86_64Linux => "x86_64-linux",
+            Self::Bitbeat => "bitbeat",
+            Self::Wasm32 => "wasm32",
+            Self::X86_64Linux => "x86_64-linux",
         })
     }
 }
@@ -104,15 +112,17 @@ impl Compiler {
         self
     }
 
-    pub fn file_output_path(&self) -> String {
-        let path = self
-            .src_path
-            .rsplit_once('/')
-            .map(|(dir, file)| (dir.to_string(), file.to_string()))
-            .unwrap_or_else(|| ("".to_string(), self.src_path.to_string()))
-            .1;
-        let file_with_extention = self.target.get_new_path(&path);
-        format!("bin/{file_with_extention}")
+    pub fn file_output_path(&self) -> std::path::PathBuf {
+        let file_name = std::path::Path::new(&self.src_path)
+            .file_name()
+            .and_then(|os| os.to_str())
+            .unwrap_or(&self.src_path);
+
+        let file_with_extension = self.target.get_new_path(file_name);
+
+        let mut out = std::path::PathBuf::from("bin");
+        out.push(file_with_extension);
+        out
     }
 
     pub fn run(&mut self, module: &mut ir::Module) -> Result<PassOutput, error::Error> {
@@ -132,7 +142,7 @@ impl Compiler {
         {
             if self.save_to_file {
                 let path = self.file_output_path();
-                compiler_result.save_to_file(&path, &self.link);
+                compiler_result.save_to_file(path.as_path(), &self.link);
             }
         }
         Ok(PassOutput::Nothing)

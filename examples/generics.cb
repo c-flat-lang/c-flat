@@ -1,12 +1,21 @@
 extern C fn write_char(u8) void;
 extern C fn write_int(s32) void;
 
-type Slice<(T: type)> struct {
-    items: ref T,
+type ArrayList<(T: type)> struct {
+    items: ref [T],
     length: usize,
+    capacity: usize,
 }
 
-fn print(string: ref Slice<(u8)>) void {
+fn init_array_list<(T: type)>() ArrayList<(T)> {
+    return ArrayList<(T)> {
+        .items = [T],
+        .length = 0,
+        .capacity = 16,
+    };
+}
+
+fn print(string: ref [u8]) void {
     let mut i: s32 = 0;
     while i < string.length {
         write_char(string.items[i]);
@@ -20,13 +29,9 @@ fn add<(T: type)>(x: T, y: T) T {
 
 
 pub fn main() void {
-    // s should turn into Slice<u8> by default but currently the compiler doesnt know about Slice.
-    // For now just manually creating it will do.
-    let s = #"Testing String Passing"#;
-    let string: Slice<(u8)> = Slice<(u8)> {
-        .items = &s,
-        .length = s.len,
-    };
+    let list: ArrayList<(s32)> = init_array_list<(s32)>();
+
+    let string: [u8] = "Testing String Passing";
     print(&string);
 
     let num0 = add<(s32)>(123, 321);

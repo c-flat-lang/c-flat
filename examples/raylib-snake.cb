@@ -6,9 +6,9 @@
 // examples/raylib-snake.cb
 
 // runtime.c
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_u8(u8) void;
-extern C fn write_float(f32) void;
+extern C fn write_f32(f32) void;
 extern C fn write_char(u8) void;
 
 // RAYLIB
@@ -26,14 +26,14 @@ type Color struct {
     a: u8,
 }
 
-extern C fn InitWindow as init_window(s32, s32, ref [25; u8]) void;
+extern C fn InitWindow as init_window(s32, s32, ref [u8]) void;
 extern C fn BeginDrawing as begin_drawing() void;
 extern C fn EndDrawing as end_drawing() void;
 extern C fn CloseWindow as close_window() void;
 extern C fn SetTargetFPS as set_target_fps(s32) void;
 extern C fn WindowShouldClose as window_should_close() bool;
 extern C fn ClearBackground as clear_background(Color) void;
-extern C fn DrawText as draw_text(ref [8; u8], s32, s32, s32, s32) void;
+extern C fn DrawText as draw_text(ref [u8], s32, s32, s32, Color) void;
 extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
 extern C fn IsKeyPressed as is_key_pressed(s32) bool;
 extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
@@ -44,30 +44,6 @@ extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) boo
 extern C fn time(s32) s32;
 extern C fn srand(s32) void;
 extern C fn rand() s32;
-
-fn debug_int(c: u8, n: s32) void {
-    write_char(c);
-    write_char(58); // :
-    write_char(32); // space
-    write_int(n);
-    write_char(10); // newline
-}
-
-fn debug_float(c: u8, n: f32) void {
-    write_char(c);
-    write_char(58); // :
-    write_char(32); // space
-    write_float(n);
-    write_char(10); // newline
-}
-
-fn debug_u8(c: u8, n: u8) void {
-    write_char(c);
-    write_char(58); // :
-    write_char(32); // space
-    write_u8(n);
-    write_char(10); // newline
-}
 
 fn rand_range(min: s32, max: s32) s32 {
     if min == max {
@@ -83,6 +59,16 @@ fn rand_bool() bool {
     let max: s32 = 2;
     let results = min + (r % (max - min));
     return results == 1;
+}
+
+fn rand_color() Color {
+    let color: Color = Color {
+        .r = rand_range(0, 255) as u8,
+        .g = rand_range(0, 255) as u8,
+        .b = rand_range(0, 255) as u8,
+        .a = 255,
+    };
+    return color;
 }
 
 fn playerIsCollidingWithFood(px: s32, py: s32, fx: s32, fy: s32) bool {
@@ -107,32 +93,34 @@ pub fn main() s32 {
     srand(time(0));
 
     let background_color = Color {
-        .r = 40 as u8,
-        .g = 44 as u8,
-        .b = 52 as u8,
-        .a = 255 as u8,
+        .r = 40,
+        .g = 44,
+        .b = 52,
+        .a = 255,
+    };
+
+    let text_color = Color {
+        .r = 0,
+        .g = 0,
+        .b = 0,
+        .a = 255,
     };
 
     let player_color = Color {
-        .r = 90 as u8,
-        .g = 157 as u8,
-        .b = 51 as u8,
-        .a = 255 as u8,
+        .r = 90,
+        .g = 157,
+        .b = 51,
+        .a = 255,
     };
 
     let player_body_color = Color {
-        .r = 57 as u8,
-        .g = 137 as u8,
-        .b = 52 as u8,
-        .a = 255 as u8,
+        .r = 57,
+        .g = 137,
+        .b = 52,
+        .a = 255,
     };
 
-    let food_color = Color {
-        .r = rand_range(0, 255) as u8,
-        .g = rand_range(0, 255) as u8,
-        .b = rand_range(0, 255) as u8,
-        .a = 255 as u8,
-    };
+    let mut food_color = rand_color();
 
     // KEYCODES
     let key_w: s32 = 87;
@@ -147,8 +135,10 @@ pub fn main() s32 {
     let GAMEPAD_BUTTON_LEFT_FACE_LEFT: s32 = 4;
 
     let CELL_SIZE: s32 = 32;
-    let screen_width: s32 = 40 * CELL_SIZE;
-    let screen_height: s32 = 25 * CELL_SIZE;
+    let CELL_WIDTH: s32 = 40;
+    let CELL_HEIGHT: s32 = 25;
+    let screen_width: s32 = CELL_WIDTH * CELL_SIZE;
+    let screen_height: s32 = CELL_HEIGHT * CELL_SIZE;
 
     let DIRECTION_UP: u8 = 0;
     let DIRECTION_DOWN: u8 = 1;
@@ -169,33 +159,19 @@ pub fn main() s32 {
 
 
     // FOOD
-    let food_x: s32 = rand_range(0, screen_width / CELL_SIZE);
-    let food_y: s32 = rand_range(0, screen_height / CELL_SIZE);
+    let food_x: s32 = rand_range(0, CELL_WIDTH);
+    let food_y: s32 = rand_range(0, CELL_HEIGHT);
 
-    let title: [25; u8] = #"raylib c-flat snake demo\0"#;
+    let title = "raylib c-flat snake demo\0";
     init_window(screen_width, screen_height, &title);
 
-    let text: [8; u8] = #"Score: \0"#;
-    let score: [2; u8] = #"0\0"#;
+    let text = "Score: \0";
+    let score = "0\0";
 
     set_target_fps(60);
     while !window_should_close() {
         // --------------UPDATE--------------
         let delta = get_frame_time();
-
-        if is_key_pressed(key_space) {
-            score[0] = score[0] + 1 as u8;
-            let r: u8 = (rand_range(0, 255) as u8);
-            food_color.r = r;
-            debug_u8(114, r);
-            let g: u8 = (rand_range(0, 255) as u8);
-            food_color.g = g;
-            debug_u8(103, g);
-            let b: u8 = (rand_range(0, 255) as u8);
-            food_color.b = b;
-            debug_u8(98, b);
-            debug_u8(97, food_color.a);
-        }
 
         if is_key_pressed(key_w) {
             player_direction = DIRECTION_UP;
@@ -250,16 +226,23 @@ pub fn main() s32 {
 
 
             if is_collided {
+                write_char('-');
                 player_body[player_body_index] = 1;
                 player_body_x[player_body_index] = prev_x;
                 player_body_y[player_body_index] = prev_y;
                 player_body_index = player_body_index + 1;
-                food_x = rand_range(0, screen_width / CELL_SIZE);
-                food_y = rand_range(0, screen_width / CELL_SIZE);
-                score[0] = score[0] + 1 as u8;
-                food_color.r = rand_range(0, 255) as u8;
-                food_color.g = rand_range(0, 255) as u8;
-                food_color.b = rand_range(0, 255) as u8;
+                food_x = rand_range(0, CELL_WIDTH);
+                food_y = rand_range(0, CELL_HEIGHT);
+                score[0] = score[0] + 1;
+                // let new_food_color = rand_color();
+                // food_color = new_food_color;
+                // let r = rand_range(0, 255);
+                // food_color = Color {
+                //     .r = r as u8,
+                //     .g = 0 as u8,
+                //     .b = 0 as u8,
+                //     .a = 255,
+                // };https://opentoonz.github.io/e/
             }
 
 
@@ -317,8 +300,8 @@ pub fn main() s32 {
             player_color
         );
 
-        draw_text(&text, 10, 10, 30, 0xFF_00_00_00);
-        draw_text(&score, 120, 10, 30, 0xFF_00_00_00);
+        draw_text(&text, 10, 10, 30, text_color);
+        draw_text(&score, 120, 10, 30, text_color);
 
         end_drawing();
     }

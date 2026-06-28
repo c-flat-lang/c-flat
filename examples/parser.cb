@@ -1,0 +1,82 @@
+extern C fn write_char(u8) void;
+
+pub fn println(string: ref [u8]) void {
+    let mut i: usize = 0;
+    while i < string.len {
+        write_char(string[i]);
+        i = i + 1;
+    }
+    write_char(10);
+}
+
+pub fn print(string: ref [u8]) void {
+    let mut i: usize = 0;
+    while i < string.len {
+        write_char(string[i]);
+        i = i + 1;
+    }
+}
+
+fn isAlpha(c: u8) bool {
+    return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');
+}
+
+fn isNumber(c: u8) bool {
+    return c >= '0' and c <= '9';
+}
+
+fn isAlphaNumeric(c: u8) bool {
+    return isAlpha(c) or isNumber(c);
+}
+
+fn isWhiteSpace(c: u8) bool {
+    return c == '\n' or c == '\t' or c == ' ';
+}
+
+pub fn main() void {
+    let src = 
+        \\pub fn main() void {
+        \\    return 0;
+        \\}
+        ;
+
+    let mut i: usize = 0;
+    while i < src.len {
+        let c = src[i];
+        if isAlpha(c) {
+            let ident: [10; u8] = [0;10];
+            ident[0] = c;
+            let mut ident_idx: usize = 1;
+            while i < src.len and isAlphaNumeric(src[i+1]) {
+                i = i + 1;
+                ident[ident_idx] = src[i];
+                ident_idx = ident_idx + 1;
+            }
+            print("Ident ");
+            println(&ident);
+        } else if isNumber(c) {
+            let number: [10; u8] = [0;10];
+            number[0] = c;
+            let mut number_idx: usize = 1;
+            while i < src.len and isNumber(src[i+1]) {
+                i = i + 1;
+                number[number_idx] = src[i];
+                number_idx = number_idx + 1;
+            }
+            print("Number ");
+            println(&number);
+        } else if c == '{' {
+            println(&"Right Brace");
+        } else if c == '}' {
+            println(&"Left Brace");
+        } else if c == '(' {
+            println(&"Right Paran");
+        } else if c == ')' {
+            println(&"Left Paran");
+        } else if c == ';' {
+            println(&"Simicolon");
+        }
+
+        i = i + 1;
+    }
+}

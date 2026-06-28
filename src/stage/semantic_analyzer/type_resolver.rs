@@ -11,6 +11,7 @@ pub struct TypeResolver<'st> {
     symbol_table: &'st mut SymbolTable,
     generic_args: Option<Vec<(Token, Type)>>,
     errors: Vec<Box<dyn Report>>,
+    suppress_errors: bool,
 }
 
 impl<'st> TypeResolver<'st> {
@@ -19,24 +20,31 @@ impl<'st> TypeResolver<'st> {
             symbol_table,
             generic_args: None,
             errors: Vec::new(),
+            suppress_errors: false,
         }
     }
 
-    pub fn walk_items(mut self, items: &mut [ast::Item]) -> Result<()> {
+    fn resolve_symbol_types(&mut self) {
         let mut symbols: Vec<_> = self
             .symbol_table
             .iter_all()
             .map(|(path, symbol)| (path, symbol.name.clone(), symbol.ty.clone()))
             .collect();
 
+        self.suppress_errors = true;
         for (_, _, ty) in symbols.iter_mut() {
             self.walk_type(ty);
         }
+        self.suppress_errors = false;
 
         for (path, name, ty) in symbols {
             self.symbol_table
                 .get_mut_from_full_scope_path(&path, &name, |symbol| symbol.ty = ty.clone());
         }
+    }
+
+    pub fn walk_items(mut self, items: &mut [ast::Item]) -> Result<()> {
+        self.resolve_symbol_types();
 
         for item in items.iter_mut() {
             self.walk_item(item);
@@ -102,6 +110,7 @@ impl<'st> TypeResolver<'st> {
             Expr::Binary(expr_binary) => self.walk_expr_binary(expr_binary),
             Expr::While(expr_while) => self.walk_expr_while(expr_while),
             Expr::Identifier(token) => {}
+            Expr::Path(_) => {}
             Expr::IfElse(expr_if_else) => self.walk_expr_if_else(expr_if_else),
             Expr::MemberAccess(expr_member_access) => {
                 self.walk_expr_member_access(expr_member_access)
@@ -113,7 +122,10 @@ impl<'st> TypeResolver<'st> {
             Expr::AddressOf(expr_address_of) => self.walk_expr(&mut expr_address_of.expr),
             Expr::Not(expr_not) => self.walk_expr(&mut expr_not.expr),
             Expr::Grouping(expr_grouping) => self.walk_expr(&mut expr_grouping.expr),
-            Expr::TypeCast(expr_cast) => self.walk_expr(&mut expr_cast.expr),
+            Expr::TypeCast(expr_cast) => {
+                self.walk_expr(&mut expr_cast.expr);
+                self.walk_type(&mut expr_cast.target_type);
+            }
         }
     }
 
@@ -242,7 +254,15 @@ impl<'st> TypeResolver<'st> {
             TypeKind::Enum(_) => todo!("Enum"),
             TypeKind::Name(name) => {
                 if let Some(symbol) = self.symbol_table.get(&name.lexeme) {
-                    *ty = symbol.ty.clone();
+                    if !self.suppress_errors {
+                        #[cfg(not(feature = "debug"))]
+                        let error = ErrorUndefinedSymbol::Type(found);
+                        #[cfg(feature = "debug")]
+                        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+                        #[cfg(feature = "debug")]
+                        let error = ErrorUndefinedSymbol::TypeDebug(found, compiler_line);
+                        self.errors.push(Box::new(error));
+                    }
                     return;
                 }
 
@@ -267,21 +287,25 @@ impl<'st> TypeResolver<'st> {
                     self.walk_type(param);
                 }
                 let Some(symbol) = self.symbol_table.get(&name.lexeme) else {
-                    #[cfg(not(feature = "debug"))]
-                    let error = ErrorUndefinedSymbol::Type(found);
-                    #[cfg(feature = "debug")]
-                    let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
-                    #[cfg(feature = "debug")]
-                    let error = ErrorUndefinedSymbol::TypeDebug(found, compiler_line);
-                    self.errors.push(Box::new(error));
+                    if !self.suppress_errors {
+                        #[cfg(not(feature = "debug"))]
+                        let error = ErrorUndefinedSymbol::Type(found);
+                        #[cfg(feature = "debug")]
+                        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+                        #[cfg(feature = "debug")]
+                        let error = ErrorUndefinedSymbol::TypeDebug(found, compiler_line);
+                        self.errors.push(Box::new(error));
+                    }
                     return;
                 };
                 *ty = symbol.ty.clone();
             }
+            TypeKind::Slice(ty) => self.walk_type(ty),
         }
     }
 
-    fn walk_use(&mut self, r#use: &mut ast::Use) {
-        todo!("{:#?}", r#use);
+    fn walk_use(&mut self, _use: &mut ast::Use) {
+        // Imports are resolved by the module loader and the symbol-table pass;
+        // there is nothing to resolve at the type level.
     }
 }

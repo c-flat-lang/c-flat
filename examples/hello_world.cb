@@ -1,3 +1,5 @@
+use modules::io::println;
+
 pub fn main() void {
-    println(#"Hello, World!\n"#);
+    println(&"Hello, World!");
 }

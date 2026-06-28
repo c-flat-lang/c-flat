@@ -66,7 +66,7 @@ impl Pass for ControlFlowGraphPass {
             let mut output = String::new();
             output += &format!("{kind}:\n");
             for (name, data) in data.iter_mut() {
-                data.sort_by(|a, b| a.0.0.cmp(&b.0.0));
+                data.sort_by_key(|a| a.0.0);
                 output += &format!("{name}:\n");
                 for (block_id, in_bounds) in data.iter() {
                     output += &format!("  {block_id:?}:\n");

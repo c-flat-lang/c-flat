@@ -38,7 +38,7 @@ impl Report for ErrorUnexpectedExpression {
                 .map(|k| format!("`{k:?}`"))
                 .collect::<Vec<_>>();
             if expected.len() == 1 {
-                format!("exected {}", expected[0])
+                format!("expected {}", expected[0])
             } else {
                 format!("expected one of: {}", expected.join(", "))
             }
@@ -233,7 +233,7 @@ impl Report for ErrorExpectedToken {
                 .map(|k| format!("`{k:?}`"))
                 .collect::<Vec<_>>();
             let expected_str = if expected.len() == 1 {
-                format!("exected {}", expected[0])
+                format!("expected {}", expected[0])
             } else {
                 format!("expected one of: {}", expected.join(", "))
             };
@@ -478,5 +478,181 @@ impl Report for Errors {
             final_report.push('\n');
         }
         final_report
+    }
+}
+
+/// Wraps an error with the filename and source of the module it originated in.
+///
+/// Spans are byte offsets into a *specific* file's source, so once we compile
+/// across multiple files we can no longer rely on the single `(filename, src)`
+/// pair passed into [`Report::report`]. A `ScopedReport` carries its own copies
+/// and ignores the ones it is handed, so each error always renders against the
+/// file it actually came from.
+#[derive(Debug)]
+pub struct ScopedReport {
+    pub filename: String,
+    pub source: String,
+    pub inner: Box<dyn Report>,
+}
+
+impl ScopedReport {
+    pub fn new(
+        filename: impl Into<String>,
+        source: impl Into<String>,
+        inner: Box<dyn Report>,
+    ) -> Self {
+        Self {
+            filename: filename.into(),
+            source: source.into(),
+            inner,
+        }
+    }
+}
+
+impl Report for ScopedReport {
+    fn report(&self, _filename: &str, _src: &str) -> String {
+        self.inner.report(&self.filename, &self.source)
+    }
+}
+
+/// A free-form error message with no source span (e.g. a file could not be read).
+#[derive(Debug)]
+pub struct ErrorMessage(pub String);
+
+impl Report for ErrorMessage {
+    fn report(&self, _filename: &str, _src: &str) -> String {
+        format!("error: {}\n", self.0)
+    }
+}
+
+/// A `use` path that does not resolve to a file on disk.
+#[derive(Debug)]
+pub struct ErrorUnresolvedImport {
+    pub span: Span,
+    pub path: String,
+    pub note: String,
+    #[cfg(feature = "debug")]
+    pub compiler_line: String,
+}
+
+impl ErrorUnresolvedImport {
+    pub fn new(
+        span: Span,
+        path: impl Into<String>,
+        note: impl Into<String>,
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            span,
+            path: path.into(),
+            note: note.into(),
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
+}
+
+impl Report for ErrorUnresolvedImport {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
+        report.message(format!("unresolved import `{}`", self.path));
+        #[allow(unused_mut)]
+        let mut note = self.note.clone();
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to ErrorUnresolvedImport");
+        }
+        report.note(note);
+        report.lines_above(3);
+        report.build()
+    }
+}
+
+/// Importing (or accessing) a symbol that exists but is not `pub`.
+#[derive(Debug)]
+pub struct ErrorPrivateImport {
+    pub span: Span,
+    pub name: String,
+    pub module: String,
+    #[cfg(feature = "debug")]
+    pub compiler_line: String,
+}
+
+impl ErrorPrivateImport {
+    pub fn new(
+        span: Span,
+        name: impl Into<String>,
+        module: impl Into<String>,
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            span,
+            name: name.into(),
+            module: module.into(),
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
+}
+
+impl Report for ErrorPrivateImport {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
+        report.message(format!("`{}` is private", self.name));
+        #[allow(unused_mut)]
+        let mut note = format!(
+            "`{}` is not declared `pub` in module `{}`",
+            self.name, self.module
+        );
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to ErrorPrivateImport");
+        }
+        report.note(note);
+        report.lines_above(3);
+        report.build()
+    }
+}
+
+/// A cycle in the module dependency graph (A uses B, B uses A).
+#[derive(Debug)]
+pub struct ErrorImportCycle {
+    pub span: Span,
+    pub chain: Vec<String>,
+    #[cfg(feature = "debug")]
+    pub compiler_line: String,
+}
+
+impl ErrorImportCycle {
+    pub fn new(
+        span: Span,
+        chain: Vec<String>,
+        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
+    ) -> Self {
+        Self {
+            span,
+            chain,
+            #[cfg(feature = "debug")]
+            compiler_line: compiler_line.into(),
+        }
+    }
+}
+
+impl Report for ErrorImportCycle {
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
+        report.message("import cycle detected");
+        #[allow(unused_mut)]
+        let mut note = format!("cycle: {}", self.chain.join(" -> "));
+        #[cfg(feature = "debug")]
+        {
+            write!(&mut note, "\n{}", self.compiler_line)
+                .expect("Failed to write debug info to ErrorImportCycle");
+        }
+        report.note(note);
+        report.lines_above(3);
+        report.build()
     }
 }

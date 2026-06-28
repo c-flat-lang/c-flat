@@ -229,7 +229,7 @@ pub enum Instruction {
     Jz(Label),
     Lea(Location, Location),
     Mov(Location, Location),
-    Movezx(Location, Location),
+    Movzx(Location, Location),
     Pop(Location),
     Push(Location),
     Ret,
@@ -237,14 +237,15 @@ pub enum Instruction {
     Setg(Location),
     Setge(Location),
     Setl(Location),
+    Setle(Location),
     Seta(Location),
     Setae(Location),
     Setb(Location),
     Sub(Location, Location),
     Test(Location, Location),
-    // Integer multiplication (2-operand: dst *= src)
+    /// Integer multiplication (2-operand: dst *= src)
     Imul(Location, Location),
-    // SSE / XMM instructions
+    /// SSE / XMM instructions
     Movd(Location, Location),
     Movss(Location, Location),
     Movsd(Location, Location),
@@ -258,20 +259,26 @@ pub enum Instruction {
     Divsd(Location, Location),
     Ucomiss(Location, Location),
     Ucomisd(Location, Location),
-    // Integer → float conversions
+    /// Integer → float conversions
     Cvtsi2ss(Location, Location),
     Cvtsi2sd(Location, Location),
-    // Float → float conversions
+    /// Float → float conversions
     Cvtss2sd(Location, Location),
     Cvtsd2ss(Location, Location),
-    // Float → int conversions (truncating toward zero)
+    /// Float → int conversions (truncating toward zero)
     Cvttss2si(Location, Location),
     Cvttsd2si(Location, Location),
-    // Sign-extending move
+    /// Sign-extending move
     Movsx(Location, Location),
-    // Integer division (rdx:rax implicit)
+    /// Integer division (rdx:rax implicit)
     Cqo,
     Idiv(Location),
+    Shr(Location, Location),
+    Sar(Location, Location),
+    /// requires args see [docs](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md#x86_64-64_bit)
+    Syscall,
+    /// Integer division (docs)[https://www.aldeid.com/wiki/X86-assembly/Instructions/cdq]
+    Cdq,
 }
 
 impl std::fmt::Display for Instruction {
@@ -296,7 +303,7 @@ impl std::fmt::Display for Instruction {
                 write!(f, "  lea {dst}, {src_str}")
             }
             Self::Mov(dst, src) => write!(f, "  mov {dst}, {src}"),
-            Self::Movezx(dst, src) => write!(f, "  movzx {dst}, {src}"),
+            Self::Movzx(dst, src) => write!(f, "  movzx {dst}, {src}"),
             Self::Pop(dst) => write!(f, "  pop {dst}"),
             Self::Push(src) => write!(f, "  push {src}"),
             Self::Ret => write!(f, "  ret"),
@@ -304,6 +311,7 @@ impl std::fmt::Display for Instruction {
             Self::Setg(dst) => write!(f, "  setg {dst}"),
             Self::Setge(dst) => write!(f, "  setge {dst}"),
             Self::Setl(dst) => write!(f, "  setl {dst}"),
+            Self::Setle(dst) => write!(f, "  setle {dst}"),
             Self::Seta(dst) => write!(f, "  seta {dst}"),
             Self::Setae(dst) => write!(f, "  setae {dst}"),
             Self::Setb(dst) => write!(f, "  setb {dst}"),
@@ -332,6 +340,10 @@ impl std::fmt::Display for Instruction {
             Self::Movsx(dst, src) => write!(f, "  movsx {dst}, {src}"),
             Self::Cqo => write!(f, "  cqo"),
             Self::Idiv(src) => write!(f, "  idiv {src}"),
+            Self::Sar(des, src) => write!(f, "  sar {des}, {src}"),
+            Self::Shr(des, src) => write!(f, "  shr {des}, {src}"),
+            Self::Syscall => write!(f, "  syscall"),
+            Self::Cdq => write!(f, "  cdq"),
         }
     }
 }
@@ -533,6 +545,16 @@ impl Assembler {
         }
     }
 
+    pub fn materialize_address_into_reg(&mut self, loc: &Location, target: PhysReg) -> Reg {
+        let reg = self.materialize_address(loc);
+        let target_reg = self
+            .alloc
+            .vreg::<Reg64>()
+            .with_constraint(RegConstraint::Fixed(target));
+        self.mov(target_reg, reg);
+        target_reg
+    }
+
     pub fn materialize_value(&mut self, loc: &Location) -> Reg {
         match loc {
             Location::Reg(r) => *r,
@@ -559,6 +581,16 @@ impl Assembler {
                 panic!("materialize_value called on an address");
             }
         }
+    }
+
+    pub fn materialize_value_into_reg(&mut self, loc: &Location, target: PhysReg) -> Reg {
+        let reg = self.materialize_value(loc);
+        let target_reg = self
+            .alloc
+            .vreg::<Reg64>()
+            .with_constraint(RegConstraint::Fixed(target));
+        self.mov(target_reg, reg);
+        target_reg
     }
 
     pub fn store_indexed(&mut self, base: Reg, index: Reg, scale: i32, value: Reg) {
@@ -728,10 +760,10 @@ impl Assembler {
         self
     }
 
-    pub fn movezx(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+    pub fn movzx(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         let lhs = lhs.into();
         debug_assert!(!matches!(lhs, Location::Imm(_)));
-        self.push_to(self.current_section, Instruction::Movezx(lhs, rhs.into()));
+        self.push_to(self.current_section, Instruction::Movzx(lhs, rhs.into()));
         self
     }
 
@@ -764,6 +796,13 @@ impl Assembler {
         let src = src.into();
         debug_assert!(!matches!(src, Location::Imm(_)));
         self.push_to(self.current_section, Instruction::Setl(src));
+        self
+    }
+
+    pub fn setle(&mut self, src: impl Into<Location>) -> &mut Self {
+        let src = src.into();
+        debug_assert!(!matches!(src, Location::Imm(_)));
+        self.push_to(self.current_section, Instruction::Setle(src));
         self
     }
 
@@ -1014,6 +1053,32 @@ impl Assembler {
 
     pub fn idiv(&mut self, src: impl Into<Location>) -> &mut Self {
         self.push_to(self.current_section, Instruction::Idiv(src.into()));
+        self
+    }
+
+    pub fn shr(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Shr(lhs.into(), rhs.into()),
+        );
+        self
+    }
+
+    pub fn sar(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Sar(lhs.into(), rhs.into()),
+        );
+        self
+    }
+
+    pub fn syscall(&mut self) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Syscall);
+        self
+    }
+
+    pub fn cdq(&mut self) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Cdq);
         self
     }
 }

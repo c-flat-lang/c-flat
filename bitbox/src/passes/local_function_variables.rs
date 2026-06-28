@@ -1,7 +1,7 @@
 use crate::{
     ir::{
         Variable,
-        instruction::{ICall, IIfElse},
+        instruction::{ICall, IIfElse, ISyscall},
     },
     passes::{DebugPass, PassOutput},
 };
@@ -123,6 +123,12 @@ fn block_pass(
             }) => ctx
                 .local_function_variables
                 .add(function_name, variable.clone()),
+            crate::ir::Instruction::Syscall(ISyscall {
+                des: Some(variable),
+                ..
+            }) => ctx
+                .local_function_variables
+                .add(function_name, variable.clone()),
             crate::ir::Instruction::Cmp(icmp) => ctx
                 .local_function_variables
                 .add(function_name, icmp.des.clone()),
@@ -150,6 +156,9 @@ fn block_pass(
             crate::ir::Instruction::Lt(ilt) => ctx
                 .local_function_variables
                 .add(function_name, ilt.des.clone()),
+            crate::ir::Instruction::Lte(ilte) => ctx
+                .local_function_variables
+                .add(function_name, ilte.des.clone()),
             crate::ir::Instruction::Load(iload) => ctx
                 .local_function_variables
                 .add(function_name, iload.des.clone()),
@@ -204,6 +213,7 @@ fn block_pass(
                 }
             }
             crate::ir::Instruction::Call(..)
+            | crate::ir::Instruction::Syscall(..)
             | crate::ir::Instruction::NoOp(..)
             | crate::ir::Instruction::Copy(..)
             | crate::ir::Instruction::ElemSet(..)
@@ -227,6 +237,14 @@ fn block_pass(
                     .add(function_name, icast.des.clone());
                 ctx.local_function_variables
                     .add(function_name, icast.src.clone());
+            }
+            crate::ir::Instruction::BitShiftRight(ibsr) => {
+                ctx.local_function_variables
+                    .add(function_name, ibsr.des.clone());
+            }
+            crate::ir::Instruction::BitWiseAnd(ibwand) => {
+                ctx.local_function_variables
+                    .add(function_name, ibwand.des.clone());
             }
         }
     }

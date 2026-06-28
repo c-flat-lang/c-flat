@@ -106,7 +106,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
         // SysV MEMORY class: if this function returns a struct > 16 bytes, the caller passes a
         // hidden return pointer in RDI as the implicit first argument.
         let returns_memory_class =
-            matches!(&self.return_type, Type::Struct(s) if s.abi_chunks().is_none());
+            matches!(&self.return_type, Type::Struct(s) if s.abi_chunks(&ctx.target).is_none());
         if returns_memory_class {
             let hidden_slot = target
                 .assembler
@@ -125,7 +125,7 @@ impl Lower<EmitX86_64LinuxPass> for ir::Function {
             target.assembler.comment(format!("arg: {}", arg.name));
             match &arg.ty {
                 Type::Struct(s) => {
-                    match s.abi_chunks() {
+                    match s.abi_chunks(&ctx.target) {
                         Some(chunks) => {
                             for (chunk_idx, chunk) in chunks.iter().enumerate() {
                                 let chunk_dst = Stack {
@@ -320,9 +320,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::Load(..) => todo!("load"),
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
+            ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
             ir::Instruction::NoOp(..) => todo!(),
-            ir::Instruction::Or(..) => todo!("or"),
+            ir::Instruction::Or(ior) => ior.lower(ctx, target)?,
             ir::Instruction::Phi(..) | ir::Instruction::Loop(..) | ir::Instruction::IfElse(..) => {
                 unreachable!(
                     "Lowering pass should be used before x86_64 emit pass {:?}",
@@ -335,6 +336,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
+            ir::Instruction::BitShiftRight(ibsr) => ibsr.lower(ctx, target)?,
+            ir::Instruction::BitWiseAnd(ibwand) => ibwand.lower(ctx, target)?,
+            ir::Instruction::Syscall(isyscall) => isyscall.lower(ctx, target)?,
         }
         Ok(())
     }

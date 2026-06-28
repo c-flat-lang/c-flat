@@ -1,20 +1,32 @@
 ---
 source: src/stage/lexer/tests.rs
-expression: snapshot_lexing(contents)
+expression: snapshot_lexing(& contents)
 ---
+use modules::io::println;
+^^^ Token { kind: Keyword(Use), lexeme: "use", span: 0..3 }
+    ^^^^^^^ Token { kind: Identifier, lexeme: "modules", span: 4..11 }
+           ^ Token { kind: Colon, lexeme: ":", span: 11..12 }
+            ^ Token { kind: Colon, lexeme: ":", span: 12..13 }
+             ^^ Token { kind: Identifier, lexeme: "io", span: 13..15 }
+               ^ Token { kind: Colon, lexeme: ":", span: 15..16 }
+                ^ Token { kind: Colon, lexeme: ":", span: 16..17 }
+                 ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 17..24 }
+                        ^ Token { kind: Semicolon, lexeme: ";", span: 24..25 }
+
 pub fn main() void {
-^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: 0..3 }
-    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 4..6 }
-       ^^^^ Token { kind: Identifier, lexeme: "main", span: 7..11 }
-           ^ Token { kind: LeftParen, lexeme: "(", span: 11..12 }
-            ^ Token { kind: RightParen, lexeme: ")", span: 12..13 }
-              ^^^^ Token { kind: Identifier, lexeme: "void", span: 14..18 }
-                   ^ Token { kind: LeftBrace, lexeme: "{", span: 19..20 }
-    println(#"Hello, World!\n"#);
-    ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 25..32 }
-           ^ Token { kind: LeftParen, lexeme: "(", span: 32..33 }
-            ^^^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!\n", span: 33..52 }
-                               ^ Token { kind: RightParen, lexeme: ")", span: 52..53 }
-                                ^ Token { kind: Semicolon, lexeme: ";", span: 53..54 }
+^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: 27..30 }
+    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 31..33 }
+       ^^^^ Token { kind: Identifier, lexeme: "main", span: 34..38 }
+           ^ Token { kind: LeftParen, lexeme: "(", span: 38..39 }
+            ^ Token { kind: RightParen, lexeme: ")", span: 39..40 }
+              ^^^^ Token { kind: Identifier, lexeme: "void", span: 41..45 }
+                   ^ Token { kind: LeftBrace, lexeme: "{", span: 46..47 }
+    println(&"Hello, World!");
+    ^^^^^^^ Token { kind: Identifier, lexeme: "println", span: 52..59 }
+           ^ Token { kind: LeftParen, lexeme: "(", span: 59..60 }
+            ^ Token { kind: Ampersand, lexeme: "&", span: 60..61 }
+             ^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!", span: 61..76 }
+                            ^ Token { kind: RightParen, lexeme: ")", span: 76..77 }
+                             ^ Token { kind: Semicolon, lexeme: ";", span: 77..78 }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 55..56 }
+^ Token { kind: RightBrace, lexeme: "}", span: 79..80 }

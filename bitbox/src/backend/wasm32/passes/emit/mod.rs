@@ -162,6 +162,7 @@ impl From<ir::Type> for ValType {
         match value {
             ir::Type::Unsigned(1..=32) => ValType::I32,
             ir::Type::Signed(1..=32) => ValType::I32,
+            ir::Type::Signed(33..=64) => ValType::I64,
             ir::Type::Float(1..=32) => ValType::F32,
             ir::Type::Float(33..=64) => ValType::F64,
             ir::Type::Pointer(_) => ValType::I32,
@@ -349,6 +350,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Gte(igte) => igte.lower(ctx, target)?,
             ir::Instruction::Rem(irem) => irem.lower(ctx, target)?,
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
+            ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijumpif) => ijumpif.lower(ctx, target)?,
             ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
@@ -364,6 +366,9 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
+            ir::Instruction::BitShiftRight(..) => todo!("@bsr"),
+            ir::Instruction::BitWiseAnd(..) => todo!("@bwand"),
+            ir::Instruction::Syscall(..) => todo!("@syscall"),
         }
         Ok(())
     }
@@ -388,7 +393,14 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
                     };
                     target.assembler.i32_const(value);
                 }
-                ValType::I64 => todo!("@const_i64"),
+                ValType::I64 => {
+                    let value: i64 = if matches!(constant.ty, ir::Type::Unsigned(_)) {
+                        constant.parse::<u64>()? as i64
+                    } else {
+                        constant.parse::<i64>()?
+                    };
+                    target.assembler.i64_const(value);
+                }
                 ValType::F32 => {
                     let value = constant.parse::<f32>()?;
                     let ieee = Ieee32::new(value.to_bits());

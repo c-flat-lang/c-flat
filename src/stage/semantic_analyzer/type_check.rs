@@ -1,4 +1,6 @@
 #![allow(unused)]
+use std::str::FromStr;
+
 use super::type_resolver::TypeResolver;
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
@@ -14,27 +16,27 @@ impl Type {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
             (
                 TypeKind::SignedTargetPointerNumber,
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::SignedTargetPointerNumber,
             ) => Some(self.clone()),
             (
                 TypeKind::UnsignedTargetPointerNumber,
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::UnsignedTargetPointerNumber,
             ) => Some(self.clone()),
             (
                 TypeKind::UnsignedNumber(lhs),
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(self.clone()),
             (
                 TypeKind::SignedNumber(lhs),
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::SignedNumber(rhs),
             ) if lhs == rhs => Some(self.clone()),
             (
                 TypeKind::Float(lhs),
-                (Plus | Minus | Star | Slash | Percent),
+                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
                 TypeKind::Float(rhs),
             ) if lhs == rhs => Some(self.clone()),
 
@@ -127,12 +129,16 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_extern_function(&self, extern_function: &mut ast::ExternFunction) -> Type {
-        // For now we just assume extern functions are always correct since we have no way to verify them
+        // Assume extern functions are always correct since we have no way to verify them 🤷
         extern_function.return_type.clone()
     }
 
-    fn walk_use(&mut self, item: &ast::Use) -> ast::Type {
-        todo!()
+    fn walk_use(&mut self, _item: &ast::Use) -> ast::Type {
+        Type {
+            kind: TypeKind::Void,
+            span: 0..1,
+            mut_token: None,
+        }
     }
 
     fn walk_function(&mut self, function: &mut ast::Function) -> ast::Type {
@@ -217,6 +223,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
+            ast::Expr::Path(expr) => self.walk_expr_path(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
             ast::Expr::Litral(expr) => self.walk_expr_litral(expr),
             ast::Expr::MemberAccess(..) => self.walk_expr_member_access(expr),
@@ -310,11 +317,20 @@ impl<'st> TypeChecker<'st> {
                 span: expr.span(),
                 mut_token: None,
             }),
-            ast::Litral::Char(_) => Type {
-                kind: TypeKind::UnsignedNumber(8),
-                span: expr.span(),
-                mut_token: None,
-            },
+            ast::Litral::Char(token) => {
+                let bytes = match SmallestCharInt::from_str(&token.lexeme) {
+                    Ok(SmallestCharInt::U8(_)) => 8,
+                    Ok(SmallestCharInt::U16(_)) => 16,
+                    Ok(SmallestCharInt::U32(_)) => 32,
+                    v => panic!("not a char {v:?}"),
+                };
+
+                Type {
+                    kind: TypeKind::UnsignedNumber(bytes),
+                    span: expr.span(),
+                    mut_token: None,
+                }
+            }
             ast::Litral::String(s) => Type {
                 kind: TypeKind::Array(
                     s.lexeme.len(),
@@ -336,11 +352,13 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_call(&mut self, expr: &mut ast::ExprCall) -> ast::Type {
-        let ast::Expr::Identifier(ident) = &expr.caller.as_ref() else {
-            panic!("Caller must be an identifier");
+        let name = match expr.caller.as_ref() {
+            ast::Expr::Identifier(ident) => ident.lexeme.clone(),
+            ast::Expr::Path(path) => path.leaf().lexeme.clone(),
+            _ => panic!("Caller must be an identifier or path"),
         };
 
-        let Some(symbol) = self.symbol_table.get(ident.lexeme.as_str()).cloned() else {
+        let Some(symbol) = self.symbol_table.get(name.as_str()).cloned() else {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
 
@@ -389,6 +407,18 @@ impl<'st> TypeChecker<'st> {
             return Type {
                 kind: TypeKind::Void,
                 span: expr.span.clone(),
+                mut_token: None,
+            };
+        };
+        symbol.ty.clone()
+    }
+
+    fn walk_expr_path(&mut self, path: &ast::ExprPath) -> ast::Type {
+        let leaf = path.leaf();
+        let Some(symbol) = self.symbol_table.get(leaf.lexeme.as_str()) else {
+            return Type {
+                kind: TypeKind::Void,
+                span: leaf.span.clone(),
                 mut_token: None,
             };
         };
@@ -468,7 +498,10 @@ impl<'st> TypeChecker<'st> {
 
         expr.ty = array_type.clone();
 
-        let TypeKind::Array(_, array_type) = array_type.kind else {
+        let (TypeKind::Array(_, array_type) | TypeKind::Slice(array_type)) =
+            &array_type.de_ref().kind
+        else {
+            eprintln!("{}", array_type.kind);
             // NOTE: This probably will cause some missleading errors.
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 array_type.clone(),
@@ -485,7 +518,7 @@ impl<'st> TypeChecker<'st> {
             )));
             return array_type;
         };
-        *array_type
+        *array_type.clone()
     }
 
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
@@ -567,10 +600,30 @@ impl<'st> TypeChecker<'st> {
             TypeKind::Struct(struct_def) => {
                 self.lookup_struct_member(&struct_def, &member_access.member.lexeme)
             }
+            TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
+                kind: TypeKind::UnsignedTargetPointerNumber,
+                span: expr.span(),
+                mut_token: None,
+            },
+            TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
+                kind: TypeKind::Ref(inner_ty.clone()),
+                span: expr.span(),
+                mut_token: None,
+            },
             TypeKind::Ref(inner) => match &inner.kind {
                 TypeKind::Struct(struct_def) => {
                     self.lookup_struct_member(struct_def, &member_access.member.lexeme)
                 }
+                TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
+                    kind: TypeKind::Ref(inner_ty.clone()),
+                    span: expr.span(),
+                    mut_token: None,
+                },
+                TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
+                    kind: TypeKind::UnsignedTargetPointerNumber,
+                    span: expr.span(),
+                    mut_token: None,
+                },
                 _ => unimplemented!("Handle member access for non struct pointer types"),
             },
             _ => unimplemented!("Handle member access for non array types"),
@@ -645,6 +698,57 @@ impl<'st> TypeChecker<'st> {
             );
         };
         field.ty.clone()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SmallestCharInt {
+    U8(u8),
+    U16(u16),
+    U32(u32),
+}
+
+impl SmallestCharInt {
+    pub fn value(&self) -> u32 {
+        match self {
+            SmallestCharInt::U8(v) => *v as u32,
+            SmallestCharInt::U16(v) => *v as u32,
+            SmallestCharInt::U32(v) => *v,
+        }
+    }
+
+    fn parse_char(s: &str) -> std::result::Result<char, char> {
+        match s {
+            "\\n" => Ok('\n'),
+            "\\t" => Ok('\t'),
+            "\\r" => Ok('\r'),
+            "\\0" => Ok('\0'),
+            _ => {
+                let mut chars = s.chars();
+                let ch = chars.next().ok_or('\0')?;
+                if let Some(c) = chars.next() {
+                    return Err(c);
+                }
+                Ok(ch)
+            }
+        }
+    }
+}
+
+impl FromStr for SmallestCharInt {
+    type Err = char;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let ch = SmallestCharInt::parse_char(s)?;
+
+        let code = ch as u32;
+
+        if code <= u8::MAX as u32 {
+            Ok(SmallestCharInt::U8(code as u8))
+        } else if code <= u16::MAX as u32 {
+            Ok(SmallestCharInt::U16(code as u16))
+        } else {
+            Ok(SmallestCharInt::U32(code))
+        }
     }
 }
 

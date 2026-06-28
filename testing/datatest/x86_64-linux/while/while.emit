@@ -142,14 +142,18 @@ main_body_loop_1:
   # lowering jump if
   jmp main_start_loop_0
 main_exit_loop_2:
-  # @cast s32 : tmp.11_v0, i_v0, unsigned-to-signed
+  # @cast s32 : tmp.12_v0, i_v0, truncate
   # lowering cast
   # lowering operand
   mov vreg(38 : Reg64), qword ptr [rbp-40]
-  mov vreg(39 : Reg64), vreg(38 : Reg64)
+  mov vreg(39 : Reg32), vreg(38 : Reg32)
+  # @cast s32 : tmp.11_v0, tmp.12_v0, unsigned-to-signed
+  # lowering cast
+  # lowering operand
+  mov vreg(41 : Reg64), vreg(39 : Reg64)
   # @ret s32 : tmp.11_v0
   # lowering return
-  mov eax, vreg(39 : Reg32)
+  mov eax, vreg(41 : Reg32)
   jmp exit_main
 exit_main:
   add rsp, 64

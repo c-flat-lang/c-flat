@@ -45,6 +45,9 @@ pub enum Instruction {
     /// `@lt <type> : <des>, <lhs>, <rhs>`
     /// `@lt u1 : is_one, n, 1`
     Lt(ILt),
+    /// `@lte <type> : <des>, <lhs>, <rhs>`
+    /// `@lte u1 : is_one, n, 1`
+    Lte(ILte),
     /// @jump <label>
     /// @jump %recursive_case
     Jump(IJump),
@@ -80,6 +83,12 @@ pub enum Instruction {
     Not(INot),
     /// `@cast <kind> <type> : <des>, <src>`
     Cast(ICast),
+    /// `@bsr <type> : <des>, <rhs>, <lhs>`
+    BitShiftRight(IBitShiftRight),
+    /// `@bwand <type> : <des>, <rhs>, <lhs>`
+    BitWiseAnd(IBitWiseAnd),
+    /// `@syscall <num>, <arg1>, ...<arg6>`
+    Syscall(ISyscall),
 }
 
 impl fmt::Display for Instruction {
@@ -101,6 +110,7 @@ impl fmt::Display for Instruction {
             Self::Gte(igte) => write!(f, "{igte}"),
             Self::Rem(irem) => write!(f, "{irem}"),
             Self::Lt(ilt) => write!(f, "{ilt}"),
+            Self::Lte(ilte) => write!(f, "{ilte}"),
             Self::Assign(iassign) => write!(f, "{iassign}"),
             Self::Alloc(ialloc) => write!(f, "{ialloc}"),
             Self::Call(icall) => write!(f, "{icall}"),
@@ -114,6 +124,9 @@ impl fmt::Display for Instruction {
             Self::Ref(iref) => write!(f, "{iref}"),
             Self::Not(inot) => write!(f, "{inot}"),
             Self::Cast(icast) => write!(f, "{icast}"),
+            Self::BitShiftRight(ibsr) => write!(f, "{ibsr}"),
+            Self::BitWiseAnd(ibwand) => write!(f, "{ibwand}"),
+            Self::Syscall(isyscall) => write!(f, "{isyscall}"),
         }
     }
 }
@@ -284,6 +297,15 @@ create_binary_instruction!(
     ILt,
     Lt,
     "lt"
+);
+create_binary_instruction!(
+    "`@lte <type> : <des>, <lhs>, <rhs>`
+
+`@lte u1 : is_one, n, 1`
+",
+    ILte,
+    Lte,
+    "lte"
 );
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -906,5 +928,127 @@ impl fmt::Display for ICast {
 impl From<ICast> for Instruction {
     fn from(i: ICast) -> Self {
         Instruction::Cast(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IBitShiftRight {
+    pub des: Variable,
+    pub rhs: Operand,
+    pub lhs: Operand,
+}
+
+impl IBitShiftRight {
+    pub fn new(des: impl Into<Variable>, lhs: impl Into<Operand>, rhs: impl Into<Operand>) -> Self {
+        Self {
+            des: des.into(),
+            lhs: lhs.into(),
+            rhs: rhs.into(),
+        }
+    }
+}
+
+impl fmt::Display for IBitShiftRight {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}, {}",
+            Paint::blue("@bsr"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_op(&self.lhs),
+            color_op(&self.rhs),
+        )
+    }
+}
+
+impl From<IBitShiftRight> for Instruction {
+    fn from(i: IBitShiftRight) -> Self {
+        Instruction::BitShiftRight(i)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IBitWiseAnd {
+    pub des: Variable,
+    pub rhs: Operand,
+    pub lhs: Operand,
+}
+
+impl IBitWiseAnd {
+    pub fn new(des: impl Into<Variable>, rhs: impl Into<Operand>, lhs: impl Into<Operand>) -> Self {
+        Self {
+            des: des.into(),
+            lhs: lhs.into(),
+            rhs: rhs.into(),
+        }
+    }
+}
+
+impl fmt::Display for IBitWiseAnd {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:<5} : {}, {}, {}",
+            Paint::blue("@bsr"),
+            Paint::yellow(&self.des.ty),
+            color_var(&self.des),
+            color_op(&self.lhs),
+            color_op(&self.rhs),
+        )
+    }
+}
+
+impl From<IBitWiseAnd> for Instruction {
+    fn from(i: IBitWiseAnd) -> Self {
+        Instruction::BitWiseAnd(i)
+    }
+}
+
+/// @syscall <num>, <args…>
+/// @syscall <type> : <des> <num>, <args…>   (when the result is captured)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ISyscall {
+    pub des: Option<Variable>,
+    pub args: Vec<Operand>,
+}
+
+impl ISyscall {
+    pub fn new<T>(des: Option<Variable>, args: impl IntoIterator<Item = T>) -> Self
+    where
+        T: Into<Operand>,
+    {
+        Self {
+            des,
+            args: args.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl fmt::Display for ISyscall {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let args_str = self
+            .args
+            .iter()
+            .map(|a| format!("{}", color_op(a)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        if let Some(dest) = &self.des {
+            return write!(
+                f,
+                "{} {:<5} : {} {}",
+                Paint::blue("@syscall"),
+                Paint::yellow(&dest.ty),
+                color_var(dest),
+                args_str
+            );
+        }
+        write!(f, "{} {}", Paint::blue("@syscall"), args_str)
+    }
+}
+
+impl From<ISyscall> for Instruction {
+    fn from(i: ISyscall) -> Self {
+        Instruction::Syscall(i)
     }
 }

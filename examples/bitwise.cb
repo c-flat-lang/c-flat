@@ -1,0 +1,39 @@
+extern C fn write_char(u8) void;
+extern C fn write_u32(u32) void;
+
+fn rule110(l: u32, c: u32, r: u32) u32 {
+    let pattern: u32 = l * 4 + c * 2 + r;
+    // Rule110 = 0b01101110 = 110 in decimal
+    let shift: u32 = 110;
+    return (shift >> pattern) & 1;
+}
+
+fn test(l: u32, c: u32, r: u32, expected: u32) void {
+    write_u32(l);
+    write_char(' ');
+    write_u32(c);
+    write_char(' ');
+    write_u32(r);
+    write_char(' ');
+    write_char(61);
+    write_char(' ');
+    write_u32(expected);
+    write_char(' ');
+    write_char(61);
+    write_char(61);
+    write_char(' ');
+    let found = rule110(l, c, r);
+    write_u32(found);
+    write_char(10);
+}
+
+pub fn main() s32 {
+    test(1, 1, 1, 0);
+    test(1, 1, 0, 1);
+    test(1, 0, 1, 1);
+    test(1, 0, 0, 0);
+    test(0, 1, 1, 1);
+    test(0, 1, 0, 1);
+    test(0, 0, 1, 1);
+    return rule110(1,1,0) as s32;
+}
