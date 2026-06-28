@@ -168,6 +168,7 @@ impl<'st> TypeChecker<'st> {
             span: struct_def.span(),
             kind: TypeKind::Struct(StructType {
                 name: struct_def.name.lexeme.clone(),
+                type_params: struct_def.type_params.clone(),
                 fields: struct_def
                     .fields
                     .iter()

@@ -3,12 +3,13 @@
 use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
 };
-use crate::stage::lexer::token::Span;
+use crate::stage::lexer::token::{Span, Token};
 use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
 pub struct TypeResolver<'st> {
     symbol_table: &'st mut SymbolTable,
+    generic_args: Option<Vec<(Token, Type)>>,
     errors: Vec<Box<dyn Report>>,
     suppress_errors: bool,
 }
@@ -17,6 +18,7 @@ impl<'st> TypeResolver<'st> {
     pub fn new(symbol_table: &'st mut SymbolTable) -> Self {
         Self {
             symbol_table,
+            generic_args: None,
             errors: Vec::new(),
             suppress_errors: false,
         }
@@ -222,9 +224,11 @@ impl<'st> TypeResolver<'st> {
     }
 
     fn walk_struct_def(&mut self, struct_def: &mut ast::Struct) {
+        self.generic_args = struct_def.type_params.clone();
         for field in struct_def.fields.iter_mut() {
             self.walk_type(&mut field.ty);
         }
+        self.generic_args = None;
     }
 
     fn walk_type(&mut self, ty: &mut Type) {
@@ -241,25 +245,34 @@ impl<'st> TypeResolver<'st> {
             TypeKind::Array(_, ty) => self.walk_type(ty),
             TypeKind::Ref(ty) => self.walk_type(ty),
             TypeKind::Struct(struct_type) => {
+                self.generic_args = struct_type.type_params.clone();
                 for (_, ty) in struct_type.fields.iter_mut() {
                     self.walk_type(ty);
                 }
+                self.generic_args = None;
             }
             TypeKind::Enum(_) => todo!("Enum"),
             TypeKind::Name(name) => {
-                let Some(symbol) = self.symbol_table.get(name) else {
-                    if !self.suppress_errors {
-                        #[cfg(not(feature = "debug"))]
-                        let error = ErrorUndefinedSymbol::Type(found);
-                        #[cfg(feature = "debug")]
-                        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
-                        #[cfg(feature = "debug")]
-                        let error = ErrorUndefinedSymbol::TypeDebug(found, compiler_line);
-                        self.errors.push(Box::new(error));
-                    }
+                if let Some(symbol) = self.symbol_table.get(&name.lexeme) {
+                    *ty = symbol.ty.clone();
                     return;
-                };
-                *ty = symbol.ty.clone();
+                }
+
+                if let Some(type_params) = self.generic_args.as_ref() {
+                    for (param_name, _) in type_params.iter() {
+                        if param_name.lexeme == name.lexeme {
+                            return;
+                        }
+                    }
+                }
+
+                #[cfg(not(feature = "debug"))]
+                let error = ErrorUndefinedSymbol::Type(found);
+                #[cfg(feature = "debug")]
+                let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+                #[cfg(feature = "debug")]
+                let error = ErrorUndefinedSymbol::TypeDebug(found, compiler_line);
+                self.errors.push(Box::new(error));
             }
             TypeKind::NameWithParams(name, params) => {
                 for param in params.params.iter_mut() {

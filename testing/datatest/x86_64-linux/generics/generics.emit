@@ -1,0 +1,255 @@
+                     Tokenizer
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit
+.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 64
+  # -- args --
+main_entry:
+  # @assign s32 : tmp.0_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(1 : Reg64), 10
+  mov vreg(0 : Reg64), vreg(1 : Reg64)
+  # @assign s32 : tmp.1_v0, 20
+  # lowering assign
+  # lowering operand
+  mov vreg(4 : Reg64), 20
+  mov vreg(3 : Reg64), vreg(4 : Reg64)
+  # @call Pair__s32 : tmp.2_v0 make_pair__s32(tmp.0_v0, tmp.1_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-4], vreg(0 : Reg32)
+  # lowering operand
+  mov dword ptr [rbp-8], vreg(3 : Reg32)
+  mov edi, dword ptr [rbp-4]
+  mov esi, dword ptr [rbp-8]
+  call make_pair__s32
+  mov qword ptr [rbp-16], rax
+  # @assign Pair__s32 : p_v0, tmp.2_v0
+  # lowering assign
+  # @elemget s32 : tmp.3_v0, p_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(7 : Reg64), 0
+  lea vreg(8 : Reg64), qword ptr [rbp-16]
+  mov vreg(9 : Reg64), 0
+  mov vreg(10 : Reg32), [vreg(8 : Reg64) + vreg(9 : Reg64) * 1]
+  # @call write_int(tmp.3_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-20], vreg(10 : Reg32)
+  mov edi, dword ptr [rbp-20]
+  call write_int
+  # @assign s32 : tmp.4_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(13 : Reg64), 10
+  mov vreg(12 : Reg64), vreg(13 : Reg64)
+  # @call write_char(tmp.4_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-24], vreg(12 : Reg32)
+  mov edi, dword ptr [rbp-24]
+  call write_char
+  # @elemget s32 : tmp.5_v0, p_v0, 1
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(15 : Reg64), 1
+  lea vreg(16 : Reg64), qword ptr [rbp-16]
+  mov vreg(17 : Reg64), 4
+  mov vreg(18 : Reg32), [vreg(16 : Reg64) + vreg(17 : Reg64) * 1]
+  # @call write_int(tmp.5_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-28], vreg(18 : Reg32)
+  mov edi, dword ptr [rbp-28]
+  call write_int
+  # @assign s32 : tmp.6_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(21 : Reg64), 10
+  mov vreg(20 : Reg64), vreg(21 : Reg64)
+  # @call write_char(tmp.6_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-32], vreg(20 : Reg32)
+  mov edi, dword ptr [rbp-32]
+  call write_char
+  # @assign s32 : tmp.7_v0, 123
+  # lowering assign
+  # lowering operand
+  mov vreg(24 : Reg64), 123
+  mov vreg(23 : Reg64), vreg(24 : Reg64)
+  # @assign s32 : tmp.8_v0, 321
+  # lowering assign
+  # lowering operand
+  mov vreg(27 : Reg64), 321
+  mov vreg(26 : Reg64), vreg(27 : Reg64)
+  # @call s32 : tmp.9_v0 add__s32(tmp.7_v0, tmp.8_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-36], vreg(23 : Reg32)
+  # lowering operand
+  mov dword ptr [rbp-40], vreg(26 : Reg32)
+  mov edi, dword ptr [rbp-36]
+  mov esi, dword ptr [rbp-40]
+  call add__s32
+  mov vreg(29 : Reg64), rax
+  # @assign s32 : num0_v0, tmp.9_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-44], vreg(29 : Reg32)
+  # @call write_int(num0_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-44]
+  call write_int
+  # @assign s32 : tmp.10_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(33 : Reg64), 10
+  mov vreg(32 : Reg64), vreg(33 : Reg64)
+  # @call write_char(tmp.10_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-48], vreg(32 : Reg32)
+  mov edi, dword ptr [rbp-48]
+  call write_char
+  # @assign s32 : tmp.11_v0, 100
+  # lowering assign
+  # lowering operand
+  mov vreg(36 : Reg64), 100
+  mov vreg(35 : Reg64), vreg(36 : Reg64)
+  # @assign s32 : tmp.12_v0, 44
+  # lowering assign
+  # lowering operand
+  mov vreg(39 : Reg64), 44
+  mov vreg(38 : Reg64), vreg(39 : Reg64)
+  # @call s32 : tmp.13_v0 add__s32(tmp.11_v0, tmp.12_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-52], vreg(35 : Reg32)
+  # lowering operand
+  mov dword ptr [rbp-56], vreg(38 : Reg32)
+  mov edi, dword ptr [rbp-52]
+  mov esi, dword ptr [rbp-56]
+  call add__s32
+  mov vreg(41 : Reg64), rax
+  # @assign s32 : num1_v0, tmp.13_v0
+  # lowering assign
+  # lowering operand
+  mov dword ptr [rbp-60], vreg(41 : Reg32)
+  # @call write_int(num1_v0)
+  # lowering call
+  # lowering operand
+  mov edi, dword ptr [rbp-60]
+  call write_int
+  # @assign s32 : tmp.14_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(45 : Reg64), 10
+  mov vreg(44 : Reg64), vreg(45 : Reg64)
+  # @call write_char(tmp.14_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-64], vreg(44 : Reg32)
+  mov edi, dword ptr [rbp-64]
+  call write_char
+  # @assign s32 : tmp.15_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(48 : Reg64), 0
+  mov vreg(47 : Reg64), vreg(48 : Reg64)
+  # @ret s32 : tmp.15_v0
+  # lowering return
+  mov eax, vreg(47 : Reg32)
+  jmp exit_main
+exit_main:
+  add rsp, 64
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---
+  # Defining Function add__s32
+add__s32:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+  # arg: x
+  mov dword ptr [rbp-4], edi
+  # arg: y
+  mov dword ptr [rbp-8], esi
+add__s32_entry:
+  # @add s32 : tmp.0_v0, x_v0, y_v0
+  # lowering add
+  # lowering operand
+  # lowering operand
+  mov vreg(2 : Reg32), dword ptr [rbp-4]
+  add vreg(2 : Reg32), dword ptr [rbp-8]
+  # @ret s32 : tmp.0_v0
+  # lowering return
+  mov eax, vreg(2 : Reg32)
+  jmp exit_add__s32
+exit_add__s32:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function add__s32 ---
+  # Defining Function make_pair__s32
+make_pair__s32:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+  # arg: a
+  mov dword ptr [rbp-4], edi
+  # arg: b
+  mov dword ptr [rbp-8], esi
+make_pair__s32_entry:
+  # @alloc Pair__s32 : tmp.0_v0, 1
+  # lowering alloc
+  # @elemset Pair__s32 : tmp.0_v0, 0, a_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(3 : Reg64), 0
+  # lowering operand
+  lea vreg(4 : Reg64), qword ptr [rbp-16]
+  mov vreg(5 : Reg64), 0
+  mov vreg(6 : Reg32), dword ptr [rbp-4]
+  mov [vreg(4 : Reg64) + vreg(5 : Reg64) * 1], vreg(6 : Reg32)
+  # @elemset Pair__s32 : tmp.0_v0, 1, b_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(7 : Reg64), 1
+  # lowering operand
+  lea vreg(8 : Reg64), qword ptr [rbp-16]
+  mov vreg(9 : Reg64), 4
+  mov vreg(10 : Reg32), dword ptr [rbp-8]
+  mov [vreg(8 : Reg64) + vreg(9 : Reg64) * 1], vreg(10 : Reg32)
+  # @ret Pair__s32 : tmp.0_v0
+  # lowering return
+  mov rax, qword ptr [rbp-16]
+  jmp exit_make_pair__s32
+exit_make_pair__s32:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function make_pair__s32 ---

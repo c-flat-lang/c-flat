@@ -774,11 +774,21 @@ impl Parser {
                     }
                     return Ok(ast::Expr::Path(ast::ExprPath { segments }));
                 }
-                if !self.restrict_struct_literal
-                    && (self.peek(TokenKind::LeftBrace) || self.peek(TokenKind::LeftTypeCradle))
-                {
+
+                if self.peek(TokenKind::LeftTypeCradle) {
                     let type_args = self.parse_type_args()?;
-                    return self.parse_struct_instantiation(token, type_args.as_deref());
+                    if !self.restrict_struct_literal && self.peek(TokenKind::LeftBrace) {
+                        return self.parse_struct_instantiation(token, type_args.as_deref());
+                    }
+                    let left_paren = self.consume(TokenKind::LeftParen)?;
+                    return self.finish_call(
+                        ast::Expr::Identifier(token),
+                        left_paren,
+                        type_args.as_deref(),
+                    );
+                }
+                if !self.restrict_struct_literal && self.peek(TokenKind::LeftBrace) {
+                    return self.parse_struct_instantiation(token, None);
                 }
                 Ok(ast::Expr::Identifier(token))
             }
@@ -968,7 +978,7 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
     let Some((prefix, number)) = parse_type(&token.lexeme) else {
         if token.kind == TokenKind::Identifier {
             return Ok(ast::Type {
-                kind: ast::TypeKind::Name(token.lexeme.clone()),
+                kind: ast::TypeKind::Name(token.clone()),
                 span: token.span.clone(),
                 ..Default::default()
             });

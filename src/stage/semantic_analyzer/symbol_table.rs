@@ -168,6 +168,7 @@ impl SymbolTableBuilder {
                 mut_token: None,
                 kind: ast::TypeKind::Struct(ast::StructType {
                     name: struct_def.name.lexeme.clone(),
+                    type_params: struct_def.type_params.clone(),
                     fields: struct_def
                         .fields
                         .iter()

@@ -73,7 +73,7 @@ pub enum TypeKind {
     Enum(String),
     Float(u8),
     /// Simple Custom `Type` with no `TypeArgs`
-    Name(String),
+    Name(Token),
     /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
     Ref(Box<Type>),
@@ -102,7 +102,8 @@ impl TypeKind {
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
             Self::Name(name) => {
                 unreachable!(
-                    "Type::Name({name}).as_bitbox_type() should be handled in type_resolver"
+                    "Type::Name({}).as_bitbox_type() should be handled in type_resolver",
+                    name.lexeme
                 )
             }
             Self::NameWithParams(name, params) => {
@@ -161,7 +162,10 @@ This means we may need to generate more then one X Type depending on how many Ge
             Self::Bool => 1,
             Self::Enum(_) => todo!("Size of enum"),
             Self::Name(name) => {
-                unreachable!("Type::Name({name}).size() should be handled in type_resolver")
+                unreachable!(
+                    "Type::Name({}).size() should be handled in type_resolver",
+                    name.lexeme
+                )
             }
             Self::NameWithParams(name, params) => {
                 unreachable!(
@@ -210,7 +214,7 @@ impl std::fmt::Display for TypeKind {
             Self::Bool => write!(f, "bool"),
             Self::Float(n) => write!(f, "f{}", n),
             Self::Enum(name) => write!(f, "{}", name),
-            Self::Name(name) => write!(f, "{}", name),
+            Self::Name(name) => write!(f, "{}", name.lexeme),
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
             Self::Ref(ty) => write!(f, "ref {ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
@@ -247,6 +251,7 @@ impl std::fmt::Display for TypeParams {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructType {
     pub name: String,
+    pub type_params: Option<Vec<(Token, Type)>>,
     pub fields: Vec<(String, Type)>,
     pub packed: bool,
 }
@@ -378,7 +383,7 @@ pub enum TypeDef {
     Struct(Struct),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub visibility: Visibility,
     pub fn_token: Token,
@@ -446,7 +451,7 @@ impl Statement {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Param {
     pub name: Token,
     pub ty: Type,
