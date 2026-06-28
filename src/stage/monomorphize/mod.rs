@@ -271,7 +271,7 @@ impl Monomorphizer {
 
         let mut tok = caller_tok;
         tok.lexeme = mangled;
-        call.caller = Box::new(Expr::Identifier(tok));
+        *call.caller = Expr::Identifier(tok);
         call.type_args = None;
     }
 
