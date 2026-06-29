@@ -375,59 +375,59 @@
                     },
                     ty: Type {
                         mut_token: None,
-                        kind: Ref(
+                        kind: Pointer(
                             Type {
                                 mut_token: None,
                                 kind: Name(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "List",
-                                        span: 213..217,
+                                        span: 210..214,
                                     },
                                 ),
-                                span: 213..217,
+                                span: 210..214,
                             },
                         ),
-                        span: 209..217,
+                        span: 209..214,
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "index",
-                        span: 219..224,
+                        span: 216..221,
                     },
                     ty: Type {
                         mut_token: None,
                         kind: UnsignedTargetPointerNumber,
-                        span: 226..231,
+                        span: 223..228,
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "value",
-                        span: 233..238,
+                        span: 230..235,
                     },
                     ty: Type {
                         mut_token: None,
                         kind: SignedNumber(
                             32,
                         ),
-                        span: 240..243,
+                        span: 237..240,
                     },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 245..249,
+                span: 242..246,
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 250..251,
+                    span: 247..248,
                 },
                 statements: [
                     Statement {
@@ -441,37 +441,37 @@
                                                     Token {
                                                         kind: Identifier,
                                                         lexeme: "list",
-                                                        span: 254..258,
+                                                        span: 251..255,
                                                     },
                                                 ),
                                                 dot: Token {
                                                     kind: Dot,
                                                     lexeme: ".",
-                                                    span: 258..259,
+                                                    span: 255..256,
                                                 },
                                                 member: Token {
                                                     kind: Identifier,
                                                     lexeme: "data",
-                                                    span: 259..263,
+                                                    span: 256..260,
                                                 },
                                             },
                                         ),
                                         open_bracket: Token {
                                             kind: LeftBracket,
                                             lexeme: "[",
-                                            span: 263..264,
+                                            span: 260..261,
                                         },
                                         index: Identifier(
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "index",
-                                                span: 264..269,
+                                                span: 261..266,
                                             },
                                         ),
                                         close_bracket: Token {
                                             kind: RightBracket,
                                             lexeme: "]",
-                                            span: 269..270,
+                                            span: 266..267,
                                         },
                                         ty: Type {
                                             mut_token: None,
@@ -483,13 +483,13 @@
                                 equal: Token {
                                     kind: Equal,
                                     lexeme: "=",
-                                    span: 271..272,
+                                    span: 268..269,
                                 },
                                 right: Identifier(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "value",
-                                        span: 273..278,
+                                        span: 270..275,
                                     },
                                 ),
                             },
@@ -498,7 +498,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 278..279,
+                                span: 275..276,
                             },
                         ),
                     },
@@ -506,7 +506,7 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 280..281,
+                    span: 277..278,
                 },
             },
         },
@@ -519,12 +519,12 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 287..289,
+                span: 284..286,
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 290..294,
+                span: 287..291,
             },
             type_args: None,
             params: [],
@@ -533,13 +533,13 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 297..300,
+                span: 294..297,
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 301..302,
+                    span: 298..299,
                 },
                 statements: [
                     Statement {
@@ -550,7 +550,7 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 305..308,
+                                    span: 302..305,
                                 },
                                 mutable: false,
                                 ty: Some(
@@ -560,16 +560,16 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "List",
-                                                span: 315..319,
+                                                span: 312..316,
                                             },
                                         ),
-                                        span: 315..319,
+                                        span: 312..316,
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "list",
-                                    span: 309..313,
+                                    span: 306..310,
                                 },
                                 expr: Call(
                                     ExprCall {
@@ -577,20 +577,20 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "init_list",
-                                                span: 322..331,
+                                                span: 319..328,
                                             },
                                         ),
                                         type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
-                                            span: 331..332,
+                                            span: 328..329,
                                         },
                                         args: [],
                                         right_paren: Token {
                                             kind: RightParen,
                                             lexeme: ")",
-                                            span: 332..333,
+                                            span: 329..330,
                                         },
                                     },
                                 ),
@@ -600,7 +600,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 333..334,
+                                span: 330..331,
                             },
                         ),
                     },
@@ -611,14 +611,14 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 337..346,
+                                        span: 334..343,
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 346..347,
+                                    span: 343..344,
                                 },
                                 args: [
                                     ArrayIndex(
@@ -629,39 +629,39 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "list",
-                                                            span: 347..351,
+                                                            span: 344..348,
                                                         },
                                                     ),
                                                     dot: Token {
                                                         kind: Dot,
                                                         lexeme: ".",
-                                                        span: 351..352,
+                                                        span: 348..349,
                                                     },
                                                     member: Token {
                                                         kind: Identifier,
                                                         lexeme: "data",
-                                                        span: 352..356,
+                                                        span: 349..353,
                                                     },
                                                 },
                                             ),
                                             open_bracket: Token {
                                                 kind: LeftBracket,
                                                 lexeme: "[",
-                                                span: 356..357,
+                                                span: 353..354,
                                             },
                                             index: Litral(
                                                 Integer(
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "0",
-                                                        span: 357..358,
+                                                        span: 354..355,
                                                     },
                                                 ),
                                             ),
                                             close_bracket: Token {
                                                 kind: RightBracket,
                                                 lexeme: "]",
-                                                span: 358..359,
+                                                span: 355..356,
                                             },
                                             ty: Type {
                                                 mut_token: None,
@@ -674,7 +674,7 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 359..360,
+                                    span: 356..357,
                                 },
                             },
                         ),
@@ -682,7 +682,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 360..361,
+                                span: 357..358,
                             },
                         ),
                     },
@@ -693,14 +693,14 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 364..374,
+                                        span: 361..371,
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 374..375,
+                                    span: 371..372,
                                 },
                                 args: [
                                     Litral(
@@ -708,7 +708,7 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 375..377,
+                                                span: 372..374,
                                             },
                                         ),
                                     ),
@@ -716,7 +716,7 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 377..378,
+                                    span: 374..375,
                                 },
                             },
                         ),
@@ -724,7 +724,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 378..379,
+                                span: 375..376,
                             },
                         ),
                     },
@@ -735,14 +735,14 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "set_list",
-                                        span: 382..390,
+                                        span: 379..387,
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 390..391,
+                                    span: 387..388,
                                 },
                                 args: [
                                     AddressOf(
@@ -750,13 +750,13 @@
                                             ampersand: Token {
                                                 kind: Ampersand,
                                                 lexeme: "&",
-                                                span: 391..392,
+                                                span: 388..389,
                                             },
                                             expr: Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "list",
-                                                    span: 392..396,
+                                                    span: 389..393,
                                                 },
                                             ),
                                         },
@@ -766,7 +766,7 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "0",
-                                                span: 398..399,
+                                                span: 395..396,
                                             },
                                         ),
                                     ),
@@ -775,7 +775,7 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "1",
-                                                span: 401..402,
+                                                span: 398..399,
                                             },
                                         ),
                                     ),
@@ -783,7 +783,7 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 402..403,
+                                    span: 399..400,
                                 },
                             },
                         ),
@@ -791,7 +791,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 403..404,
+                                span: 400..401,
                             },
                         ),
                     },
@@ -802,14 +802,14 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 407..416,
+                                        span: 404..413,
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 416..417,
+                                    span: 413..414,
                                 },
                                 args: [
                                     ArrayIndex(
@@ -820,39 +820,39 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "list",
-                                                            span: 417..421,
+                                                            span: 414..418,
                                                         },
                                                     ),
                                                     dot: Token {
                                                         kind: Dot,
                                                         lexeme: ".",
-                                                        span: 421..422,
+                                                        span: 418..419,
                                                     },
                                                     member: Token {
                                                         kind: Identifier,
                                                         lexeme: "data",
-                                                        span: 422..426,
+                                                        span: 419..423,
                                                     },
                                                 },
                                             ),
                                             open_bracket: Token {
                                                 kind: LeftBracket,
                                                 lexeme: "[",
-                                                span: 426..427,
+                                                span: 423..424,
                                             },
                                             index: Litral(
                                                 Integer(
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "0",
-                                                        span: 427..428,
+                                                        span: 424..425,
                                                     },
                                                 ),
                                             ),
                                             close_bracket: Token {
                                                 kind: RightBracket,
                                                 lexeme: "]",
-                                                span: 428..429,
+                                                span: 425..426,
                                             },
                                             ty: Type {
                                                 mut_token: None,
@@ -865,7 +865,7 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 429..430,
+                                    span: 426..427,
                                 },
                             },
                         ),
@@ -873,7 +873,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 430..431,
+                                span: 427..428,
                             },
                         ),
                     },
@@ -884,14 +884,14 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 434..444,
+                                        span: 431..441,
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 444..445,
+                                    span: 441..442,
                                 },
                                 args: [
                                     Litral(
@@ -899,7 +899,7 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 445..447,
+                                                span: 442..444,
                                             },
                                         ),
                                     ),
@@ -907,7 +907,7 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 447..448,
+                                    span: 444..445,
                                 },
                             },
                         ),
@@ -915,7 +915,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 448..449,
+                                span: 445..446,
                             },
                         ),
                     },
@@ -927,7 +927,7 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 452..458,
+                                    span: 449..455,
                                 },
                                 expr: Some(
                                     Litral(
@@ -935,7 +935,7 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "0",
-                                                span: 459..460,
+                                                span: 456..457,
                                             },
                                         ),
                                     ),
@@ -946,7 +946,7 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 460..461,
+                                span: 457..458,
                             },
                         ),
                     },
@@ -954,7 +954,7 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 462..463,
+                    span: 459..460,
                 },
             },
         },

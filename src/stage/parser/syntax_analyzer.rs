@@ -327,12 +327,12 @@ impl Parser {
                 })
             }
             TokenKind::Identifier => token_as_type(mut_token, &tok),
-            TokenKind::Keyword(Keyword::Ref) => {
+            TokenKind::Star => {
                 let ty = self.parse_type()?;
                 let span = tok.span.start..ty.span.end;
                 Ok(ast::Type {
                     mut_token,
-                    kind: ast::TypeKind::Ref(Box::new(ty)),
+                    kind: ast::TypeKind::Pointer(Box::new(ty)),
                     span,
                 })
             }
@@ -689,12 +689,21 @@ impl Parser {
                 expr = ast::Expr::ArrayIndex(array_index);
             } else if self.peek(TokenKind::Dot) {
                 let dot = self.consume(TokenKind::Dot)?;
-                let member = self.consume(TokenKind::Identifier)?;
-                expr = ast::Expr::MemberAccess(ExprMemberAccess {
-                    base: Box::new(expr),
-                    dot,
-                    member,
-                })
+                if self.peek(TokenKind::Star) {
+                    let star = self.consume(TokenKind::Star)?;
+                    expr = ast::Expr::Deref(ast::ExprDeref {
+                        base: Box::new(expr),
+                        dot,
+                        star,
+                    })
+                } else {
+                    let member = self.consume(TokenKind::Identifier)?;
+                    expr = ast::Expr::MemberAccess(ExprMemberAccess {
+                        base: Box::new(expr),
+                        dot,
+                        member,
+                    })
+                }
             } else {
                 break;
             }

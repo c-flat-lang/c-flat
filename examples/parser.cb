@@ -1,6 +1,6 @@
 extern C fn write_char(u8) void;
 
-pub fn println(string: ref [u8]) void {
+pub fn println(string: *[u8]) void {
     let mut i: usize = 0;
     while i < string.len {
         write_char(string[i]);
@@ -9,7 +9,7 @@ pub fn println(string: ref [u8]) void {
     write_char(10);
 }
 
-pub fn print(string: ref [u8]) void {
+pub fn print(string: *[u8]) void {
     let mut i: usize = 0;
     while i < string.len {
         write_char(string[i]);

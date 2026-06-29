@@ -11,7 +11,7 @@ type Point struct {
     y: u8,
 }
 
-fn display_point(point: ref Point) void {
+fn display_point(point: *Point) void {
     write_char('P');
     write_char('o');
     write_char('i');

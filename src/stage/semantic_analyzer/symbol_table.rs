@@ -246,6 +246,7 @@ impl SymbolTableBuilder {
             Expr::While(expr) => self.walk_expr_while(expr),
             Expr::Block(block) => self.walk_block(block),
             Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
+            Expr::Deref(expr) => self.walk_expr(&expr.base),
             Expr::Not(expr) => self.walk_expr(&expr.expr),
             Expr::Grouping(expr_grouping) => self.walk_expr(&expr_grouping.expr),
             Expr::TypeCast(cast) => self.walk_expr(&cast.expr),

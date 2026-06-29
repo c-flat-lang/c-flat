@@ -825,6 +825,38 @@ impl Lower<Wasm32LowerContext<'_>> for ILoad {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         self.src.lower(ctx, target)?;
+
+        let memarg_byte = wasm_encoder::MemArg {
+            offset: 0,
+            align: 0,
+            memory_index: 0,
+        };
+        let memarg_word = wasm_encoder::MemArg {
+            offset: 0,
+            align: 1,
+            memory_index: 0,
+        };
+        let memarg_dword = wasm_encoder::MemArg {
+            offset: 0,
+            align: 2,
+            memory_index: 0,
+        };
+
+        match &self.des.ty {
+            Type::Unsigned(1..=8) => target.assembler.i32_load8_u(memarg_byte),
+            Type::Signed(1..=8) => target.assembler.i32_load8_s(memarg_byte),
+            Type::Unsigned(9..=16) => target.assembler.i32_load16_u(memarg_word),
+            Type::Signed(9..=16) => target.assembler.i32_load16_s(memarg_word),
+            _ => match self.des.ty.clone().into() {
+                ValType::I32 => target.assembler.i32_load(memarg_dword),
+                ValType::I64 => todo!("@load i64"),
+                ValType::F32 => todo!("@load f32"),
+                ValType::F64 => todo!("@load f64"),
+                ValType::V128 => todo!("@load v128"),
+                ValType::Ref(_) => todo!("@load ref"),
+            },
+        };
+
         let Some(idx) = ctx
             .local_function_variables
             .get(&target.function_name)
