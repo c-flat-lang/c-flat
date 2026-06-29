@@ -120,6 +120,7 @@ impl<'st> TypeResolver<'st> {
             Expr::ArrayRepeat(expr_array_repeat) => self.walk_expr_array_repeat(expr_array_repeat),
             Expr::Block(expr_block) => self.walk_expr_block(expr_block),
             Expr::AddressOf(expr_address_of) => self.walk_expr(&mut expr_address_of.expr),
+            Expr::Deref(expr_deref) => self.walk_expr(&mut expr_deref.base),
             Expr::Not(expr_not) => self.walk_expr(&mut expr_not.expr),
             Expr::Grouping(expr_grouping) => self.walk_expr(&mut expr_grouping.expr),
             Expr::TypeCast(expr_cast) => {
@@ -243,7 +244,7 @@ impl<'st> TypeResolver<'st> {
             | TypeKind::UnsignedTargetPointerNumber
             | TypeKind::Void => {}
             TypeKind::Array(_, ty) => self.walk_type(ty),
-            TypeKind::Ref(ty) => self.walk_type(ty),
+            TypeKind::Pointer(ty) => self.walk_type(ty),
             TypeKind::Struct(struct_type) => {
                 self.generic_args = struct_type.type_params.clone();
                 for (_, ty) in struct_type.fields.iter_mut() {

@@ -10,7 +10,7 @@ fn exit(code: usize) void {
 
 pub fn main() void {
     // Reinterpret the raw mmap address as a typed pointer, then write/read it.
-    let p = mem::alloc(64) as ref Pair;
+    let p = mem::alloc(64) as *Pair;
     p.data[0] = 13;
     p.data[1] = 29;
     let sum = p.data[0] + p.data[1]; // 42

@@ -137,7 +137,7 @@ impl Monomorphizer {
     /// Resolves any [`TypeKind::NameWithParams`] into a mangled [`TypeKind::Name`]
     fn rewrite_type(&mut self, ty: &mut Type) {
         match &mut ty.kind {
-            TypeKind::Ref(inner) => self.rewrite_type(inner),
+            TypeKind::Pointer(inner) => self.rewrite_type(inner),
             TypeKind::Slice(inner) => self.rewrite_type(inner),
             TypeKind::Array(_, inner) => self.rewrite_type(inner),
             TypeKind::Struct(st) => {
@@ -222,6 +222,7 @@ impl Monomorphizer {
             }
             Expr::Block(b) => self.rewrite_block(b),
             Expr::AddressOf(a) => self.rewrite_expr(&mut a.expr),
+            Expr::Deref(d) => self.rewrite_expr(&mut d.base),
             Expr::Not(n) => self.rewrite_expr(&mut n.expr),
             Expr::Grouping(g) => self.rewrite_expr(&mut g.expr),
             Expr::TypeCast(c) => {
@@ -376,7 +377,7 @@ fn substitute_type(ty: &mut Type, subst: &HashMap<String, Type>) {
                 substitute_type(param, subst);
             }
         }
-        TypeKind::Ref(inner) => substitute_type(inner, subst),
+        TypeKind::Pointer(inner) => substitute_type(inner, subst),
         TypeKind::Slice(inner) => substitute_type(inner, subst),
         TypeKind::Array(_, inner) => substitute_type(inner, subst),
         TypeKind::Struct(st) => {
@@ -466,6 +467,7 @@ fn substitute_expr(expr: &mut Expr, subst: &HashMap<String, Type>) {
         }
         Expr::Block(b) => substitute_block(b, subst),
         Expr::AddressOf(a) => substitute_expr(&mut a.expr, subst),
+        Expr::Deref(d) => substitute_expr(&mut d.base, subst),
         Expr::Not(n) => substitute_expr(&mut n.expr, subst),
         Expr::Grouping(g) => substitute_expr(&mut g.expr, subst),
         Expr::TypeCast(c) => {
@@ -488,7 +490,7 @@ fn unify(
                 .entry(p.lexeme.clone())
                 .or_insert_with(|| actual.clone());
         }
-        (TypeKind::Ref(a), TypeKind::Ref(b)) => unify(a, b, names, bindings),
+        (TypeKind::Pointer(a), TypeKind::Pointer(b)) => unify(a, b, names, bindings),
         (TypeKind::Slice(a), TypeKind::Slice(b)) => unify(a, b, names, bindings),
         (TypeKind::Array(_, a), TypeKind::Array(_, b)) => unify(a, b, names, bindings),
         _ => {}
@@ -504,7 +506,11 @@ fn infer_expr_type(expr: &Expr) -> Option<Type> {
         }
         Expr::Grouping(g) => infer_expr_type(&g.expr),
         Expr::Binary(b) => infer_expr_type(&b.left),
-        Expr::AddressOf(a) => Some(ty(TypeKind::Ref(Box::new(infer_expr_type(&a.expr)?)))),
+        Expr::AddressOf(a) => Some(ty(TypeKind::Pointer(Box::new(infer_expr_type(&a.expr)?)))),
+        Expr::Deref(d) => match infer_expr_type(&d.base)?.kind {
+            TypeKind::Pointer(inner) => Some(*inner),
+            _ => None,
+        },
         _ => None,
     }
 }
@@ -528,7 +534,7 @@ fn mangle_type(kind: &TypeKind) -> String {
         TypeKind::UnsignedNumber(n) => format!("u{n}"),
         TypeKind::SignedTargetPointerNumber => "ssize".into(),
         TypeKind::UnsignedTargetPointerNumber => "usize".into(),
-        TypeKind::Ref(inner) => format!("ref_{}", mangle_type(&inner.kind)),
+        TypeKind::Pointer(inner) => format!("ptr_{}", mangle_type(&inner.kind)),
         TypeKind::Slice(inner) => format!("slice_{}", mangle_type(&inner.kind)),
         TypeKind::Array(n, inner) => format!("arr{n}_{}", mangle_type(&inner.kind)),
         TypeKind::Name(tok) => tok.lexeme.clone(),

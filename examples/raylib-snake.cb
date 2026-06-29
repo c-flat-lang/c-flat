@@ -26,14 +26,14 @@ type Color struct {
     a: u8,
 }
 
-extern C fn InitWindow as init_window(s32, s32, ref [u8]) void;
+extern C fn InitWindow as init_window(s32, s32, *[u8]) void;
 extern C fn BeginDrawing as begin_drawing() void;
 extern C fn EndDrawing as end_drawing() void;
 extern C fn CloseWindow as close_window() void;
 extern C fn SetTargetFPS as set_target_fps(s32) void;
 extern C fn WindowShouldClose as window_should_close() bool;
 extern C fn ClearBackground as clear_background(Color) void;
-extern C fn DrawText as draw_text(ref [u8], s32, s32, s32, Color) void;
+extern C fn DrawText as draw_text(*[u8], s32, s32, s32, Color) void;
 extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
 extern C fn IsKeyPressed as is_key_pressed(s32) bool;
 extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;

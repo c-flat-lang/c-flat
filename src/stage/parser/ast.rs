@@ -57,7 +57,7 @@ impl Type {
     pub fn de_ref(&self) -> &Type {
         let mut ty = self;
 
-        while let TypeKind::Ref(inner) = &ty.kind {
+        while let TypeKind::Pointer(inner) = &ty.kind {
             ty = inner;
         }
 
@@ -76,7 +76,7 @@ pub enum TypeKind {
     Name(Token),
     /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
-    Ref(Box<Type>),
+    Pointer(Box<Type>),
     SignedNumber(u8),
     /// isize
     SignedTargetPointerNumber,
@@ -112,7 +112,7 @@ impl TypeKind {
                     name.lexeme
                 )
             }
-            Self::Ref(inner) => {
+            Self::Pointer(inner) => {
                 bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
             }
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
@@ -173,7 +173,7 @@ This means we may need to generate more then one X Type depending on how many Ge
                     name.lexeme
                 )
             }
-            Self::Ref(_) => 64,
+            Self::Pointer(_) => 64,
             Self::SignedTargetPointerNumber => unreachable!(
                 "ssize or SignedTargetPointerNumber should be handled in type_resolver"
             ),
@@ -216,7 +216,7 @@ impl std::fmt::Display for TypeKind {
             Self::Enum(name) => write!(f, "{}", name),
             Self::Name(name) => write!(f, "{}", name.lexeme),
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
-            Self::Ref(ty) => write!(f, "ref {ty}"),
+            Self::Pointer(ty) => write!(f, "*{ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
             Self::SignedTargetPointerNumber => write!(f, "ssize"),
             Self::Slice(ty) => write!(f, "[{ty}]"),
@@ -424,6 +424,21 @@ impl ExprAddressOf {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprDeref {
+    pub base: Box<Expr>,
+    pub dot: Token,
+    pub star: Token,
+}
+
+impl ExprDeref {
+    pub fn span(&self) -> Span {
+        let start = self.base.span().start;
+        let end = self.star.span.end;
+        start..end
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExprNot {
     pub bang: Token,
     pub expr: Box<Expr>,
@@ -476,6 +491,7 @@ pub enum Expr {
     ArrayRepeat(ExprArrayRepeat),
     Block(ExprBlock),
     AddressOf(ExprAddressOf),
+    Deref(ExprDeref),
     Not(ExprNot),
     Grouping(ExprGrouping),
     TypeCast(ExprTypeCast),
@@ -501,6 +517,7 @@ impl Expr {
             Self::ArrayRepeat(expr) => expr.span(),
             Self::Block(expr) => expr.span(),
             Self::AddressOf(expr) => expr.span(),
+            Self::Deref(expr) => expr.span(),
             Self::Not(expr) => expr.span(),
             Self::Grouping(expr) => expr.span(),
             Self::TypeCast(expr) => expr.span(),

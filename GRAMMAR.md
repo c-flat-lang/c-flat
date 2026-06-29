@@ -61,6 +61,40 @@ is accepted today; type-argument inference covers literal arguments — pass an
 explicit `<( .. )>` otherwise; const/value generics, generic enums, and generic
 methods are not implemented.
 
+## **Pointers**
+
+A pointer type is written `*T` (a pointer to a value of type `T`), following the
+Zig/C convention. Pointers nest (`**T`) and compose with other type forms
+(`*[u8]`, `*List`). Like Zig, pointers are **non-null by default** — there is no
+null pointer today; a typed null/optional pointer (`?*T`) is planned for later.
+
+```
+fn set_list(list: *List, index: usize, value: s32) void { ... }
+
+pub fn println(string: *[u8]) void { ... }
+```
+
+Two operators work with pointers:
+
+- **Address-of** `&expr` — takes the address of `expr`, producing a `*T`.
+- **Dereference** `expr.*` — reads through a pointer, producing the pointee `T`.
+  It is a postfix operator, so it chains: `p.*`, `p.*.field`, `p.*[i]`.
+
+```
+let x: s32 = 10;
+let p: *s32 = &x;   // address-of: *s32
+let y: s32 = p.*;   // dereference: s32
+```
+
+Grammar additions:
+
+$$
+\begin{align}
+    [\text{Type}] &\to \text{*} \ [\text{Type}] \\
+    [\text{Expr}] &\to \text{\&} \ [\text{Expr}] \mid [\text{Expr}] . \text{*}
+\end{align}
+$$
+
 ## **Modules (`use`)**
 
 A `use` statement imports from another `.cb` file. Paths resolve relative to the

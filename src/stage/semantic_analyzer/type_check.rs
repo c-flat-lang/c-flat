@@ -214,6 +214,7 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr(&mut self, expr: &mut ast::Expr) -> ast::Type {
         match expr {
             ast::Expr::AddressOf(expr) => self.walk_expr_address_of(expr),
+            ast::Expr::Deref(expr) => self.walk_expr_deref(expr),
             ast::Expr::Array(expr) => self.walk_expr_array(expr),
             ast::Expr::ArrayIndex(expr) => self.walk_expr_array_index(expr),
             ast::Expr::ArrayRepeat(expr) => self.walk_expr_array_repeat(expr),
@@ -524,9 +525,29 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
         let inner_type = self.walk_expr(&mut expr.expr);
         Type {
-            kind: TypeKind::Ref(Box::new(inner_type)),
+            kind: TypeKind::Pointer(Box::new(inner_type)),
             span: expr.span(),
             mut_token: None,
+        }
+    }
+
+    fn walk_expr_deref(&mut self, expr: &mut ast::ExprDeref) -> Type {
+        let base_type = self.walk_expr(&mut expr.base);
+        match base_type.kind {
+            TypeKind::Pointer(inner) => *inner,
+            _ => {
+                self.errors.push(Box::new(ErrorMissMatchedType::new(
+                    base_type.clone(),
+                    TypeKind::Pointer(Box::new(Type {
+                        kind: TypeKind::Void,
+                        span: 0..1,
+                        mut_token: None,
+                    })),
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
+                base_type
+            }
         }
     }
 
@@ -606,16 +627,16 @@ impl<'st> TypeChecker<'st> {
                 mut_token: None,
             },
             TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
-                kind: TypeKind::Ref(inner_ty.clone()),
+                kind: TypeKind::Pointer(inner_ty.clone()),
                 span: expr.span(),
                 mut_token: None,
             },
-            TypeKind::Ref(inner) => match &inner.kind {
+            TypeKind::Pointer(inner) => match &inner.kind {
                 TypeKind::Struct(struct_def) => {
                     self.lookup_struct_member(struct_def, &member_access.member.lexeme)
                 }
                 TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
-                    kind: TypeKind::Ref(inner_ty.clone()),
+                    kind: TypeKind::Pointer(inner_ty.clone()),
                     span: expr.span(),
                     mut_token: None,
                 },

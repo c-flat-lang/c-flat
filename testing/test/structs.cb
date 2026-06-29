@@ -10,7 +10,7 @@ fn init_list() List {
   return list;
 }
 
-fn set_list(list: ref List, index: usize, value: s32) void {
+fn set_list(list: *List, index: usize, value: s32) void {
   list.data[index] = value;
 }
 

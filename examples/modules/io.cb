@@ -1,4 +1,4 @@
-pub fn println(string: ref [u8]) void {
+pub fn println(string: *[u8]) void {
     syscall4(
         1,            // SYS_write
         1,            // stdout

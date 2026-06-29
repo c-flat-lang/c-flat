@@ -9,8 +9,8 @@ use std::str::FromStr;
 
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
-    ExprBlock, ExprCall, ExprDecl, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot, ExprReturn,
-    ExprStruct, ExprTypeCast, ExprWhile, Litral,
+    ExprBlock, ExprCall, ExprDecl, ExprDeref, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot,
+    ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral,
 };
 
 #[derive(Debug)]
@@ -201,6 +201,7 @@ impl Lowerable for Expr {
             Expr::While(expr) => expr.lower(assembler, ctx),
             Expr::Block(block) => block.lower(assembler, ctx),
             Expr::AddressOf(expr) => expr.lower(assembler, ctx),
+            Expr::Deref(expr) => expr.lower(assembler, ctx),
             Expr::Not(expr) => expr.lower(assembler, ctx),
             Expr::Grouping(expr) => expr.lower(assembler, ctx),
             Expr::TypeCast(expr) => expr.lower(assembler, ctx),
@@ -951,6 +952,22 @@ impl Lowerable for ExprAddressOf {
         let ptr_ty = ir::Type::Pointer(Box::new(src_var.ty.clone()));
         let des = assembler.var(ptr_ty);
         assembler.ref_of(des.clone(), src_var);
+        Some(des)
+    }
+}
+
+impl Lowerable for ExprDeref {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let ptr = self.base.lower(assembler, ctx)?;
+        let ir::Type::Pointer(inner) = &ptr.ty else {
+            panic!("Expected pointer type in Deref, found {}", ptr.ty);
+        };
+        let des = assembler.var(inner.as_ref().clone());
+        assembler.load(des.clone(), ptr);
         Some(des)
     }
 }
