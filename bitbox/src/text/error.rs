@@ -144,7 +144,7 @@ impl Report for ErrorUnexpectedEndOfInput {
             .last_known_token
             .as_ref()
             .map(|t| t.span.clone())
-            .or(self.filename.as_ref().map(|filename| Span::new(filename)))
+            .or(self.filename.as_ref().map(Span::new))
             .unwrap_or(Span::new("unknown"));
 
         ReportBuilder::new(&span, src)

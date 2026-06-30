@@ -302,8 +302,7 @@ impl ErrorUnexpectedEndOfInput {
 
 impl Report for ErrorUnexpectedEndOfInput {
     fn filename(&self) -> &str {
-        &self
-            .last_token
+        self.last_token
             .as_ref()
             .map(|token| token.span.filename.as_str())
             .unwrap_or(self.filename.as_str())

@@ -89,7 +89,6 @@ pub fn compile_source(
 
 #[cfg(not(feature = "wasm"))]
 pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
-    use crate::error::{Report, ScopedReport};
     use crate::stage::parser::ast::Item;
     use std::path::Path;
 
@@ -101,7 +100,7 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         for module in &program.modules {
             eprintln!("=== {} ===", module.path.display());
             for token in
-                stage::lexer::Lexer.run((&module.path.to_str().unwrap_or_default(), &module.source))
+                stage::lexer::Lexer.run((module.path.to_str().unwrap_or_default(), &module.source))
             {
                 eprintln!("{:?}", token);
             }
@@ -116,9 +115,6 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         }
         std::process::exit(0);
     }
-
-    let entry_path = program.modules[0].path.display().to_string();
-    let entry_source = program.modules[0].source.clone();
 
     let items: Vec<Item> = program
         .modules

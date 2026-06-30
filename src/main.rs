@@ -1,9 +1,7 @@
 use bitbox::passes::DebugPass;
 use cflat::Cli;
 
-use cflat::error::ErrorMessage;
 use cflat::front_end_compiler;
-use report::Report;
 
 fn main() {
     use bitbox::passes::PassOutput;
