@@ -6,9 +6,9 @@ use crate::{error::Result, stage::lexer::token::Token};
 #[derive(Debug, Default)]
 pub struct Parser {}
 
-impl Stage<Vec<Token>, Result<Vec<ast::Item>>> for Parser {
-    fn run(&mut self, input: Vec<Token>) -> Result<Vec<ast::Item>> {
+impl Stage<(&str, Vec<Token>), Result<Vec<ast::Item>>> for Parser {
+    fn run(&mut self, (filename, input): (&str, Vec<Token>)) -> Result<Vec<ast::Item>> {
         eprintln!("{: >30}", "Parser");
-        syntax_analyzer::Parser::new(input.into_iter().peekable()).parse()
+        syntax_analyzer::Parser::new(filename, input.into_iter().peekable()).parse()
     }
 }

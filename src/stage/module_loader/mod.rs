@@ -222,7 +222,7 @@ impl ModuleLoader {
             let (span, importer) = edge_span
                 .get(&(from, to))
                 .cloned()
-                .unwrap_or((0..1, cycle[0]));
+                .unwrap_or((Span::new(entry.to_str().unwrap_or_default()), cycle[0]));
             errors.push(Box::new(ScopedReport::new(
                 modules[importer].display(),
                 modules[importer].source.clone(),
@@ -256,9 +256,9 @@ impl ModuleLoader {
             raw
         };
 
-        let tokens = crate::stage::lexer::Lexer.run(&source);
+        let tokens = crate::stage::lexer::Lexer.run((path.to_str().unwrap_or_default(), &source));
         let items = crate::stage::parser::Parser::default()
-            .run(tokens)
+            .run((path.to_str().unwrap_or_default(), tokens))
             .map_err(|err| -> Box<dyn Report> {
                 Box::new(ScopedReport::new(
                     path.display().to_string(),
@@ -323,7 +323,11 @@ fn item_visibility(items: &[Item], name: &str) -> Option<Visibility> {
 
 fn use_span(use_item: &ast::Use) -> Span {
     match (use_item.path.first(), use_item.path.last()) {
-        (Some(first), Some(last)) => first.span.start..last.span.end,
+        (Some(first), Some(last)) => Span {
+            start: first.span.start,
+            end: last.span.end,
+            filename: first.span.filename.clone(),
+        },
         _ => use_item.use_token.span.clone(),
     }
 }

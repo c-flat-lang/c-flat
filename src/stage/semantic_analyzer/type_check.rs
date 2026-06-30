@@ -133,10 +133,10 @@ impl<'st> TypeChecker<'st> {
         extern_function.return_type.clone()
     }
 
-    fn walk_use(&mut self, _item: &ast::Use) -> ast::Type {
+    fn walk_use(&mut self, item: &ast::Use) -> ast::Type {
         Type {
             kind: TypeKind::Void,
-            span: 0..1,
+            span: item.span(),
             mut_token: None,
         }
     }
@@ -180,13 +180,19 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_block(&mut self, block: &mut ast::ExprBlock) -> ast::Type {
+        let last_index = block.statements.len().saturating_sub(1);
+        let span = block
+            .statements
+            .get(last_index)
+            .map(|e| e.span())
+            .unwrap_or_default();
+
         let mut last_type = Type {
             kind: TypeKind::Void,
-            span: 0..1,
+            span: span.clone(),
             mut_token: None,
         };
 
-        let last_index = block.statements.len().saturating_sub(1);
         for (i, statement) in block.statements.iter_mut().enumerate() {
             if i != last_index {
                 self.walk_expr(&mut statement.expr);
@@ -201,7 +207,7 @@ impl<'st> TypeChecker<'st> {
                 last_type = Type {
                     mut_token: None,
                     kind: TypeKind::Void,
-                    span: 0..1,
+                    span: span.clone(),
                 };
             } else {
                 last_type = ty;
@@ -505,14 +511,7 @@ impl<'st> TypeChecker<'st> {
             // NOTE: This probably will cause some missleading errors.
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 array_type.clone(),
-                TypeKind::Array(
-                    0,
-                    Box::new(Type {
-                        kind: TypeKind::Void,
-                        span: 0..1,
-                        mut_token: None,
-                    }),
-                ),
+                TypeKind::Array(0, Box::new(array_type.clone())),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -537,11 +536,7 @@ impl<'st> TypeChecker<'st> {
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
                     base_type.clone(),
-                    TypeKind::Pointer(Box::new(Type {
-                        kind: TypeKind::Void,
-                        span: 0..1,
-                        mut_token: None,
-                    })),
+                    TypeKind::Pointer(Box::new(base_type.clone())),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -785,15 +780,17 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer.run(src);
-        let mut ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
+        let tokens = crate::stage::lexer::Lexer.run(("test_type_check", src));
+        let mut ast = crate::stage::parser::Parser::default()
+            .run(("test_type_check", tokens))
+            .unwrap();
         let mut symbol_table =
             crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::default()
                 .build(&mut ast)
                 .unwrap();
         let type_checker = TypeChecker::new(&mut symbol_table);
         if let Err(errors) = type_checker.check(&mut ast) {
-            eprintln!("{}", errors.report("type_check.cb", src));
+            eprintln!("{}", errors.report(src));
             assert!(false);
         }
         assert!(true);
