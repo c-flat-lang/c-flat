@@ -1,6 +1,6 @@
 ---
 source: src/stage/lexer/tests.rs
-expression: snapshot_lexing(& contents)
+expression: "snapshot_lexing(\"../../../examples/extern.cb\", & contents)"
 ---
 // Build command:
 // cargo run -r -- \
@@ -8,216 +8,216 @@ expression: snapshot_lexing(& contents)
 //   --link "-L/opt/raylib/release/libs/linux -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
 //   examples/extern.cb
 extern C fn InitWindow as init_window(s32, s32, *[u8]) void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 185..191 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 192..193 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 194..196 }
-            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "InitWindow", span: 197..207 }
-                       ^^ Token { kind: Keyword(As), lexeme: "as", span: 208..210 }
-                          ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "init_window", span: 211..222 }
-                                     ^ Token { kind: LeftParen, lexeme: "(", span: 222..223 }
-                                      ^^^ Token { kind: Identifier, lexeme: "s32", span: 223..226 }
-                                         ^ Token { kind: Comma, lexeme: ",", span: 226..227 }
-                                           ^^^ Token { kind: Identifier, lexeme: "s32", span: 228..231 }
-                                              ^ Token { kind: Comma, lexeme: ",", span: 231..232 }
-                                                ^ Token { kind: Star, lexeme: "*", span: 233..234 }
-                                                 ^ Token { kind: LeftBracket, lexeme: "[", span: 234..235 }
-                                                  ^^ Token { kind: Identifier, lexeme: "u8", span: 235..237 }
-                                                    ^ Token { kind: RightBracket, lexeme: "]", span: 237..238 }
-                                                     ^ Token { kind: RightParen, lexeme: ")", span: 238..239 }
-                                                       ^^^^ Token { kind: Identifier, lexeme: "void", span: 240..244 }
-                                                           ^ Token { kind: Semicolon, lexeme: ";", span: 244..245 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 185, end: 191, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 192, end: 193, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 194, end: 196, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "InitWindow", span: Span { start: 197, end: 207, filename: "../../../examples/extern.cb" } }
+                       ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 208, end: 210, filename: "../../../examples/extern.cb" } }
+                          ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "init_window", span: Span { start: 211, end: 222, filename: "../../../examples/extern.cb" } }
+                                     ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 222, end: 223, filename: "../../../examples/extern.cb" } }
+                                      ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 223, end: 226, filename: "../../../examples/extern.cb" } }
+                                         ^ Token { kind: Comma, lexeme: ",", span: Span { start: 226, end: 227, filename: "../../../examples/extern.cb" } }
+                                           ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 228, end: 231, filename: "../../../examples/extern.cb" } }
+                                              ^ Token { kind: Comma, lexeme: ",", span: Span { start: 231, end: 232, filename: "../../../examples/extern.cb" } }
+                                                ^ Token { kind: Star, lexeme: "*", span: Span { start: 233, end: 234, filename: "../../../examples/extern.cb" } }
+                                                 ^ Token { kind: LeftBracket, lexeme: "[", span: Span { start: 234, end: 235, filename: "../../../examples/extern.cb" } }
+                                                  ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 235, end: 237, filename: "../../../examples/extern.cb" } }
+                                                    ^ Token { kind: RightBracket, lexeme: "]", span: Span { start: 237, end: 238, filename: "../../../examples/extern.cb" } }
+                                                     ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 238, end: 239, filename: "../../../examples/extern.cb" } }
+                                                       ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 240, end: 244, filename: "../../../examples/extern.cb" } }
+                                                           ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 244, end: 245, filename: "../../../examples/extern.cb" } }
 extern C fn BeginDrawing as begin_drawing() void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 246..252 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 253..254 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 255..257 }
-            ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "BeginDrawing", span: 258..270 }
-                         ^^ Token { kind: Keyword(As), lexeme: "as", span: 271..273 }
-                            ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "begin_drawing", span: 274..287 }
-                                         ^ Token { kind: LeftParen, lexeme: "(", span: 287..288 }
-                                          ^ Token { kind: RightParen, lexeme: ")", span: 288..289 }
-                                            ^^^^ Token { kind: Identifier, lexeme: "void", span: 290..294 }
-                                                ^ Token { kind: Semicolon, lexeme: ";", span: 294..295 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 246, end: 252, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 253, end: 254, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 255, end: 257, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "BeginDrawing", span: Span { start: 258, end: 270, filename: "../../../examples/extern.cb" } }
+                         ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 271, end: 273, filename: "../../../examples/extern.cb" } }
+                            ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "begin_drawing", span: Span { start: 274, end: 287, filename: "../../../examples/extern.cb" } }
+                                         ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 287, end: 288, filename: "../../../examples/extern.cb" } }
+                                          ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 288, end: 289, filename: "../../../examples/extern.cb" } }
+                                            ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 290, end: 294, filename: "../../../examples/extern.cb" } }
+                                                ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 294, end: 295, filename: "../../../examples/extern.cb" } }
 extern C fn EndDrawing as end_drawing() void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 296..302 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 303..304 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 305..307 }
-            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "EndDrawing", span: 308..318 }
-                       ^^ Token { kind: Keyword(As), lexeme: "as", span: 319..321 }
-                          ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "end_drawing", span: 322..333 }
-                                     ^ Token { kind: LeftParen, lexeme: "(", span: 333..334 }
-                                      ^ Token { kind: RightParen, lexeme: ")", span: 334..335 }
-                                        ^^^^ Token { kind: Identifier, lexeme: "void", span: 336..340 }
-                                            ^ Token { kind: Semicolon, lexeme: ";", span: 340..341 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 296, end: 302, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 303, end: 304, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 305, end: 307, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "EndDrawing", span: Span { start: 308, end: 318, filename: "../../../examples/extern.cb" } }
+                       ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 319, end: 321, filename: "../../../examples/extern.cb" } }
+                          ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "end_drawing", span: Span { start: 322, end: 333, filename: "../../../examples/extern.cb" } }
+                                     ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 333, end: 334, filename: "../../../examples/extern.cb" } }
+                                      ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 334, end: 335, filename: "../../../examples/extern.cb" } }
+                                        ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 336, end: 340, filename: "../../../examples/extern.cb" } }
+                                            ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 340, end: 341, filename: "../../../examples/extern.cb" } }
 extern C fn CloseWindow as close_window() void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 342..348 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 349..350 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 351..353 }
-            ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "CloseWindow", span: 354..365 }
-                        ^^ Token { kind: Keyword(As), lexeme: "as", span: 366..368 }
-                           ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "close_window", span: 369..381 }
-                                       ^ Token { kind: LeftParen, lexeme: "(", span: 381..382 }
-                                        ^ Token { kind: RightParen, lexeme: ")", span: 382..383 }
-                                          ^^^^ Token { kind: Identifier, lexeme: "void", span: 384..388 }
-                                              ^ Token { kind: Semicolon, lexeme: ";", span: 388..389 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 342, end: 348, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 349, end: 350, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 351, end: 353, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "CloseWindow", span: Span { start: 354, end: 365, filename: "../../../examples/extern.cb" } }
+                        ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 366, end: 368, filename: "../../../examples/extern.cb" } }
+                           ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "close_window", span: Span { start: 369, end: 381, filename: "../../../examples/extern.cb" } }
+                                       ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 381, end: 382, filename: "../../../examples/extern.cb" } }
+                                        ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 382, end: 383, filename: "../../../examples/extern.cb" } }
+                                          ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 384, end: 388, filename: "../../../examples/extern.cb" } }
+                                              ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 388, end: 389, filename: "../../../examples/extern.cb" } }
 extern C fn SetTargetFPS as set_target_fps(s32) void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 390..396 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 397..398 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 399..401 }
-            ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "SetTargetFPS", span: 402..414 }
-                         ^^ Token { kind: Keyword(As), lexeme: "as", span: 415..417 }
-                            ^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "set_target_fps", span: 418..432 }
-                                          ^ Token { kind: LeftParen, lexeme: "(", span: 432..433 }
-                                           ^^^ Token { kind: Identifier, lexeme: "s32", span: 433..436 }
-                                              ^ Token { kind: RightParen, lexeme: ")", span: 436..437 }
-                                                ^^^^ Token { kind: Identifier, lexeme: "void", span: 438..442 }
-                                                    ^ Token { kind: Semicolon, lexeme: ";", span: 442..443 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 390, end: 396, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 397, end: 398, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 399, end: 401, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "SetTargetFPS", span: Span { start: 402, end: 414, filename: "../../../examples/extern.cb" } }
+                         ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 415, end: 417, filename: "../../../examples/extern.cb" } }
+                            ^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "set_target_fps", span: Span { start: 418, end: 432, filename: "../../../examples/extern.cb" } }
+                                          ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 432, end: 433, filename: "../../../examples/extern.cb" } }
+                                           ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 433, end: 436, filename: "../../../examples/extern.cb" } }
+                                              ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 436, end: 437, filename: "../../../examples/extern.cb" } }
+                                                ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 438, end: 442, filename: "../../../examples/extern.cb" } }
+                                                    ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 442, end: 443, filename: "../../../examples/extern.cb" } }
 extern C fn WindowShouldClose as window_should_close() bool;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 444..450 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 451..452 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 453..455 }
-            ^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "WindowShouldClose", span: 456..473 }
-                              ^^ Token { kind: Keyword(As), lexeme: "as", span: 474..476 }
-                                 ^^^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "window_should_close", span: 477..496 }
-                                                    ^ Token { kind: LeftParen, lexeme: "(", span: 496..497 }
-                                                     ^ Token { kind: RightParen, lexeme: ")", span: 497..498 }
-                                                       ^^^^ Token { kind: Identifier, lexeme: "bool", span: 499..503 }
-                                                           ^ Token { kind: Semicolon, lexeme: ";", span: 503..504 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 444, end: 450, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 451, end: 452, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 453, end: 455, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "WindowShouldClose", span: Span { start: 456, end: 473, filename: "../../../examples/extern.cb" } }
+                              ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 474, end: 476, filename: "../../../examples/extern.cb" } }
+                                 ^^^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "window_should_close", span: Span { start: 477, end: 496, filename: "../../../examples/extern.cb" } }
+                                                    ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 496, end: 497, filename: "../../../examples/extern.cb" } }
+                                                     ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 497, end: 498, filename: "../../../examples/extern.cb" } }
+                                                       ^^^^ Token { kind: Identifier, lexeme: "bool", span: Span { start: 499, end: 503, filename: "../../../examples/extern.cb" } }
+                                                           ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 503, end: 504, filename: "../../../examples/extern.cb" } }
 extern C fn ClearBackground as clear_background(u32) void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 505..511 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 512..513 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 514..516 }
-            ^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "ClearBackground", span: 517..532 }
-                            ^^ Token { kind: Keyword(As), lexeme: "as", span: 533..535 }
-                               ^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "clear_background", span: 536..552 }
-                                               ^ Token { kind: LeftParen, lexeme: "(", span: 552..553 }
-                                                ^^^ Token { kind: Identifier, lexeme: "u32", span: 553..556 }
-                                                   ^ Token { kind: RightParen, lexeme: ")", span: 556..557 }
-                                                     ^^^^ Token { kind: Identifier, lexeme: "void", span: 558..562 }
-                                                         ^ Token { kind: Semicolon, lexeme: ";", span: 562..563 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 505, end: 511, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 512, end: 513, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 514, end: 516, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "ClearBackground", span: Span { start: 517, end: 532, filename: "../../../examples/extern.cb" } }
+                            ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 533, end: 535, filename: "../../../examples/extern.cb" } }
+                               ^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "clear_background", span: Span { start: 536, end: 552, filename: "../../../examples/extern.cb" } }
+                                               ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 552, end: 553, filename: "../../../examples/extern.cb" } }
+                                                ^^^ Token { kind: Identifier, lexeme: "u32", span: Span { start: 553, end: 556, filename: "../../../examples/extern.cb" } }
+                                                   ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 556, end: 557, filename: "../../../examples/extern.cb" } }
+                                                     ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 558, end: 562, filename: "../../../examples/extern.cb" } }
+                                                         ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 562, end: 563, filename: "../../../examples/extern.cb" } }
 extern C fn DrawText as draw_text(*[u8], s32, s32, s32, s32) void;
-^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: 564..570 }
-       ^ Token { kind: Identifier, lexeme: "C", span: 571..572 }
-         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 573..575 }
-            ^^^^^^^^ Token { kind: Identifier, lexeme: "DrawText", span: 576..584 }
-                     ^^ Token { kind: Keyword(As), lexeme: "as", span: 585..587 }
-                        ^^^^^^^^^ Token { kind: Identifier, lexeme: "draw_text", span: 588..597 }
-                                 ^ Token { kind: LeftParen, lexeme: "(", span: 597..598 }
-                                  ^ Token { kind: Star, lexeme: "*", span: 598..599 }
-                                   ^ Token { kind: LeftBracket, lexeme: "[", span: 599..600 }
-                                    ^^ Token { kind: Identifier, lexeme: "u8", span: 600..602 }
-                                      ^ Token { kind: RightBracket, lexeme: "]", span: 602..603 }
-                                       ^ Token { kind: Comma, lexeme: ",", span: 603..604 }
-                                         ^^^ Token { kind: Identifier, lexeme: "s32", span: 605..608 }
-                                            ^ Token { kind: Comma, lexeme: ",", span: 608..609 }
-                                              ^^^ Token { kind: Identifier, lexeme: "s32", span: 610..613 }
-                                                 ^ Token { kind: Comma, lexeme: ",", span: 613..614 }
-                                                   ^^^ Token { kind: Identifier, lexeme: "s32", span: 615..618 }
-                                                      ^ Token { kind: Comma, lexeme: ",", span: 618..619 }
-                                                        ^^^ Token { kind: Identifier, lexeme: "s32", span: 620..623 }
-                                                           ^ Token { kind: RightParen, lexeme: ")", span: 623..624 }
-                                                             ^^^^ Token { kind: Identifier, lexeme: "void", span: 625..629 }
-                                                                 ^ Token { kind: Semicolon, lexeme: ";", span: 629..630 }
+^^^^^^ Token { kind: Keyword(Extern), lexeme: "extern", span: Span { start: 564, end: 570, filename: "../../../examples/extern.cb" } }
+       ^ Token { kind: Identifier, lexeme: "C", span: Span { start: 571, end: 572, filename: "../../../examples/extern.cb" } }
+         ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 573, end: 575, filename: "../../../examples/extern.cb" } }
+            ^^^^^^^^ Token { kind: Identifier, lexeme: "DrawText", span: Span { start: 576, end: 584, filename: "../../../examples/extern.cb" } }
+                     ^^ Token { kind: Keyword(As), lexeme: "as", span: Span { start: 585, end: 587, filename: "../../../examples/extern.cb" } }
+                        ^^^^^^^^^ Token { kind: Identifier, lexeme: "draw_text", span: Span { start: 588, end: 597, filename: "../../../examples/extern.cb" } }
+                                 ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 597, end: 598, filename: "../../../examples/extern.cb" } }
+                                  ^ Token { kind: Star, lexeme: "*", span: Span { start: 598, end: 599, filename: "../../../examples/extern.cb" } }
+                                   ^ Token { kind: LeftBracket, lexeme: "[", span: Span { start: 599, end: 600, filename: "../../../examples/extern.cb" } }
+                                    ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 600, end: 602, filename: "../../../examples/extern.cb" } }
+                                      ^ Token { kind: RightBracket, lexeme: "]", span: Span { start: 602, end: 603, filename: "../../../examples/extern.cb" } }
+                                       ^ Token { kind: Comma, lexeme: ",", span: Span { start: 603, end: 604, filename: "../../../examples/extern.cb" } }
+                                         ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 605, end: 608, filename: "../../../examples/extern.cb" } }
+                                            ^ Token { kind: Comma, lexeme: ",", span: Span { start: 608, end: 609, filename: "../../../examples/extern.cb" } }
+                                              ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 610, end: 613, filename: "../../../examples/extern.cb" } }
+                                                 ^ Token { kind: Comma, lexeme: ",", span: Span { start: 613, end: 614, filename: "../../../examples/extern.cb" } }
+                                                   ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 615, end: 618, filename: "../../../examples/extern.cb" } }
+                                                      ^ Token { kind: Comma, lexeme: ",", span: Span { start: 618, end: 619, filename: "../../../examples/extern.cb" } }
+                                                        ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 620, end: 623, filename: "../../../examples/extern.cb" } }
+                                                           ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 623, end: 624, filename: "../../../examples/extern.cb" } }
+                                                             ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 625, end: 629, filename: "../../../examples/extern.cb" } }
+                                                                 ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 629, end: 630, filename: "../../../examples/extern.cb" } }
 
 pub fn main() s32 {
-^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: 632..635 }
-    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: 636..638 }
-       ^^^^ Token { kind: Identifier, lexeme: "main", span: 639..643 }
-           ^ Token { kind: LeftParen, lexeme: "(", span: 643..644 }
-            ^ Token { kind: RightParen, lexeme: ")", span: 644..645 }
-              ^^^ Token { kind: Identifier, lexeme: "s32", span: 646..649 }
-                  ^ Token { kind: LeftBrace, lexeme: "{", span: 650..651 }
+^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: Span { start: 632, end: 635, filename: "../../../examples/extern.cb" } }
+    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 636, end: 638, filename: "../../../examples/extern.cb" } }
+       ^^^^ Token { kind: Identifier, lexeme: "main", span: Span { start: 639, end: 643, filename: "../../../examples/extern.cb" } }
+           ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 643, end: 644, filename: "../../../examples/extern.cb" } }
+            ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 644, end: 645, filename: "../../../examples/extern.cb" } }
+              ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 646, end: 649, filename: "../../../examples/extern.cb" } }
+                  ^ Token { kind: LeftBrace, lexeme: "{", span: Span { start: 650, end: 651, filename: "../../../examples/extern.cb" } }
     let screen_width = 1920;
-    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 656..659 }
-        ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_width", span: 660..672 }
-                     ^ Token { kind: Equal, lexeme: "=", span: 673..674 }
-                       ^^^^ Token { kind: Number, lexeme: "1920", span: 675..679 }
-                           ^ Token { kind: Semicolon, lexeme: ";", span: 679..680 }
+    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: Span { start: 656, end: 659, filename: "../../../examples/extern.cb" } }
+        ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_width", span: Span { start: 660, end: 672, filename: "../../../examples/extern.cb" } }
+                     ^ Token { kind: Equal, lexeme: "=", span: Span { start: 673, end: 674, filename: "../../../examples/extern.cb" } }
+                       ^^^^ Token { kind: Number, lexeme: "1920", span: Span { start: 675, end: 679, filename: "../../../examples/extern.cb" } }
+                           ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 679, end: 680, filename: "../../../examples/extern.cb" } }
     let screen_height = 1080;
-    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 685..688 }
-        ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_height", span: 689..702 }
-                      ^ Token { kind: Equal, lexeme: "=", span: 703..704 }
-                        ^^^^ Token { kind: Number, lexeme: "1080", span: 705..709 }
-                            ^ Token { kind: Semicolon, lexeme: ";", span: 709..710 }
+    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: Span { start: 685, end: 688, filename: "../../../examples/extern.cb" } }
+        ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_height", span: Span { start: 689, end: 702, filename: "../../../examples/extern.cb" } }
+                      ^ Token { kind: Equal, lexeme: "=", span: Span { start: 703, end: 704, filename: "../../../examples/extern.cb" } }
+                        ^^^^ Token { kind: Number, lexeme: "1080", span: Span { start: 705, end: 709, filename: "../../../examples/extern.cb" } }
+                            ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 709, end: 710, filename: "../../../examples/extern.cb" } }
 
     let title = "raylib-cb\0";
-    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 716..719 }
-        ^^^^^ Token { kind: Identifier, lexeme: "title", span: 720..725 }
-              ^ Token { kind: Equal, lexeme: "=", span: 726..727 }
-                ^^^^^^^^^^^^^ Token { kind: String, lexeme: "raylib-cb\0", span: 728..741 }
-                             ^ Token { kind: Semicolon, lexeme: ";", span: 741..742 }
+    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: Span { start: 716, end: 719, filename: "../../../examples/extern.cb" } }
+        ^^^^^ Token { kind: Identifier, lexeme: "title", span: Span { start: 720, end: 725, filename: "../../../examples/extern.cb" } }
+              ^ Token { kind: Equal, lexeme: "=", span: Span { start: 726, end: 727, filename: "../../../examples/extern.cb" } }
+                ^^^^^^^^^^^^^ Token { kind: String, lexeme: "raylib-cb\0", span: Span { start: 728, end: 741, filename: "../../../examples/extern.cb" } }
+                             ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 741, end: 742, filename: "../../../examples/extern.cb" } }
     let text = "Congrats! You created your first window in c-flat boiiii\0"
-    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: 747..750 }
-        ^^^^ Token { kind: Identifier, lexeme: "text", span: 751..755 }
-             ^ Token { kind: Equal, lexeme: "=", span: 756..757 }
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Congrats! You created your first window in c-flat boiiii\0", span: 758..818 }
+    ^^^ Token { kind: Keyword(Let), lexeme: "let", span: Span { start: 747, end: 750, filename: "../../../examples/extern.cb" } }
+        ^^^^ Token { kind: Identifier, lexeme: "text", span: Span { start: 751, end: 755, filename: "../../../examples/extern.cb" } }
+             ^ Token { kind: Equal, lexeme: "=", span: Span { start: 756, end: 757, filename: "../../../examples/extern.cb" } }
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Congrats! You created your first window in c-flat boiiii\0", span: Span { start: 758, end: 818, filename: "../../../examples/extern.cb" } }
     init_window(screen_width, screen_height, &title);
-    ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "init_window", span: 823..834 }
-               ^ Token { kind: LeftParen, lexeme: "(", span: 834..835 }
-                ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_width", span: 835..847 }
-                            ^ Token { kind: Comma, lexeme: ",", span: 847..848 }
-                              ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_height", span: 849..862 }
-                                           ^ Token { kind: Comma, lexeme: ",", span: 862..863 }
-                                             ^ Token { kind: Ampersand, lexeme: "&", span: 864..865 }
-                                              ^^^^^ Token { kind: Identifier, lexeme: "title", span: 865..870 }
-                                                   ^ Token { kind: RightParen, lexeme: ")", span: 870..871 }
-                                                    ^ Token { kind: Semicolon, lexeme: ";", span: 871..872 }
+    ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "init_window", span: Span { start: 823, end: 834, filename: "../../../examples/extern.cb" } }
+               ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 834, end: 835, filename: "../../../examples/extern.cb" } }
+                ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_width", span: Span { start: 835, end: 847, filename: "../../../examples/extern.cb" } }
+                            ^ Token { kind: Comma, lexeme: ",", span: Span { start: 847, end: 848, filename: "../../../examples/extern.cb" } }
+                              ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "screen_height", span: Span { start: 849, end: 862, filename: "../../../examples/extern.cb" } }
+                                           ^ Token { kind: Comma, lexeme: ",", span: Span { start: 862, end: 863, filename: "../../../examples/extern.cb" } }
+                                             ^ Token { kind: Ampersand, lexeme: "&", span: Span { start: 864, end: 865, filename: "../../../examples/extern.cb" } }
+                                              ^^^^^ Token { kind: Identifier, lexeme: "title", span: Span { start: 865, end: 870, filename: "../../../examples/extern.cb" } }
+                                                   ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 870, end: 871, filename: "../../../examples/extern.cb" } }
+                                                    ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 871, end: 872, filename: "../../../examples/extern.cb" } }
 
     set_target_fps(60);
-    ^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "set_target_fps", span: 878..892 }
-                  ^ Token { kind: LeftParen, lexeme: "(", span: 892..893 }
-                   ^^ Token { kind: Number, lexeme: "60", span: 893..895 }
-                     ^ Token { kind: RightParen, lexeme: ")", span: 895..896 }
-                      ^ Token { kind: Semicolon, lexeme: ";", span: 896..897 }
+    ^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "set_target_fps", span: Span { start: 878, end: 892, filename: "../../../examples/extern.cb" } }
+                  ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 892, end: 893, filename: "../../../examples/extern.cb" } }
+                   ^^ Token { kind: Number, lexeme: "60", span: Span { start: 893, end: 895, filename: "../../../examples/extern.cb" } }
+                     ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 895, end: 896, filename: "../../../examples/extern.cb" } }
+                      ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 896, end: 897, filename: "../../../examples/extern.cb" } }
     while !window_should_close() {
-    ^^^^^ Token { kind: Keyword(While), lexeme: "while", span: 902..907 }
-          ^ Token { kind: Bang, lexeme: "!", span: 908..909 }
-           ^^^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "window_should_close", span: 909..928 }
-                              ^ Token { kind: LeftParen, lexeme: "(", span: 928..929 }
-                               ^ Token { kind: RightParen, lexeme: ")", span: 929..930 }
-                                 ^ Token { kind: LeftBrace, lexeme: "{", span: 931..932 }
+    ^^^^^ Token { kind: Keyword(While), lexeme: "while", span: Span { start: 902, end: 907, filename: "../../../examples/extern.cb" } }
+          ^ Token { kind: Bang, lexeme: "!", span: Span { start: 908, end: 909, filename: "../../../examples/extern.cb" } }
+           ^^^^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "window_should_close", span: Span { start: 909, end: 928, filename: "../../../examples/extern.cb" } }
+                              ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 928, end: 929, filename: "../../../examples/extern.cb" } }
+                               ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 929, end: 930, filename: "../../../examples/extern.cb" } }
+                                 ^ Token { kind: LeftBrace, lexeme: "{", span: Span { start: 931, end: 932, filename: "../../../examples/extern.cb" } }
         begin_drawing();
-        ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "begin_drawing", span: 941..954 }
-                     ^ Token { kind: LeftParen, lexeme: "(", span: 954..955 }
-                      ^ Token { kind: RightParen, lexeme: ")", span: 955..956 }
-                       ^ Token { kind: Semicolon, lexeme: ";", span: 956..957 }
+        ^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "begin_drawing", span: Span { start: 941, end: 954, filename: "../../../examples/extern.cb" } }
+                     ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 954, end: 955, filename: "../../../examples/extern.cb" } }
+                      ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 955, end: 956, filename: "../../../examples/extern.cb" } }
+                       ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 956, end: 957, filename: "../../../examples/extern.cb" } }
 
         clear_background(0xFF_FF_FF_FF);
-        ^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "clear_background", span: 967..983 }
-                        ^ Token { kind: LeftParen, lexeme: "(", span: 983..984 }
-                         ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4294967295", span: 984..997 }
-                                      ^ Token { kind: RightParen, lexeme: ")", span: 997..998 }
-                                       ^ Token { kind: Semicolon, lexeme: ";", span: 998..999 }
+        ^^^^^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "clear_background", span: Span { start: 967, end: 983, filename: "../../../examples/extern.cb" } }
+                        ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 983, end: 984, filename: "../../../examples/extern.cb" } }
+                         ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4294967295", span: Span { start: 984, end: 997, filename: "../../../examples/extern.cb" } }
+                                      ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 997, end: 998, filename: "../../../examples/extern.cb" } }
+                                       ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 998, end: 999, filename: "../../../examples/extern.cb" } }
         draw_text(&text, 190, 200, 20, 0xFF_00_00_00);
-        ^^^^^^^^^ Token { kind: Identifier, lexeme: "draw_text", span: 1008..1017 }
-                 ^ Token { kind: LeftParen, lexeme: "(", span: 1017..1018 }
-                  ^ Token { kind: Ampersand, lexeme: "&", span: 1018..1019 }
-                   ^^^^ Token { kind: Identifier, lexeme: "text", span: 1019..1023 }
-                       ^ Token { kind: Comma, lexeme: ",", span: 1023..1024 }
-                         ^^^ Token { kind: Number, lexeme: "190", span: 1025..1028 }
-                            ^ Token { kind: Comma, lexeme: ",", span: 1028..1029 }
-                              ^^^ Token { kind: Number, lexeme: "200", span: 1030..1033 }
-                                 ^ Token { kind: Comma, lexeme: ",", span: 1033..1034 }
-                                   ^^ Token { kind: Number, lexeme: "20", span: 1035..1037 }
-                                     ^ Token { kind: Comma, lexeme: ",", span: 1037..1038 }
-                                       ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4278190080", span: 1039..1052 }
-                                                    ^ Token { kind: RightParen, lexeme: ")", span: 1052..1053 }
-                                                     ^ Token { kind: Semicolon, lexeme: ";", span: 1053..1054 }
+        ^^^^^^^^^ Token { kind: Identifier, lexeme: "draw_text", span: Span { start: 1008, end: 1017, filename: "../../../examples/extern.cb" } }
+                 ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 1017, end: 1018, filename: "../../../examples/extern.cb" } }
+                  ^ Token { kind: Ampersand, lexeme: "&", span: Span { start: 1018, end: 1019, filename: "../../../examples/extern.cb" } }
+                   ^^^^ Token { kind: Identifier, lexeme: "text", span: Span { start: 1019, end: 1023, filename: "../../../examples/extern.cb" } }
+                       ^ Token { kind: Comma, lexeme: ",", span: Span { start: 1023, end: 1024, filename: "../../../examples/extern.cb" } }
+                         ^^^ Token { kind: Number, lexeme: "190", span: Span { start: 1025, end: 1028, filename: "../../../examples/extern.cb" } }
+                            ^ Token { kind: Comma, lexeme: ",", span: Span { start: 1028, end: 1029, filename: "../../../examples/extern.cb" } }
+                              ^^^ Token { kind: Number, lexeme: "200", span: Span { start: 1030, end: 1033, filename: "../../../examples/extern.cb" } }
+                                 ^ Token { kind: Comma, lexeme: ",", span: Span { start: 1033, end: 1034, filename: "../../../examples/extern.cb" } }
+                                   ^^ Token { kind: Number, lexeme: "20", span: Span { start: 1035, end: 1037, filename: "../../../examples/extern.cb" } }
+                                     ^ Token { kind: Comma, lexeme: ",", span: Span { start: 1037, end: 1038, filename: "../../../examples/extern.cb" } }
+                                       ^^^^^^^^^^^^^ Token { kind: Number, lexeme: "4278190080", span: Span { start: 1039, end: 1052, filename: "../../../examples/extern.cb" } }
+                                                    ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 1052, end: 1053, filename: "../../../examples/extern.cb" } }
+                                                     ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 1053, end: 1054, filename: "../../../examples/extern.cb" } }
 
         end_drawing();
-        ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "end_drawing", span: 1064..1075 }
-                   ^ Token { kind: LeftParen, lexeme: "(", span: 1075..1076 }
-                    ^ Token { kind: RightParen, lexeme: ")", span: 1076..1077 }
-                     ^ Token { kind: Semicolon, lexeme: ";", span: 1077..1078 }
+        ^^^^^^^^^^^ Token { kind: Identifier, lexeme: "end_drawing", span: Span { start: 1064, end: 1075, filename: "../../../examples/extern.cb" } }
+                   ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 1075, end: 1076, filename: "../../../examples/extern.cb" } }
+                    ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 1076, end: 1077, filename: "../../../examples/extern.cb" } }
+                     ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 1077, end: 1078, filename: "../../../examples/extern.cb" } }
     }
-    ^ Token { kind: RightBrace, lexeme: "}", span: 1083..1084 }
+    ^ Token { kind: RightBrace, lexeme: "}", span: Span { start: 1083, end: 1084, filename: "../../../examples/extern.cb" } }
     close_window();
-    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "close_window", span: 1089..1101 }
-                ^ Token { kind: LeftParen, lexeme: "(", span: 1101..1102 }
-                 ^ Token { kind: RightParen, lexeme: ")", span: 1102..1103 }
-                  ^ Token { kind: Semicolon, lexeme: ";", span: 1103..1104 }
+    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "close_window", span: Span { start: 1089, end: 1101, filename: "../../../examples/extern.cb" } }
+                ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 1101, end: 1102, filename: "../../../examples/extern.cb" } }
+                 ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 1102, end: 1103, filename: "../../../examples/extern.cb" } }
+                  ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 1103, end: 1104, filename: "../../../examples/extern.cb" } }
     return 0;
-    ^^^^^^ Token { kind: Keyword(Return), lexeme: "return", span: 1109..1115 }
-           ^ Token { kind: Number, lexeme: "0", span: 1116..1117 }
-            ^ Token { kind: Semicolon, lexeme: ";", span: 1117..1118 }
+    ^^^^^^ Token { kind: Keyword(Return), lexeme: "return", span: Span { start: 1109, end: 1115, filename: "../../../examples/extern.cb" } }
+           ^ Token { kind: Number, lexeme: "0", span: Span { start: 1116, end: 1117, filename: "../../../examples/extern.cb" } }
+            ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 1117, end: 1118, filename: "../../../examples/extern.cb" } }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: 1119..1120 }
+^ Token { kind: RightBrace, lexeme: "}", span: Span { start: 1119, end: 1120, filename: "../../../examples/extern.cb" } }

@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/fix_arrays.cb
                         Parser
 === testing/test/fix_arrays.cb ===
 [
@@ -10,12 +10,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 4..6,
+                span: Span {
+                    start: 4,
+                    end: 6,
+                    filename: "testing/test/fix_arrays.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 7..11,
+                span: Span {
+                    start: 7,
+                    end: 11,
+                    filename: "testing/test/fix_arrays.cb",
+                },
             },
             type_args: None,
             params: [],
@@ -24,13 +32,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 14..17,
+                span: Span {
+                    start: 14,
+                    end: 17,
+                    filename: "testing/test/fix_arrays.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 18..19,
+                    span: Span {
+                        start: 18,
+                        end: 19,
+                        filename: "testing/test/fix_arrays.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -41,7 +57,11 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 24..27,
+                                    span: Span {
+                                        start: 24,
+                                        end: 27,
+                                        filename: "testing/test/fix_arrays.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: Some(
@@ -54,56 +74,92 @@
                                                 kind: SignedNumber(
                                                     32,
                                                 ),
-                                                span: 39..42,
+                                                span: Span {
+                                                    start: 39,
+                                                    end: 42,
+                                                    filename: "testing/test/fix_arrays.cb",
+                                                },
                                             },
                                         ),
-                                        span: 35..43,
+                                        span: Span {
+                                            start: 35,
+                                            end: 43,
+                                            filename: "testing/test/fix_arrays.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "array",
-                                    span: 28..33,
+                                    span: Span {
+                                        start: 28,
+                                        end: 33,
+                                        filename: "testing/test/fix_arrays.cb",
+                                    },
                                 },
                                 expr: ArrayRepeat(
                                     ExprArrayRepeat {
                                         open_bracket: Token {
                                             kind: LeftBracket,
                                             lexeme: "[",
-                                            span: 46..47,
+                                            span: Span {
+                                                start: 46,
+                                                end: 47,
+                                                filename: "testing/test/fix_arrays.cb",
+                                            },
                                         },
                                         count: Litral(
                                             Integer(
                                                 Token {
                                                     kind: Number,
                                                     lexeme: "2",
-                                                    span: 50..51,
+                                                    span: Span {
+                                                        start: 50,
+                                                        end: 51,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                             ),
                                         ),
                                         semicolon: Token {
                                             kind: Semicolon,
                                             lexeme: ";",
-                                            span: 48..49,
+                                            span: Span {
+                                                start: 48,
+                                                end: 49,
+                                                filename: "testing/test/fix_arrays.cb",
+                                            },
                                         },
                                         value: Litral(
                                             Integer(
                                                 Token {
                                                     kind: Number,
                                                     lexeme: "0",
-                                                    span: 47..48,
+                                                    span: Span {
+                                                        start: 47,
+                                                        end: 48,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                             ),
                                         ),
                                         close_bracket: Token {
                                             kind: RightBracket,
                                             lexeme: "]",
-                                            span: 51..52,
+                                            span: Span {
+                                                start: 51,
+                                                end: 52,
+                                                filename: "testing/test/fix_arrays.cb",
+                                            },
                                         },
                                         ty: Type {
                                             mut_token: None,
                                             kind: Void,
-                                            span: 0..1,
+                                            span: Span {
+                                                start: 0,
+                                                end: 0,
+                                                filename: "",
+                                            },
                                         },
                                     },
                                 ),
@@ -113,7 +169,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 52..53,
+                                span: Span {
+                                    start: 52,
+                                    end: 53,
+                                    filename: "testing/test/fix_arrays.cb",
+                                },
                             },
                         ),
                     },
@@ -125,27 +185,43 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 58..61,
+                                    span: Span {
+                                        start: 58,
+                                        end: 61,
+                                        filename: "testing/test/fix_arrays.cb",
+                                    },
                                 },
                                 mutable: true,
                                 ty: Some(
                                     Type {
                                         mut_token: None,
                                         kind: UnsignedTargetPointerNumber,
-                                        span: 69..74,
+                                        span: Span {
+                                            start: 69,
+                                            end: 74,
+                                            filename: "testing/test/fix_arrays.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "i",
-                                    span: 66..67,
+                                    span: Span {
+                                        start: 66,
+                                        end: 67,
+                                        filename: "testing/test/fix_arrays.cb",
+                                    },
                                 },
                                 expr: Litral(
                                     Integer(
                                         Token {
                                             kind: Number,
                                             lexeme: "0",
-                                            span: 77..78,
+                                            span: Span {
+                                                start: 77,
+                                                end: 78,
+                                                filename: "testing/test/fix_arrays.cb",
+                                            },
                                         },
                                     ),
                                 ),
@@ -155,7 +231,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 78..79,
+                                span: Span {
+                                    start: 78,
+                                    end: 79,
+                                    filename: "testing/test/fix_arrays.cb",
+                                },
                             },
                         ),
                     },
@@ -167,7 +247,11 @@
                                         While,
                                     ),
                                     lexeme: "while",
-                                    span: 84..89,
+                                    span: Span {
+                                        start: 84,
+                                        end: 89,
+                                        filename: "testing/test/fix_arrays.cb",
+                                    },
                                 },
                                 condition: Binary(
                                     ExprBinary {
@@ -175,13 +259,21 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "i",
-                                                span: 90..91,
+                                                span: Span {
+                                                    start: 90,
+                                                    end: 91,
+                                                    filename: "testing/test/fix_arrays.cb",
+                                                },
                                             },
                                         ),
                                         op: Token {
                                             kind: Less,
                                             lexeme: "<",
-                                            span: 92..93,
+                                            span: Span {
+                                                start: 92,
+                                                end: 93,
+                                                filename: "testing/test/fix_arrays.cb",
+                                            },
                                         },
                                         right: MemberAccess(
                                             ExprMemberAccess {
@@ -189,18 +281,30 @@
                                                     Token {
                                                         kind: Identifier,
                                                         lexeme: "array",
-                                                        span: 94..99,
+                                                        span: Span {
+                                                            start: 94,
+                                                            end: 99,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
                                                     },
                                                 ),
                                                 dot: Token {
                                                     kind: Dot,
                                                     lexeme: ".",
-                                                    span: 99..100,
+                                                    span: Span {
+                                                        start: 99,
+                                                        end: 100,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                                 member: Token {
                                                     kind: Identifier,
                                                     lexeme: "len",
-                                                    span: 100..103,
+                                                    span: Span {
+                                                        start: 100,
+                                                        end: 103,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -210,7 +314,11 @@
                                     open_brace: Token {
                                         kind: LeftBrace,
                                         lexeme: "{",
-                                        span: 104..105,
+                                        span: Span {
+                                            start: 104,
+                                            end: 105,
+                                            filename: "testing/test/fix_arrays.cb",
+                                        },
                                     },
                                     statements: [
                                         Statement {
@@ -222,37 +330,61 @@
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "array",
-                                                                    span: 114..119,
+                                                                    span: Span {
+                                                                        start: 114,
+                                                                        end: 119,
+                                                                        filename: "testing/test/fix_arrays.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             open_bracket: Token {
                                                                 kind: LeftBracket,
                                                                 lexeme: "[",
-                                                                span: 119..120,
+                                                                span: Span {
+                                                                    start: 119,
+                                                                    end: 120,
+                                                                    filename: "testing/test/fix_arrays.cb",
+                                                                },
                                                             },
                                                             index: Identifier(
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "i",
-                                                                    span: 120..121,
+                                                                    span: Span {
+                                                                        start: 120,
+                                                                        end: 121,
+                                                                        filename: "testing/test/fix_arrays.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             close_bracket: Token {
                                                                 kind: RightBracket,
                                                                 lexeme: "]",
-                                                                span: 121..122,
+                                                                span: Span {
+                                                                    start: 121,
+                                                                    end: 122,
+                                                                    filename: "testing/test/fix_arrays.cb",
+                                                                },
                                                             },
                                                             ty: Type {
                                                                 mut_token: None,
                                                                 kind: Void,
-                                                                span: 0..1,
+                                                                span: Span {
+                                                                    start: 0,
+                                                                    end: 0,
+                                                                    filename: "",
+                                                                },
                                                             },
                                                         },
                                                     ),
                                                     equal: Token {
                                                         kind: Equal,
                                                         lexeme: "=",
-                                                        span: 123..124,
+                                                        span: Span {
+                                                            start: 123,
+                                                            end: 124,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
                                                     },
                                                     right: TypeCast(
                                                         ExprTypeCast {
@@ -261,13 +393,21 @@
                                                                     As,
                                                                 ),
                                                                 lexeme: "as",
-                                                                span: 127..129,
+                                                                span: Span {
+                                                                    start: 127,
+                                                                    end: 129,
+                                                                    filename: "testing/test/fix_arrays.cb",
+                                                                },
                                                             },
                                                             expr: Identifier(
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "i",
-                                                                    span: 125..126,
+                                                                    span: Span {
+                                                                        start: 125,
+                                                                        end: 126,
+                                                                        filename: "testing/test/fix_arrays.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             target_type: Type {
@@ -275,7 +415,11 @@
                                                                 kind: SignedNumber(
                                                                     32,
                                                                 ),
-                                                                span: 130..133,
+                                                                span: Span {
+                                                                    start: 130,
+                                                                    end: 133,
+                                                                    filename: "testing/test/fix_arrays.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -285,7 +429,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 133..134,
+                                                    span: Span {
+                                                        start: 133,
+                                                        end: 134,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -296,13 +444,21 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "i",
-                                                            span: 143..144,
+                                                            span: Span {
+                                                                start: 143,
+                                                                end: 144,
+                                                                filename: "testing/test/fix_arrays.cb",
+                                                            },
                                                         },
                                                     ),
                                                     equal: Token {
                                                         kind: Equal,
                                                         lexeme: "=",
-                                                        span: 145..146,
+                                                        span: Span {
+                                                            start: 145,
+                                                            end: 146,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
                                                     },
                                                     right: Binary(
                                                         ExprBinary {
@@ -310,20 +466,32 @@
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "i",
-                                                                    span: 147..148,
+                                                                    span: Span {
+                                                                        start: 147,
+                                                                        end: 148,
+                                                                        filename: "testing/test/fix_arrays.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             op: Token {
                                                                 kind: Plus,
                                                                 lexeme: "+",
-                                                                span: 149..150,
+                                                                span: Span {
+                                                                    start: 149,
+                                                                    end: 150,
+                                                                    filename: "testing/test/fix_arrays.cb",
+                                                                },
                                                             },
                                                             right: Litral(
                                                                 Integer(
                                                                     Token {
                                                                         kind: Number,
                                                                         lexeme: "1",
-                                                                        span: 151..152,
+                                                                        span: Span {
+                                                                            start: 151,
+                                                                            end: 152,
+                                                                            filename: "testing/test/fix_arrays.cb",
+                                                                        },
                                                                     },
                                                                 ),
                                                             ),
@@ -335,7 +503,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 152..153,
+                                                    span: Span {
+                                                        start: 152,
+                                                        end: 153,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -343,7 +515,11 @@
                                     close_brace: Token {
                                         kind: RightBrace,
                                         lexeme: "}",
-                                        span: 158..159,
+                                        span: Span {
+                                            start: 158,
+                                            end: 159,
+                                            filename: "testing/test/fix_arrays.cb",
+                                        },
                                     },
                                 },
                             },
@@ -358,7 +534,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 164..170,
+                                    span: Span {
+                                        start: 164,
+                                        end: 170,
+                                        filename: "testing/test/fix_arrays.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Litral(
@@ -366,7 +546,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "0",
-                                                span: 171..172,
+                                                span: Span {
+                                                    start: 171,
+                                                    end: 172,
+                                                    filename: "testing/test/fix_arrays.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -377,7 +561,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 172..173,
+                                span: Span {
+                                    start: 172,
+                                    end: 173,
+                                    filename: "testing/test/fix_arrays.cb",
+                                },
                             },
                         ),
                     },
@@ -385,7 +573,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 174..175,
+                    span: Span {
+                        start: 174,
+                        end: 175,
+                        filename: "testing/test/fix_arrays.cb",
+                    },
                 },
             },
         },
