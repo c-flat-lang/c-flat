@@ -1,10 +1,21 @@
 use report::SpanSite;
+use std::fmt;
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Clone, PartialEq, Eq, Hash)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
     pub filename: String,
+}
+
+impl fmt::Debug for Span {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Span")
+            .field("start", &self.start)
+            .field("end", &self.end)
+            .field("filename", &self.filename.replace('\\', "/"))
+            .finish()
+    }
 }
 
 impl Span {
