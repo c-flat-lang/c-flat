@@ -16,13 +16,13 @@ fn snapshot_compiler(target: Target, pass: DebugPass, path: &str, src: &str) -> 
         target,
         file_path: path.to_string(),
     };
-    let tokens = lex(path, src);
-    let maybe_ast = Parser::new(path, tokens).parse();
+    let tokens = lex(src);
+    let maybe_ast = Parser::new(tokens).parse();
 
     let ast = match maybe_ast {
         Ok(ast) => ast,
         Err(err) => {
-            println!("{}", err.report(src));
+            println!("{}", err.report(&cli_options.file_path, src));
             std::process::exit(1);
         }
     };
@@ -30,7 +30,7 @@ fn snapshot_compiler(target: Target, pass: DebugPass, path: &str, src: &str) -> 
     let symbol_table = match SymbolTableBuilder::default().build(&ast) {
         Ok(table) => table,
         Err(errors) => {
-            eprintln!("{}", errors.report(src));
+            eprintln!("{}", errors.report(&cli_options.file_path, src));
             std::process::exit(1);
         }
     };

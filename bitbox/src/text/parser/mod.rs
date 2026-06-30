@@ -16,8 +16,6 @@ enum TopLevel {
 
 pub struct Parser {
     stream: std::iter::Peekable<std::vec::IntoIter<Token>>,
-    last_token: Option<Token>,
-    filename: String,
 }
 
 // Helpers
@@ -38,10 +36,7 @@ impl Parser {
                 #[cfg(feature = "debug")]
                 compiler_line: format!("{} {}:{}", file!(), line!(), column!()),
             })),
-            None => Err(Box::new(ErrorUnexpectedEndOfInput {
-                last_known_token: self.last_token.clone(),
-                filename: Some(self.filename.clone()),
-            })),
+            None => Err(Box::new(ErrorUnexpectedEndOfInput)),
         }
     }
 
@@ -55,22 +50,16 @@ impl Parser {
 
     fn next(&mut self) -> Result<Token> {
         let Some(token) = self.stream.next() else {
-            return Err(Box::new(ErrorUnexpectedEndOfInput {
-                last_known_token: self.last_token.clone(),
-                filename: Some(self.filename.clone()),
-            }));
+            return Err(Box::new(ErrorUnexpectedEndOfInput));
         };
-        self.last_token = Some(token.clone());
         Ok(token)
     }
 }
 
 impl Parser {
-    pub fn new(filename: impl Into<String>, tokens: Vec<Token>) -> Self {
+    pub fn new(tokens: Vec<Token>) -> Self {
         Self {
             stream: tokens.into_iter().peekable(),
-            last_token: None,
-            filename: filename.into(),
         }
     }
 

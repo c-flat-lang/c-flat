@@ -13,23 +13,19 @@ pub struct Parser {
     /// parsed in primary position. Set while parsing `if`/`while` conditions so
     /// that `if cond {` is never mistaken for a struct instantiation.
     restrict_struct_literal: bool,
-    last_token: Option<Token>,
-    filename: String,
 }
 
 impl Parser {
     fn next_if_token_kind_eq(&mut self, kind: TokenKind) -> Option<Token> {
-        self.next_if(|token| token.kind == kind)
+        self.lexer.next_if(|token| token.kind == kind)
     }
 }
 
 impl Parser {
-    pub fn new(filename: impl Into<String>, lexer: Peekable<std::vec::IntoIter<Token>>) -> Self {
+    pub fn new(lexer: Peekable<std::vec::IntoIter<Token>>) -> Self {
         Self {
             lexer,
             restrict_struct_literal: false,
-            last_token: None,
-            filename: filename.into(),
         }
     }
 
@@ -39,8 +35,6 @@ impl Parser {
             let visibility = self.parse_visibility()?;
             let Some(token) = self.lexer.peek() else {
                 return Err(Box::new(ErrorUnexpectedEndOfInput::new(
-                    self.last_token.clone(),
-                    &self.filename,
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -91,24 +85,8 @@ impl Parser {
         matches!(self.lexer.peek(), Some(token) if token.kind == kind)
     }
 
-    fn next(&mut self) -> Option<Token> {
-        let token = self.lexer.next();
-        if token.is_some() {
-            self.last_token = token.clone();
-        }
-        token
-    }
-
-    fn next_if(&mut self, f: impl Fn(&Token) -> bool) -> Option<Token> {
-        let token = self.lexer.next_if(f);
-        if token.is_some() {
-            self.last_token = token.clone();
-        }
-        token
-    }
-
     fn consume(&mut self, kind: TokenKind) -> Result<Token> {
-        match self.next() {
+        match self.lexer.next() {
             Some(token) if token.kind == kind => Ok(token),
             Some(token) => Err(Box::new(ErrorExpectedToken::new(
                 token,
@@ -117,8 +95,6 @@ impl Parser {
                 format!("{} {}:{}", file!(), line!(), column!()),
             ))),
             None => Err(Box::new(ErrorUnexpectedEndOfInput::new(
-                self.last_token.clone(),
-                &self.filename,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             ))),
@@ -135,13 +111,11 @@ impl Parser {
     fn parse_visibility(&mut self) -> Result<ast::Visibility> {
         match self.lexer.peek() {
             Some(token) if token.is_keyword(Keyword::Pub) => {
-                self.next();
+                self.lexer.next();
                 Ok(ast::Visibility::Public)
             }
             Some(_) => Ok(ast::Visibility::Private),
             None => Err(Box::new(ErrorUnexpectedEndOfInput::new(
-                self.last_token.clone(),
-                &self.filename,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             ))),
@@ -193,10 +167,8 @@ impl Parser {
         let type_params = self.parse_type_params()?;
 
         let Ok(struct_token) = self.consume(TokenKind::Keyword(Keyword::Struct)) else {
-            let Some(token) = self.next() else {
+            let Some(token) = self.lexer.next() else {
                 return Err(Box::new(ErrorUnexpectedEndOfInput::new(
-                    self.last_token.clone(),
-                    &self.filename,
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -330,10 +302,8 @@ impl Parser {
 
     fn parse_type(&mut self) -> Result<ast::Type> {
         let mut_token = self.consume_if_eq(TokenKind::Keyword(Keyword::Mut));
-        let Some(tok) = self.next() else {
+        let Some(tok) = self.lexer.next() else {
             return Err(Box::new(ErrorUnexpectedEndOfInput::new(
-                self.last_token.clone(),
-                &self.filename,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -349,9 +319,7 @@ impl Parser {
                     self.consume_if_eq(TokenKind::Comma);
                 }
                 let right_param = self.consume(TokenKind::RightTypeCradle)?;
-                let span_start = mut_token.as_ref().unwrap_or(&tok).span.start;
-                let mut span = right_param.span.clone();
-                span.start = span_start;
+                let span = mut_token.as_ref().unwrap_or(&tok).span.start..right_param.span.end;
                 Ok(ast::Type {
                     mut_token,
                     kind: ast::TypeKind::NameWithParams(tok, TypeParams { params }),
@@ -361,8 +329,7 @@ impl Parser {
             TokenKind::Identifier => token_as_type(mut_token, &tok),
             TokenKind::Star => {
                 let ty = self.parse_type()?;
-                let mut span = tok.span.clone();
-                span.end = ty.span.end;
+                let span = tok.span.start..ty.span.end;
                 Ok(ast::Type {
                     mut_token,
                     kind: ast::TypeKind::Pointer(Box::new(ty)),
@@ -372,8 +339,7 @@ impl Parser {
             TokenKind::LeftBracket if self.peek(TokenKind::Identifier) => {
                 let ty = self.parse_type()?;
                 let right_brace = self.consume(TokenKind::RightBracket)?;
-                let mut span = tok.span.clone();
-                span.end = right_brace.span.end;
+                let span = tok.span.start..right_brace.span.end;
                 Ok(ast::Type {
                     mut_token,
                     kind: ast::TypeKind::Slice(Box::new(ty)),
@@ -385,8 +351,7 @@ impl Parser {
                 self.consume(TokenKind::Semicolon)?;
                 let ty = self.parse_type()?;
                 let closing_bracket = self.consume(TokenKind::RightBracket)?;
-                let mut span = tok.span.clone();
-                span.end = closing_bracket.span.end;
+                let span = tok.span.start..closing_bracket.span.end;
                 Ok(ast::Type {
                     mut_token,
                     kind: ast::TypeKind::Array(count.lexeme.parse().unwrap(), Box::new(ty)),
@@ -593,7 +558,7 @@ impl Parser {
 
     fn parse_bitwise(&mut self) -> Result<ast::Expr> {
         let mut left = self.parse_comparison()?;
-        while let Some(op) = self.next_if(one_of(&[TokenKind::Ampersand])) {
+        while let Some(op) = self.lexer.next_if(one_of(&[TokenKind::Ampersand])) {
             let right = self.parse_comparison()?;
             let binary_expr = ast::ExprBinary {
                 left: Box::new(left),
@@ -608,7 +573,7 @@ impl Parser {
     fn parse_comparison(&mut self) -> Result<ast::Expr> {
         use TokenKind::*;
         let mut left = self.parse_type_casting()?;
-        while let Some(op) = self.next_if(one_of(&[
+        while let Some(op) = self.lexer.next_if(one_of(&[
             Greater,
             Less,
             GreaterEqual,
@@ -646,7 +611,7 @@ impl Parser {
 
     fn parse_bit_shift(&mut self) -> Result<ast::Expr> {
         let mut left = self.parse_term()?;
-        while let Some(op) = self.next_if(one_of(&[TokenKind::BitShiftRight])) {
+        while let Some(op) = self.lexer.next_if(one_of(&[TokenKind::BitShiftRight])) {
             let right = Box::new(self.parse_term()?);
             let binary_expr = ast::ExprBinary {
                 left: Box::new(left),
@@ -677,7 +642,7 @@ impl Parser {
 
     fn parse_factor(&mut self) -> Result<ast::Expr> {
         let mut left = self.parse_call()?;
-        while let Some(op) = self.next_if(one_of(&[
+        while let Some(op) = self.lexer.next_if(one_of(&[
             TokenKind::Star,
             TokenKind::Slash,
             TokenKind::Percent,
@@ -768,9 +733,9 @@ impl Parser {
         let mut args = vec![];
         while matches!(self.lexer.peek(), Some(token) if token.kind != TokenKind::RightParen) {
             args.push(self.parse_expr()?);
-            self.next_if(|tok| tok.kind == TokenKind::Comma);
+            self.lexer.next_if(|tok| tok.kind == TokenKind::Comma);
         }
-        let Some(right_paren) = self.next_if(|tok| tok.kind == TokenKind::RightParen) else {
+        let Some(right_paren) = self.lexer.next_if(|tok| tok.kind == TokenKind::RightParen) else {
             let span = args.last().map(|e| e.span()).unwrap_or(left_paren.span);
             return Err(Box::new(ErrorMissingPairedClosingChar::new(
                 span,
@@ -789,10 +754,8 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<ast::Expr> {
-        let Some(token) = self.next() else {
+        let Some(token) = self.lexer.next() else {
             return Err(Box::new(ErrorUnexpectedEndOfInput::new(
-                self.last_token.clone(),
-                &self.filename,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
