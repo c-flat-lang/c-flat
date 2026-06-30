@@ -1,95 +1,95 @@
 ---
 source: bitbox/src/text/lexer/test.rs
-expression: snapshot_lexing(contents)
+expression: "snapshot_lexing(\"../../../examples/looping.bitbox\", & contents)"
 ---
 public function main() s32 {
-^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: 0..6 }
-       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 7..15 }
-                ^^^^ Token { kind: Identifier, lexeme: "main", span: 16..20 }
-                    ^ Token { kind: LeftParen, lexeme: "(", span: 20..21 }
-                     ^ Token { kind: RightParen, lexeme: ")", span: 21..22 }
-                       ^^^ Token { kind: Identifier, lexeme: "s32", span: 23..26 }
-                           ^^ Token { kind: LeftBrace, lexeme: "{", span: 27..29 }
+^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: Span { start: 0, end: 6, filename: "../../../examples/looping.bitbox" } }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: Span { start: 7, end: 15, filename: "../../../examples/looping.bitbox" } }
+                ^^^^ Token { kind: Identifier, lexeme: "main", span: Span { start: 16, end: 20, filename: "../../../examples/looping.bitbox" } }
+                    ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 20, end: 21, filename: "../../../examples/looping.bitbox" } }
+                     ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 21, end: 22, filename: "../../../examples/looping.bitbox" } }
+                       ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 23, end: 26, filename: "../../../examples/looping.bitbox" } }
+                           ^^ Token { kind: LeftBrace, lexeme: "{", span: Span { start: 27, end: 29, filename: "../../../examples/looping.bitbox" } }
   %entry:
-  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: 31..38 }
+  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: Span { start: 31, end: 38, filename: "../../../examples/looping.bitbox" } }
     @load u8 : start, 0
-^ Token { kind: Delimiter, lexeme: "\\n", span: 38..39 }
-    ^^^^^ Token { kind: Instruction(Load), lexeme: "@load", span: 43..48 }
-          ^^ Token { kind: Identifier, lexeme: "u8", span: 49..51 }
-             ^ Token { kind: Colon, lexeme: ":", span: 52..53 }
-               ^^^^^ Token { kind: Identifier, lexeme: "start", span: 54..59 }
-                    ^ Token { kind: Comma, lexeme: ",", span: 59..60 }
-                      ^ Token { kind: Number, lexeme: "0", span: 61..62 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 38, end: 39, filename: "../../../examples/looping.bitbox" } }
+    ^^^^^ Token { kind: Instruction(Load), lexeme: "@load", span: Span { start: 43, end: 48, filename: "../../../examples/looping.bitbox" } }
+          ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 49, end: 51, filename: "../../../examples/looping.bitbox" } }
+             ^ Token { kind: Colon, lexeme: ":", span: Span { start: 52, end: 53, filename: "../../../examples/looping.bitbox" } }
+               ^^^^^ Token { kind: Identifier, lexeme: "start", span: Span { start: 54, end: 59, filename: "../../../examples/looping.bitbox" } }
+                    ^ Token { kind: Comma, lexeme: ",", span: Span { start: 59, end: 60, filename: "../../../examples/looping.bitbox" } }
+                      ^ Token { kind: Number, lexeme: "0", span: Span { start: 61, end: 62, filename: "../../../examples/looping.bitbox" } }
     @jump %loop
-^ Token { kind: Delimiter, lexeme: "\\n", span: 62..63 }
-    ^^^^^ Token { kind: Instruction(Jump), lexeme: "@jump", span: 67..72 }
-          ^^^^^ Token { kind: Label, lexeme: "loop", span: 73..78 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 62, end: 63, filename: "../../../examples/looping.bitbox" } }
+    ^^^^^ Token { kind: Instruction(Jump), lexeme: "@jump", span: Span { start: 67, end: 72, filename: "../../../examples/looping.bitbox" } }
+          ^^^^^ Token { kind: Label, lexeme: "loop", span: Span { start: 73, end: 78, filename: "../../../examples/looping.bitbox" } }
 
-^^ Token { kind: Delimiter, lexeme: "\\n", span: 78..80 }
+^^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 78, end: 80, filename: "../../../examples/looping.bitbox" } }
   %loop:
-  ^^^^^^ Token { kind: LabelDefinition, lexeme: "loop", span: 82..88 }
+  ^^^^^^ Token { kind: LabelDefinition, lexeme: "loop", span: Span { start: 82, end: 88, filename: "../../../examples/looping.bitbox" } }
     @phi u8 : result, [(%entry, start), (%loop, next)]
-^ Token { kind: Delimiter, lexeme: "\\n", span: 88..89 }
-    ^^^^ Token { kind: Instruction(Phi), lexeme: "@phi", span: 93..97 }
-         ^^ Token { kind: Identifier, lexeme: "u8", span: 98..100 }
-            ^ Token { kind: Colon, lexeme: ":", span: 101..102 }
-              ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 103..109 }
-                    ^ Token { kind: Comma, lexeme: ",", span: 109..110 }
-                      ^ Token { kind: LeftBracket, lexeme: "[", span: 111..112 }
-                       ^ Token { kind: LeftParen, lexeme: "(", span: 112..113 }
-                        ^^^^^^ Token { kind: Label, lexeme: "entry", span: 113..119 }
-                              ^ Token { kind: Comma, lexeme: ",", span: 119..120 }
-                                ^^^^^ Token { kind: Identifier, lexeme: "start", span: 121..126 }
-                                     ^ Token { kind: RightParen, lexeme: ")", span: 126..127 }
-                                      ^ Token { kind: Comma, lexeme: ",", span: 127..128 }
-                                        ^ Token { kind: LeftParen, lexeme: "(", span: 129..130 }
-                                         ^^^^^ Token { kind: Label, lexeme: "loop", span: 130..135 }
-                                              ^ Token { kind: Comma, lexeme: ",", span: 135..136 }
-                                                ^^^^ Token { kind: Identifier, lexeme: "next", span: 137..141 }
-                                                    ^ Token { kind: RightParen, lexeme: ")", span: 141..142 }
-                                                     ^ Token { kind: RightBracket, lexeme: "]", span: 142..143 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 88, end: 89, filename: "../../../examples/looping.bitbox" } }
+    ^^^^ Token { kind: Instruction(Phi), lexeme: "@phi", span: Span { start: 93, end: 97, filename: "../../../examples/looping.bitbox" } }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 98, end: 100, filename: "../../../examples/looping.bitbox" } }
+            ^ Token { kind: Colon, lexeme: ":", span: Span { start: 101, end: 102, filename: "../../../examples/looping.bitbox" } }
+              ^^^^^^ Token { kind: Identifier, lexeme: "result", span: Span { start: 103, end: 109, filename: "../../../examples/looping.bitbox" } }
+                    ^ Token { kind: Comma, lexeme: ",", span: Span { start: 109, end: 110, filename: "../../../examples/looping.bitbox" } }
+                      ^ Token { kind: LeftBracket, lexeme: "[", span: Span { start: 111, end: 112, filename: "../../../examples/looping.bitbox" } }
+                       ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 112, end: 113, filename: "../../../examples/looping.bitbox" } }
+                        ^^^^^^ Token { kind: Label, lexeme: "entry", span: Span { start: 113, end: 119, filename: "../../../examples/looping.bitbox" } }
+                              ^ Token { kind: Comma, lexeme: ",", span: Span { start: 119, end: 120, filename: "../../../examples/looping.bitbox" } }
+                                ^^^^^ Token { kind: Identifier, lexeme: "start", span: Span { start: 121, end: 126, filename: "../../../examples/looping.bitbox" } }
+                                     ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 126, end: 127, filename: "../../../examples/looping.bitbox" } }
+                                      ^ Token { kind: Comma, lexeme: ",", span: Span { start: 127, end: 128, filename: "../../../examples/looping.bitbox" } }
+                                        ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 129, end: 130, filename: "../../../examples/looping.bitbox" } }
+                                         ^^^^^ Token { kind: Label, lexeme: "loop", span: Span { start: 130, end: 135, filename: "../../../examples/looping.bitbox" } }
+                                              ^ Token { kind: Comma, lexeme: ",", span: Span { start: 135, end: 136, filename: "../../../examples/looping.bitbox" } }
+                                                ^^^^ Token { kind: Identifier, lexeme: "next", span: Span { start: 137, end: 141, filename: "../../../examples/looping.bitbox" } }
+                                                    ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 141, end: 142, filename: "../../../examples/looping.bitbox" } }
+                                                     ^ Token { kind: RightBracket, lexeme: "]", span: Span { start: 142, end: 143, filename: "../../../examples/looping.bitbox" } }
 
-^^ Token { kind: Delimiter, lexeme: "\\n", span: 143..145 }
+^^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 143, end: 145, filename: "../../../examples/looping.bitbox" } }
     @cmp u8 : is_running, result, 10
-    ^^^^ Token { kind: Instruction(Cmp), lexeme: "@cmp", span: 149..153 }
-         ^^ Token { kind: Identifier, lexeme: "u8", span: 154..156 }
-            ^ Token { kind: Colon, lexeme: ":", span: 157..158 }
-              ^^^^^^^^^^ Token { kind: Identifier, lexeme: "is_running", span: 159..169 }
-                        ^ Token { kind: Comma, lexeme: ",", span: 169..170 }
-                          ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 171..177 }
-                                ^ Token { kind: Comma, lexeme: ",", span: 177..178 }
-                                  ^^ Token { kind: Number, lexeme: "10", span: 179..181 }
+    ^^^^ Token { kind: Instruction(Cmp), lexeme: "@cmp", span: Span { start: 149, end: 153, filename: "../../../examples/looping.bitbox" } }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 154, end: 156, filename: "../../../examples/looping.bitbox" } }
+            ^ Token { kind: Colon, lexeme: ":", span: Span { start: 157, end: 158, filename: "../../../examples/looping.bitbox" } }
+              ^^^^^^^^^^ Token { kind: Identifier, lexeme: "is_running", span: Span { start: 159, end: 169, filename: "../../../examples/looping.bitbox" } }
+                        ^ Token { kind: Comma, lexeme: ",", span: Span { start: 169, end: 170, filename: "../../../examples/looping.bitbox" } }
+                          ^^^^^^ Token { kind: Identifier, lexeme: "result", span: Span { start: 171, end: 177, filename: "../../../examples/looping.bitbox" } }
+                                ^ Token { kind: Comma, lexeme: ",", span: Span { start: 177, end: 178, filename: "../../../examples/looping.bitbox" } }
+                                  ^^ Token { kind: Number, lexeme: "10", span: Span { start: 179, end: 181, filename: "../../../examples/looping.bitbox" } }
     @add u8 : next, result, 1
-^ Token { kind: Delimiter, lexeme: "\\n", span: 181..182 }
-    ^^^^ Token { kind: Instruction(Add), lexeme: "@add", span: 186..190 }
-         ^^ Token { kind: Identifier, lexeme: "u8", span: 191..193 }
-            ^ Token { kind: Colon, lexeme: ":", span: 194..195 }
-              ^^^^ Token { kind: Identifier, lexeme: "next", span: 196..200 }
-                  ^ Token { kind: Comma, lexeme: ",", span: 200..201 }
-                    ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 202..208 }
-                          ^ Token { kind: Comma, lexeme: ",", span: 208..209 }
-                            ^ Token { kind: Number, lexeme: "1", span: 210..211 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 181, end: 182, filename: "../../../examples/looping.bitbox" } }
+    ^^^^ Token { kind: Instruction(Add), lexeme: "@add", span: Span { start: 186, end: 190, filename: "../../../examples/looping.bitbox" } }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 191, end: 193, filename: "../../../examples/looping.bitbox" } }
+            ^ Token { kind: Colon, lexeme: ":", span: Span { start: 194, end: 195, filename: "../../../examples/looping.bitbox" } }
+              ^^^^ Token { kind: Identifier, lexeme: "next", span: Span { start: 196, end: 200, filename: "../../../examples/looping.bitbox" } }
+                  ^ Token { kind: Comma, lexeme: ",", span: Span { start: 200, end: 201, filename: "../../../examples/looping.bitbox" } }
+                    ^^^^^^ Token { kind: Identifier, lexeme: "result", span: Span { start: 202, end: 208, filename: "../../../examples/looping.bitbox" } }
+                          ^ Token { kind: Comma, lexeme: ",", span: Span { start: 208, end: 209, filename: "../../../examples/looping.bitbox" } }
+                            ^ Token { kind: Number, lexeme: "1", span: Span { start: 210, end: 211, filename: "../../../examples/looping.bitbox" } }
 
-^^ Token { kind: Delimiter, lexeme: "\\n", span: 211..213 }
+^^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 211, end: 213, filename: "../../../examples/looping.bitbox" } }
     @jumpif is_running, %exit
-    ^^^^^^^ Token { kind: Instruction(JumpIf), lexeme: "@jumpif", span: 217..224 }
-            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "is_running", span: 225..235 }
-                      ^ Token { kind: Comma, lexeme: ",", span: 235..236 }
-                        ^^^^^ Token { kind: Label, lexeme: "exit", span: 237..242 }
+    ^^^^^^^ Token { kind: Instruction(JumpIf), lexeme: "@jumpif", span: Span { start: 217, end: 224, filename: "../../../examples/looping.bitbox" } }
+            ^^^^^^^^^^ Token { kind: Identifier, lexeme: "is_running", span: Span { start: 225, end: 235, filename: "../../../examples/looping.bitbox" } }
+                      ^ Token { kind: Comma, lexeme: ",", span: Span { start: 235, end: 236, filename: "../../../examples/looping.bitbox" } }
+                        ^^^^^ Token { kind: Label, lexeme: "exit", span: Span { start: 237, end: 242, filename: "../../../examples/looping.bitbox" } }
     @jump %loop
-^ Token { kind: Delimiter, lexeme: "\\n", span: 242..243 }
-    ^^^^^ Token { kind: Instruction(Jump), lexeme: "@jump", span: 247..252 }
-          ^^^^^ Token { kind: Label, lexeme: "loop", span: 253..258 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 242, end: 243, filename: "../../../examples/looping.bitbox" } }
+    ^^^^^ Token { kind: Instruction(Jump), lexeme: "@jump", span: Span { start: 247, end: 252, filename: "../../../examples/looping.bitbox" } }
+          ^^^^^ Token { kind: Label, lexeme: "loop", span: Span { start: 253, end: 258, filename: "../../../examples/looping.bitbox" } }
 
-^^ Token { kind: Delimiter, lexeme: "\\n", span: 258..260 }
+^^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 258, end: 260, filename: "../../../examples/looping.bitbox" } }
   %exit:
-  ^^^^^^ Token { kind: LabelDefinition, lexeme: "exit", span: 262..268 }
+  ^^^^^^ Token { kind: LabelDefinition, lexeme: "exit", span: Span { start: 262, end: 268, filename: "../../../examples/looping.bitbox" } }
     @ret u8 : result
-^ Token { kind: Delimiter, lexeme: "\\n", span: 268..269 }
-    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: 273..277 }
-         ^^ Token { kind: Identifier, lexeme: "u8", span: 278..280 }
-            ^ Token { kind: Colon, lexeme: ":", span: 281..282 }
-              ^^^^^^ Token { kind: Identifier, lexeme: "result", span: 283..289 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 268, end: 269, filename: "../../../examples/looping.bitbox" } }
+    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: Span { start: 273, end: 277, filename: "../../../examples/looping.bitbox" } }
+         ^^ Token { kind: Identifier, lexeme: "u8", span: Span { start: 278, end: 280, filename: "../../../examples/looping.bitbox" } }
+            ^ Token { kind: Colon, lexeme: ":", span: Span { start: 281, end: 282, filename: "../../../examples/looping.bitbox" } }
+              ^^^^^^ Token { kind: Identifier, lexeme: "result", span: Span { start: 283, end: 289, filename: "../../../examples/looping.bitbox" } }
 }
-^ Token { kind: Delimiter, lexeme: "\\n", span: 289..290 }
-^^ Token { kind: RightBrace, lexeme: "}", span: 290..292 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 289, end: 290, filename: "../../../examples/looping.bitbox" } }
+^^ Token { kind: RightBrace, lexeme: "}", span: Span { start: 290, end: 292, filename: "../../../examples/looping.bitbox" } }

@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/text/parser/test.rs
-expression: snapshot_parsing(contents)
+expression: "snapshot_parsing(\"../../../examples/array.bitbox\", & contents)"
 ---
 Ok(
     Module {
@@ -9,21 +9,33 @@ Ok(
                 name: Token {
                     kind: Identifier,
                     lexeme: "main",
-                    span: 16..20,
+                    span: Span {
+                        start: 16,
+                        end: 20,
+                        filename: "../../../examples/array.bitbox",
+                    },
                 },
                 visibility: Public,
                 params: [],
                 return_type: Token {
                     kind: Identifier,
                     lexeme: "s32",
-                    span: 23..26,
+                    span: Span {
+                        start: 23,
+                        end: 26,
+                        filename: "../../../examples/array.bitbox",
+                    },
                 },
                 block: [
                     BasicBlock {
                         label: Token {
                             kind: LabelDefinition,
                             lexeme: "entry",
-                            span: 31..38,
+                            span: Span {
+                                start: 31,
+                                end: 38,
+                                filename: "../../../examples/array.bitbox",
+                            },
                         },
                         instructions: [
                             Instruction {
@@ -32,17 +44,29 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "s32",
-                                        span: 50..53,
+                                        span: Span {
+                                            start: 50,
+                                            end: 53,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "arr",
-                                        span: 56..59,
+                                        span: Span {
+                                            start: 56,
+                                            end: 59,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "3",
-                                        span: 61..62,
+                                        span: Span {
+                                            start: 61,
+                                            end: 62,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -52,22 +76,38 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "s32",
-                                        span: 76..79,
+                                        span: Span {
+                                            start: 76,
+                                            end: 79,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "arr",
-                                        span: 82..85,
+                                        span: Span {
+                                            start: 82,
+                                            end: 85,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "0",
-                                        span: 87..88,
+                                        span: Span {
+                                            start: 87,
+                                            end: 88,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "100",
-                                        span: 90..93,
+                                        span: Span {
+                                            start: 90,
+                                            end: 93,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -77,22 +117,38 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "s32",
-                                        span: 107..110,
+                                        span: Span {
+                                            start: 107,
+                                            end: 110,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "arr",
-                                        span: 113..116,
+                                        span: Span {
+                                            start: 113,
+                                            end: 116,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "1",
-                                        span: 118..119,
+                                        span: Span {
+                                            start: 118,
+                                            end: 119,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "200",
-                                        span: 121..124,
+                                        span: Span {
+                                            start: 121,
+                                            end: 124,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -102,22 +158,38 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "s32",
-                                        span: 138..141,
+                                        span: Span {
+                                            start: 138,
+                                            end: 141,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "arr",
-                                        span: 144..147,
+                                        span: Span {
+                                            start: 144,
+                                            end: 147,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "2",
-                                        span: 149..150,
+                                        span: Span {
+                                            start: 149,
+                                            end: 150,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "300",
-                                        span: 152..155,
+                                        span: Span {
+                                            start: 152,
+                                            end: 155,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -127,22 +199,38 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "s32",
-                                        span: 169..172,
+                                        span: Span {
+                                            start: 169,
+                                            end: 172,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "ret",
-                                        span: 174..177,
+                                        span: Span {
+                                            start: 174,
+                                            end: 177,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "arr",
-                                        span: 179..182,
+                                        span: Span {
+                                            start: 179,
+                                            end: 182,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "1",
-                                        span: 184..185,
+                                        span: Span {
+                                            start: 184,
+                                            end: 185,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -152,12 +240,20 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "s32",
-                                        span: 195..198,
+                                        span: Span {
+                                            start: 195,
+                                            end: 198,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "ret",
-                                        span: 201..204,
+                                        span: Span {
+                                            start: 201,
+                                            end: 204,
+                                            filename: "../../../examples/array.bitbox",
+                                        },
                                     },
                                 ],
                             },
