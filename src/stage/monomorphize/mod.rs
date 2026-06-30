@@ -21,7 +21,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::error::{ErrorMessage, Errors, Report, Result};
-use crate::stage::lexer::token::Token;
+use crate::stage::lexer::token::{Span, Token};
 use crate::stage::parser::ast::{
     self, Expr, ExprBlock, ExprCall, ExprStruct, Litral, Type, TypeKind,
 };
@@ -341,11 +341,11 @@ impl Monomorphizer {
     }
 }
 
-fn ty(kind: TypeKind) -> Type {
+fn ty(kind: TypeKind, span: Span) -> Type {
     Type {
         mut_token: None,
         kind,
-        span: 0..1,
+        span,
     }
 }
 
@@ -498,15 +498,18 @@ fn unify(
 }
 
 fn infer_expr_type(expr: &Expr) -> Option<Type> {
+    let ty_with_span = |kind: TypeKind| ty(kind, expr.span());
     match expr {
-        Expr::Litral(Litral::Integer(_)) => Some(ty(TypeKind::SignedNumber(32))),
-        Expr::Litral(Litral::Float(_)) => Some(ty(TypeKind::Float(32))),
+        Expr::Litral(Litral::Integer(_)) => Some(ty_with_span(TypeKind::SignedNumber(32))),
+        Expr::Litral(Litral::Float(_)) => Some(ty_with_span(TypeKind::Float(32))),
         Expr::Litral(Litral::BoolTrue(_)) | Expr::Litral(Litral::BoolFalse(_)) => {
-            Some(ty(TypeKind::Bool))
+            Some(ty_with_span(TypeKind::Bool))
         }
         Expr::Grouping(g) => infer_expr_type(&g.expr),
         Expr::Binary(b) => infer_expr_type(&b.left),
-        Expr::AddressOf(a) => Some(ty(TypeKind::Pointer(Box::new(infer_expr_type(&a.expr)?)))),
+        Expr::AddressOf(a) => Some(ty_with_span(TypeKind::Pointer(Box::new(infer_expr_type(
+            &a.expr,
+        )?)))),
         Expr::Deref(d) => match infer_expr_type(&d.base)?.kind {
             TypeKind::Pointer(inner) => Some(*inner),
             _ => None,

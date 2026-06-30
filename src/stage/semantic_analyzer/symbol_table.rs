@@ -1,5 +1,5 @@
 use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
-use crate::stage::lexer::token::Token;
+use crate::stage::lexer::token::{Span, Token};
 
 use crate::stage::parser::ast;
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ fn ty(kind: ast::TypeKind) -> ast::Type {
     ast::Type {
         mut_token: None,
         kind,
-        span: 0..1,
+        span: Span::new("builtin"),
     }
 }
 
@@ -311,6 +311,7 @@ impl SymbolTableBuilder {
         let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
         #[cfg(feature = "debug")]
         let error = ErrorUndefinedSymbol::TokenDebug(token.clone(), compiler_line);
+
         self.push_error(Box::new(error));
     }
 
@@ -573,13 +574,26 @@ impl SymbolTable {
 mod tests {
     use super::*;
     use crate::stage::Stage;
+    use crate::stage::lexer::token::{Keyword, TokenKind};
     use pretty_assertions::assert_eq;
+
+    fn create_span(range: std::ops::Range<usize>) -> Span {
+        Span {
+            start: range.start,
+            end: range.end,
+            filename: "test".to_string(),
+        }
+    }
 
     fn create_ty(kind: ast::TypeKind) -> ast::Type {
         ast::Type {
             kind,
-            span: 0..1,
-            ..Default::default()
+            span: create_span(0..0),
+            mut_token: Some(Token::new(
+                TokenKind::Keyword(Keyword::Mut),
+                "mut",
+                create_span(0..0),
+            )),
         }
     }
 
@@ -697,12 +711,14 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer.run(src);
-        let ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
+        let tokens = crate::stage::lexer::Lexer.run(("test_build_symbol_table", src));
+        let ast = crate::stage::parser::Parser::default()
+            .run(("test_build_symbol_table", tokens))
+            .unwrap();
         let symbol_table = match SymbolTableBuilder::default().build(&ast) {
             Ok(table) => table,
             Err(errors) => {
-                eprintln!("{}", errors.report("symbol_table.cb", src));
+                eprintln!("{}", errors.report(src));
                 return;
             }
         };
@@ -715,7 +731,7 @@ mod tests {
                 kind: SymbolKind::Function,
                 ty: ast::Type {
                     kind: ast::TypeKind::SignedNumber(32),
-                    span: 32..35,
+                    span: create_span(32..35),
                     ..Default::default()
                 },
                 is_mutable: false,
@@ -723,12 +739,12 @@ mod tests {
                 params: Some(vec![
                     ast::Type {
                         kind: ast::TypeKind::SignedNumber(32),
-                        span: 19..22,
+                        span: create_span(19..22),
                         ..Default::default()
                     },
                     ast::Type {
                         kind: ast::TypeKind::SignedNumber(32),
-                        span: 27..30,
+                        span: create_span(27..30),
                         ..Default::default()
                     },
                 ]),

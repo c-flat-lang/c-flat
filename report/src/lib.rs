@@ -1,10 +1,17 @@
 use std::fmt::Write;
 
 pub trait Report: std::fmt::Debug {
-    fn report(&self, filename: &str, src: &str) -> String;
+    fn report(&self, src: &str) -> String;
+    fn filename(&self) -> &str;
 }
 
-pub type Span = std::ops::Range<usize>;
+pub trait SpanSite: std::fmt::Debug {
+    fn range(&self) -> std::ops::Range<usize>;
+    fn start(&self) -> usize;
+    fn end(&self) -> usize;
+    fn filename(&self) -> &str;
+}
+
 pub type CompilerError = Box<dyn Report>;
 pub type Result<T> = std::result::Result<T, CompilerError>;
 
@@ -21,14 +28,14 @@ pub struct ReportBuilder<'a> {
 }
 
 impl<'a> ReportBuilder<'a> {
-    pub fn new(filename: &'a str, src: &'a str, span: &'a Span) -> Self {
-        let (row, col) = Self::get_row_col_from_span(src, span);
+    pub fn new(site: &'a impl SpanSite, src: &'a str) -> Self {
+        let (row, col) = Self::get_row_col_from_span(src, site.range());
         let problem_line = Self::get_problem_src_line(src, row);
-        let underline = Self::get_underline(col, span);
+        let underline = Self::get_underline(col, site.range());
 
         Self {
             message: String::new(),
-            filename,
+            filename: site.filename(),
             row,
             col,
             src,
@@ -49,7 +56,7 @@ impl<'a> ReportBuilder<'a> {
         self
     }
 
-    /// Lines to use above starting [Span]
+    /// Lines to use above starting [`std::ops::Range<usize>`] aka Span
     pub fn lines_above(&mut self, lines_above: usize) -> &mut Self {
         self.lines_above = lines_above;
         self
@@ -82,7 +89,7 @@ impl<'a> ReportBuilder<'a> {
         report
     }
 
-    fn get_row_col_from_span(src: &str, span: &Span) -> (usize, usize) {
+    fn get_row_col_from_span(src: &str, span: std::ops::Range<usize>) -> (usize, usize) {
         let row = src[..span.start].chars().filter(|&c| c == '\n').count();
         let col = span.start - src[..span.start].rfind('\n').map(|n| n + 1).unwrap_or(0);
         (row, col)
@@ -94,7 +101,7 @@ impl<'a> ReportBuilder<'a> {
             .unwrap_or("Failed to extract source line")
     }
 
-    fn get_underline(col: usize, span: &Span) -> String {
+    fn get_underline(col: usize, span: std::ops::Range<usize>) -> String {
         let spacing = " ".repeat(col);
         let underline = "^".repeat(span.len());
         format!("{}{}", spacing, underline)

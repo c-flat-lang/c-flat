@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/ifelse.cb
                         Parser
 === testing/test/ifelse.cb ===
 [
@@ -10,24 +10,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 0..6,
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 9..11,
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 7..8,
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_int",
-                span: 12..21,
+                span: Span {
+                    start: 12,
+                    end: 21,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             local_name: None,
             params: [
@@ -36,13 +52,21 @@
                     kind: SignedNumber(
                         32,
                     ),
-                    span: 22..25,
+                    span: Span {
+                        start: 22,
+                        end: 25,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 27..31,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
         },
     ),
@@ -54,24 +78,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 33..39,
+                span: Span {
+                    start: 33,
+                    end: 39,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 42..44,
+                span: Span {
+                    start: 42,
+                    end: 44,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 40..41,
+                span: Span {
+                    start: 40,
+                    end: 41,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_char",
-                span: 45..55,
+                span: Span {
+                    start: 45,
+                    end: 55,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             local_name: None,
             params: [
@@ -80,13 +120,21 @@
                     kind: UnsignedNumber(
                         8,
                     ),
-                    span: 56..58,
+                    span: Span {
+                        start: 56,
+                        end: 58,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 60..64,
+                span: Span {
+                    start: 60,
+                    end: 64,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
         },
     ),
@@ -98,12 +146,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 67..69,
+                span: Span {
+                    start: 67,
+                    end: 69,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "max_s32",
-                span: 70..77,
+                span: Span {
+                    start: 70,
+                    end: 77,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             type_args: None,
             params: [
@@ -111,28 +167,44 @@
                     name: Token {
                         kind: Identifier,
                         lexeme: "x",
-                        span: 78..79,
+                        span: Span {
+                            start: 78,
+                            end: 79,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
                         kind: SignedNumber(
                             32,
                         ),
-                        span: 81..84,
+                        span: Span {
+                            start: 81,
+                            end: 84,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "y",
-                        span: 86..87,
+                        span: Span {
+                            start: 86,
+                            end: 87,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
                         kind: SignedNumber(
                             32,
                         ),
-                        span: 89..92,
+                        span: Span {
+                            start: 89,
+                            end: 92,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                 },
             ],
@@ -141,13 +213,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 94..97,
+                span: Span {
+                    start: 94,
+                    end: 97,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 98..99,
+                    span: Span {
+                        start: 98,
+                        end: 99,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -158,7 +238,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 104..110,
+                                    span: Span {
+                                        start: 104,
+                                        end: 110,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 expr: Some(
                                     IfElse(
@@ -168,7 +252,11 @@
                                                     If,
                                                 ),
                                                 lexeme: "if",
-                                                span: 111..113,
+                                                span: Span {
+                                                    start: 111,
+                                                    end: 113,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                             condition: Binary(
                                                 ExprBinary {
@@ -176,19 +264,31 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "x",
-                                                            span: 114..115,
+                                                            span: Span {
+                                                                start: 114,
+                                                                end: 115,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                     ),
                                                     op: Token {
                                                         kind: Greater,
                                                         lexeme: ">",
-                                                        span: 116..117,
+                                                        span: Span {
+                                                            start: 116,
+                                                            end: 117,
+                                                            filename: "testing/test/ifelse.cb",
+                                                        },
                                                     },
                                                     right: Identifier(
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "y",
-                                                            span: 118..119,
+                                                            span: Span {
+                                                                start: 118,
+                                                                end: 119,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                     ),
                                                 },
@@ -197,7 +297,11 @@
                                                 open_brace: Token {
                                                     kind: LeftBrace,
                                                     lexeme: "{",
-                                                    span: 120..121,
+                                                    span: Span {
+                                                        start: 120,
+                                                        end: 121,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                                 statements: [
                                                     Statement {
@@ -205,7 +309,11 @@
                                                             Token {
                                                                 kind: Identifier,
                                                                 lexeme: "x",
-                                                                span: 122..123,
+                                                                span: Span {
+                                                                    start: 122,
+                                                                    end: 123,
+                                                                    filename: "testing/test/ifelse.cb",
+                                                                },
                                                             },
                                                         ),
                                                         delem: None,
@@ -214,7 +322,11 @@
                                                 close_brace: Token {
                                                     kind: RightBrace,
                                                     lexeme: "}",
-                                                    span: 124..125,
+                                                    span: Span {
+                                                        start: 124,
+                                                        end: 125,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             },
                                             else_token: Some(
@@ -223,7 +335,11 @@
                                                         Else,
                                                     ),
                                                     lexeme: "else",
-                                                    span: 126..130,
+                                                    span: Span {
+                                                        start: 126,
+                                                        end: 130,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             ),
                                             else_branch: Some(
@@ -232,7 +348,11 @@
                                                         open_brace: Token {
                                                             kind: LeftBrace,
                                                             lexeme: "{",
-                                                            span: 131..132,
+                                                            span: Span {
+                                                                start: 131,
+                                                                end: 132,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                         statements: [
                                                             Statement {
@@ -240,7 +360,11 @@
                                                                     Token {
                                                                         kind: Identifier,
                                                                         lexeme: "y",
-                                                                        span: 133..134,
+                                                                        span: Span {
+                                                                            start: 133,
+                                                                            end: 134,
+                                                                            filename: "testing/test/ifelse.cb",
+                                                                        },
                                                                     },
                                                                 ),
                                                                 delem: None,
@@ -249,7 +373,11 @@
                                                         close_brace: Token {
                                                             kind: RightBrace,
                                                             lexeme: "}",
-                                                            span: 135..136,
+                                                            span: Span {
+                                                                start: 135,
+                                                                end: 136,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                     },
                                                 ),
@@ -257,7 +385,11 @@
                                             ty: Type {
                                                 mut_token: None,
                                                 kind: Void,
-                                                span: 0..1,
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                    filename: "",
+                                                },
                                             },
                                         },
                                     ),
@@ -268,7 +400,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 136..137,
+                                span: Span {
+                                    start: 136,
+                                    end: 137,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -276,7 +412,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 138..139,
+                    span: Span {
+                        start: 138,
+                        end: 139,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
             },
         },
@@ -289,12 +429,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 141..143,
+                span: Span {
+                    start: 141,
+                    end: 143,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "min_s32",
-                span: 144..151,
+                span: Span {
+                    start: 144,
+                    end: 151,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             type_args: None,
             params: [
@@ -302,28 +450,44 @@
                     name: Token {
                         kind: Identifier,
                         lexeme: "x",
-                        span: 152..153,
+                        span: Span {
+                            start: 152,
+                            end: 153,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
                         kind: SignedNumber(
                             32,
                         ),
-                        span: 155..158,
+                        span: Span {
+                            start: 155,
+                            end: 158,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "y",
-                        span: 160..161,
+                        span: Span {
+                            start: 160,
+                            end: 161,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
                         kind: SignedNumber(
                             32,
                         ),
-                        span: 163..166,
+                        span: Span {
+                            start: 163,
+                            end: 166,
+                            filename: "testing/test/ifelse.cb",
+                        },
                     },
                 },
             ],
@@ -332,13 +496,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 168..171,
+                span: Span {
+                    start: 168,
+                    end: 171,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 172..173,
+                    span: Span {
+                        start: 172,
+                        end: 173,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -349,7 +521,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 178..184,
+                                    span: Span {
+                                        start: 178,
+                                        end: 184,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 expr: Some(
                                     IfElse(
@@ -359,7 +535,11 @@
                                                     If,
                                                 ),
                                                 lexeme: "if",
-                                                span: 185..187,
+                                                span: Span {
+                                                    start: 185,
+                                                    end: 187,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                             condition: Binary(
                                                 ExprBinary {
@@ -367,19 +547,31 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "x",
-                                                            span: 188..189,
+                                                            span: Span {
+                                                                start: 188,
+                                                                end: 189,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                     ),
                                                     op: Token {
                                                         kind: Less,
                                                         lexeme: "<",
-                                                        span: 190..191,
+                                                        span: Span {
+                                                            start: 190,
+                                                            end: 191,
+                                                            filename: "testing/test/ifelse.cb",
+                                                        },
                                                     },
                                                     right: Identifier(
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "y",
-                                                            span: 192..193,
+                                                            span: Span {
+                                                                start: 192,
+                                                                end: 193,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                     ),
                                                 },
@@ -388,7 +580,11 @@
                                                 open_brace: Token {
                                                     kind: LeftBrace,
                                                     lexeme: "{",
-                                                    span: 194..195,
+                                                    span: Span {
+                                                        start: 194,
+                                                        end: 195,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                                 statements: [
                                                     Statement {
@@ -396,7 +592,11 @@
                                                             Token {
                                                                 kind: Identifier,
                                                                 lexeme: "x",
-                                                                span: 196..197,
+                                                                span: Span {
+                                                                    start: 196,
+                                                                    end: 197,
+                                                                    filename: "testing/test/ifelse.cb",
+                                                                },
                                                             },
                                                         ),
                                                         delem: None,
@@ -405,7 +605,11 @@
                                                 close_brace: Token {
                                                     kind: RightBrace,
                                                     lexeme: "}",
-                                                    span: 198..199,
+                                                    span: Span {
+                                                        start: 198,
+                                                        end: 199,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             },
                                             else_token: Some(
@@ -414,7 +618,11 @@
                                                         Else,
                                                     ),
                                                     lexeme: "else",
-                                                    span: 200..204,
+                                                    span: Span {
+                                                        start: 200,
+                                                        end: 204,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             ),
                                             else_branch: Some(
@@ -423,7 +631,11 @@
                                                         open_brace: Token {
                                                             kind: LeftBrace,
                                                             lexeme: "{",
-                                                            span: 205..206,
+                                                            span: Span {
+                                                                start: 205,
+                                                                end: 206,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                         statements: [
                                                             Statement {
@@ -431,7 +643,11 @@
                                                                     Token {
                                                                         kind: Identifier,
                                                                         lexeme: "y",
-                                                                        span: 207..208,
+                                                                        span: Span {
+                                                                            start: 207,
+                                                                            end: 208,
+                                                                            filename: "testing/test/ifelse.cb",
+                                                                        },
                                                                     },
                                                                 ),
                                                                 delem: None,
@@ -440,7 +656,11 @@
                                                         close_brace: Token {
                                                             kind: RightBrace,
                                                             lexeme: "}",
-                                                            span: 209..210,
+                                                            span: Span {
+                                                                start: 209,
+                                                                end: 210,
+                                                                filename: "testing/test/ifelse.cb",
+                                                            },
                                                         },
                                                     },
                                                 ),
@@ -448,7 +668,11 @@
                                             ty: Type {
                                                 mut_token: None,
                                                 kind: Void,
-                                                span: 0..1,
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                    filename: "",
+                                                },
                                             },
                                         },
                                     ),
@@ -459,7 +683,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 210..211,
+                                span: Span {
+                                    start: 210,
+                                    end: 211,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -467,7 +695,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 212..213,
+                    span: Span {
+                        start: 212,
+                        end: 213,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
             },
         },
@@ -480,12 +712,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 219..221,
+                span: Span {
+                    start: 219,
+                    end: 221,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 222..226,
+                span: Span {
+                    start: 222,
+                    end: 226,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             type_args: None,
             params: [],
@@ -494,13 +734,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 229..232,
+                span: Span {
+                    start: 229,
+                    end: 232,
+                    filename: "testing/test/ifelse.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 233..234,
+                    span: Span {
+                        start: 233,
+                        end: 234,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -511,21 +759,33 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 239..242,
+                                    span: Span {
+                                        start: 239,
+                                        end: 242,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: None,
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "x",
-                                    span: 243..244,
+                                    span: Span {
+                                        start: 243,
+                                        end: 244,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 expr: Litral(
                                     Integer(
                                         Token {
                                             kind: Number,
                                             lexeme: "123",
-                                            span: 247..250,
+                                            span: Span {
+                                                start: 247,
+                                                end: 250,
+                                                filename: "testing/test/ifelse.cb",
+                                            },
                                         },
                                     ),
                                 ),
@@ -535,7 +795,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 250..251,
+                                span: Span {
+                                    start: 250,
+                                    end: 251,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -547,7 +811,11 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 256..259,
+                                    span: Span {
+                                        start: 256,
+                                        end: 259,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: Some(
@@ -556,20 +824,32 @@
                                         kind: SignedNumber(
                                             32,
                                         ),
-                                        span: 263..266,
+                                        span: Span {
+                                            start: 263,
+                                            end: 266,
+                                            filename: "testing/test/ifelse.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "y",
-                                    span: 260..261,
+                                    span: Span {
+                                        start: 260,
+                                        end: 261,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 expr: Litral(
                                     Integer(
                                         Token {
                                             kind: Number,
                                             lexeme: "205",
-                                            span: 269..272,
+                                            span: Span {
+                                                start: 269,
+                                                end: 272,
+                                                filename: "testing/test/ifelse.cb",
+                                            },
                                         },
                                     ),
                                 ),
@@ -579,7 +859,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 272..273,
+                                span: Span {
+                                    start: 272,
+                                    end: 273,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -591,14 +875,22 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 278..281,
+                                    span: Span {
+                                        start: 278,
+                                        end: 281,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: None,
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "result",
-                                    span: 282..288,
+                                    span: Span {
+                                        start: 282,
+                                        end: 288,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 expr: Call(
                                     ExprCall {
@@ -606,35 +898,55 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "min_s32",
-                                                span: 292..299,
+                                                span: Span {
+                                                    start: 292,
+                                                    end: 299,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         ),
                                         type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
-                                            span: 299..300,
+                                            span: Span {
+                                                start: 299,
+                                                end: 300,
+                                                filename: "testing/test/ifelse.cb",
+                                            },
                                         },
                                         args: [
                                             Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "x",
-                                                    span: 300..301,
+                                                    span: Span {
+                                                        start: 300,
+                                                        end: 301,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             ),
                                             Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "y",
-                                                    span: 303..304,
+                                                    span: Span {
+                                                        start: 303,
+                                                        end: 304,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             ),
                                         ],
                                         right_paren: Token {
                                             kind: RightParen,
                                             lexeme: ")",
-                                            span: 304..305,
+                                            span: Span {
+                                                start: 304,
+                                                end: 305,
+                                                filename: "testing/test/ifelse.cb",
+                                            },
                                         },
                                     },
                                 ),
@@ -644,7 +956,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 305..306,
+                                span: Span {
+                                    start: 305,
+                                    end: 306,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -655,28 +971,44 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 311..320,
+                                        span: Span {
+                                            start: 311,
+                                            end: 320,
+                                            filename: "testing/test/ifelse.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 320..321,
+                                    span: Span {
+                                        start: 320,
+                                        end: 321,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 args: [
                                     Identifier(
                                         Token {
                                             kind: Identifier,
                                             lexeme: "result",
-                                            span: 321..327,
+                                            span: Span {
+                                                start: 321,
+                                                end: 327,
+                                                filename: "testing/test/ifelse.cb",
+                                            },
                                         },
                                     ),
                                 ],
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 327..328,
+                                    span: Span {
+                                        start: 327,
+                                        end: 328,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                             },
                         ),
@@ -684,7 +1016,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 328..329,
+                                span: Span {
+                                    start: 328,
+                                    end: 329,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -695,14 +1031,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 334..344,
+                                        span: Span {
+                                            start: 334,
+                                            end: 344,
+                                            filename: "testing/test/ifelse.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 344..345,
+                                    span: Span {
+                                        start: 344,
+                                        end: 345,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
@@ -710,7 +1054,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 345..347,
+                                                span: Span {
+                                                    start: 345,
+                                                    end: 347,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -718,7 +1066,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 347..348,
+                                    span: Span {
+                                        start: 347,
+                                        end: 348,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                             },
                         ),
@@ -726,7 +1078,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 348..349,
+                                span: Span {
+                                    start: 348,
+                                    end: 349,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -737,14 +1093,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 354..363,
+                                        span: Span {
+                                            start: 354,
+                                            end: 363,
+                                            filename: "testing/test/ifelse.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 363..364,
+                                    span: Span {
+                                        start: 363,
+                                        end: 364,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 args: [
                                     Call(
@@ -753,35 +1117,55 @@
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "max_s32",
-                                                    span: 364..371,
+                                                    span: Span {
+                                                        start: 364,
+                                                        end: 371,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             ),
                                             type_args: None,
                                             left_paren: Token {
                                                 kind: LeftParen,
                                                 lexeme: "(",
-                                                span: 371..372,
+                                                span: Span {
+                                                    start: 371,
+                                                    end: 372,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                             args: [
                                                 Identifier(
                                                     Token {
                                                         kind: Identifier,
                                                         lexeme: "x",
-                                                        span: 372..373,
+                                                        span: Span {
+                                                            start: 372,
+                                                            end: 373,
+                                                            filename: "testing/test/ifelse.cb",
+                                                        },
                                                     },
                                                 ),
                                                 Identifier(
                                                     Token {
                                                         kind: Identifier,
                                                         lexeme: "y",
-                                                        span: 375..376,
+                                                        span: Span {
+                                                            start: 375,
+                                                            end: 376,
+                                                            filename: "testing/test/ifelse.cb",
+                                                        },
                                                     },
                                                 ),
                                             ],
                                             right_paren: Token {
                                                 kind: RightParen,
                                                 lexeme: ")",
-                                                span: 376..377,
+                                                span: Span {
+                                                    start: 376,
+                                                    end: 377,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -789,7 +1173,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 377..378,
+                                    span: Span {
+                                        start: 377,
+                                        end: 378,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                             },
                         ),
@@ -797,7 +1185,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 378..379,
+                                span: Span {
+                                    start: 378,
+                                    end: 379,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -808,14 +1200,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 384..394,
+                                        span: Span {
+                                            start: 384,
+                                            end: 394,
+                                            filename: "testing/test/ifelse.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 394..395,
+                                    span: Span {
+                                        start: 394,
+                                        end: 395,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
@@ -823,7 +1223,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 395..397,
+                                                span: Span {
+                                                    start: 395,
+                                                    end: 397,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -831,7 +1235,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 397..398,
+                                    span: Span {
+                                        start: 397,
+                                        end: 398,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                             },
                         ),
@@ -839,7 +1247,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 398..399,
+                                span: Span {
+                                    start: 398,
+                                    end: 399,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -851,7 +1263,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 404..410,
+                                    span: Span {
+                                        start: 404,
+                                        end: 410,
+                                        filename: "testing/test/ifelse.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Litral(
@@ -859,7 +1275,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "0",
-                                                span: 411..412,
+                                                span: Span {
+                                                    start: 411,
+                                                    end: 412,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -870,7 +1290,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 412..413,
+                                span: Span {
+                                    start: 412,
+                                    end: 413,
+                                    filename: "testing/test/ifelse.cb",
+                                },
                             },
                         ),
                     },
@@ -878,7 +1302,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 414..415,
+                    span: Span {
+                        start: 414,
+                        end: 415,
+                        filename: "testing/test/ifelse.cb",
+                    },
                 },
             },
         },

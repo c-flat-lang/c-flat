@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/generics.cb
                         Parser
 === testing/test/generics.cb ===
 [
@@ -10,24 +10,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 0..6,
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/generics.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 9..11,
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/generics.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 7..8,
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/generics.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_char",
-                span: 12..22,
+                span: Span {
+                    start: 12,
+                    end: 22,
+                    filename: "testing/test/generics.cb",
+                },
             },
             local_name: None,
             params: [
@@ -36,13 +52,21 @@
                     kind: UnsignedNumber(
                         8,
                     ),
-                    span: 23..25,
+                    span: Span {
+                        start: 23,
+                        end: 25,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 27..31,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/generics.cb",
+                },
             },
         },
     ),
@@ -54,24 +78,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 33..39,
+                span: Span {
+                    start: 33,
+                    end: 39,
+                    filename: "testing/test/generics.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 42..44,
+                span: Span {
+                    start: 42,
+                    end: 44,
+                    filename: "testing/test/generics.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 40..41,
+                span: Span {
+                    start: 40,
+                    end: 41,
+                    filename: "testing/test/generics.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_int",
-                span: 45..54,
+                span: Span {
+                    start: 45,
+                    end: 54,
+                    filename: "testing/test/generics.cb",
+                },
             },
             local_name: None,
             params: [
@@ -80,13 +120,21 @@
                     kind: SignedNumber(
                         32,
                     ),
-                    span: 55..58,
+                    span: Span {
+                        start: 55,
+                        end: 58,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 60..64,
+                span: Span {
+                    start: 60,
+                    end: 64,
+                    filename: "testing/test/generics.cb",
+                },
             },
         },
     ),
@@ -99,12 +147,20 @@
                         Type,
                     ),
                     lexeme: "type",
-                    span: 67..71,
+                    span: Span {
+                        start: 67,
+                        end: 71,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 name: Token {
                     kind: Identifier,
                     lexeme: "Pair",
-                    span: 72..76,
+                    span: Span {
+                        start: 72,
+                        end: 76,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 type_params: Some(
                     [
@@ -112,12 +168,20 @@
                             Token {
                                 kind: Identifier,
                                 lexeme: "T",
-                                span: 78..79,
+                                span: Span {
+                                    start: 78,
+                                    end: 79,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                             Type {
                                 mut_token: None,
                                 kind: Type,
-                                span: 81..85,
+                                span: Span {
+                                    start: 81,
+                                    end: 85,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     ],
@@ -127,7 +191,11 @@
                         Struct,
                     ),
                     lexeme: "struct",
-                    span: 88..94,
+                    span: Span {
+                        start: 88,
+                        end: 94,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 fields: [
                     Field {
@@ -135,12 +203,20 @@
                         name: Token {
                             kind: Identifier,
                             lexeme: "first",
-                            span: 101..106,
+                            span: Span {
+                                start: 101,
+                                end: 106,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         colon: Token {
                             kind: Colon,
                             lexeme: ":",
-                            span: 106..107,
+                            span: Span {
+                                start: 106,
+                                end: 107,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         ty: Type {
                             mut_token: None,
@@ -148,10 +224,18 @@
                                 Token {
                                     kind: Identifier,
                                     lexeme: "T",
-                                    span: 108..109,
+                                    span: Span {
+                                        start: 108,
+                                        end: 109,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             ),
-                            span: 108..109,
+                            span: Span {
+                                start: 108,
+                                end: 109,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         default_expr: None,
                     },
@@ -160,12 +244,20 @@
                         name: Token {
                             kind: Identifier,
                             lexeme: "second",
-                            span: 115..121,
+                            span: Span {
+                                start: 115,
+                                end: 121,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         colon: Token {
                             kind: Colon,
                             lexeme: ":",
-                            span: 121..122,
+                            span: Span {
+                                start: 121,
+                                end: 122,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         ty: Type {
                             mut_token: None,
@@ -173,10 +265,18 @@
                                 Token {
                                     kind: Identifier,
                                     lexeme: "T",
-                                    span: 123..124,
+                                    span: Span {
+                                        start: 123,
+                                        end: 124,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             ),
-                            span: 123..124,
+                            span: Span {
+                                start: 123,
+                                end: 124,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         default_expr: None,
                     },
@@ -184,12 +284,20 @@
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 95..96,
+                    span: Span {
+                        start: 95,
+                        end: 96,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 126..127,
+                    span: Span {
+                        start: 126,
+                        end: 127,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
             },
         ),
@@ -202,12 +310,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 129..131,
+                span: Span {
+                    start: 129,
+                    end: 131,
+                    filename: "testing/test/generics.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "make_pair",
-                span: 132..141,
+                span: Span {
+                    start: 132,
+                    end: 141,
+                    filename: "testing/test/generics.cb",
+                },
             },
             type_args: Some(
                 [
@@ -215,12 +331,20 @@
                         Token {
                             kind: Identifier,
                             lexeme: "T",
-                            span: 143..144,
+                            span: Span {
+                                start: 143,
+                                end: 144,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         Type {
                             mut_token: None,
                             kind: Type,
-                            span: 146..150,
+                            span: Span {
+                                start: 146,
+                                end: 150,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                     ),
                 ],
@@ -230,7 +354,11 @@
                     name: Token {
                         kind: Identifier,
                         lexeme: "a",
-                        span: 153..154,
+                        span: Span {
+                            start: 153,
+                            end: 154,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
@@ -238,17 +366,29 @@
                             Token {
                                 kind: Identifier,
                                 lexeme: "T",
-                                span: 156..157,
+                                span: Span {
+                                    start: 156,
+                                    end: 157,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
-                        span: 156..157,
+                        span: Span {
+                            start: 156,
+                            end: 157,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "b",
-                        span: 159..160,
+                        span: Span {
+                            start: 159,
+                            end: 160,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
@@ -256,10 +396,18 @@
                             Token {
                                 kind: Identifier,
                                 lexeme: "T",
-                                span: 162..163,
+                                span: Span {
+                                    start: 162,
+                                    end: 163,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
-                        span: 162..163,
+                        span: Span {
+                            start: 162,
+                            end: 163,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                 },
             ],
@@ -269,7 +417,11 @@
                     Token {
                         kind: Identifier,
                         lexeme: "Pair",
-                        span: 165..169,
+                        span: Span {
+                            start: 165,
+                            end: 169,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                     TypeParams {
                         params: [
@@ -279,21 +431,37 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "T",
-                                        span: 171..172,
+                                        span: Span {
+                                            start: 171,
+                                            end: 172,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
-                                span: 171..172,
+                                span: Span {
+                                    start: 171,
+                                    end: 172,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ],
                     },
                 ),
-                span: 165..174,
+                span: Span {
+                    start: 165,
+                    end: 174,
+                    filename: "testing/test/generics.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 175..176,
+                    span: Span {
+                        start: 175,
+                        end: 176,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -304,7 +472,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 181..187,
+                                    span: Span {
+                                        start: 181,
+                                        end: 187,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Struct(
@@ -312,7 +484,11 @@
                                             name: Token {
                                                 kind: Identifier,
                                                 lexeme: "Pair",
-                                                span: 188..192,
+                                                span: Span {
+                                                    start: 188,
+                                                    end: 192,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                             type_args: Some(
                                                 [
@@ -322,40 +498,68 @@
                                                             Token {
                                                                 kind: Identifier,
                                                                 lexeme: "T",
-                                                                span: 194..195,
+                                                                span: Span {
+                                                                    start: 194,
+                                                                    end: 195,
+                                                                    filename: "testing/test/generics.cb",
+                                                                },
                                                             },
                                                         ),
-                                                        span: 194..195,
+                                                        span: Span {
+                                                            start: 194,
+                                                            end: 195,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ],
                                             ),
                                             open_brace: Token {
                                                 kind: LeftBrace,
                                                 lexeme: "{",
-                                                span: 198..199,
+                                                span: Span {
+                                                    start: 198,
+                                                    end: 199,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                             init_fields: [
                                                 InitField {
                                                     dot: Token {
                                                         kind: Dot,
                                                         lexeme: ".",
-                                                        span: 208..209,
+                                                        span: Span {
+                                                            start: 208,
+                                                            end: 209,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                     name: Token {
                                                         kind: Identifier,
                                                         lexeme: "first",
-                                                        span: 209..214,
+                                                        span: Span {
+                                                            start: 209,
+                                                            end: 214,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                     equal: Token {
                                                         kind: Equal,
                                                         lexeme: "=",
-                                                        span: 215..216,
+                                                        span: Span {
+                                                            start: 215,
+                                                            end: 216,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                     expr: Identifier(
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "a",
-                                                            span: 217..218,
+                                                            span: Span {
+                                                                start: 217,
+                                                                end: 218,
+                                                                filename: "testing/test/generics.cb",
+                                                            },
                                                         },
                                                     ),
                                                 },
@@ -363,23 +567,39 @@
                                                     dot: Token {
                                                         kind: Dot,
                                                         lexeme: ".",
-                                                        span: 228..229,
+                                                        span: Span {
+                                                            start: 228,
+                                                            end: 229,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                     name: Token {
                                                         kind: Identifier,
                                                         lexeme: "second",
-                                                        span: 229..235,
+                                                        span: Span {
+                                                            start: 229,
+                                                            end: 235,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                     equal: Token {
                                                         kind: Equal,
                                                         lexeme: "=",
-                                                        span: 236..237,
+                                                        span: Span {
+                                                            start: 236,
+                                                            end: 237,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                     expr: Identifier(
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "b",
-                                                            span: 238..239,
+                                                            span: Span {
+                                                                start: 238,
+                                                                end: 239,
+                                                                filename: "testing/test/generics.cb",
+                                                            },
                                                         },
                                                     ),
                                                 },
@@ -387,7 +607,11 @@
                                             close_brace: Token {
                                                 kind: RightBrace,
                                                 lexeme: "}",
-                                                span: 245..246,
+                                                span: Span {
+                                                    start: 245,
+                                                    end: 246,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -398,7 +622,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 246..247,
+                                span: Span {
+                                    start: 246,
+                                    end: 247,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -406,7 +634,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 248..249,
+                    span: Span {
+                        start: 248,
+                        end: 249,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
             },
         },
@@ -419,12 +651,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 251..253,
+                span: Span {
+                    start: 251,
+                    end: 253,
+                    filename: "testing/test/generics.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "add",
-                span: 254..257,
+                span: Span {
+                    start: 254,
+                    end: 257,
+                    filename: "testing/test/generics.cb",
+                },
             },
             type_args: Some(
                 [
@@ -432,12 +672,20 @@
                         Token {
                             kind: Identifier,
                             lexeme: "T",
-                            span: 259..260,
+                            span: Span {
+                                start: 259,
+                                end: 260,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                         Type {
                             mut_token: None,
                             kind: Type,
-                            span: 262..266,
+                            span: Span {
+                                start: 262,
+                                end: 266,
+                                filename: "testing/test/generics.cb",
+                            },
                         },
                     ),
                 ],
@@ -447,7 +695,11 @@
                     name: Token {
                         kind: Identifier,
                         lexeme: "x",
-                        span: 269..270,
+                        span: Span {
+                            start: 269,
+                            end: 270,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
@@ -455,17 +707,29 @@
                             Token {
                                 kind: Identifier,
                                 lexeme: "T",
-                                span: 272..273,
+                                span: Span {
+                                    start: 272,
+                                    end: 273,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
-                        span: 272..273,
+                        span: Span {
+                            start: 272,
+                            end: 273,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "y",
-                        span: 275..276,
+                        span: Span {
+                            start: 275,
+                            end: 276,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
@@ -473,10 +737,18 @@
                             Token {
                                 kind: Identifier,
                                 lexeme: "T",
-                                span: 278..279,
+                                span: Span {
+                                    start: 278,
+                                    end: 279,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
-                        span: 278..279,
+                        span: Span {
+                            start: 278,
+                            end: 279,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                 },
             ],
@@ -486,16 +758,28 @@
                     Token {
                         kind: Identifier,
                         lexeme: "T",
-                        span: 281..282,
+                        span: Span {
+                            start: 281,
+                            end: 282,
+                            filename: "testing/test/generics.cb",
+                        },
                     },
                 ),
-                span: 281..282,
+                span: Span {
+                    start: 281,
+                    end: 282,
+                    filename: "testing/test/generics.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 283..284,
+                    span: Span {
+                        start: 283,
+                        end: 284,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -506,7 +790,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 289..295,
+                                    span: Span {
+                                        start: 289,
+                                        end: 295,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Binary(
@@ -515,19 +803,31 @@
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "x",
-                                                    span: 296..297,
+                                                    span: Span {
+                                                        start: 296,
+                                                        end: 297,
+                                                        filename: "testing/test/generics.cb",
+                                                    },
                                                 },
                                             ),
                                             op: Token {
                                                 kind: Plus,
                                                 lexeme: "+",
-                                                span: 298..299,
+                                                span: Span {
+                                                    start: 298,
+                                                    end: 299,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                             right: Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "y",
-                                                    span: 300..301,
+                                                    span: Span {
+                                                        start: 300,
+                                                        end: 301,
+                                                        filename: "testing/test/generics.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -539,7 +839,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 301..302,
+                                span: Span {
+                                    start: 301,
+                                    end: 302,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -547,7 +851,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 303..304,
+                    span: Span {
+                        start: 303,
+                        end: 304,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
             },
         },
@@ -560,12 +868,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 310..312,
+                span: Span {
+                    start: 310,
+                    end: 312,
+                    filename: "testing/test/generics.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 313..317,
+                span: Span {
+                    start: 313,
+                    end: 317,
+                    filename: "testing/test/generics.cb",
+                },
             },
             type_args: None,
             params: [],
@@ -574,13 +890,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 320..323,
+                span: Span {
+                    start: 320,
+                    end: 323,
+                    filename: "testing/test/generics.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 324..325,
+                    span: Span {
+                        start: 324,
+                        end: 325,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -591,7 +915,11 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 330..333,
+                                    span: Span {
+                                        start: 330,
+                                        end: 333,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: Some(
@@ -601,7 +929,11 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "Pair",
-                                                span: 337..341,
+                                                span: Span {
+                                                    start: 337,
+                                                    end: 341,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                             TypeParams {
                                                 params: [
@@ -610,18 +942,30 @@
                                                         kind: SignedNumber(
                                                             32,
                                                         ),
-                                                        span: 343..346,
+                                                        span: Span {
+                                                            start: 343,
+                                                            end: 346,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ],
                                             },
                                         ),
-                                        span: 337..348,
+                                        span: Span {
+                                            start: 337,
+                                            end: 348,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "p",
-                                    span: 334..335,
+                                    span: Span {
+                                        start: 334,
+                                        end: 335,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 expr: Call(
                                     ExprCall {
@@ -629,7 +973,11 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "make_pair",
-                                                span: 351..360,
+                                                span: Span {
+                                                    start: 351,
+                                                    end: 360,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                         type_args: Some(
@@ -639,14 +987,22 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
-                                                    span: 362..365,
+                                                    span: Span {
+                                                        start: 362,
+                                                        end: 365,
+                                                        filename: "testing/test/generics.cb",
+                                                    },
                                                 },
                                             ],
                                         ),
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
-                                            span: 367..368,
+                                            span: Span {
+                                                start: 367,
+                                                end: 368,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                         args: [
                                             Litral(
@@ -654,7 +1010,11 @@
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "10",
-                                                        span: 368..370,
+                                                        span: Span {
+                                                            start: 368,
+                                                            end: 370,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ),
                                             ),
@@ -663,7 +1023,11 @@
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "20",
-                                                        span: 372..374,
+                                                        span: Span {
+                                                            start: 372,
+                                                            end: 374,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ),
                                             ),
@@ -671,7 +1035,11 @@
                                         right_paren: Token {
                                             kind: RightParen,
                                             lexeme: ")",
-                                            span: 374..375,
+                                            span: Span {
+                                                start: 374,
+                                                end: 375,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                     },
                                 ),
@@ -681,7 +1049,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 375..376,
+                                span: Span {
+                                    start: 375,
+                                    end: 376,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -692,14 +1064,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 381..390,
+                                        span: Span {
+                                            start: 381,
+                                            end: 390,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 390..391,
+                                    span: Span {
+                                        start: 390,
+                                        end: 391,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     MemberAccess(
@@ -708,18 +1088,30 @@
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "p",
-                                                    span: 391..392,
+                                                    span: Span {
+                                                        start: 391,
+                                                        end: 392,
+                                                        filename: "testing/test/generics.cb",
+                                                    },
                                                 },
                                             ),
                                             dot: Token {
                                                 kind: Dot,
                                                 lexeme: ".",
-                                                span: 392..393,
+                                                span: Span {
+                                                    start: 392,
+                                                    end: 393,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                             member: Token {
                                                 kind: Identifier,
                                                 lexeme: "first",
-                                                span: 393..398,
+                                                span: Span {
+                                                    start: 393,
+                                                    end: 398,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -727,7 +1119,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 398..399,
+                                    span: Span {
+                                        start: 398,
+                                        end: 399,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -735,7 +1131,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 399..400,
+                                span: Span {
+                                    start: 399,
+                                    end: 400,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -746,14 +1146,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 405..415,
+                                        span: Span {
+                                            start: 405,
+                                            end: 415,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 415..416,
+                                    span: Span {
+                                        start: 415,
+                                        end: 416,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
@@ -761,7 +1169,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 416..418,
+                                                span: Span {
+                                                    start: 416,
+                                                    end: 418,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -769,7 +1181,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 418..419,
+                                    span: Span {
+                                        start: 418,
+                                        end: 419,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -777,7 +1193,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 419..420,
+                                span: Span {
+                                    start: 419,
+                                    end: 420,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -788,14 +1208,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 425..434,
+                                        span: Span {
+                                            start: 425,
+                                            end: 434,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 434..435,
+                                    span: Span {
+                                        start: 434,
+                                        end: 435,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     MemberAccess(
@@ -804,18 +1232,30 @@
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "p",
-                                                    span: 435..436,
+                                                    span: Span {
+                                                        start: 435,
+                                                        end: 436,
+                                                        filename: "testing/test/generics.cb",
+                                                    },
                                                 },
                                             ),
                                             dot: Token {
                                                 kind: Dot,
                                                 lexeme: ".",
-                                                span: 436..437,
+                                                span: Span {
+                                                    start: 436,
+                                                    end: 437,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                             member: Token {
                                                 kind: Identifier,
                                                 lexeme: "second",
-                                                span: 437..443,
+                                                span: Span {
+                                                    start: 437,
+                                                    end: 443,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -823,7 +1263,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 443..444,
+                                    span: Span {
+                                        start: 443,
+                                        end: 444,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -831,7 +1275,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 444..445,
+                                span: Span {
+                                    start: 444,
+                                    end: 445,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -842,14 +1290,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 450..460,
+                                        span: Span {
+                                            start: 450,
+                                            end: 460,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 460..461,
+                                    span: Span {
+                                        start: 460,
+                                        end: 461,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
@@ -857,7 +1313,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 461..463,
+                                                span: Span {
+                                                    start: 461,
+                                                    end: 463,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -865,7 +1325,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 463..464,
+                                    span: Span {
+                                        start: 463,
+                                        end: 464,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -873,7 +1337,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 464..465,
+                                span: Span {
+                                    start: 464,
+                                    end: 465,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -885,14 +1353,22 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 471..474,
+                                    span: Span {
+                                        start: 471,
+                                        end: 474,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: None,
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "num0",
-                                    span: 475..479,
+                                    span: Span {
+                                        start: 475,
+                                        end: 479,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 expr: Call(
                                     ExprCall {
@@ -900,7 +1376,11 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "add",
-                                                span: 482..485,
+                                                span: Span {
+                                                    start: 482,
+                                                    end: 485,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                         type_args: Some(
@@ -910,14 +1390,22 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
-                                                    span: 487..490,
+                                                    span: Span {
+                                                        start: 487,
+                                                        end: 490,
+                                                        filename: "testing/test/generics.cb",
+                                                    },
                                                 },
                                             ],
                                         ),
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
-                                            span: 492..493,
+                                            span: Span {
+                                                start: 492,
+                                                end: 493,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                         args: [
                                             Litral(
@@ -925,7 +1413,11 @@
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "123",
-                                                        span: 493..496,
+                                                        span: Span {
+                                                            start: 493,
+                                                            end: 496,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ),
                                             ),
@@ -934,7 +1426,11 @@
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "321",
-                                                        span: 498..501,
+                                                        span: Span {
+                                                            start: 498,
+                                                            end: 501,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ),
                                             ),
@@ -942,7 +1438,11 @@
                                         right_paren: Token {
                                             kind: RightParen,
                                             lexeme: ")",
-                                            span: 501..502,
+                                            span: Span {
+                                                start: 501,
+                                                end: 502,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                     },
                                 ),
@@ -952,7 +1452,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 502..503,
+                                span: Span {
+                                    start: 502,
+                                    end: 503,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -963,28 +1467,44 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 508..517,
+                                        span: Span {
+                                            start: 508,
+                                            end: 517,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 517..518,
+                                    span: Span {
+                                        start: 517,
+                                        end: 518,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     Identifier(
                                         Token {
                                             kind: Identifier,
                                             lexeme: "num0",
-                                            span: 518..522,
+                                            span: Span {
+                                                start: 518,
+                                                end: 522,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                     ),
                                 ],
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 522..523,
+                                    span: Span {
+                                        start: 522,
+                                        end: 523,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -992,7 +1512,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 523..524,
+                                span: Span {
+                                    start: 523,
+                                    end: 524,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -1003,14 +1527,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 529..539,
+                                        span: Span {
+                                            start: 529,
+                                            end: 539,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 539..540,
+                                    span: Span {
+                                        start: 539,
+                                        end: 540,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
@@ -1018,7 +1550,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 540..542,
+                                                span: Span {
+                                                    start: 540,
+                                                    end: 542,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -1026,7 +1562,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 542..543,
+                                    span: Span {
+                                        start: 542,
+                                        end: 543,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -1034,7 +1574,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 543..544,
+                                span: Span {
+                                    start: 543,
+                                    end: 544,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -1046,14 +1590,22 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 550..553,
+                                    span: Span {
+                                        start: 550,
+                                        end: 553,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: None,
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "num1",
-                                    span: 554..558,
+                                    span: Span {
+                                        start: 554,
+                                        end: 558,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 expr: Call(
                                     ExprCall {
@@ -1061,14 +1613,22 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "add",
-                                                span: 561..564,
+                                                span: Span {
+                                                    start: 561,
+                                                    end: 564,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                         type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
-                                            span: 564..565,
+                                            span: Span {
+                                                start: 564,
+                                                end: 565,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                         args: [
                                             Litral(
@@ -1076,7 +1636,11 @@
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "100",
-                                                        span: 565..568,
+                                                        span: Span {
+                                                            start: 565,
+                                                            end: 568,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ),
                                             ),
@@ -1085,7 +1649,11 @@
                                                     Token {
                                                         kind: Number,
                                                         lexeme: "44",
-                                                        span: 570..572,
+                                                        span: Span {
+                                                            start: 570,
+                                                            end: 572,
+                                                            filename: "testing/test/generics.cb",
+                                                        },
                                                     },
                                                 ),
                                             ),
@@ -1093,7 +1661,11 @@
                                         right_paren: Token {
                                             kind: RightParen,
                                             lexeme: ")",
-                                            span: 572..573,
+                                            span: Span {
+                                                start: 572,
+                                                end: 573,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                     },
                                 ),
@@ -1103,7 +1675,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 573..574,
+                                span: Span {
+                                    start: 573,
+                                    end: 574,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -1114,28 +1690,44 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_int",
-                                        span: 579..588,
+                                        span: Span {
+                                            start: 579,
+                                            end: 588,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 588..589,
+                                    span: Span {
+                                        start: 588,
+                                        end: 589,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     Identifier(
                                         Token {
                                             kind: Identifier,
                                             lexeme: "num1",
-                                            span: 589..593,
+                                            span: Span {
+                                                start: 589,
+                                                end: 593,
+                                                filename: "testing/test/generics.cb",
+                                            },
                                         },
                                     ),
                                 ],
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 593..594,
+                                    span: Span {
+                                        start: 593,
+                                        end: 594,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -1143,7 +1735,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 594..595,
+                                span: Span {
+                                    start: 594,
+                                    end: 595,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -1154,14 +1750,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 600..610,
+                                        span: Span {
+                                            start: 600,
+                                            end: 610,
+                                            filename: "testing/test/generics.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 610..611,
+                                    span: Span {
+                                        start: 610,
+                                        end: 611,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
@@ -1169,7 +1773,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "10",
-                                                span: 611..613,
+                                                span: Span {
+                                                    start: 611,
+                                                    end: 613,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -1177,7 +1785,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 613..614,
+                                    span: Span {
+                                        start: 613,
+                                        end: 614,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                             },
                         ),
@@ -1185,7 +1797,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 614..615,
+                                span: Span {
+                                    start: 614,
+                                    end: 615,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -1197,7 +1813,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 621..627,
+                                    span: Span {
+                                        start: 621,
+                                        end: 627,
+                                        filename: "testing/test/generics.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Litral(
@@ -1205,7 +1825,11 @@
                                             Token {
                                                 kind: Number,
                                                 lexeme: "0",
-                                                span: 628..629,
+                                                span: Span {
+                                                    start: 628,
+                                                    end: 629,
+                                                    filename: "testing/test/generics.cb",
+                                                },
                                             },
                                         ),
                                     ),
@@ -1216,7 +1840,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 629..630,
+                                span: Span {
+                                    start: 629,
+                                    end: 630,
+                                    filename: "testing/test/generics.cb",
+                                },
                             },
                         ),
                     },
@@ -1224,7 +1852,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 631..632,
+                    span: Span {
+                        start: 631,
+                        end: 632,
+                        filename: "testing/test/generics.cb",
+                    },
                 },
             },
         },

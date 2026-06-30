@@ -89,7 +89,6 @@ pub fn compile_source(
 
 #[cfg(not(feature = "wasm"))]
 pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
-    use crate::error::{Report, ScopedReport};
     use crate::stage::parser::ast::Item;
     use std::path::Path;
 
@@ -100,7 +99,9 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
     if let Some(DebugMode::Token) = cli_options.debug_mode {
         for module in &program.modules {
             eprintln!("=== {} ===", module.path.display());
-            for token in stage::lexer::Lexer.run(&module.source) {
+            for token in
+                stage::lexer::Lexer.run((module.path.to_str().unwrap_or_default(), &module.source))
+            {
                 eprintln!("{:?}", token);
             }
         }
@@ -115,29 +116,15 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         std::process::exit(0);
     }
 
-    let entry_path = program.modules[0].path.display().to_string();
-    let entry_source = program.modules[0].source.clone();
-    let scope = |err: Box<dyn Report>| -> Box<dyn Report> {
-        Box::new(ScopedReport::new(
-            entry_path.clone(),
-            entry_source.clone(),
-            err,
-        ))
-    };
-
     let items: Vec<Item> = program
         .modules
         .into_iter()
         .flat_map(|module| module.items)
         .collect();
 
-    let mut items = stage::monomorphize::Monomorphizer::default()
-        .run(items)
-        .map_err(scope)?;
+    let mut items = stage::monomorphize::Monomorphizer::default().run(items)?;
 
-    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default()
-        .run(&mut items)
-        .map_err(scope)?;
+    let symbol_table = stage::semantic_analyzer::SemanticAnalyzer::default().run(&mut items)?;
 
     if let Some(DebugMode::SymbolTable) = cli_options.debug_mode {
         eprintln!("{:#?}", symbol_table);

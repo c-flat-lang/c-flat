@@ -11,8 +11,7 @@ fn main() {
     let mut module = match front_end_compiler(&cli_options) {
         Ok(module) => module,
         Err(err) => {
-            // TODO: look at removing source from report (bitbox is using it still).
-            let errors = err.report(&cli_options.file_path, "");
+            let errors = err.report("");
             eprintln!("{}", errors);
             std::process::exit(1);
         }
