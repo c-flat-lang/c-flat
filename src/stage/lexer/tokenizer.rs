@@ -5,10 +5,10 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(src: &'a str) -> Self {
+    pub fn new(filename: &str, src: &'a str) -> Self {
         Self {
             chars: src.chars().peekable(),
-            span: 0..0,
+            span: Span::new(filename),
         }
     }
 
@@ -33,7 +33,7 @@ impl<'a> Tokenizer<'a> {
 
     fn spanned(&mut self, kind: TokenKind, lexeme: impl Into<String>) -> Token {
         let span = self.span.clone();
-        self.span = self.span.end..self.span.end;
+        self.span.start = self.span.end;
         Token::new(kind, lexeme, span)
     }
 

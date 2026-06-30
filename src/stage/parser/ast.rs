@@ -4,21 +4,11 @@ use std::fmt::Write;
 
 use crate::stage::lexer::token::{Span, Token};
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Default, Clone, Eq)]
 pub struct Type {
     pub mut_token: Option<Token>,
     pub kind: TypeKind,
     pub span: Span,
-}
-
-impl Default for Type {
-    fn default() -> Self {
-        Self {
-            mut_token: None,
-            kind: TypeKind::default(),
-            span: 0..1,
-        }
-    }
 }
 
 impl std::fmt::Display for Type {
@@ -314,13 +304,19 @@ pub struct ExternFunction {
 
 impl ExternFunction {
     pub fn span(&self) -> Span {
+        let filename = self.extern_token.span.filename.clone();
         let start = self.extern_token.span.start;
         let end = self
             .local_name
             .as_ref()
             .map(|n| n.span.end)
             .unwrap_or(self.binding_name.span.end);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 
     pub fn name(&self) -> &str {
@@ -337,6 +333,23 @@ pub struct Use {
     pub path: Vec<Token>,
 }
 
+impl Use {
+    pub fn span(&self) -> Span {
+        let filename = self.use_token.span.filename.clone().clone();
+        let start = self.use_token.span.clone();
+        let end = self
+            .path
+            .last()
+            .map(|token| token.span.end)
+            .unwrap_or(start.end);
+        Span {
+            start: start.start,
+            end,
+            filename,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Field {
     pub visibility: Visibility,
@@ -348,13 +361,18 @@ pub struct Field {
 
 impl Field {
     pub fn span(&self) -> Span {
+        let filename = self.name.span.filename.clone().clone();
         let start = self.name.span.clone();
         let end = self
             .default_expr
             .as_ref()
             .map(|d| d.span().end)
             .unwrap_or(start.end);
-        start.start..end
+        Span {
+            start: start.start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -372,9 +390,15 @@ pub struct Struct {
 
 impl Struct {
     pub fn span(&self) -> Span {
+        let filename = self.type_token.span.filename.clone();
         let start = self.type_token.span.start;
         let end = self.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -403,9 +427,15 @@ pub struct ExprBlock {
 
 impl ExprBlock {
     pub fn span(&self) -> Span {
+        let filename = self.open_brace.span.filename.clone();
         let start = self.open_brace.span.start;
         let end = self.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -417,9 +447,15 @@ pub struct ExprAddressOf {
 
 impl ExprAddressOf {
     pub fn span(&self) -> Span {
+        let filename = self.ampersand.span.filename.clone();
         let start = self.ampersand.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -432,9 +468,15 @@ pub struct ExprDeref {
 
 impl ExprDeref {
     pub fn span(&self) -> Span {
+        let filename = self.base.span().filename.clone();
         let start = self.base.span().start;
         let end = self.star.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -446,9 +488,15 @@ pub struct ExprNot {
 
 impl ExprNot {
     pub fn span(&self) -> Span {
+        let filename = self.bang.span.filename.clone();
         let start = self.bang.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -460,9 +508,15 @@ pub struct Statement {
 
 impl Statement {
     pub fn span(&self) -> Span {
+        let filename = self.expr.span().filename.clone();
         let start = self.expr.span();
         let end = self.delem.as_ref().map(|d| d.span.end).unwrap_or(start.end);
-        start.start..end
+
+        Span {
+            start: start.start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -538,9 +592,15 @@ pub struct ExprTypeCast {
 
 impl ExprTypeCast {
     pub fn span(&self) -> Span {
+        let filename = self.as_token.span.filename.clone();
         let start = self.as_token.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -553,9 +613,15 @@ pub struct ExprGrouping {
 
 impl ExprGrouping {
     pub fn span(&self) -> Span {
+        let filename = self.open_paren.span.filename.clone();
         let start = self.open_paren.span.start;
         let end = self.close_paren.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -569,9 +635,15 @@ pub struct ExprArray {
 
 impl ExprArray {
     pub fn span(&self) -> Span {
+        let filename = self.open_bracket.span.filename.clone();
         let start = self.open_bracket.span.start;
         let end = self.close_bracket.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -586,9 +658,15 @@ pub struct ExprArrayIndex {
 
 impl ExprArrayIndex {
     pub fn span(&self) -> Span {
+        let filename = self.expr.span().filename.clone();
         let start = self.expr.span().start;
         let end = self.close_bracket.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -604,9 +682,15 @@ pub struct ExprArrayRepeat {
 
 impl ExprArrayRepeat {
     pub fn span(&self) -> Span {
+        let filename = self.open_bracket.span.filename.clone();
         let start = self.open_bracket.span.start;
         let end = self.close_bracket.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -618,9 +702,15 @@ pub struct ExprReturn {
 
 impl ExprReturn {
     pub fn span(&self) -> Span {
+        let filename = self.return_token.span.filename.clone();
         let start = self.return_token.span.start;
         let end = self.expr.as_ref().map(|e| e.span().end).unwrap_or(start);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -634,9 +724,15 @@ pub struct InitField {
 
 impl InitField {
     pub fn span(&self) -> Span {
+        let filename = self.dot.span.filename.clone();
         let start = self.dot.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -651,9 +747,15 @@ pub struct ExprStruct {
 
 impl ExprStruct {
     pub fn span(&self) -> Span {
+        let filename = self.name.span.filename.clone();
         let start = self.name.span.start;
         let end = self.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -668,9 +770,15 @@ pub struct ExprDecl {
 
 impl ExprDecl {
     pub fn span(&self) -> Span {
+        let filename = self.let_token.span.filename.clone();
         let start = self.let_token.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -683,9 +791,15 @@ pub struct ExprAssignment {
 
 impl ExprAssignment {
     pub fn span(&self) -> Span {
-        let start = self.left.span();
-        let end = self.right.span();
-        start.start..end.end
+        let filename = self.left.span().filename.clone();
+        let start = self.left.span().start;
+        let end = self.right.span().end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -700,9 +814,15 @@ pub struct ExprCall {
 
 impl ExprCall {
     pub fn span(&self) -> Span {
-        let start = self.caller.span();
+        let filename = self.caller.span().filename.clone();
+        let start = self.caller.span().start;
         let end = self.right_paren.span.end;
-        start.start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -715,9 +835,15 @@ pub struct ExprBinary {
 
 impl ExprBinary {
     pub fn span(&self) -> Span {
-        let start = self.left.span();
-        let end = self.right.span();
-        start.start..end.end
+        let filename = self.left.span().filename.clone();
+        let start = self.left.span().start;
+        let end = self.right.span().end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -730,9 +856,15 @@ pub struct ExprWhile {
 
 impl ExprWhile {
     pub fn span(&self) -> Span {
+        let filename = self.while_token.span.filename.clone();
         let start = self.while_token.span.start;
         let end = self.body.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -748,13 +880,19 @@ pub struct ExprIfElse {
 
 impl ExprIfElse {
     pub fn span(&self) -> Span {
+        let filename = self.if_token.span.filename.clone();
         let start = self.if_token.span.start;
         let end = self
             .else_branch
             .as_ref()
             .map(|b| b.span().end)
             .unwrap_or(self.then_branch.close_brace.span.end);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -768,9 +906,15 @@ pub struct ExprPath {
 
 impl ExprPath {
     pub fn span(&self) -> Span {
+        let filename = self.segments[0].span.filename.clone();
         let start = self.segments.first().map(|t| t.span.start).unwrap_or(0);
         let end = self.segments.last().map(|t| t.span.end).unwrap_or(start);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 
     /// The final segment, which names the item being referred to. v1 resolves a
@@ -791,9 +935,15 @@ pub struct ExprMemberAccess {
 
 impl ExprMemberAccess {
     pub fn span(&self) -> Span {
+        let filename = self.base.span().filename.clone();
         let start = self.base.span().start;
         let end = self.member.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
