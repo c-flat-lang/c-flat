@@ -1,37 +1,5 @@
-extern C fn write_char(u8) void;
-
-pub fn println(string: *[u8]) void {
-    let mut i: usize = 0;
-    while i < string.len {
-        write_char(string[i]);
-        i = i + 1;
-    }
-    write_char(10);
-}
-
-pub fn print(string: *[u8]) void {
-    let mut i: usize = 0;
-    while i < string.len {
-        write_char(string[i]);
-        i = i + 1;
-    }
-}
-
-fn isAlpha(c: u8) bool {
-    return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');
-}
-
-fn isNumber(c: u8) bool {
-    return c >= '0' and c <= '9';
-}
-
-fn isAlphaNumeric(c: u8) bool {
-    return isAlpha(c) or isNumber(c);
-}
-
-fn isWhiteSpace(c: u8) bool {
-    return c == '\n' or c == '\t' or c == ' ';
-}
+use modules::ascii;
+use modules::io;
 
 pub fn main() void {
     let src = 
@@ -43,38 +11,40 @@ pub fn main() void {
     let mut i: usize = 0;
     while i < src.len {
         let c = src[i];
-        if isAlpha(c) {
+        if ascii::isAlpha(c) {
             let ident: [10; u8] = [0;10];
             ident[0] = c;
             let mut ident_idx: usize = 1;
-            while i < src.len and isAlphaNumeric(src[i+1]) {
+            while i < src.len and ascii::isAlphaNumeric(src[i+1]) {
                 i = i + 1;
                 ident[ident_idx] = src[i];
                 ident_idx = ident_idx + 1;
             }
-            print("Ident ");
-            println(&ident);
-        } else if isNumber(c) {
+            io::io_write_str(&"Ident ");
+            io::io_write_str(&ident);
+            io::io_write_str(&"\n");
+        } else if ascii::isNumber(c) {
             let number: [10; u8] = [0;10];
             number[0] = c;
             let mut number_idx: usize = 1;
-            while i < src.len and isNumber(src[i+1]) {
+            while i < src.len and ascii::isNumber(src[i+1]) {
                 i = i + 1;
                 number[number_idx] = src[i];
                 number_idx = number_idx + 1;
             }
-            print("Number ");
-            println(&number);
+            io::io_write_str(&"Number ");
+            io::io_write_str(&number);
+            io::io_write_str(&"\n");
         } else if c == '{' {
-            println(&"Right Brace");
+            io::io_write_str(&"Right Brace");
         } else if c == '}' {
-            println(&"Left Brace");
+            io::io_write_str(&"Left Brace");
         } else if c == '(' {
-            println(&"Right Paran");
+            io::io_write_str(&"Right Paran");
         } else if c == ')' {
-            println(&"Left Paran");
+            io::io_write_str(&"Left Paran");
         } else if c == ';' {
-            println(&"Simicolon");
+            io::io_write_str(&"Simicolon");
         }
 
         i = i + 1;

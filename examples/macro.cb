@@ -1,7 +1,7 @@
 // This Example does not compile.
 // Just experimenting with syntax.
 use std::ArrayList;
-use std::os::unix::{syscall4, SYS_WRITE};
+use std::os::unix::{syscall3, SYS_WRITE};
 use std::str::format;
 use core::macro::{TokenStream, Token, TokenKind};
 
@@ -16,8 +16,8 @@ macro println(tokens: TokenStream) TokenStream {
     let first = tokens.peek();
     if first.is_none() {
         // Empty println — just write a newline
-        // Expand to: syscall4(SYS_WRITE, 1, "\n".ptr, 1);
-        output.push(Token::ident("syscall4"));
+        // Expand to: syscall3(SYS_WRITE, 1, "\n".ptr, 1);
+        output.push(Token::ident("syscall3"));
         output.push(Token::punct("("));
         output.push(Token::ident("SYS_WRITE"));
         output.push(Token::punct(","));
@@ -38,7 +38,7 @@ macro println(tokens: TokenStream) TokenStream {
     // Expand to:
     // {
     //     let __println_buf = format(<tokens>, "\n");
-    //     syscall4(SYS_WRITE, 1, __println_buf.ptr, __println_buf.len);
+    //     syscall3(SYS_WRITE, 1, __println_buf.ptr, __println_buf.len);
     // }
 
     // Opening block
@@ -69,8 +69,8 @@ macro println(tokens: TokenStream) TokenStream {
     output.push(Token::punct(")"));
     output.push(Token::punct(";"));
 
-    // syscall4(SYS_WRITE, 1, __println_buf.ptr, __println_buf.len);
-    output.push(Token::ident("syscall4"));
+    // syscall3(SYS_WRITE, 1, __println_buf.ptr, __println_buf.len);
+    output.push(Token::ident("syscall3"));
     output.push(Token::punct("("));
     output.push(Token::ident("SYS_WRITE"));
     output.push(Token::punct(","));

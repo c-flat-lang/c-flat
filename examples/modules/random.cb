@@ -1,0 +1,25 @@
+// libc
+extern C fn time(s32) s32;
+extern C fn srand(s32) void;
+extern C fn rand() s32;
+
+pub fn init_random() void {
+    srand(time(0));
+}
+
+pub fn rand_range(min: s32, max: s32) s32 {
+    if min == max {
+        return min;
+    }
+    let r: s32 = rand();
+    return min + (r % (max - min));
+}
+
+pub fn rand_bool() bool {
+    let r: s32 = rand();
+    let min: s32 = 0;
+    let max: s32 = 2;
+    let results = min + (r % (max - min));
+    return results == 1;
+}
+

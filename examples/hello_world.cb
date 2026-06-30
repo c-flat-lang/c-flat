@@ -1,5 +1,5 @@
-use modules::io::println;
+use modules::io::io_write_str;
 
 pub fn main() void {
-    println(&"Hello, World!");
+    io_write_str(&"Hello, World!\n");
 }

@@ -502,7 +502,6 @@ impl<'st> TypeChecker<'st> {
         let (TypeKind::Array(_, array_type) | TypeKind::Slice(array_type)) =
             &array_type.de_ref().kind
         else {
-            eprintln!("{}", array_type.kind);
             // NOTE: This probably will cause some missleading errors.
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 array_type.clone(),

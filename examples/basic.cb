@@ -1,19 +1,18 @@
-extern C fn write_int(s32) void;
-extern C fn write_char(u8) void;
-
-fn max_s32(x: s32, y: s32) s32 {
-    return if x > y { x } else { y };
-}
-
-fn min_s32(x: s32, y: s32) s32 {
-    return if x < y { x } else { y };
-}
+use modules::math;
+use modules::io::io_write_str;
 
 pub fn main() s32 {
     let x = 123;
     let y: s32 = 205;
-    let result =  min_s32(x, y);
-    write_int(result);
-    write_char(10);
+    io_write_str(&"min: ");
+    let min_result: s32 = math::min<(s32)>(x, y);
+    io_write_s32(min_result);
+    io_write_str(&"\n");
+
+    let max_result: s32 = math::max<(s32)>(x, y);
+    io_write_str(&"max: ");
+    io_write_s32(max_result);
+    io_write_str(&"\n");
+
     return 0;
 }

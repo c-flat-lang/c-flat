@@ -1,71 +1,15 @@
 // BUILD WITH
-// cargo run --features "debug" -- \
-// --target=x86_64-linux \
 // # this may need to be adjusted depending on where raylib is on your system
-// --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
-// examples/raylib-snake.cb
+// cargo run --features "debug" -- --target=x86_64-linux --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" examples/raylib-snake.cb
 
-// runtime.c
-extern C fn write_s32(s32) void;
-extern C fn write_u8(u8) void;
-extern C fn write_f32(f32) void;
-extern C fn write_char(u8) void;
-
-// RAYLIB
-type Rectangle struct {
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-}
-
-type Color struct {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-}
-
-extern C fn InitWindow as init_window(s32, s32, *[u8]) void;
-extern C fn BeginDrawing as begin_drawing() void;
-extern C fn EndDrawing as end_drawing() void;
-extern C fn CloseWindow as close_window() void;
-extern C fn SetTargetFPS as set_target_fps(s32) void;
-extern C fn WindowShouldClose as window_should_close() bool;
-extern C fn ClearBackground as clear_background(Color) void;
-extern C fn DrawText as draw_text(*[u8], s32, s32, s32, Color) void;
-extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
-extern C fn IsKeyPressed as is_key_pressed(s32) bool;
-extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
-extern C fn GetFrameTime as get_frame_time() f32;
-extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
-
-// libc
-extern C fn time(s32) s32;
-extern C fn srand(s32) void;
-extern C fn rand() s32;
-
-fn rand_range(min: s32, max: s32) s32 {
-    if min == max {
-        return min;
-    }
-    let r: s32 = rand();
-    return min + (r % (max - min));
-}
-
-fn rand_bool() bool {
-    let r: s32 = rand();
-    let min: s32 = 0;
-    let max: s32 = 2;
-    let results = min + (r % (max - min));
-    return results == 1;
-}
+use modules::raylib;
+use modules::random;
 
 fn rand_color() Color {
     let color: Color = Color {
-        .r = rand_range(0, 255) as u8,
-        .g = rand_range(0, 255) as u8,
-        .b = rand_range(0, 255) as u8,
+        .r = random::rand_range(0, 255) as u8,
+        .g = random::rand_range(0, 255) as u8,
+        .b = random::rand_range(0, 255) as u8,
         .a = 255,
     };
     return color;
@@ -90,7 +34,7 @@ fn playerIsCollidingWithFood(px: s32, py: s32, fx: s32, fy: s32) bool {
 }
 
 pub fn main() s32 {
-    srand(time(0));
+    random::init_random();
 
     let background_color = Color {
         .r = 40,
@@ -159,8 +103,8 @@ pub fn main() s32 {
 
 
     // FOOD
-    let food_x: s32 = rand_range(0, CELL_WIDTH);
-    let food_y: s32 = rand_range(0, CELL_HEIGHT);
+    let food_x: s32 = random::rand_range(0, CELL_WIDTH);
+    let food_y: s32 = random::rand_range(0, CELL_HEIGHT);
 
     let title = "raylib c-flat snake demo\0";
     init_window(screen_width, screen_height, &title);
@@ -226,23 +170,19 @@ pub fn main() s32 {
 
 
             if is_collided {
-                write_char('-');
                 player_body[player_body_index] = 1;
                 player_body_x[player_body_index] = prev_x;
                 player_body_y[player_body_index] = prev_y;
                 player_body_index = player_body_index + 1;
-                food_x = rand_range(0, CELL_WIDTH);
-                food_y = rand_range(0, CELL_HEIGHT);
+                food_x = random::rand_range(0, CELL_WIDTH);
+                food_y = random::rand_range(0, CELL_HEIGHT);
                 score[0] = score[0] + 1;
+                // TODO: figure out why this is not allowing to be set here.
                 // let new_food_color = rand_color();
                 // food_color = new_food_color;
-                // let r = rand_range(0, 255);
-                // food_color = Color {
-                //     .r = r as u8,
-                //     .g = 0 as u8,
-                //     .b = 0 as u8,
-                //     .a = 255,
-                // };https://opentoonz.github.io/e/
+                // food_color.r = new_food_color.r;
+                // food_color.g = new_food_color.g;
+                // food_color.b = new_food_color.b;
             }
 
 

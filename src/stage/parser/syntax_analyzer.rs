@@ -433,7 +433,7 @@ impl Parser {
 
     fn while_expression(&mut self) -> Result<ast::Expr> {
         if !self.peek(TokenKind::Keyword(Keyword::While)) {
-            return self.return_expression();
+            return self.parse_return_expression();
         }
         let while_token = self.consume(TokenKind::Keyword(Keyword::While))?;
         self.restrict_struct_literal = true;
@@ -448,11 +448,18 @@ impl Parser {
         Ok(ast::Expr::While(while_expr))
     }
 
-    fn return_expression(&mut self) -> Result<ast::Expr> {
+    fn parse_return_expression(&mut self) -> Result<ast::Expr> {
         if !self.peek(TokenKind::Keyword(Keyword::Return)) {
             return self.parse_expr();
         }
         let return_token = self.consume(TokenKind::Keyword(Keyword::Return))?;
+        if self.peek(TokenKind::Semicolon) {
+            let return_expr = ast::ExprReturn {
+                return_token,
+                expr: None,
+            };
+            return Ok(ast::Expr::Return(return_expr));
+        }
         let expr = self.parse_expr()?;
         let return_expr = ast::ExprReturn {
             return_token,

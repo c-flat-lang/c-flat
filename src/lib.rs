@@ -115,8 +115,6 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         std::process::exit(0);
     }
 
-    // Spans are byte offsets into a specific module's source; once we flatten we
-    // can only render diagnostics against one source, so use the entry module's.
     let entry_path = program.modules[0].path.display().to_string();
     let entry_source = program.modules[0].source.clone();
     let scope = |err: Box<dyn Report>| -> Box<dyn Report> {
@@ -127,17 +125,12 @@ pub fn front_end_compiler(cli_options: &Cli) -> Result<bitbox::ir::Module> {
         ))
     };
 
-    // Compile every reachable module's items as one program. v1 uses a flat
-    // namespace, so top level names must be unique across modules.
-    // Easiest solution for now, at lest until true namespace separation can be implemented.
     let items: Vec<Item> = program
         .modules
         .into_iter()
         .flat_map(|module| module.items)
         .collect();
 
-    // Lower generics to concrete, monomorphized items before any type checking;
-    // every later stage only ever sees concrete types.
     let mut items = stage::monomorphize::Monomorphizer::default()
         .run(items)
         .map_err(scope)?;
