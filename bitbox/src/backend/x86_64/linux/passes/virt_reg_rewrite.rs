@@ -121,7 +121,8 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Cvttss2si(a, b)
         | Instruction::Cvttsd2si(a, b)
         | Instruction::Cvtsi2sd(a, b)
-        | Instruction::Movsx(a, b) => {
+        | Instruction::Movsx(a, b)
+        | Instruction::Xor(a, b) => {
             visit(a);
             visit(b);
         }
@@ -135,7 +136,8 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Seta(a)
         | Instruction::Setae(a)
         | Instruction::Setb(a)
-        | Instruction::Idiv(a) => {
+        | Instruction::Idiv(a)
+        | Instruction::Div(a) => {
             visit(a);
         }
         Instruction::Call(..)
@@ -199,8 +201,10 @@ fn map_locations(
         Instruction::Cvttsd2si(a, b) => Instruction::Cvttsd2si(rw(a), rw(b)),
         Instruction::Movsx(a, b) => Instruction::Movsx(rw(a), rw(b)),
         Instruction::Idiv(a) => Instruction::Idiv(rw(a)),
+        Instruction::Div(a) => Instruction::Div(rw(a)),
         Instruction::Sar(a, b) => Instruction::Sar(rw(a), rw(b)),
         Instruction::Shr(a, b) => Instruction::Shr(rw(a), rw(b)),
+        Instruction::Xor(a, b) => Instruction::Xor(rw(a), rw(b)),
         Instruction::Call(..)
         | Instruction::Comment(..)
         | Instruction::DefineLabel(..)

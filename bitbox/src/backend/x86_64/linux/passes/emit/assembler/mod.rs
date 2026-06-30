@@ -273,12 +273,14 @@ pub enum Instruction {
     /// Integer division (rdx:rax implicit)
     Cqo,
     Idiv(Location),
+    Div(Location),
     Shr(Location, Location),
     Sar(Location, Location),
     /// requires args see [docs](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md#x86_64-64_bit)
     Syscall,
     /// Integer division (docs)[https://www.aldeid.com/wiki/X86-assembly/Instructions/cdq]
     Cdq,
+    Xor(Location, Location),
 }
 
 impl std::fmt::Display for Instruction {
@@ -340,10 +342,12 @@ impl std::fmt::Display for Instruction {
             Self::Movsx(dst, src) => write!(f, "  movsx {dst}, {src}"),
             Self::Cqo => write!(f, "  cqo"),
             Self::Idiv(src) => write!(f, "  idiv {src}"),
+            Self::Div(src) => write!(f, "  div {src}"),
             Self::Sar(des, src) => write!(f, "  sar {des}, {src}"),
             Self::Shr(des, src) => write!(f, "  shr {des}, {src}"),
             Self::Syscall => write!(f, "  syscall"),
             Self::Cdq => write!(f, "  cdq"),
+            Self::Xor(des, src) => write!(f, "  xor {des}, {src}"),
         }
     }
 }
@@ -584,12 +588,11 @@ impl Assembler {
     }
 
     pub fn materialize_value_into_reg(&mut self, loc: &Location, target: PhysReg) -> Reg {
-        let reg = self.materialize_value(loc);
         let target_reg = self
             .alloc
             .vreg::<Reg64>()
             .with_constraint(RegConstraint::Fixed(target));
-        self.mov(target_reg, reg);
+        self.mov(target_reg, loc.clone());
         target_reg
     }
 
@@ -1056,6 +1059,11 @@ impl Assembler {
         self
     }
 
+    pub fn div(&mut self, src: impl Into<Location>) -> &mut Self {
+        self.push_to(self.current_section, Instruction::Div(src.into()));
+        self
+    }
+
     pub fn shr(&mut self, lhs: impl Into<Location>, rhs: impl Into<Location>) -> &mut Self {
         self.push_to(
             self.current_section,
@@ -1079,6 +1087,14 @@ impl Assembler {
 
     pub fn cdq(&mut self) -> &mut Self {
         self.push_to(self.current_section, Instruction::Cdq);
+        self
+    }
+
+    pub fn xor(&mut self, des: impl Into<Location>, src: impl Into<Location>) -> &mut Self {
+        self.push_to(
+            self.current_section,
+            Instruction::Xor(des.into(), src.into()),
+        );
         self
     }
 }

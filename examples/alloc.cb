@@ -1,4 +1,8 @@
+extern C fn write_s32(s32) void;
+
 use modules::mem;
+use modules::io::io_write_s32;
+use modules::io::io_write_str;
 
 type Pair struct {
     data: [2; s32],
@@ -13,7 +17,11 @@ pub fn main() void {
     let p = mem::alloc(64) as *Pair;
     p.data[0] = 13;
     p.data[1] = 29;
-    let sum = p.data[0] + p.data[1]; // 42
+    let sum: s32 = p.data[0] + p.data[1]; // 42
     mem::free(p);
+    io_write_str(&"-----\n");
+    io_write_s32(sum);
+    io_write_str(&"-----\n");
+    write_s32(sum);
     exit(sum as usize);
 }

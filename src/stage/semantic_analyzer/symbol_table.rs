@@ -1,7 +1,7 @@
 use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
 use crate::stage::lexer::token::Token;
 
-use crate::stage::parser::ast::{self, Expr};
+use crate::stage::parser::ast;
 use std::collections::HashMap;
 
 fn ty(kind: ast::TypeKind) -> ast::Type {
@@ -228,28 +228,28 @@ impl SymbolTableBuilder {
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
             ast::Expr::Path(expr) => self.walk_expr_path(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
-            Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
-            Expr::Return(..) => todo!(),
-            Expr::Litral(..) => {}
-            Expr::Array(expr_array) => {
+            ast::Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
+            ast::Expr::Return(expr) => self.walk_expr_return(expr),
+            ast::Expr::Litral(..) => {}
+            ast::Expr::Array(expr_array) => {
                 for expr in expr_array.elements.iter() {
                     self.walk_expr(expr);
                 }
             }
-            Expr::ArrayIndex(expr) => {
+            ast::Expr::ArrayIndex(expr) => {
                 self.walk_expr(&expr.expr);
                 self.walk_expr(&expr.index);
             }
-            Expr::ArrayRepeat(_) => {
+            ast::Expr::ArrayRepeat(_) => {
                 unreachable!("No need to do anything")
             }
-            Expr::While(expr) => self.walk_expr_while(expr),
-            Expr::Block(block) => self.walk_block(block),
-            Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
-            Expr::Deref(expr) => self.walk_expr(&expr.base),
-            Expr::Not(expr) => self.walk_expr(&expr.expr),
-            Expr::Grouping(expr_grouping) => self.walk_expr(&expr_grouping.expr),
-            Expr::TypeCast(cast) => self.walk_expr(&cast.expr),
+            ast::Expr::While(expr) => self.walk_expr_while(expr),
+            ast::Expr::Block(block) => self.walk_block(block),
+            ast::Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
+            ast::Expr::Deref(expr) => self.walk_expr(&expr.base),
+            ast::Expr::Not(expr) => self.walk_expr(&expr.expr),
+            ast::Expr::Grouping(expr_grouping) => self.walk_expr(&expr_grouping.expr),
+            ast::Expr::TypeCast(cast) => self.walk_expr(&cast.expr),
         }
     }
 
@@ -359,6 +359,13 @@ impl SymbolTableBuilder {
         let ast::ExprMemberAccess { base, .. } = expr;
 
         self.walk_expr(base);
+    }
+
+    fn walk_expr_return(&mut self, expr: &ast::ExprReturn) {
+        let Some(ret_expr) = &expr.expr else {
+            return;
+        };
+        self.walk_expr(ret_expr);
     }
 
     fn walk_extern_function(&mut self, extern_function: &ast::ExternFunction) {

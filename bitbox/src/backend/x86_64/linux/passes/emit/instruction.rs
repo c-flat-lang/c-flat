@@ -314,7 +314,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IReturn {
                     }
                 };
             }
-            Operand::None => todo!("ret none"),
+            Operand::None => {}
         }
         target
             .assembler
@@ -443,7 +443,27 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IRem {
         let rhs = self.rhs.lower(ctx, target)?;
 
         match &self.des.ty {
-            Type::Unsigned(bits) => todo!("@rem u{bits}"),
+            Type::Unsigned(bits) => {
+                match bits {
+                    8 | 16 | 32 => {
+                        target.assembler.mov(Reg32::Eax, lhs);
+                        target.assembler.xor(Reg32::Edx, Reg32::Edx); // zero EDX, no sign extension
+                        target.assembler.div(rhs); // remainder → EDX
+                        let result = target.assembler.alloc.vreg::<Reg32>();
+                        target.assembler.mov(result, Reg32::Edx);
+                        target.assembler.alloc.store_variable(&self.des, result);
+                    }
+                    64 => {
+                        target.assembler.mov(Reg64::Rax, lhs);
+                        target.assembler.xor(Reg64::Rdx, Reg64::Rdx); // zero RDX
+                        target.assembler.div(rhs); // remainder → RDX
+                        let result = target.assembler.alloc.vreg::<Reg64>();
+                        target.assembler.mov(result, Reg64::Rdx);
+                        target.assembler.alloc.store_variable(&self.des, result);
+                    }
+                    b => panic!("Unsupported unsigned int width: {b}"),
+                }
+            }
             Type::Signed(bits) => {
                 match bits {
                     8 | 16 | 32 => {
@@ -524,7 +544,25 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IDiv {
                     .alloc
                     .store_variable(&self.des, Location::Reg(lhs_xmm));
             }
-            Type::Unsigned(bits) => todo!("@div u{bits}"),
+            Type::Unsigned(bits) => match bits {
+                8 | 16 | 32 => {
+                    target.assembler.mov(Reg32::Eax, lhs);
+                    target.assembler.xor(Reg32::Edx, Reg32::Edx); // zero EDX
+                    target.assembler.div(rhs); // quotient → EAX
+                    let result = target.assembler.alloc.vreg::<Reg32>();
+                    target.assembler.mov(result, Reg32::Eax);
+                    target.assembler.alloc.store_variable(&self.des, result);
+                }
+                64 => {
+                    target.assembler.mov(Reg64::Rax, lhs);
+                    target.assembler.xor(Reg64::Rdx, Reg64::Rdx); // zero RDX
+                    target.assembler.div(rhs); // quotient → RAX
+                    let result = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.mov(result, Reg64::Rax);
+                    target.assembler.alloc.store_variable(&self.des, result);
+                }
+                b => panic!("Unsupported unsigned int width: {b}"),
+            },
             ty => panic!("Division not supported for type {:?}", ty),
         }
 
@@ -1489,13 +1527,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             // ── Sign-extend: smaller signed → larger signed ─────────────────
             CastKind::SignExtend => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
-                let sized_src = match src_ty.size(&ctx.target) {
-                    1 => src_val.cast_to::<Reg8>(),
-                    2 => src_val.cast_to::<Reg16>(),
-                    4 => src_val.cast_to::<Reg32>(),
-                    _ => src_val,
+                match src_ty.size(&ctx.target) {
+                    1 => target.assembler.movsx(dst_reg, src_val.cast_to::<Reg8>()),
+                    2 => target.assembler.movsx(dst_reg, src_val.cast_to::<Reg16>()),
+                    4 => target.assembler.movsx(dst_reg, src_val.cast_to::<Reg32>()),
+                    _ => target.assembler.mov(dst_reg, src_val), // same width, plain mov
                 };
-                target.assembler.movsx(dst_reg, sized_src);
                 target
                     .assembler
                     .alloc
@@ -1505,13 +1542,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICast {
             // ── Zero-extend: smaller unsigned/bool → larger type ─────────────
             CastKind::ZeroExtend => {
                 let dst_reg = target.assembler.alloc.vreg::<Reg64>();
-                let sized_src = match src_ty.size(&ctx.target) {
-                    1 => src_val.cast_to::<Reg8>(),
-                    2 => src_val.cast_to::<Reg16>(),
-                    4 => src_val.cast_to::<Reg32>(),
-                    _ => src_val,
+                match src_ty.size(&ctx.target) {
+                    1 => target.assembler.movzx(dst_reg, src_val.cast_to::<Reg8>()),
+                    2 => target.assembler.movzx(dst_reg, src_val.cast_to::<Reg16>()),
+                    4 => target.assembler.movzx(dst_reg, src_val.cast_to::<Reg32>()),
+                    _ => target.assembler.mov(dst_reg, src_val), // already 64-bit, mov is a no-op extend
                 };
-                target.assembler.movzx(dst_reg, sized_src);
                 target
                     .assembler
                     .alloc

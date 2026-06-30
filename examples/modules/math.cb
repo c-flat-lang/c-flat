@@ -1,11 +1,12 @@
-pub fn add(a: s32, b: s32) s32 {
-    return a + b;
+pub fn add<(T: type)>(x: T, y: T) T {
+    return x + y + z;
 }
 
-pub fn mul(a: s32, b: s32) s32 {
-    return a * b;
+pub fn max<(T: type)>(x: T, y: T) T {
+    return if x > y { x } else { y };
 }
 
-fn secret(x: s32) s32 {
-    return x;
+pub fn min<(T: type)>(x: T, y: T) T {
+    return if x < y { x } else { y };
 }
+
