@@ -6,10 +6,10 @@ pub struct Lexer<'a> {
 }
 
 impl<'a> Lexer<'a> {
-    pub fn new(filename: impl Into<String>, input: &'a str) -> Self {
+    pub fn new(input: &'a str) -> Self {
         Self {
             chars: input.chars().peekable(),
-            span: Span::new(filename),
+            span: 0..0,
         }
     }
 
@@ -34,7 +34,7 @@ impl<'a> Lexer<'a> {
 
     fn spanned(&mut self, kind: TokenKind, lexeme: impl Into<String>) -> Token {
         let span = self.span.clone();
-        self.span.start = self.span.end;
+        self.span = self.span.end..self.span.end;
         Token {
             span,
             kind,

@@ -1,9 +1,7 @@
 use bitbox::passes::DebugPass;
 use cflat::Cli;
 
-use cflat::error::ErrorMessage;
 use cflat::front_end_compiler;
-use report::Report;
 
 fn main() {
     use bitbox::passes::PassOutput;
@@ -13,7 +11,8 @@ fn main() {
     let mut module = match front_end_compiler(&cli_options) {
         Ok(module) => module,
         Err(err) => {
-            let errors = err.report("");
+            // TODO: look at removing source from report (bitbox is using it still).
+            let errors = err.report(&cli_options.file_path, "");
             eprintln!("{}", errors);
             std::process::exit(1);
         }

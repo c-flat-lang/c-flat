@@ -1,8 +1,8 @@
 use crate::text::lexer::lex;
 use std::fmt::Write;
 
-pub fn snapshot_lexing(path: &str, input: &str) -> String {
-    let tokens = lex(path, input);
+pub fn snapshot_lexing(input: &str) -> String {
+    let tokens = lex(input);
     let mut tokens = std::collections::VecDeque::from(tokens);
     let mut output = String::new();
     let mut total = 0;
@@ -36,7 +36,7 @@ macro_rules! snapshot {
             let mut settings = insta::Settings::clone_current();
             settings.set_snapshot_path("testdata/output/");
             settings.bind(|| {
-                insta::assert_snapshot!(snapshot_lexing($path, &contents));
+                insta::assert_snapshot!(snapshot_lexing(&contents));
             });
         }
     };

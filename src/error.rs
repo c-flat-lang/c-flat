@@ -8,7 +8,6 @@ use std::fmt::Write;
 pub struct ErrorUnexpectedExpression {
     expr: Expr,
     expected: Vec<TokenKind>,
-    span: Span,
     #[cfg(feature = "debug")]
     compiler_line: String,
 }
@@ -19,11 +18,9 @@ impl ErrorUnexpectedExpression {
         expected: &[TokenKind],
         #[cfg(feature = "debug")] compiler_line: String,
     ) -> Self {
-        let span = expr.span();
         Self {
             expr,
             expected: expected.to_vec(),
-            span,
             #[cfg(feature = "debug")]
             compiler_line,
         }
@@ -31,13 +28,9 @@ impl ErrorUnexpectedExpression {
 }
 
 impl Report for ErrorUnexpectedExpression {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         let span = self.expr.span();
-        let mut report = ReportBuilder::new(&span, src);
+        let mut report = ReportBuilder::new(filename, src, &span);
         report.message({
             let expected = self
                 .expected
@@ -87,16 +80,9 @@ impl ErrorMissMatchedType {
 }
 
 impl Report for ErrorMissMatchedType {
-    fn filename(&self) -> &str {
-        self.alt_span
-            .as_ref()
-            .map(|span| span.filename.as_str())
-            .unwrap_or(self.found.span.filename.as_str())
-    }
-
-    fn report(&self, src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         let span = self.alt_span.as_ref().unwrap_or(&self.found.span);
-        let mut report = ReportBuilder::new(span, src);
+        let mut report = ReportBuilder::new(filename, src, span);
         report.message("mismatched type");
 
         let mut note = String::new();
@@ -145,17 +131,9 @@ impl ErrorUnsupportedBinaryOp {
 }
 
 impl Report for ErrorUnsupportedBinaryOp {
-    fn filename(&self) -> &str {
-        &self.op.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let span = Span {
-            start: self.lhs.span.start,
-            end: self.rhs.span.end,
-            filename: self.rhs.span.filename.clone(),
-        };
-        let mut report = ReportBuilder::new(&span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let span = self.lhs.span.start..self.rhs.span.end;
+        let mut report = ReportBuilder::new(filename, src, &span);
         report.message(format!(
             "unsupported binary operator with {} {} {}",
             self.lhs.kind, self.op.lexeme, self.rhs.kind,
@@ -195,11 +173,7 @@ impl ErrorExpectedKeyWord {
 }
 
 impl Report for ErrorExpectedKeyWord {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         let mut note = String::new();
         write!(
             &mut note,
@@ -219,7 +193,7 @@ impl Report for ErrorExpectedKeyWord {
                 .expect("Failed to write note in ErrorExpectedKeyWord");
         }
 
-        ReportBuilder::new(&self.span, src)
+        ReportBuilder::new(filename, src, &self.span)
             .message("expected keyword")
             .note(note)
             .build()
@@ -250,12 +224,8 @@ impl ErrorExpectedToken {
 }
 
 impl Report for ErrorExpectedToken {
-    fn filename(&self) -> &str {
-        &self.actual.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.actual.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.actual.span);
         report.message({
             let expected = self
                 .expected
@@ -277,46 +247,35 @@ impl Report for ErrorExpectedToken {
 }
 
 #[derive(Debug)]
+#[cfg(not(feature = "debug"))]
+pub struct ErrorUnexpectedEndOfInput;
+
+#[derive(Debug)]
+#[cfg(feature = "debug")]
 pub struct ErrorUnexpectedEndOfInput {
-    last_token: Option<Token>,
-    filename: String,
-    #[cfg(feature = "debug")]
     compiler_line: String,
 }
 
 #[allow(clippy::new_without_default)]
 impl ErrorUnexpectedEndOfInput {
-    pub fn new(
-        last_token: Option<Token>,
-        filename: impl Into<String>,
-        #[cfg(feature = "debug")] compiler_line: impl Into<String>,
-    ) -> Self {
-        Self {
-            last_token,
-            filename: filename.into(),
-            #[cfg(feature = "debug")]
-            compiler_line: compiler_line.into(),
+    pub fn new(#[cfg(feature = "debug")] compiler_line: impl Into<String>) -> Self {
+        #[cfg(not(feature = "debug"))]
+        {
+            Self
+        }
+        #[cfg(feature = "debug")]
+        {
+            Self {
+                compiler_line: compiler_line.into(),
+            }
         }
     }
 }
 
 impl Report for ErrorUnexpectedEndOfInput {
-    fn filename(&self) -> &str {
-        &self
-            .last_token
-            .as_ref()
-            .map(|token| token.span.filename.as_str())
-            .unwrap_or(self.filename.as_str())
-    }
-
-    fn report(&self, src: &str) -> String {
-        let span = self
-            .last_token
-            .as_ref()
-            .map(|t| t.span.clone())
-            .unwrap_or(Span::new(&self.filename));
-
-        let mut report = ReportBuilder::new(&span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let span = src.len().saturating_sub(1)..src.len();
+        let mut report = ReportBuilder::new(filename, src, &span);
         report.message("unexpected end of input");
         #[cfg(feature = "debug")]
         {
@@ -344,12 +303,8 @@ impl ErrorExpectedType {
 }
 
 impl Report for ErrorExpectedType {
-    fn filename(&self) -> &str {
-        &self.found.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.found.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.found.span);
         report.message(format!(
             "expected a type definition but found '{}'",
             self.found.lexeme
@@ -395,12 +350,8 @@ impl ErrorMissingPairedClosingChar {
 }
 
 impl Report for ErrorMissingPairedClosingChar {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
         report.message("missing closing pair");
         let mut note = String::new();
 
@@ -442,12 +393,8 @@ impl ErrorUnexpectedTopLevelItem {
 }
 
 impl Report for ErrorUnexpectedTopLevelItem {
-    fn filename(&self) -> &str {
-        &self.found.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.found.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.found.span);
         report.message(format!(
             "unexpected top level item `{}`",
             &self.found.lexeme
@@ -490,18 +437,7 @@ pub enum ErrorUndefinedSymbol {
 }
 
 impl Report for ErrorUndefinedSymbol {
-    fn filename(&self) -> &str {
-        match self {
-            ErrorUndefinedSymbol::Token(token) => &token.span.filename,
-            ErrorUndefinedSymbol::Type(ty) => &ty.span.filename,
-            #[cfg(feature = "debug")]
-            ErrorUndefinedSymbol::TokenDebug(token, _) => &token.span.filename,
-            #[cfg(feature = "debug")]
-            ErrorUndefinedSymbol::TypeDebug(ty, _) => &ty.span.filename,
-        }
-    }
-
-    fn report(&self, src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         #[allow(unused_variables)]
         let (span, name, compiler_line) = match self {
             ErrorUndefinedSymbol::Token(token) => (&token.span, &token.lexeme, None::<&String>),
@@ -517,7 +453,7 @@ impl Report for ErrorUndefinedSymbol {
             }
         };
 
-        let mut report = ReportBuilder::new(span, src);
+        let mut report = ReportBuilder::new(filename, src, span);
         report.message(format!("undefined symbol `{}`", name));
 
         #[cfg(feature = "debug")]
@@ -535,31 +471,10 @@ pub struct Errors {
 }
 
 impl Report for Errors {
-    fn filename(&self) -> &str {
-        "Errors dont have a single filename"
-    }
-
-    fn report(&self, _src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         let mut final_report = String::new();
         for error in self.errors.iter() {
-            let filename = error.filename();
-            let maybe_src = std::fs::read_to_string(filename).map_err(|err| -> Box<dyn Report> {
-                Box::new(ErrorMessage(format!(
-                    "could not read `{}`: {}",
-                    filename, err,
-                )))
-            });
-
-            let src = match maybe_src {
-                Ok(src) => src,
-                Err(err) => {
-                    let errors = err.report("");
-                    eprintln!("{}", errors);
-                    std::process::exit(1);
-                }
-            };
-
-            final_report.push_str(&error.report(src.as_str()));
+            final_report.push_str(&error.report(filename, src));
             final_report.push('\n');
         }
         final_report
@@ -595,12 +510,8 @@ impl ScopedReport {
 }
 
 impl Report for ScopedReport {
-    fn filename(&self) -> &str {
-        &self.filename
-    }
-
-    fn report(&self, _src: &str) -> String {
-        self.inner.report(&self.source)
+    fn report(&self, _filename: &str, _src: &str) -> String {
+        self.inner.report(&self.filename, &self.source)
     }
 }
 
@@ -609,11 +520,7 @@ impl Report for ScopedReport {
 pub struct ErrorMessage(pub String);
 
 impl Report for ErrorMessage {
-    fn filename(&self) -> &str {
-        "ErrorMessage"
-    }
-
-    fn report(&self, _src: &str) -> String {
+    fn report(&self, _filename: &str, _src: &str) -> String {
         format!("error: {}\n", self.0)
     }
 }
@@ -646,12 +553,8 @@ impl ErrorUnresolvedImport {
 }
 
 impl Report for ErrorUnresolvedImport {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
         report.message(format!("unresolved import `{}`", self.path));
         #[allow(unused_mut)]
         let mut note = self.note.clone();
@@ -694,12 +597,8 @@ impl ErrorPrivateImport {
 }
 
 impl Report for ErrorPrivateImport {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
         report.message(format!("`{}` is private", self.name));
         #[allow(unused_mut)]
         let mut note = format!(
@@ -742,12 +641,8 @@ impl ErrorImportCycle {
 }
 
 impl Report for ErrorImportCycle {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        let mut report = ReportBuilder::new(&self.span, src);
+    fn report(&self, filename: &str, src: &str) -> String {
+        let mut report = ReportBuilder::new(filename, src, &self.span);
         report.message("import cycle detected");
         #[allow(unused_mut)]
         let mut note = format!("cycle: {}", self.chain.join(" -> "));

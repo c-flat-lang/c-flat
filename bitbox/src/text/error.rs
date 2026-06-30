@@ -11,12 +11,8 @@ pub struct ErrorMissMatchedType {
 }
 
 impl Report for ErrorMissMatchedType {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
             .message("mismatched type")
             .note(format!(
                 "expected `{}`, found `{}`",
@@ -35,12 +31,8 @@ pub struct ErrorUnsupportedBinaryOp {
 }
 
 impl Report for ErrorUnsupportedBinaryOp {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
             .message("unsupported binary operator")
             .build()
     }
@@ -54,12 +46,8 @@ pub struct ErrorExpectedKeyWord {
 }
 
 impl Report for ErrorExpectedKeyWord {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
             .message("expected keyword")
             .note(format!(
                 "expected `{}`, found `{}`",
@@ -83,11 +71,7 @@ pub struct ErrorExpectedToken {
 }
 
 impl Report for ErrorExpectedToken {
-    fn filename(&self) -> &str {
-        &self.actual.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         let message = {
             let message = match &self.expected {
                 TokenKind::Keyword(keyword) => {
@@ -116,38 +100,19 @@ impl Report for ErrorExpectedToken {
                 message
             }
         };
-        ReportBuilder::new(&self.actual.span, src)
+        ReportBuilder::new(filename, src, &self.actual.span)
             .message(message)
             .lines_above(3)
             .build()
     }
 }
 
-#[derive(Debug, Default)]
-pub struct ErrorUnexpectedEndOfInput {
-    pub last_known_token: Option<Token>,
-    pub filename: Option<String>,
-}
+#[derive(Debug)]
+pub struct ErrorUnexpectedEndOfInput;
 
 impl Report for ErrorUnexpectedEndOfInput {
-    fn filename(&self) -> &str {
-        self.last_known_token
-            .as_ref()
-            .map(|token| &token.span.filename)
-            .or(self.filename.as_ref())
-            .expect("No filename")
-            .as_str()
-    }
-
-    fn report(&self, src: &str) -> String {
-        let span = self
-            .last_known_token
-            .as_ref()
-            .map(|t| t.span.clone())
-            .or(self.filename.as_ref().map(|filename| Span::new(filename)))
-            .unwrap_or(Span::new("unknown"));
-
-        ReportBuilder::new(&span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &Span::default())
             .message("unexpected end of input")
             .build()
     }
@@ -159,12 +124,8 @@ pub struct ErrorExpectedType {
 }
 
 impl Report for ErrorExpectedType {
-    fn filename(&self) -> &str {
-        &self.found.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.found.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
             .message(format!(
                 "expected a type definition but found '{}'",
                 self.found.lexeme
@@ -182,12 +143,8 @@ pub struct ErrorMissingPairedClosingChar {
 }
 
 impl Report for ErrorMissingPairedClosingChar {
-    fn filename(&self) -> &str {
-        &self.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.span)
             .message("missing closing pair")
             .note(format!("expected {:?}", self.expected))
             .lines_above(3)
@@ -202,12 +159,8 @@ pub struct ErrorUnexpectedTopLevelItem {
 }
 
 impl Report for ErrorUnexpectedTopLevelItem {
-    fn filename(&self) -> &str {
-        &self.found.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.found.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
             .message(format!(
                 "unexpected top level item `{}`",
                 &self.found.lexeme
@@ -231,14 +184,10 @@ pub struct Errors {
 }
 
 impl Report for Errors {
-    fn filename(&self) -> &str {
-        "ERRORS has no single filename"
-    }
-
-    fn report(&self, src: &str) -> String {
+    fn report(&self, filename: &str, src: &str) -> String {
         let mut final_report = String::new();
         for error in self.errors.iter() {
-            final_report.push_str(&error.report(src));
+            final_report.push_str(&error.report(filename, src));
             final_report.push('\n');
         }
         final_report
@@ -251,12 +200,8 @@ pub struct ErrorUndefinedSymbol {
 }
 
 impl Report for ErrorUndefinedSymbol {
-    fn filename(&self) -> &str {
-        &self.found.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.found.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.found.span)
             .message(format!("undefined symbol `{}`", &self.found.lexeme))
             .build()
     }
@@ -268,12 +213,8 @@ pub struct ErrorMissingSymbol {
 }
 
 impl Report for ErrorMissingSymbol {
-    fn filename(&self) -> &str {
-        &self.symbol.span.filename
-    }
-
-    fn report(&self, src: &str) -> String {
-        ReportBuilder::new(&self.symbol.span, src)
+    fn report(&self, filename: &str, src: &str) -> String {
+        ReportBuilder::new(filename, src, &self.symbol.span)
             .message(format!("symbol `{}` not found", &self.symbol.lexeme))
             .build()
     }

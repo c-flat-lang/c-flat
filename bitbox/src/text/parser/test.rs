@@ -1,9 +1,9 @@
 use crate::text::lexer::lex;
 use crate::text::parser;
 
-pub fn snapshot_parsing(path: &str, input: &str) -> String {
-    let tokens = lex(path, input);
-    let program = parser::Parser::new(path, tokens).parse();
+pub fn snapshot_parsing(input: &str) -> String {
+    let tokens = lex(input);
+    let program = parser::Parser::new(tokens).parse();
     format!("{:#?}", program)
 }
 
@@ -16,7 +16,7 @@ macro_rules! snapshot {
             let mut settings = insta::Settings::clone_current();
             settings.set_snapshot_path("testdata/output/");
             settings.bind(|| {
-                insta::assert_snapshot!(snapshot_parsing($path, &contents));
+                insta::assert_snapshot!(snapshot_parsing(&contents));
             });
         }
     };
