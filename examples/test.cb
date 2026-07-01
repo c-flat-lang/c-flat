@@ -1,0 +1,9 @@
+use modules::fmt;
+use modules::io;
+
+pub fn main() void {
+    let buf: [11; u8] = [0; 11];
+    let num: s32 = 123;
+    let size = fmt::convert_s32_to_array(num, &buf);
+    io::io_write_str(buf);
+}

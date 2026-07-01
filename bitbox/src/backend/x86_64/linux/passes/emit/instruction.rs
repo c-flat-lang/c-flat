@@ -7,8 +7,8 @@ use crate::backend::x86_64::linux::passes::emit::assembler::{
 use crate::backend::x86_64::linux::passes::emit::error::Error;
 use crate::ir::instruction::{
     CastKind, IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp, IDiv,
-    IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf, ILt, ILte, IMul, INot, IOr, IRef, IRem, IReturn,
-    ISub, ISyscall,
+    IElemGet, IElemSet, IGt, IGte, IJump, IJumpIf, ILoad, ILt, ILte, IMul, INot, IOr, IRef, IRem,
+    IReturn, ISub, ISyscall,
 };
 use crate::ir::{AbiChunk, Operand, Type};
 
@@ -336,6 +336,110 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJumpIf {
             .assembler
             .test(cond.clone(), cond.clone())
             .jnz(format!("{}_{}", target.function_name, &self.label));
+
+        Ok(())
+    }
+}
+
+impl Lower<X86_64LinuxLowerContext<'_>> for ILoad {
+    type Output = ();
+    fn lower(
+        &self,
+        ctx: &mut crate::backend::Context,
+        target: &mut X86_64LinuxLowerContext<'_>,
+    ) -> Result<Self::Output, crate::error::Error> {
+        target.assembler.comment("lowering load");
+
+        let src_loc = self.src.lower(ctx, target)?;
+        let ptr_reg = target.assembler.materialize_value(&src_loc);
+
+        match &self.des.ty {
+            Type::Float(32) => {
+                let zero = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(zero, 0i64);
+                let dst = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movss(
+                    Location::Reg(dst),
+                    Location::MemIndexed(MemIndexed::new(ptr_reg, zero, 1)),
+                );
+                target.assembler.alloc.store_variable(&self.des, dst);
+            }
+            Type::Float(64) => {
+                let zero = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(zero, 0i64);
+                let dst = target.assembler.alloc.vreg::<XmmReg>();
+                target.assembler.movsd(
+                    Location::Reg(dst),
+                    Location::MemIndexed(MemIndexed::new(ptr_reg, zero, 1)),
+                );
+                target.assembler.alloc.store_variable(&self.des, dst);
+            }
+            Type::Struct(_) | Type::Array(_, _) => {
+                let size: usize = match &self.des.ty {
+                    Type::Struct(s) => s.size(&ctx.target) as usize,
+                    Type::Array(len, elem) => (*len as usize) * (Stack::access_size(elem) as usize),
+                    _ => unreachable!(),
+                };
+
+                let Some(Location::Stack(dst_slot)) =
+                    target.assembler.alloc.get_variable_location(&self.des)
+                else {
+                    panic!("aggregate load destination must be on stack");
+                };
+                let base_offset = dst_slot.offset;
+                let full_qwords = size / 8;
+                let remainder = size % 8;
+
+                for i in 0..full_qwords {
+                    let off = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.mov(off, (i * 8) as i64);
+                    let chunk = target.assembler.alloc.vreg::<Reg64>();
+                    target
+                        .assembler
+                        .load_indexed(ptr_reg, off, 1, Location::Reg(chunk));
+                    let dst = Stack {
+                        offset: base_offset - (i as i32 * 8),
+                        access_size: 8,
+                    };
+                    target.assembler.mov(Location::Stack(dst), chunk);
+                }
+
+                if remainder > 0 {
+                    let off = target.assembler.alloc.vreg::<Reg64>();
+                    target.assembler.mov(off, (full_qwords * 8) as i64);
+                    let dst = Stack {
+                        offset: base_offset - (full_qwords as i32 * 8),
+                        access_size: remainder as i32,
+                    };
+
+                    let tmp = match remainder {
+                        1 => target.assembler.alloc.vreg::<Reg8>(),
+                        2 => target.assembler.alloc.vreg::<Reg16>(),
+                        3 | 4 => target.assembler.alloc.vreg::<Reg32>(),
+                        _ => target.assembler.alloc.vreg::<Reg64>(),
+                    };
+                    target
+                        .assembler
+                        .load_indexed(ptr_reg, off, 1, Location::Reg(tmp));
+                    target.assembler.mov(Location::Stack(dst), tmp);
+                }
+            }
+            _ => {
+                let zero = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(zero, 0i64);
+                let out = match Stack::access_size(&self.des.ty) {
+                    1 => target.assembler.alloc.vreg::<Reg8>(),
+                    2 => target.assembler.alloc.vreg::<Reg16>(),
+                    4 => target.assembler.alloc.vreg::<Reg32>(),
+                    8 => target.assembler.alloc.vreg::<Reg64>(),
+                    _ => unreachable!(),
+                };
+                target
+                    .assembler
+                    .load_indexed(ptr_reg, zero, 1, Location::Reg(out));
+                target.assembler.alloc.store_variable(&self.des, out);
+            }
+        }
 
         Ok(())
     }
