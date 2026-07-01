@@ -375,54 +375,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ILoad {
                 target.assembler.alloc.store_variable(&self.des, dst);
             }
             Type::Struct(_) | Type::Array(_, _) => {
-                let size: usize = match &self.des.ty {
-                    Type::Struct(s) => s.size(&ctx.target) as usize,
-                    Type::Array(len, elem) => (*len as usize) * (Stack::access_size(elem) as usize),
-                    _ => unreachable!(),
-                };
-
-                let Some(Location::Stack(dst_slot)) =
-                    target.assembler.alloc.get_variable_location(&self.des)
-                else {
-                    panic!("aggregate load destination must be on stack");
-                };
-                let base_offset = dst_slot.offset;
-                let full_qwords = size / 8;
-                let remainder = size % 8;
-
-                for i in 0..full_qwords {
-                    let off = target.assembler.alloc.vreg::<Reg64>();
-                    target.assembler.mov(off, (i * 8) as i64);
-                    let chunk = target.assembler.alloc.vreg::<Reg64>();
-                    target
-                        .assembler
-                        .load_indexed(ptr_reg, off, 1, Location::Reg(chunk));
-                    let dst = Stack {
-                        offset: base_offset - (i as i32 * 8),
-                        access_size: 8,
-                    };
-                    target.assembler.mov(Location::Stack(dst), chunk);
-                }
-
-                if remainder > 0 {
-                    let off = target.assembler.alloc.vreg::<Reg64>();
-                    target.assembler.mov(off, (full_qwords * 8) as i64);
-                    let dst = Stack {
-                        offset: base_offset - (full_qwords as i32 * 8),
-                        access_size: remainder as i32,
-                    };
-
-                    let tmp = match remainder {
-                        1 => target.assembler.alloc.vreg::<Reg8>(),
-                        2 => target.assembler.alloc.vreg::<Reg16>(),
-                        3 | 4 => target.assembler.alloc.vreg::<Reg32>(),
-                        _ => target.assembler.alloc.vreg::<Reg64>(),
-                    };
-                    target
-                        .assembler
-                        .load_indexed(ptr_reg, off, 1, Location::Reg(tmp));
-                    target.assembler.mov(Location::Stack(dst), tmp);
-                }
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(ptr_reg));
             }
             _ => {
                 let zero = target.assembler.alloc.vreg::<Reg64>();
