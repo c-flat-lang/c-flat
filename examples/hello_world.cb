@@ -1,4 +1,4 @@
-use modules::io::io_write_str;
+use std::linux::io::io_write_str;
 
 pub fn main() void {
     io_write_str(&"Hello, World!\n");

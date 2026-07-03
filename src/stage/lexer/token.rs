@@ -104,6 +104,7 @@ pub enum TokenKind {
     Bang,
     BangEqual,
     BitShiftRight,
+    Builtin(Builtin),
     Char,
     Colon,
     Comma,
@@ -134,6 +135,11 @@ pub enum TokenKind {
     Slash,
     Star,
     String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Builtin {
+    SizeOf,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

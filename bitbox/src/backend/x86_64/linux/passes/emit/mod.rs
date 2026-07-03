@@ -318,7 +318,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Rem(irem) => irem.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
-            ir::Instruction::Load(..) => todo!("load"),
+            ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
             ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,

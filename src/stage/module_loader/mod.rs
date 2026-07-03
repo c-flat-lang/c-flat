@@ -21,6 +21,7 @@
 //! implemented yet.
 
 use std::collections::{HashMap, VecDeque};
+use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::error::{
@@ -290,15 +291,50 @@ struct PendingVis {
     span: Span,
 }
 
+fn cflat_std_root() -> Option<PathBuf> {
+    if let Ok(p) = env::var("CFLAT_STD_PATH") {
+        return Some(PathBuf::from(p));
+    }
+
+    // TODO: This should change to CB_INSTALL_ROOT later.
+    // Its a good fall back for now.
+    let root = if let Ok(r) = env::var("CARGO_INSTALL_ROOT") {
+        PathBuf::from(r)
+    } else {
+        // `HOME` on Unix, `USERPROFILE` on Windows.
+        let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
+        PathBuf::from(home).join(".cargo")
+    };
+    Some(root.join("lib/c-flat/std"))
+}
+
 /// Resolve a `use` path to a file using "longest file prefix wins". Returns the
 /// resolved file and any trailing in-file selectors.
 fn resolve_use_path(base_dir: &Path, segments: &[String]) -> Option<(PathBuf, Vec<String>)> {
+    let is_std = segments.first().map(|s| s == "std").unwrap_or(false);
+    let std_root = if is_std {
+        Some(cflat_std_root()?)
+    } else {
+        None
+    };
+
     for len in (1..=segments.len()).rev() {
-        let mut candidate = base_dir.to_path_buf();
-        for seg in &segments[0..len] {
+        let seg_slice = if is_std {
+            &segments[1..len]
+        } else {
+            &segments[0..len]
+        };
+
+        let mut candidate = if is_std {
+            std_root.clone().expect("std_root is Some when is_std")
+        } else {
+            base_dir.to_path_buf()
+        };
+        for seg in seg_slice {
             candidate.push(seg);
         }
         candidate.set_extension("cb");
+
         if candidate.is_file() {
             let selectors = segments[len..].to_vec();
             return Some((candidate, selectors));
@@ -315,7 +351,10 @@ fn item_visibility(items: &[Item], name: &str) -> Option<Visibility> {
             Item::Type(ast::TypeDef::Struct(s)) if s.name.lexeme == name => {
                 return Some(s.visibility);
             }
-            _ => {}
+            Item::Type(ast::TypeDef::Enum(s)) if s.name.lexeme == name => {
+                return Some(s.visibility);
+            }
+            Item::Function(..) | Item::Use(..) | Item::ExternFunction(..) | Item::Type(..) => {}
         }
     }
     None

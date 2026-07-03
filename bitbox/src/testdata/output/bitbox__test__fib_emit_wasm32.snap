@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/test.rs
-expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fib.bitbox\",\ncontents)"
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fib.bitbox\", &\ncontents)"
 ---
 (module
   (type (;0;) (func (param i32)))
@@ -9,7 +9,7 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
   (type (;3;) (func (result i32)))
   (import "core" "write_int" (func (;0;) (type 0)))
   (import "core" "write_char" (func (;1;) (type 1)))
-  (memory (;0;) 1)
+  (memory (;0;) 4)
   (global (;0;) (mut i32) i32.const 0)
   (export "memory" (memory 0))
   (export "__stack_pointer" (global 0))

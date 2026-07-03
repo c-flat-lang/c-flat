@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>c-flat · raylib · wasm</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px;
+        background: #14141e;
+        color: #e6e6ee;
+        font: 14px/1.5 system-ui, sans-serif;
+      }
+      canvas {
+        border: 1px solid #333;
+        image-rendering: pixelated;
+        background: #000;
+      }
+      #log {
+        width: 640px;
+        min-height: 1.5em;
+        white-space: pre-wrap;
+        font-family: monospace;
+        color: #9ecbff;
+      }
+      .err {
+        color: #ff6b6b;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>c-flat · raylib · wasm</h1>
+    <canvas id="screen" width="640" height="480"></canvas>
+    <div id="log"></div>
+
+    <script type="module">
+      // Frame-callback harness: the wasm exports init() -> *State and
+      // step(state); JS calls step() once per requestAnimationFrame.
+      import { makeRaylib } from "./raylib.js";
+
+      const WASM_URL = "./__WASM_FILE__";
+
+      const logEl = document.getElementById("log");
+      const canvas = document.getElementById("screen");
+      globalThis.__cflat_log = (s) => (logEl.textContent += s);
+      const fail = (msg) => {
+        logEl.innerHTML += `<span class="err">${msg}</span>\n`;
+        console.error(msg);
+      };
+
+      async function main() {
+        let instance = null;
+        const { core, beginFrame, endFrame } = makeRaylib(
+          () => instance.exports.memory,
+          canvas,
+        );
+
+        let res;
+        try {
+          const bytes = await (await fetch(WASM_URL)).arrayBuffer();
+          res = await WebAssembly.instantiate(bytes, { core });
+        } catch (e) {
+          return fail("Failed to load/instantiate wasm: " + e);
+        }
+        instance = res.instance;
+
+        const { init, step } = instance.exports;
+        if (typeof init !== "function" || typeof step !== "function") {
+          return fail(
+            "wasm must export init() and step(state); got: " +
+              Object.keys(instance.exports).join(", "),
+          );
+        }
+
+        const state = init();
+        function frame(now) {
+          beginFrame(now);
+          try {
+            step(state);
+          } catch (e) {
+            return fail("Trap in step(): " + e);
+          }
+          endFrame();
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+
+      main();
+    </script>
+  </body>
+</html>

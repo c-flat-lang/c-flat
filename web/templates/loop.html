@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>c-flat · raylib · wasm</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px;
+        background: #14141e;
+        color: #e6e6ee;
+        font: 14px/1.5 system-ui, sans-serif;
+      }
+      canvas {
+        border: 1px solid #333;
+        image-rendering: pixelated;
+        background: #000;
+      }
+      #log {
+        width: 640px;
+        min-height: 1.5em;
+        white-space: pre-wrap;
+        font-family: monospace;
+        color: #9ecbff;
+      }
+      .err {
+        color: #ff6b6b;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>c-flat · raylib · wasm</h1>
+    <canvas id="screen" width="640" height="480"></canvas>
+    <div id="log"></div>
+
+    <script type="module">
+      // Blocking-loop harness: the wasm was built with `wasm-opt --asyncify`,
+      // so main()'s `while (!window_should_close())` loop yields at
+      // end_drawing() and resumes on each requestAnimationFrame.
+      import { makeRaylib } from "./raylib.js";
+
+      const WASM_URL = "./__WASM_FILE__";
+
+      // Asyncify unwind-stack region, placed high in the 4-page (256 KB) linear
+      // memory, above the program's data (which grows up from 0).
+      const DATA_ADDR = 0x30000; // 192 KB
+      const STACK_SIZE = 0x8000; // 32 KB unwind buffer
+
+      const logEl = document.getElementById("log");
+      const canvas = document.getElementById("screen");
+      globalThis.__cflat_log = (s) => (logEl.textContent += s);
+      const fail = (msg) => {
+        logEl.innerHTML += `<span class="err">${msg}</span>\n`;
+        console.error(msg);
+      };
+
+      let instance = null;
+      let exports = null;
+      let sleeping = false;
+
+      const { core, beginFrame, endFrame } = makeRaylib(
+        () => instance.exports.memory,
+        canvas,
+      );
+
+      core.EndDrawing = () => {
+        if (!sleeping) {
+          endFrame();
+          exports.asyncify_start_unwind(DATA_ADDR);
+          sleeping = true;
+        } else {
+          exports.asyncify_stop_rewind();
+          sleeping = false;
+        }
+      };
+
+      function run() {
+        exports.main();
+        // asyncify_get_state(): 0 normal, 1 unwinding, 2 rewinding.
+        if (exports.asyncify_get_state() === 1) {
+          exports.asyncify_stop_unwind();
+          requestAnimationFrame((now) => {
+            beginFrame(now);
+            exports.asyncify_start_rewind(DATA_ADDR);
+            run();
+          });
+        }
+      }
+
+      async function main() {
+        let res;
+        try {
+          const bytes = await (await fetch(WASM_URL)).arrayBuffer();
+          res = await WebAssembly.instantiate(bytes, { core });
+        } catch (e) {
+          return fail("Failed to load/instantiate wasm: " + e);
+        }
+        instance = res.instance;
+        exports = instance.exports;
+
+        for (const fn of ["main", "asyncify_start_unwind", "asyncify_stop_unwind", "asyncify_start_rewind", "asyncify_stop_rewind", "asyncify_get_state"]) {
+          if (typeof exports[fn] !== "function") {
+            return fail(`wasm missing export ${fn} — was it built with wasm-opt --asyncify?`);
+          }
+        }
+
+        const view = new Int32Array(exports.memory.buffer);
+        view[DATA_ADDR >> 2] = DATA_ADDR + 8;
+        view[(DATA_ADDR + 4) >> 2] = DATA_ADDR + 8 + STACK_SIZE;
+
+        beginFrame(performance.now());
+        try {
+          run();
+        } catch (e) {
+          fail("Trap while running main(): " + e);
+        }
+      }
+
+      main();
+    </script>
+  </body>
+</html>

@@ -10,7 +10,7 @@ use std::str::FromStr;
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
     ExprBlock, ExprCall, ExprDecl, ExprDeref, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot,
-    ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral,
+    ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
 };
 
 #[derive(Debug)]
@@ -139,7 +139,7 @@ impl<'a> LoweringContext<'a> {
 #[derive(Debug, Clone)]
 pub struct Address {
     variable: Variable,
-    offset: Variable,
+    offset: Operand,
 }
 
 #[derive(Debug, Clone)]
@@ -179,6 +179,7 @@ impl Lowerable for Expr {
             Expr::Litral(lit) => lit.lower(assembler, ctx),
             Expr::Assignment(assign) => assign.lower(assembler, ctx),
             Expr::Declare(declare) => declare.lower(assembler, ctx),
+            Expr::Builtin(call) => call.lower(assembler, ctx),
             Expr::Call(call) => call.lower(assembler, ctx),
             Expr::Identifier(ident) => {
                 let Some(_) = ctx.symbol_table.get(&ident.lexeme) else {
@@ -188,10 +189,31 @@ impl Lowerable for Expr {
             }
             Expr::Path(path) => {
                 let leaf = path.leaf();
-                let Some(_) = ctx.symbol_table.get(&leaf.lexeme) else {
-                    panic!("Symbol not found {}", leaf.lexeme);
+                if ctx.symbol_table.get(&leaf.lexeme).is_some() {
+                    return ctx.get_variable(&leaf.lexeme);
+                }
+                let head = path.head();
+                let Some(symbol) = ctx.symbol_table.get(&head.lexeme) else {
+                    panic!("Undefind symbol {:?} or {:?}", path.head(), leaf);
                 };
-                ctx.get_variable(&leaf.lexeme)
+                match &symbol.kind {
+                    super::semantic_analyzer::symbol_table::SymbolKind::Struct => {
+                        todo!("Path Struct")
+                    }
+                    super::semantic_analyzer::symbol_table::SymbolKind::Enum => {
+                        let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
+                            panic!("incorrect SymbolKind matched with a Symbol");
+                        };
+                        let Some((_, value)) = ty.variants.iter().find(|v| v.0 == leaf.lexeme)
+                        else {
+                            panic!("Unknown variant on {}", head.lexeme);
+                        };
+                        let tmp = assembler.var(Type::Unsigned(32));
+                        assembler.assign(tmp.clone(), Operand::const_unsigned(value, 32));
+                        Some(tmp)
+                    }
+                    kind => unreachable!("PATH {kind:?}"),
+                }
             }
             Expr::Struct(expr) => expr.lower(assembler, ctx),
             Expr::MemberAccess(expr) => expr.lower(assembler, ctx),
@@ -224,6 +246,35 @@ impl Addressable for Expr {
                 ctx.get_variable(&ident.lexeme).map(AddressableVar::Var)
             }
             Expr::ArrayIndex(expr) => expr.lower_to_address(assembler, ctx),
+            // `base.field = value` — address is the base (struct value or
+            // pointer-to-struct) indexed by the field position.
+            Expr::MemberAccess(member) => {
+                let Some(base) = member.base.lower(assembler, ctx) else {
+                    panic!("Failed to return variable from MemberAccess base lowering");
+                };
+                let fields = match &base.ty {
+                    ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+                    ir::Type::Pointer(inner) => match inner.as_ref() {
+                        ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+                        _ => panic!("Expected pointer to struct type in MemberAccess assignment"),
+                    },
+                    _ => panic!("Expected struct type in MemberAccess assignment"),
+                };
+                let Some(idx) = fields
+                    .iter()
+                    .position(|(name, _)| name == &member.member.lexeme)
+                else {
+                    panic!("Field not found {}", member.member.lexeme);
+                };
+                let address = Address {
+                    variable: base,
+                    offset: Operand::ConstantInt(ConstantInt::new(
+                        idx.to_string(),
+                        Type::Signed(32),
+                    )),
+                };
+                Some(AddressableVar::Address(address))
+            }
             _ => unreachable!(),
         }
     }
@@ -675,7 +726,32 @@ impl Lowerable for ExprCall {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         let name = match self.caller.as_ref() {
-            ast::Expr::Identifier(ident) => &ident.lexeme,
+            ast::Expr::Identifier(ident) => match &ident.kind {
+                TokenKind::Builtin(builtin) => match builtin {
+                    super::lexer::token::Builtin::SizeOf => {
+                        let number_bytes = ctx.target.target_pointer_size();
+                        let var = assembler.var(Type::Unsigned(number_bytes));
+                        let ty = &self.type_args.as_ref().unwrap()[0];
+                        let size_of_type = match &ty.kind {
+                            TypeKind::Name(name) => {
+                                let Some(symbol) = ctx.symbol_table.get(&name.lexeme) else {
+                                    panic!("unknown symbol {}", name.lexeme);
+                                };
+
+                                symbol.ty.size(&ctx.target)
+                            }
+                            _ => ty.size(&ctx.target),
+                        };
+
+                        assembler.assign(
+                            var.clone(),
+                            Operand::const_unsigned(size_of_type.to_string(), number_bytes),
+                        );
+                        return Some(var);
+                    }
+                },
+                _ => &ident.lexeme,
+            },
             ast::Expr::Path(path) => &path.leaf().lexeme,
             _ => panic!("Caller must be an identifier or path"),
         };
@@ -829,6 +905,13 @@ impl Lowerable for ExprArrayIndex {
                 Some(dst)
             }
 
+            // *T — raw pointer to elements. Index directly off the pointer.
+            Type::Pointer(elem_ty) => {
+                let dst = assembler.var((**elem_ty).clone());
+                assembler.elemget(dst.clone(), ptr, index);
+                Some(dst)
+            }
+
             other => {
                 panic!("Cannot index {:?}", other)
             }
@@ -850,10 +933,15 @@ impl Addressable for ExprArrayIndex {
             panic!("Failed to return variable from ExprArrayIndex index lowering");
         };
 
-        let ast::TypeKind::Array(_, _) = &self.ty.kind else {
-            panic!("Expected array type but got {}", self.ty);
+        // Assignable containers: fixed arrays, slices, and raw pointers (`*T`).
+        match &self.ty.kind {
+            ast::TypeKind::Array(_, _) | ast::TypeKind::Slice(_) | ast::TypeKind::Pointer(_) => {}
+            other => panic!("Expected indexable type but got {other:?}"),
         };
-        let address = Address { variable, offset };
+        let address = Address {
+            variable,
+            offset: offset.into(),
+        };
         let var = AddressableVar::Address(address);
         Some(var)
     }

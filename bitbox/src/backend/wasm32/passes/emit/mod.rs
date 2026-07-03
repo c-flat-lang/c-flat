@@ -6,8 +6,9 @@ use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::{DebugPass, Pass, PassOutput};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
-    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, Ieee32, ImportSection,
-    InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection, ValType,
+    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, Ieee32, Ieee64,
+    ImportSection, InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection,
+    ValType,
 };
 
 #[derive(Debug)]
@@ -36,7 +37,10 @@ impl Pass for EmitWasm32Pass {
         {
             let module = ctx.output.get_mut_wasm32();
             module.memory_section.memory(MemoryType {
-                minimum: 1,
+                // 4 pages (256 KB): leaves headroom above the program's data for
+                // an Asyncify unwind stack when the output is post-processed with
+                // `wasm-opt --asyncify` (the bump allocator grows up from 0).
+                minimum: 4,
                 maximum: None,
                 memory64: false,
                 shared: false,
@@ -162,6 +166,7 @@ impl From<ir::Type> for ValType {
         match value {
             ir::Type::Unsigned(1..=32) => ValType::I32,
             ir::Type::Signed(1..=32) => ValType::I32,
+            ir::Type::Unsigned(33..=64) => ValType::I64,
             ir::Type::Signed(33..=64) => ValType::I64,
             ir::Type::Float(1..=32) => ValType::F32,
             ir::Type::Float(33..=64) => ValType::F64,
@@ -334,7 +339,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
-            ir::Instruction::NoOp(..) => todo!("@noop"),
+            ir::Instruction::NoOp(..) => {}
             ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
             ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
             ir::Instruction::Alloc(ialloc) => ialloc.lower(ctx, target)?,
@@ -366,9 +371,16 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
-            ir::Instruction::BitShiftRight(..) => todo!("@bsr"),
-            ir::Instruction::BitWiseAnd(..) => todo!("@bwand"),
-            ir::Instruction::Syscall(..) => todo!("@syscall"),
+            ir::Instruction::BitShiftRight(ibsr) => ibsr.lower(ctx, target)?,
+            ir::Instruction::BitWiseAnd(ibwand) => ibwand.lower(ctx, target)?,
+            ir::Instruction::Syscall(..) => {
+                return Err(crate::error::Error::InvalidInstruction {
+                    index: 0,
+                    message: "`syscall` is unavailable on the wasm32 target \
+                              (there are no host syscalls in a wasm/browser environment)"
+                        .to_string(),
+                });
+            }
         }
         Ok(())
     }
@@ -406,9 +418,15 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
                     let ieee = Ieee32::new(value.to_bits());
                     target.assembler.f32_const(ieee);
                 }
-                ValType::F64 => todo!("@const_f64"),
-                ValType::V128 => todo!("@const_v128"),
-                ValType::Ref(_) => todo!("@const_ref"),
+                ValType::F64 => {
+                    let value = constant.parse::<f64>()?;
+                    let ieee = Ieee64::new(value.to_bits());
+                    target.assembler.f64_const(ieee);
+                }
+                ValType::V128 => unreachable!("@const v128: SIMD is not produced by c-flat"),
+                ValType::Ref(_) => {
+                    unreachable!("@const ref: reference types are not produced by c-flat")
+                }
             },
             ir::Operand::Variable(variable) => {
                 let variables = ctx.local_function_variables.get(&target.function_name);

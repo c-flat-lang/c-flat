@@ -1,0 +1,50 @@
+use std::raylib::init_window;
+use std::raylib::set_target_fps;
+use std::raylib::window_should_close;
+use std::raylib::begin_drawing;
+use std::raylib::end_drawing;
+use std::raylib::clear_background;
+use std::raylib::draw_rectangle;
+use std::raylib::close_window;
+use std::raylib::Color;
+
+pub fn main() void {
+    let cell_size: s32 = 32;
+    let screen_width: s32 = 720;
+    let screen_height: s32 = 720;
+    init_window(screen_width, screen_height, &"c-flat raylib\0");
+    set_target_fps(60);
+
+    let x:  s32 = 32;
+    let y:  s32 = 32;
+    let dx: s32 = 4;
+    let dy: s32 = 3;
+
+    let bg = Color { .r = 20,  .g = 20, .b = 30, .a = 255 };
+    let fg = Color { .r = 230, .g = 80, .b = 60, .a = 255 };
+
+    while !window_should_close() {
+        x = x + dx;
+        y = y + dy;
+
+        if x < 0 {
+            dx = 0 - dx;
+        }
+        if x > screen_width - cell_size {
+            dx = 0 - dx;
+        }
+        if y < 0 {
+            dy = 0 - dy;
+        }
+        if y > screen_height - cell_size {
+            dy = 0 - dy;
+        }
+
+        begin_drawing();
+        clear_background(bg);
+        draw_rectangle(x, y, cell_size, cell_size, fg);
+        end_drawing();
+    }
+
+    close_window();
+}
