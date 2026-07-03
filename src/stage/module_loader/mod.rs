@@ -291,30 +291,34 @@ struct PendingVis {
     span: Span,
 }
 
-fn cflat_std_root() -> PathBuf {
+fn cflat_std_root() -> Option<PathBuf> {
     if let Ok(p) = env::var("CFLAT_STD_PATH") {
-        return PathBuf::from(p);
+        return Some(PathBuf::from(p));
     }
 
     // TODO: This should change to CB_INSTALL_ROOT later.
     // Its a good fall back for now.
-    let root = env::var("CARGO_INSTALL_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| {
-            env::var("HOME")
-                .map(|h| PathBuf::from(h).join(".cargo"))
-                .expect("HOME not set and CARGO_INSTALL_ROOT/CFLAT_STD_PATH not set")
-        });
-    root.join("lib/c-flat/std")
+    let root = if let Ok(r) = env::var("CARGO_INSTALL_ROOT") {
+        PathBuf::from(r)
+    } else {
+        // `HOME` on Unix, `USERPROFILE` on Windows.
+        let home = env::var("HOME").or_else(|_| env::var("USERPROFILE")).ok()?;
+        PathBuf::from(home).join(".cargo")
+    };
+    Some(root.join("lib/c-flat/std"))
 }
 
 /// Resolve a `use` path to a file using "longest file prefix wins". Returns the
 /// resolved file and any trailing in-file selectors.
 fn resolve_use_path(base_dir: &Path, segments: &[String]) -> Option<(PathBuf, Vec<String>)> {
-    let std_root = cflat_std_root();
+    let is_std = segments.first().map(|s| s == "std").unwrap_or(false);
+    let std_root = if is_std {
+        Some(cflat_std_root()?)
+    } else {
+        None
+    };
 
     for len in (1..=segments.len()).rev() {
-        let is_std = segments[0] == "std";
         let seg_slice = if is_std {
             &segments[1..len]
         } else {
@@ -322,7 +326,7 @@ fn resolve_use_path(base_dir: &Path, segments: &[String]) -> Option<(PathBuf, Ve
         };
 
         let mut candidate = if is_std {
-            std_root.clone()
+            std_root.clone().expect("std_root is Some when is_std")
         } else {
             base_dir.to_path_buf()
         };
