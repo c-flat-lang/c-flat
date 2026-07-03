@@ -661,7 +661,7 @@ impl<'st> TypeChecker<'st> {
                 }
             }
             TypeKind::Struct(struct_def) => {
-                self.lookup_struct_member(&struct_def, &member_access.member.lexeme)
+                self.lookup_struct_member(struct_def, &member_access.member.lexeme)
             }
             TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
                 kind: TypeKind::UnsignedTargetPointerNumber,

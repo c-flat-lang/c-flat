@@ -1,0 +1,62 @@
+use std::raylib::init_window;
+use std::raylib::set_target_fps;
+use std::raylib::begin_drawing;
+use std::raylib::end_drawing;
+use std::raylib::clear_background;
+use std::raylib::draw_rectangle;
+use std::raylib::Color;
+
+type GameState struct {
+    x:  s32,
+    y:  s32,
+    screen_width: s32,
+    screen_height: s32,
+    cell_size: s32,
+    dx: s32,
+    dy: s32,
+    bg: Color,
+    fg: Color,
+}
+
+pub fn init() *GameState {
+    let cell_size: s32 = 32;
+    let screen_width: s32 = 720;
+    let screen_height: s32 = 720;
+    init_window(screen_width, screen_height, &"c-flat raylib demo\0");
+    set_target_fps(60);
+    let s = GameState {
+        .x  = 32,
+        .y  = 32,
+        .screen_width = screen_width,
+        .screen_height = screen_height,
+        .cell_size = cell_size,
+        .dx = 4,
+        .dy = 3,
+        .bg = Color { .r = 20,  .g = 20, .b = 30, .a = 255 },
+        .fg = Color { .r = 230, .g = 80, .b = 60, .a = 255 },
+    };
+    return &s;
+}
+
+pub fn step(s: *GameState) void {
+    s.x = s.x + s.dx;
+    s.y = s.y + s.dy;
+
+    if s.x < 0 {
+        s.dx = 0 - s.dx;
+    }
+    if s.x > s.screen_width - s.cell_size {
+        s.dx = 0 - s.dx;
+    }
+    if s.y < 0 {
+        s.dy = 0 - s.dy;
+    }
+    if s.y > s.screen_height - s.cell_size {
+        s.dy = 0 - s.dy;
+    }
+
+    begin_drawing();
+    clear_background(s.bg);
+    draw_rectangle(s.x, s.y, s.cell_size, s.cell_size, s.fg);
+    end_drawing();
+}

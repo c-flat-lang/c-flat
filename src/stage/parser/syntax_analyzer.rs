@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 
 use crate::error::{
-    ErrorExpectedKeyWord, ErrorExpectedToken, ErrorExpectedType, ErrorMissingPairedClosingChar,
+    ErrorExpectedToken, ErrorExpectedType, ErrorMissingPairedClosingChar,
     ErrorUnexpectedEndOfInput, ErrorUnexpectedToken, ErrorUnexpectedTopLevelItem, Result,
 };
 use crate::stage::lexer::token::{Keyword, Token, TokenKind};
@@ -92,9 +92,7 @@ impl Parser {
     }
 
     fn peek_kind(&mut self) -> Option<&TokenKind> {
-        let Some(token) = self.lexer.peek() else {
-            return None;
-        };
+        let token = self.lexer.peek()?;
         Some(&token.kind)
     }
 
@@ -460,19 +458,6 @@ impl Parser {
                         span,
                     })
                 }
-            }
-            TokenKind::LeftBracket => {
-                let count = self.consume(TokenKind::Number)?;
-                self.consume(TokenKind::Semicolon)?;
-                let ty = self.parse_type()?;
-                let closing_bracket = self.consume(TokenKind::RightBracket)?;
-                let mut span = tok.span.clone();
-                span.end = closing_bracket.span.end;
-                Ok(ast::Type {
-                    mut_token,
-                    kind: ast::TypeKind::Array(count.lexeme.parse().unwrap(), Box::new(ty)),
-                    span,
-                })
             }
             TokenKind::Keyword(Keyword::Type) => Ok(ast::Type {
                 kind: ast::TypeKind::Type,
