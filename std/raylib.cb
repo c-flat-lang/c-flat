@@ -26,3 +26,20 @@ pub extern C fn IsKeyPressed as is_key_pressed(s32) bool;
 pub extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
 pub extern C fn GetFrameTime as get_frame_time() f32;
 pub extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
+
+// Texture loading functions
+// Note: These functions require GPU access
+
+pub type Texture2D struct {
+    id: usize,
+    width: s32,
+    height: s32,
+    mipmaps: s32,
+    format: s32,
+}
+
+pub extern C fn LoadTexture as load_texture(*[u8]) Texture2D; 
+pub extern C fn UnloadTexture as unload_texture(Texture2D) void; 
+
+// Texture drawing functions
+pub extern C fn DrawTexture as draw_texture(Texture2D, s32, s32, Color) void;
