@@ -2,31 +2,34 @@
 source: src/stage/lexer/tests.rs
 expression: "snapshot_lexing(\"../../../examples/hello_world.cb\", & contents)"
 ---
-use modules::io::io_write_str;
+use std::linux::io::io_write_str;
 ^^^ Token { kind: Keyword(Use), lexeme: "use", span: Span { start: 0, end: 3, filename: "../../../examples/hello_world.cb" } }
-    ^^^^^^^ Token { kind: Identifier, lexeme: "modules", span: Span { start: 4, end: 11, filename: "../../../examples/hello_world.cb" } }
-           ^ Token { kind: Colon, lexeme: ":", span: Span { start: 11, end: 12, filename: "../../../examples/hello_world.cb" } }
-            ^ Token { kind: Colon, lexeme: ":", span: Span { start: 12, end: 13, filename: "../../../examples/hello_world.cb" } }
-             ^^ Token { kind: Identifier, lexeme: "io", span: Span { start: 13, end: 15, filename: "../../../examples/hello_world.cb" } }
+    ^^^ Token { kind: Identifier, lexeme: "std", span: Span { start: 4, end: 7, filename: "../../../examples/hello_world.cb" } }
+       ^ Token { kind: Colon, lexeme: ":", span: Span { start: 7, end: 8, filename: "../../../examples/hello_world.cb" } }
+        ^ Token { kind: Colon, lexeme: ":", span: Span { start: 8, end: 9, filename: "../../../examples/hello_world.cb" } }
+         ^^^^^ Token { kind: Identifier, lexeme: "linux", span: Span { start: 9, end: 14, filename: "../../../examples/hello_world.cb" } }
+              ^ Token { kind: Colon, lexeme: ":", span: Span { start: 14, end: 15, filename: "../../../examples/hello_world.cb" } }
                ^ Token { kind: Colon, lexeme: ":", span: Span { start: 15, end: 16, filename: "../../../examples/hello_world.cb" } }
-                ^ Token { kind: Colon, lexeme: ":", span: Span { start: 16, end: 17, filename: "../../../examples/hello_world.cb" } }
-                 ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "io_write_str", span: Span { start: 17, end: 29, filename: "../../../examples/hello_world.cb" } }
-                             ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 29, end: 30, filename: "../../../examples/hello_world.cb" } }
+                ^^ Token { kind: Identifier, lexeme: "io", span: Span { start: 16, end: 18, filename: "../../../examples/hello_world.cb" } }
+                  ^ Token { kind: Colon, lexeme: ":", span: Span { start: 18, end: 19, filename: "../../../examples/hello_world.cb" } }
+                   ^ Token { kind: Colon, lexeme: ":", span: Span { start: 19, end: 20, filename: "../../../examples/hello_world.cb" } }
+                    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "io_write_str", span: Span { start: 20, end: 32, filename: "../../../examples/hello_world.cb" } }
+                                ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 32, end: 33, filename: "../../../examples/hello_world.cb" } }
 
 pub fn main() void {
-^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: Span { start: 32, end: 35, filename: "../../../examples/hello_world.cb" } }
-    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 36, end: 38, filename: "../../../examples/hello_world.cb" } }
-       ^^^^ Token { kind: Identifier, lexeme: "main", span: Span { start: 39, end: 43, filename: "../../../examples/hello_world.cb" } }
-           ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 43, end: 44, filename: "../../../examples/hello_world.cb" } }
-            ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 44, end: 45, filename: "../../../examples/hello_world.cb" } }
-              ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 46, end: 50, filename: "../../../examples/hello_world.cb" } }
-                   ^ Token { kind: LeftBrace, lexeme: "{", span: Span { start: 51, end: 52, filename: "../../../examples/hello_world.cb" } }
+^^^ Token { kind: Keyword(Pub), lexeme: "pub", span: Span { start: 35, end: 38, filename: "../../../examples/hello_world.cb" } }
+    ^^ Token { kind: Keyword(Fn), lexeme: "fn", span: Span { start: 39, end: 41, filename: "../../../examples/hello_world.cb" } }
+       ^^^^ Token { kind: Identifier, lexeme: "main", span: Span { start: 42, end: 46, filename: "../../../examples/hello_world.cb" } }
+           ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 46, end: 47, filename: "../../../examples/hello_world.cb" } }
+            ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 47, end: 48, filename: "../../../examples/hello_world.cb" } }
+              ^^^^ Token { kind: Identifier, lexeme: "void", span: Span { start: 49, end: 53, filename: "../../../examples/hello_world.cb" } }
+                   ^ Token { kind: LeftBrace, lexeme: "{", span: Span { start: 54, end: 55, filename: "../../../examples/hello_world.cb" } }
     io_write_str(&"Hello, World!\n");
-    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "io_write_str", span: Span { start: 57, end: 69, filename: "../../../examples/hello_world.cb" } }
-                ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 69, end: 70, filename: "../../../examples/hello_world.cb" } }
-                 ^ Token { kind: Ampersand, lexeme: "&", span: Span { start: 70, end: 71, filename: "../../../examples/hello_world.cb" } }
-                  ^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!\n", span: Span { start: 71, end: 88, filename: "../../../examples/hello_world.cb" } }
-                                   ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 88, end: 89, filename: "../../../examples/hello_world.cb" } }
-                                    ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 89, end: 90, filename: "../../../examples/hello_world.cb" } }
+    ^^^^^^^^^^^^ Token { kind: Identifier, lexeme: "io_write_str", span: Span { start: 60, end: 72, filename: "../../../examples/hello_world.cb" } }
+                ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 72, end: 73, filename: "../../../examples/hello_world.cb" } }
+                 ^ Token { kind: Ampersand, lexeme: "&", span: Span { start: 73, end: 74, filename: "../../../examples/hello_world.cb" } }
+                  ^^^^^^^^^^^^^^^^^ Token { kind: String, lexeme: "Hello, World!\n", span: Span { start: 74, end: 91, filename: "../../../examples/hello_world.cb" } }
+                                   ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 91, end: 92, filename: "../../../examples/hello_world.cb" } }
+                                    ^ Token { kind: Semicolon, lexeme: ";", span: Span { start: 92, end: 93, filename: "../../../examples/hello_world.cb" } }
 }
-^ Token { kind: RightBrace, lexeme: "}", span: Span { start: 91, end: 92, filename: "../../../examples/hello_world.cb" } }
+^ Token { kind: RightBrace, lexeme: "}", span: Span { start: 94, end: 95, filename: "../../../examples/hello_world.cb" } }
