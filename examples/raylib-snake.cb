@@ -9,6 +9,7 @@ use std::random;
 use std::fmt;
 use std::linux::io;
 use std::ascii;
+use std::array_list::ArrayList;
 
 fn rand_color() Color {
     let color: Color = Color {
@@ -70,6 +71,23 @@ fn update_score_string(text: *[11; u8], score: s32, out: *[11; u8]) void {
     }
 }
 
+type Direction enum {
+    up,
+    down,
+    left,
+    right,
+}
+
+type Player struct {
+    x: s32,
+    y: s32,
+    body_x: ArrayList<(s32)>,
+    body_y: ArrayList<(s32)>,
+    color: ArrayList<(Color)>,
+    speed: f32,
+    direction: Direction,
+}
+
 pub fn main() s32 {
     random::init_random();
 
@@ -129,7 +147,6 @@ pub fn main() s32 {
     // PLAYER
     let player_x: s32 = screen_width / (2 * CELL_SIZE);
     let player_y: s32 = screen_height / (2 * CELL_SIZE);
-    let player_body: [32; u8] = [0;32];
     let player_body_x: [32; s32] = [0;32];
     let player_body_y: [32; s32] = [0;32];
     let player_body_index: usize = 0;
@@ -209,7 +226,6 @@ pub fn main() s32 {
 
 
             if is_collided {
-                player_body[player_body_index] = 1;
                 player_body_x[player_body_index] = prev_x;
                 player_body_y[player_body_index] = prev_y;
                 player_body_index = player_body_index + 1;

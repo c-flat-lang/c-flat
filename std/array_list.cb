@@ -1,14 +1,14 @@
 use std::linux::memory;
 
 pub type ArrayList<(T: type)> struct {
-    items:    *[T],
+    items:    *T,
     capacity: usize,
     length:   usize,
 }
 
 pub fn ArrayList_new<(T: type)>() ArrayList<(T)> {
     let initial_cap: usize = 16;
-    let items: *[T] = memory::alloc_many<(T)>(initial_cap);
+    let items: *T = memory::alloc_many<(T)>(initial_cap);
     return ArrayList<(T)> {
         .items    = items,
         .capacity = initial_cap,
@@ -17,18 +17,18 @@ pub fn ArrayList_new<(T: type)>() ArrayList<(T)> {
 }
 
 pub fn ArrayList_free<(T: type)>(self: *ArrayList<(T)>) void {
-    memory::free_many<(T)>(self.items.data, self.capacity);
+    memory::free_many<(T)>(self.items, self.capacity);
 }
 
 fn ArrayList_grow<(T: type)>(self: *ArrayList<(T)>) void {
     let new_cap: usize = self.capacity * 2;
-    let new_items: *[T] = memory::alloc_many<(T)>(new_cap);
+    let new_items: *T = memory::alloc_many<(T)>(new_cap);
     let i: usize = 0;
     while i < self.length {
-        new_items.data[i] = self.items.data[i];
+        new_items[i] = self.items[i];
         i = i + 1;
     }
-    memory::free_many<(T)>(self.items.data, self.capacity);
+    memory::free_many<(T)>(self.items, self.capacity);
     self.items    = new_items;
     self.capacity = new_cap;
 }
@@ -37,27 +37,27 @@ pub fn ArrayList_push<(T: type)>(self: *ArrayList<(T)>, value: T) void {
     if self.length == self.capacity {
         ArrayList_grow<(T)>(self);
     }
-    self.items.data[self.length] = value;
+    self.items[self.length] = value;
     self.length = self.length + 1;
 }
 
 pub fn ArrayList_pop<(T: type)>(self: *ArrayList<(T)>) T {
     self.length = self.length - 1;
-    return self.items.data[self.length];
+    return self.items[self.length];
 }
 
 pub fn ArrayList_get<(T: type)>(self: *ArrayList<(T)>, index: usize) T {
     if index >= self.length {
         syscall1(60, 1);
     }
-    return self.items.data[index];
+    return self.items[index];
 }
 
 pub fn ArrayList_set<(T: type)>(self: *ArrayList<(T)>, index: usize, value: T) void {
     if index >= self.length {
         syscall1(60, 1);
     }
-    self.items.data[index] = value;
+    self.items[index] = value;
 }
 
 pub fn ArrayList_len<(T: type)>(self: *ArrayList<(T)>) usize {

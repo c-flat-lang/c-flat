@@ -623,7 +623,10 @@ impl Expr {
     }
 
     pub fn is_addressable(&self) -> bool {
-        matches!(self, Expr::Identifier(..) | Expr::ArrayIndex(..))
+        matches!(
+            self,
+            Expr::Identifier(..) | Expr::ArrayIndex(..) | Expr::MemberAccess(..)
+        )
     }
 }
 

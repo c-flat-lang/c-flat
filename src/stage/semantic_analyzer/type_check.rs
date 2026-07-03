@@ -546,10 +546,16 @@ impl<'st> TypeChecker<'st> {
 
         expr.ty = array_type.clone();
 
-        match &array_type.de_ref().kind {
+        // Index one layer at a time so `*[T]` yields the slice element `T`
+        // while a raw `*T` yields the pointee `T`. `de_ref` would strip every
+        // pointer layer and break raw-pointer indexing.
+        match &array_type.kind {
             TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
             TypeKind::Slice(elem_ty) => *elem_ty.clone(),
-            TypeKind::Pointer(elem_ty) => *elem_ty.clone(),
+            TypeKind::Pointer(inner) => match &inner.kind {
+                TypeKind::Slice(elem_ty) => *elem_ty.clone(),
+                _ => (**inner).clone(),
+            },
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
                     array_type.clone(),

@@ -1211,10 +1211,26 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
 
         // Materialize base AFTER lowering operands but BEFORE materializing
         // index/value into registers, so all three are live at the same point.
-        let base = target.assembler.materialize_address(&base_ptr);
+        // For a raw pointer (`*T`) the pointer VALUE is the base address; for an
+        // array/struct the storage location is the base.
+        let base = if matches!(&self.addr.ty, Type::Pointer(_)) {
+            target.assembler.materialize_value(&base_ptr)
+        } else {
+            target.assembler.materialize_address(&base_ptr)
+        };
 
-        // Struct fields: use field_offset with scale=1.
-        if let Type::Struct(s) = &self.addr.ty {
+        // Struct fields: use field_offset with scale=1. `base` above already
+        // holds the struct's address — the storage slot for a struct value, or
+        // the loaded pointer value for a `*Struct` member write.
+        let struct_ty = match &self.addr.ty {
+            Type::Struct(s) => Some(s.clone()),
+            Type::Pointer(inner) => match inner.as_ref() {
+                Type::Struct(s) => Some(s.clone()),
+                _ => None,
+            },
+            _ => None,
+        };
+        if let Some(s) = struct_ty {
             let field_idx = match &self.index {
                 Operand::ConstantInt(c) => c.parse::<usize>()?,
                 _ => panic!("IElemSet: dynamic struct field index not supported"),
@@ -1278,8 +1294,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
             return Ok(());
         }
 
-        // Array element store: index * element_size stride.
-        let element_size = self.addr.ty.element_size(&ctx.target);
+        // Array/pointer element store: index * element_size stride. For a raw
+        // pointer the stride is the pointee size, not the pointer's own size.
+        let element_size = match &self.addr.ty {
+            Type::Pointer(inner) => inner.size(&ctx.target),
+            _ => self.addr.ty.element_size(&ctx.target),
+        };
 
         // Materialize index AFTER base so both vregs are live at the same point,
         // preventing the allocator from assigning them the same physical register.
@@ -1322,11 +1342,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
         let base_ptr = &self.ptr.lower(ctx, target)?;
         let index = self.index.lower(ctx, target)?;
 
-        // For pointer-to-struct member access: load the pointer value first to get the struct address.
-        let is_ptr_to_struct = matches!(self.ptr.ty(), Some(Type::Pointer(inner)) if matches!(inner.as_ref(), Type::Struct(_)));
+        // For any pointer base (`*T` element access or `*Struct` member access),
+        // the pointer VALUE is the element/struct address, so load it first.
+        // base_ptr is the STORAGE location of the pointer variable.
+        let is_ptr = matches!(self.ptr.ty(), Some(Type::Pointer(_)));
         let effective_base: Location;
-        let resolved_base = if is_ptr_to_struct {
-            // base_ptr is the STORAGE location of the pointer variable; load its VALUE.
+        let resolved_base = if is_ptr {
             let ptr_val = target.assembler.materialize_value(base_ptr);
             effective_base = Location::Reg(ptr_val);
             &effective_base

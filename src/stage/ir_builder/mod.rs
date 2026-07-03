@@ -139,7 +139,7 @@ impl<'a> LoweringContext<'a> {
 #[derive(Debug, Clone)]
 pub struct Address {
     variable: Variable,
-    offset: Variable,
+    offset: Operand,
 }
 
 #[derive(Debug, Clone)]
@@ -246,6 +246,35 @@ impl Addressable for Expr {
                 ctx.get_variable(&ident.lexeme).map(AddressableVar::Var)
             }
             Expr::ArrayIndex(expr) => expr.lower_to_address(assembler, ctx),
+            // `base.field = value` — address is the base (struct value or
+            // pointer-to-struct) indexed by the field position.
+            Expr::MemberAccess(member) => {
+                let Some(base) = member.base.lower(assembler, ctx) else {
+                    panic!("Failed to return variable from MemberAccess base lowering");
+                };
+                let fields = match &base.ty {
+                    ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+                    ir::Type::Pointer(inner) => match inner.as_ref() {
+                        ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+                        _ => panic!("Expected pointer to struct type in MemberAccess assignment"),
+                    },
+                    _ => panic!("Expected struct type in MemberAccess assignment"),
+                };
+                let Some(idx) = fields
+                    .iter()
+                    .position(|(name, _)| name == &member.member.lexeme)
+                else {
+                    panic!("Field not found {}", member.member.lexeme);
+                };
+                let address = Address {
+                    variable: base,
+                    offset: Operand::ConstantInt(ConstantInt::new(
+                        idx.to_string(),
+                        Type::Signed(32),
+                    )),
+                };
+                Some(AddressableVar::Address(address))
+            }
             _ => unreachable!(),
         }
     }
@@ -876,6 +905,13 @@ impl Lowerable for ExprArrayIndex {
                 Some(dst)
             }
 
+            // *T — raw pointer to elements. Index directly off the pointer.
+            Type::Pointer(elem_ty) => {
+                let dst = assembler.var((**elem_ty).clone());
+                assembler.elemget(dst.clone(), ptr, index);
+                Some(dst)
+            }
+
             other => {
                 panic!("Cannot index {:?}", other)
             }
@@ -897,10 +933,17 @@ impl Addressable for ExprArrayIndex {
             panic!("Failed to return variable from ExprArrayIndex index lowering");
         };
 
-        let ast::TypeKind::Array(_, _) = &self.ty.kind else {
-            panic!("Expected array type but got {}", self.ty);
+        // Assignable containers: fixed arrays, slices, and raw pointers (`*T`).
+        match &self.ty.kind {
+            ast::TypeKind::Array(_, _)
+            | ast::TypeKind::Slice(_)
+            | ast::TypeKind::Pointer(_) => {}
+            other => panic!("Expected indexable type but got {other:?}"),
         };
-        let address = Address { variable, offset };
+        let address = Address {
+            variable,
+            offset: offset.into(),
+        };
         let var = AddressableVar::Address(address);
         Some(var)
     }

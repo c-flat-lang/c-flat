@@ -38,6 +38,12 @@ const CALLEE_SAVED: &[PhysReg] = &[
     PhysReg::R15,
 ];
 
+/// Index in `SCRATCH_POOL` of the first callee-saved register. Pool slots
+/// before this are caller-saved (clobbered by `call`/`syscall`); slots from
+/// here on are callee-saved and survive a call once the prolog/epilog save
+/// them.
+const CALLEE_SAVED_START: usize = 7;
+
 const XMM_SCRATCH_POOL: [XmmReg; 16] = [
     XmmReg::Xmm0,
     XmmReg::Xmm1,
@@ -271,9 +277,17 @@ fn rewrite_function(f: &mut Function) {
     let mut xmm_intervals: HashMap<usize, (usize, usize)> = HashMap::new();
     let mut constraints: HashMap<usize, PhysReg> = HashMap::new();
 
+    // Instruction indices (in the flattened prolog+instructions+epilog space)
+    // that clobber caller-saved registers: `call` and `syscall`. A vreg whose
+    // live interval spans one of these must be given a callee-saved register.
+    let mut clobber_indices: Vec<usize> = Vec::new();
+
     let mut idx = 0usize;
     for section in [&f.prolog, &f.instructions, &f.epilog] {
         for instr in section {
+            if matches!(instr, Instruction::Call(..) | Instruction::Syscall) {
+                clobber_indices.push(idx);
+            }
             for_each_location(instr, |loc| {
                 if let Location::Reg(Reg::VReg(v)) = loc {
                     if let RegConstraint::Fixed(phys) = v.constraint {
@@ -298,7 +312,7 @@ fn rewrite_function(f: &mut Function) {
     }
 
     // Step 2a: Linear-scan for GP vregs.
-    let gp_assignment = linear_scan_gp(gp_intervals, constraints);
+    let gp_assignment = linear_scan_gp(gp_intervals, constraints, &clobber_indices);
     // Step 2b: Linear-scan for XMM vregs.
     let xmm_assignment = linear_scan_xmm(xmm_intervals);
 
@@ -309,10 +323,18 @@ fn rewrite_function(f: &mut Function) {
         .copied()
         .collect();
 
-    // Prepend pushes to prolog, append pops to epilog (in reverse order)
-    for &reg in &used_callee_saved {
+    // Insert pushes just after the function's entry label (so they land inside
+    // the function, not before its label) and pops before the final Ret. Push
+    // in forward order and pop in reverse so the stack stays balanced.
+    let insert_pos = f
+        .prolog
+        .iter()
+        .position(|i| matches!(i, Instruction::DefineLabel(..)))
+        .map(|p| p + 1)
+        .unwrap_or(0);
+    for (i, &reg) in used_callee_saved.iter().enumerate() {
         f.prolog
-            .insert(0, Instruction::Push(Location::Reg(reg.into())));
+            .insert(insert_pos + i, Instruction::Push(Location::Reg(reg.into())));
     }
     for &reg in used_callee_saved.iter().rev() {
         // Insert before the final Ret
@@ -338,6 +360,7 @@ fn rewrite_function(f: &mut Function) {
 fn linear_scan_gp(
     intervals: HashMap<usize, (usize, usize)>,
     constraints: HashMap<usize, PhysReg>,
+    clobber_indices: &[usize],
 ) -> HashMap<usize, PhysReg> {
     if intervals.is_empty() {
         return HashMap::new();
@@ -377,11 +400,21 @@ fn linear_scan_gp(
         });
         free.extend(reclaimed);
 
-        let blocked: HashSet<usize> = fixed_intervals
+        let mut blocked: HashSet<usize> = fixed_intervals
             .iter()
             .filter(|(fs, fe, _, _)| fs <= start && start <= fe)
             .filter_map(|(_, _, _, phys)| SCRATCH_POOL.iter().position(|p| p == phys))
             .collect();
+
+        // If this value is live across a `call`/`syscall`, a caller-saved
+        // register would be clobbered by the callee. Restrict it to the
+        // callee-saved slots, which the prolog/epilog preserve.
+        let crosses_call = clobber_indices.iter().any(|&c| *start < c && c < *end);
+        if crosses_call {
+            for i in 0..CALLEE_SAVED_START {
+                blocked.insert(i);
+            }
+        }
 
         let pool_idx = free
             .iter()

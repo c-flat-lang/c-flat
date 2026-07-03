@@ -10,12 +10,12 @@ pub fn main() void {
     let list = ArrayList_new<(s32)>();
     ArrayList_push<(s32)>(&list, 10);
 
-    let i: s32 = list.items.*[0];
+    let i: s32 = list.items[0];
     io::io_write_s32(i);
 
     ArrayList_push<(s32)>(&list, 20);
 
-    i = list.items.*[1];
+    i = list.items[1];
     io::io_write_s32(i);
 
     ArrayList_free<(s32)>(&list);
