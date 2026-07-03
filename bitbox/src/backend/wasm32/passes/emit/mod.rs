@@ -7,8 +7,8 @@ use crate::passes::{DebugPass, Pass, PassOutput};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
     Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, Ieee32, Ieee64,
-    ImportSection,
-    InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection, ValType,
+    ImportSection, InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection,
+    ValType,
 };
 
 #[derive(Debug)]
@@ -424,7 +424,9 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
                     target.assembler.f64_const(ieee);
                 }
                 ValType::V128 => unreachable!("@const v128: SIMD is not produced by c-flat"),
-                ValType::Ref(_) => unreachable!("@const ref: reference types are not produced by c-flat"),
+                ValType::Ref(_) => {
+                    unreachable!("@const ref: reference types are not produced by c-flat")
+                }
             },
             ir::Operand::Variable(variable) => {
                 let variables = ctx.local_function_variables.get(&target.function_name);

@@ -22,21 +22,29 @@ fn branch_terminates(blocks: &[BasicBlock]) -> bool {
 /// already on the stack). Integers narrower than 32 bits use sized stores;
 /// otherwise the store width follows the value's wasm type so f32/f64/i64
 /// fields are stored correctly (not truncated through `i32.store`).
-fn emit_typed_store(
-    ty: &Type,
-    ctx: &crate::backend::Context,
-    target: &mut Wasm32LowerContext<'_>,
-) {
-    let dword = wasm_encoder::MemArg { offset: 0, align: 2, memory_index: 0 };
-    let qword = wasm_encoder::MemArg { offset: 0, align: 3, memory_index: 0 };
+fn emit_typed_store(ty: &Type, ctx: &crate::backend::Context, target: &mut Wasm32LowerContext<'_>) {
+    let dword = wasm_encoder::MemArg {
+        offset: 0,
+        align: 2,
+        memory_index: 0,
+    };
+    let qword = wasm_encoder::MemArg {
+        offset: 0,
+        align: 3,
+        memory_index: 0,
+    };
     match ty.clone().into() {
         ValType::I32 => match ty.size(&ctx.target) {
-            1 => target
-                .assembler
-                .i32_store8(wasm_encoder::MemArg { offset: 0, align: 0, memory_index: 0 }),
-            2 => target
-                .assembler
-                .i32_store16(wasm_encoder::MemArg { offset: 0, align: 1, memory_index: 0 }),
+            1 => target.assembler.i32_store8(wasm_encoder::MemArg {
+                offset: 0,
+                align: 0,
+                memory_index: 0,
+            }),
+            2 => target.assembler.i32_store16(wasm_encoder::MemArg {
+                offset: 0,
+                align: 1,
+                memory_index: 0,
+            }),
             _ => target.assembler.i32_store(dword),
         },
         ValType::I64 => target.assembler.i64_store(qword),
@@ -197,7 +205,9 @@ impl Lower<Wasm32LowerContext<'_>> for IAssign {
                 target.assembler.local_set(idx as u32);
             }
             ValType::V128 => unreachable!("@assign v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@assign ref: reference types are not produced by c-flat"),
+            ValType::Ref(_) => {
+                unreachable!("@assign ref: reference types are not produced by c-flat")
+            }
         }
         Ok(())
     }
@@ -430,7 +440,9 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
                 ValType::F32 => target.assembler.f32_load(memarg_dword),
                 ValType::F64 => target.assembler.f64_load(memarg_qword),
                 ValType::V128 => unreachable!("@elemget v128: SIMD is not produced by c-flat"),
-                ValType::Ref(_) => unreachable!("@elemget ref: reference types are not produced by c-flat"),
+                ValType::Ref(_) => {
+                    unreachable!("@elemget ref: reference types are not produced by c-flat")
+                }
             },
         };
 
@@ -581,8 +593,12 @@ impl Lower<Wasm32LowerContext<'_>> for IAnd {
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_and(),
             ValType::I64 => target.assembler.i64_and(),
-            ValType::F32 => unreachable!("@and f32: bitwise-and on floats is rejected by the type checker"),
-            ValType::F64 => unreachable!("@and f64: bitwise-and on floats is rejected by the type checker"),
+            ValType::F32 => {
+                unreachable!("@and f32: bitwise-and on floats is rejected by the type checker")
+            }
+            ValType::F64 => {
+                unreachable!("@and f64: bitwise-and on floats is rejected by the type checker")
+            }
             ValType::V128 => unreachable!("@and v128: SIMD is not produced by c-flat"),
             ValType::Ref(_) => unreachable!("@and ref: reference types are not produced by c-flat"),
         };
@@ -641,8 +657,12 @@ impl Lower<Wasm32LowerContext<'_>> for IXOr {
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_xor(),
             ValType::I64 => target.assembler.i64_xor(),
-            ValType::F32 => unreachable!("@xor f32: bitwise-xor on floats is rejected by the type checker"),
-            ValType::F64 => unreachable!("@xor f64: bitwise-xor on floats is rejected by the type checker"),
+            ValType::F32 => {
+                unreachable!("@xor f32: bitwise-xor on floats is rejected by the type checker")
+            }
+            ValType::F64 => {
+                unreachable!("@xor f64: bitwise-xor on floats is rejected by the type checker")
+            }
             ValType::V128 => unreachable!("@xor v128: SIMD is not produced by c-flat"),
             ValType::Ref(_) => unreachable!("@xor ref: reference types are not produced by c-flat"),
         };
@@ -671,10 +691,16 @@ impl Lower<Wasm32LowerContext<'_>> for IBitWiseAnd {
         match self.des.ty.clone().into() {
             ValType::I32 => target.assembler.i32_and(),
             ValType::I64 => target.assembler.i64_and(),
-            ValType::F32 => unreachable!("@bwand f32: bitwise-and on floats is rejected by the type checker"),
-            ValType::F64 => unreachable!("@bwand f64: bitwise-and on floats is rejected by the type checker"),
+            ValType::F32 => {
+                unreachable!("@bwand f32: bitwise-and on floats is rejected by the type checker")
+            }
+            ValType::F64 => {
+                unreachable!("@bwand f64: bitwise-and on floats is rejected by the type checker")
+            }
             ValType::V128 => unreachable!("@bwand v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@bwand ref: reference types are not produced by c-flat"),
+            ValType::Ref(_) => {
+                unreachable!("@bwand ref: reference types are not produced by c-flat")
+            }
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -947,7 +973,9 @@ impl Lower<Wasm32LowerContext<'_>> for ILoad {
                 ValType::F32 => target.assembler.f32_load(memarg_dword),
                 ValType::F64 => target.assembler.f64_load(memarg_qword),
                 ValType::V128 => unreachable!("@load v128: SIMD is not produced by c-flat"),
-                ValType::Ref(_) => unreachable!("@load ref: reference types are not produced by c-flat"),
+                ValType::Ref(_) => {
+                    unreachable!("@load ref: reference types are not produced by c-flat")
+                }
             },
         };
 
@@ -1121,8 +1149,12 @@ impl Lower<Wasm32LowerContext<'_>> for IRef {
                     ValType::I64 => target.assembler.i64_store(memarg_qword),
                     ValType::F32 => target.assembler.f32_store(memarg_dword),
                     ValType::F64 => target.assembler.f64_store(memarg_qword),
-                    ValType::V128 => unreachable!("@ref spill v128: SIMD is not produced by c-flat"),
-                    ValType::Ref(_) => unreachable!("@ref spill ref: reference types are not produced by c-flat"),
+                    ValType::V128 => {
+                        unreachable!("@ref spill v128: SIMD is not produced by c-flat")
+                    }
+                    ValType::Ref(_) => {
+                        unreachable!("@ref spill ref: reference types are not produced by c-flat")
+                    }
                 };
                 target.assembler.global_get(0);
                 target.assembler.i32_const(size);

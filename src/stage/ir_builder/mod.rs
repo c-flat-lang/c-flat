@@ -935,9 +935,7 @@ impl Addressable for ExprArrayIndex {
 
         // Assignable containers: fixed arrays, slices, and raw pointers (`*T`).
         match &self.ty.kind {
-            ast::TypeKind::Array(_, _)
-            | ast::TypeKind::Slice(_)
-            | ast::TypeKind::Pointer(_) => {}
+            ast::TypeKind::Array(_, _) | ast::TypeKind::Slice(_) | ast::TypeKind::Pointer(_) => {}
             other => panic!("Expected indexable type but got {other:?}"),
         };
         let address = Address {
