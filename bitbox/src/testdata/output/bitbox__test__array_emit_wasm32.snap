@@ -4,7 +4,7 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/ar
 ---
 (module
   (type (;0;) (func (result i32)))
-  (memory (;0;) 1)
+  (memory (;0;) 4)
   (global (;0;) (mut i32) i32.const 0)
   (export "memory" (memory 0))
   (export "__stack_pointer" (global 0))
