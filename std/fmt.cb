@@ -1,7 +1,7 @@
 /// Caller supplys buffer
-/// Returning how many slots are used in buffer
-pub fn convert_s32_to_array(n: s32, buf: *[11; u8]) usize {
-    let pos: usize = 11;
+pub fn convert_s32_to_array(n: s32, buf: *[11; u8]) void {
+    let ARRAY_LEN: usize = 11;
+    let pos: usize = ARRAY_LEN;
     let is_neg: bool = n < 0;
 
     if n == 2147483648 * (0 - 1) {
@@ -29,14 +29,4 @@ pub fn convert_s32_to_array(n: s32, buf: *[11; u8]) usize {
         pos = pos - 1;
         buf.*[pos] = '-';
     }
-
-    let len: usize = 11 - pos;
-
-    let i: usize = 0;
-    while i < len {
-        buf.*[i] = buf.*[pos + i];
-        i = i + 1;
-    }
-
-    i
 }

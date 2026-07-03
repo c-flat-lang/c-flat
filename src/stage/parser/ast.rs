@@ -59,8 +59,7 @@ impl Type {
 pub enum TypeKind {
     Array(usize, Box<Type>),
     Bool,
-    /// unimplemented!
-    Enum(String),
+    Enum(EnumType),
     Float(u8),
     /// Simple Custom `Type` with no `TypeArgs`
     Name(Token),
@@ -88,7 +87,7 @@ impl TypeKind {
                 Box::new(ty.kind.as_bitbox_type(target_pointer_size)),
             ),
             Self::Bool => bitbox::ir::Type::Unsigned(32),
-            Self::Enum(name) => todo!("{name}"),
+            Self::Enum(..) => bitbox::ir::Type::Unsigned(32),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
             Self::Name(name) => {
                 unreachable!(
@@ -150,7 +149,7 @@ This means we may need to generate more then one X Type depending on how many Ge
         match self {
             Self::Array(count, ty) => count * ty.kind.size(target_pointer_size),
             Self::Bool => 1,
-            Self::Enum(_) => todo!("Size of enum"),
+            Self::Enum(..) => 4, // TODO: This will change once we can set the enum number type
             Self::Name(name) => {
                 unreachable!(
                     "Type::Name({}).size() should be handled in type_resolver",
@@ -202,8 +201,8 @@ impl std::fmt::Display for TypeKind {
         match self {
             Self::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
             Self::Bool => write!(f, "bool"),
+            Self::Enum(symbol) => write!(f, "{}", symbol.name),
             Self::Float(n) => write!(f, "f{}", n),
-            Self::Enum(name) => write!(f, "{}", name),
             Self::Name(name) => write!(f, "{}", name.lexeme),
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
             Self::Pointer(ty) => write!(f, "*{ty}"),
@@ -217,6 +216,14 @@ impl std::fmt::Display for TypeKind {
             Self::Void => write!(f, "void"),
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnumType {
+    pub name: String,
+    pub type_params: Option<Vec<(Token, Type)>>,
+    // We will need to add something for set values
+    pub variants: Vec<(String, String)>, // (name, default-value),
+    pub number_kind: Box<TypeKind>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -238,6 +245,7 @@ impl std::fmt::Display for TypeParams {
         write!(f, "{string}")
     }
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructType {
     pub name: String,
@@ -403,8 +411,42 @@ impl Struct {
 }
 
 #[derive(Debug, Clone)]
+pub struct Variant {
+    pub name: Token,
+    pub equals: Option<Token>,
+    pub value: Option<Token>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Enum {
+    pub visibility: Visibility,
+    pub type_token: Token,
+    pub name: Token,
+    pub type_params: Option<Vec<(Token, Type)>>,
+    pub enum_token: Token,
+    pub variants: Vec<Variant>,
+    pub open_brace: Token,
+    pub close_brace: Token,
+}
+
+impl Enum {
+    pub fn span(&self) -> Span {
+        let filename = self.type_token.span.filename.clone();
+        let start = self.type_token.span.start;
+        let end = self.close_brace.span.end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum TypeDef {
     Struct(Struct),
+    Enum(Enum),
 }
 
 #[derive(Debug, Clone)]
@@ -528,53 +570,55 @@ pub struct Param {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
-    Return(ExprReturn),
-    Struct(ExprStruct),
-    Declare(ExprDecl),
-    Assignment(ExprAssignment),
-    Litral(Litral),
-    Call(ExprCall),
-    Binary(ExprBinary),
-    While(ExprWhile),
-    Identifier(Token),
-    Path(ExprPath),
-    IfElse(ExprIfElse),
-    MemberAccess(ExprMemberAccess),
+    AddressOf(ExprAddressOf),
     Array(ExprArray),
     ArrayIndex(ExprArrayIndex),
     ArrayRepeat(ExprArrayRepeat),
+    Assignment(ExprAssignment),
+    Binary(ExprBinary),
     Block(ExprBlock),
-    AddressOf(ExprAddressOf),
+    Builtin(ExprCall),
+    Call(ExprCall),
+    Declare(ExprDecl),
     Deref(ExprDeref),
-    Not(ExprNot),
     Grouping(ExprGrouping),
+    Identifier(Token),
+    IfElse(ExprIfElse),
+    Litral(Litral),
+    MemberAccess(ExprMemberAccess),
+    Not(ExprNot),
+    Path(ExprPath),
+    Return(ExprReturn),
+    Struct(ExprStruct),
     TypeCast(ExprTypeCast),
+    While(ExprWhile),
 }
 
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Self::Return(expr) => expr.span(),
-            Self::Struct(expr) => expr.span(),
-            Self::Declare(expr) => expr.span(),
-            Self::Assignment(expr) => expr.span(),
-            Self::Litral(litral) => litral.span(),
-            Self::Call(expr) => expr.span(),
-            Self::Binary(expr) => expr.span(),
-            Self::While(expr) => expr.span(),
-            Self::Identifier(token) => token.span.clone(),
-            Self::Path(expr) => expr.span(),
-            Self::IfElse(expr) => expr.span(),
-            Self::MemberAccess(expr) => expr.span(),
+            Self::AddressOf(expr) => expr.span(),
             Self::Array(expr) => expr.span(),
             Self::ArrayIndex(expr) => expr.span(),
             Self::ArrayRepeat(expr) => expr.span(),
+            Self::Assignment(expr) => expr.span(),
+            Self::Binary(expr) => expr.span(),
             Self::Block(expr) => expr.span(),
-            Self::AddressOf(expr) => expr.span(),
+            Self::Builtin(expr) => expr.span(),
+            Self::Call(expr) => expr.span(),
+            Self::Declare(expr) => expr.span(),
             Self::Deref(expr) => expr.span(),
-            Self::Not(expr) => expr.span(),
             Self::Grouping(expr) => expr.span(),
+            Self::Identifier(token) => token.span.clone(),
+            Self::IfElse(expr) => expr.span(),
+            Self::Litral(litral) => litral.span(),
+            Self::MemberAccess(expr) => expr.span(),
+            Self::Not(expr) => expr.span(),
+            Self::Path(expr) => expr.span(),
+            Self::Return(expr) => expr.span(),
+            Self::Struct(expr) => expr.span(),
             Self::TypeCast(expr) => expr.span(),
+            Self::While(expr) => expr.span(),
         }
     }
 
@@ -915,6 +959,12 @@ impl ExprPath {
             end,
             filename,
         }
+    }
+
+    pub fn head(&self) -> &Token {
+        self.segments
+            .first()
+            .expect("ExprPath must have first segment")
     }
 
     /// The final segment, which names the item being referred to. v1 resolves a

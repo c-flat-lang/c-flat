@@ -1,85 +1,119 @@
-// This Example does not compile.
-// Just experimenting with syntax.
+extern C fn write_s32(s32) void;
 
-pub type Option enum (T) {
-    Some(T),
-    None,
-}
-
-
-pub type ArrayList struct (T) {
-    data: [T],
-    len: u32,
-
-    pub fn new(allocator: Allocator) ArrayList(T) {
-        return .{
-            data: allocator.allocate(T, 10),
-            len: 0
-        };
-    }
-
-    pub fn deallocate(*self, allocator: Allocator) void {
-        allocator.deallocate(self.data);
-    }
-
-    pub fn capacity(*self: Self) u32 {
-        return self.data.len;
-    }
-
-    pub fn push(*self, value: T) void {
-        if self.len >= self.capacity() {
-            self.extend();
-        }
-        self.data[self.len] = value;
-        self.len += 1;
-    }
-
-    pub fn pop(*self) Option(T) {
-        if self.len == 0 {
-            return Option.None;
-        }
-        self.len -= 1;
-        return Option.Some(self.data[self.len]);
-    }
-
-    pub fn extend(*self, allocator: Allocator) void {
-        let new_capacity = self.capacity() * 2;
-        let new_data = allocator.allocate(T, new_capacity);
-        for i in 0..self.len {
-            new_data[i] = self.data[i];
-        }
-        self.data = new_data;
-        self.capacity = new_capacity;
-    }
-
-    type Iterator struct {
-        data: *ArrayList,
-        current: s32,
-        end: s32,
-
-        pub fn next(*self) Option(T) {
-            if self.current >= self.end {
-                return Option.None;
-            }
-            let value = &self.data.data[self.current];
-            self.current += 1;
-            return Option.Some(value);
-        }
-    }
-
-    fn iterator(*self) Iterator {
-        return .{
-            data: self,
-            current: 0,
-            end: self.len,
-        };
-    }
-}
+use std::array_list::ArrayList_new;
+use std::array_list::ArrayList_push;
+use std::array_list::ArrayList_free;
+// use modules::array_list::ArrayList_get;
+use std::linux::io;
 
 pub fn main() void {
-    let array: ArrayList(i32) = ArrayList(i32).new();
-    let iter: ArrayList.Iterator = array.iterator();
-    while iter.next() |value| {
-        println(value);
-    }
+    let list = ArrayList_new<(s32)>();
+    ArrayList_push<(s32)>(&list, 10);
+
+    let i: s32 = list.items.*[0];
+    io::io_write_s32(i);
+
+    ArrayList_push<(s32)>(&list, 20);
+
+    i = list.items.*[1];
+    io::io_write_s32(i);
+
+    ArrayList_free<(s32)>(&list);
+    
+    // let a: s32 = 10;
+    // let b: s32 = 20;
+    // let c: s32 = 42;
+    // arraylist_push<(s32)>(&list, &a, 4);
+    // arraylist_push<(s32)>(&list, &b, 4);
+    // arraylist_push<(s32)>(&list, &c, 4);
+
+    // let elem = arraylist_get<(s32)>(&list, 2, 4); // ref to 42
+    // io_write_s32(elem);
+
+    // arraylist_free<(s32)>(&list, 4);
 }
+// // This Example does not compile.
+// // Just experimenting with syntax.
+//
+// pub type Option enum (T) {
+//     Some(T),
+//     None,
+// }
+//
+//
+// pub type ArrayList struct (T) {
+//     data: [T],
+//     len: u32,
+//
+//     pub fn new(allocator: Allocator) ArrayList(T) {
+//         return .{
+//             data: allocator.allocate(T, 10),
+//             len: 0
+//         };
+//     }
+//
+//     pub fn deallocate(*self, allocator: Allocator) void {
+//         allocator.deallocate(self.data);
+//     }
+//
+//     pub fn capacity(*self: Self) u32 {
+//         return self.data.len;
+//     }
+//
+//     pub fn push(*self, value: T) void {
+//         if self.len >= self.capacity() {
+//             self.extend();
+//         }
+//         self.data[self.len] = value;
+//         self.len += 1;
+//     }
+//
+//     pub fn pop(*self) Option(T) {
+//         if self.len == 0 {
+//             return Option.None;
+//         }
+//         self.len -= 1;
+//         return Option.Some(self.data[self.len]);
+//     }
+//
+//     pub fn extend(*self, allocator: Allocator) void {
+//         let new_capacity = self.capacity() * 2;
+//         let new_data = allocator.allocate(T, new_capacity);
+//         for i in 0..self.len {
+//             new_data[i] = self.data[i];
+//         }
+//         self.data = new_data;
+//         self.capacity = new_capacity;
+//     }
+//
+//     type Iterator struct {
+//         data: *ArrayList,
+//         current: s32,
+//         end: s32,
+//
+//         pub fn next(*self) Option(T) {
+//             if self.current >= self.end {
+//                 return Option.None;
+//             }
+//             let value = &self.data.data[self.current];
+//             self.current += 1;
+//             return Option.Some(value);
+//         }
+//     }
+//
+//     fn iterator(*self) Iterator {
+//         return .{
+//             data: self,
+//             current: 0,
+//             end: self.len,
+//         };
+//     }
+// }
+//
+// pub fn main() void {
+//     let array: ArrayList(i32) = ArrayList(i32).new();
+//     let iter: ArrayList.Iterator = array.iterator();
+//     while iter.next() |value| {
+//         println(value);
+//     }
+// }

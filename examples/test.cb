@@ -1,9 +1,48 @@
-use modules::fmt;
-use modules::io;
+extern C fn write_u8(u8) void;
+extern C fn write_char(u8) void;
+extern C fn write_bool(bool) void;
+
+use std::ascii;
+use std::linux::io;
+use std::fmt;
+
+
+fn update_score_string(text: *[11; u8], score: s32, out: *[11; u8]) void {
+    let mut buffer:[11; u8] = [0;11];
+    let base_x = 10;
+    let base_y = 10;
+    let text_size = 30;
+    fmt::convert_s32_to_array(score, &buffer);
+
+    let mut buffer_index: usize = buffer.len - 1;
+    let mut text_index: usize = text.*.len - 1;
+    let mut percent_count: usize = 0;
+    let mut buffer_exhausted: bool = false;
+
+    while text_index > 0 and percent_count < 4 {
+        let c: u8 = text.*[text_index]
+        if c == '%' {
+            percent_count = percent_count + 1;
+            if !buffer_exhausted and ascii::isNumber(buffer[buffer_index]) {
+                out.*[text_index] = buffer[buffer_index];
+                if buffer_index == 0 {
+                    buffer_exhausted = true;
+                } else {
+                    buffer_index = buffer_index - 1;
+                }
+            } else {
+                out.*[text_index] = ' ';
+                buffer_exhausted = true;
+            }
+        }
+        text_index = text_index - 1;
+    }
+}
 
 pub fn main() void {
-    let buf: [11; u8] = [0; 11];
-    let num: s32 = 123;
-    let size = fmt::convert_s32_to_array(num, &buf);
-    io::io_write_str(buf);
+    let text: [11; u8] = "Score %%%%\0";
+    let out: [11; u8] = "Score %%%%\0";
+    update_score_string(&text, 2000, &out);
+    io::io_write_str(&text);
+    io::io_write_str(&out);
 }

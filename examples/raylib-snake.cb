@@ -1,9 +1,14 @@
 // BUILD WITH
 // # this may need to be adjusted depending on where raylib is on your system
 // cargo run --features "debug" -- --target=x86_64-linux --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" examples/raylib-snake.cb
+extern C fn write_u8(u8) void;
+extern C fn write_char(u8) void;
 
-use modules::raylib;
-use modules::random;
+use std::raylib;
+use std::random;
+use std::fmt;
+use std::linux::io;
+use std::ascii;
 
 fn rand_color() Color {
     let color: Color = Color {
@@ -31,6 +36,38 @@ fn playerIsCollidingWithFood(px: s32, py: s32, fx: s32, fy: s32) bool {
     };
 
     return check_collision_recs(player_rect, food_rect);
+}
+
+fn update_score_string(text: *[11; u8], score: s32, out: *[11; u8]) void {
+    let mut buffer:[11; u8] = [0;11];
+    let base_x = 10;
+    let base_y = 10;
+    let text_size = 30;
+    fmt::convert_s32_to_array(score, &buffer);
+
+    let mut buffer_index: usize = buffer.len - 1;
+    let mut text_index: usize = text.*.len - 1;
+    let mut percent_count: usize = 0;
+    let mut buffer_exhausted: bool = false;
+
+    while text_index > 0 and percent_count < 4 {
+        let c: u8 = text.*[text_index]
+        if c == '%' {
+            percent_count = percent_count + 1;
+            if !buffer_exhausted and ascii::isNumber(buffer[buffer_index]) {
+                out.*[text_index] = buffer[buffer_index];
+                if buffer_index == 0 {
+                    buffer_exhausted = true;
+                } else {
+                    buffer_index = buffer_index - 1;
+                }
+            } else {
+                out.*[text_index] = ' ';
+                buffer_exhausted = true;
+            }
+        }
+        text_index = text_index - 1;
+    }
 }
 
 pub fn main() s32 {
@@ -109,8 +146,10 @@ pub fn main() s32 {
     let title = "raylib c-flat snake demo\0";
     init_window(screen_width, screen_height, &title);
 
-    let text = "Score: \0";
-    let score = "0\0";
+    let text_template = "Score: %%%%\0";
+    let text = "Score: %%%%\0";
+    let score: s32 = 0;
+    update_score_string(&text_template, score, &text);
 
     set_target_fps(60);
     while !window_should_close() {
@@ -176,7 +215,8 @@ pub fn main() s32 {
                 player_body_index = player_body_index + 1;
                 food_x = random::rand_range(0, CELL_WIDTH);
                 food_y = random::rand_range(0, CELL_HEIGHT);
-                score[0] = score[0] + 1;
+                score = score + 1;
+                update_score_string(&text_template, score, &text);
                 // TODO: figure out why this is not allowing to be set here.
                 // let new_food_color = rand_color();
                 // food_color = new_food_color;
@@ -241,7 +281,6 @@ pub fn main() s32 {
         );
 
         draw_text(&text, 10, 10, 30, text_color);
-        draw_text(&score, 120, 10, 30, text_color);
 
         end_drawing();
     }

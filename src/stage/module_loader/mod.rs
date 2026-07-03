@@ -21,6 +21,7 @@
 //! implemented yet.
 
 use std::collections::{HashMap, VecDeque};
+use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::error::{
@@ -290,15 +291,46 @@ struct PendingVis {
     span: Span,
 }
 
+fn cflat_std_root() -> PathBuf {
+    if let Ok(p) = env::var("CFLAT_STD_PATH") {
+        return PathBuf::from(p);
+    }
+
+    // TODO: This should change to CB_INSTALL_ROOT later.
+    // Its a good fall back for now.
+    let root = env::var("CARGO_INSTALL_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            env::var("HOME")
+                .map(|h| PathBuf::from(h).join(".cargo"))
+                .expect("HOME not set and CARGO_INSTALL_ROOT/CFLAT_STD_PATH not set")
+        });
+    root.join("lib/c-flat/std")
+}
+
 /// Resolve a `use` path to a file using "longest file prefix wins". Returns the
 /// resolved file and any trailing in-file selectors.
 fn resolve_use_path(base_dir: &Path, segments: &[String]) -> Option<(PathBuf, Vec<String>)> {
+    let std_root = cflat_std_root();
+
     for len in (1..=segments.len()).rev() {
-        let mut candidate = base_dir.to_path_buf();
-        for seg in &segments[0..len] {
+        let is_std = segments[0] == "std";
+        let seg_slice = if is_std {
+            &segments[1..len]
+        } else {
+            &segments[0..len]
+        };
+
+        let mut candidate = if is_std {
+            std_root.clone()
+        } else {
+            base_dir.to_path_buf()
+        };
+        for seg in seg_slice {
             candidate.push(seg);
         }
         candidate.set_extension("cb");
+
         if candidate.is_file() {
             let selectors = segments[len..].to_vec();
             return Some((candidate, selectors));
@@ -315,7 +347,10 @@ fn item_visibility(items: &[Item], name: &str) -> Option<Visibility> {
             Item::Type(ast::TypeDef::Struct(s)) if s.name.lexeme == name => {
                 return Some(s.visibility);
             }
-            _ => {}
+            Item::Type(ast::TypeDef::Enum(s)) if s.name.lexeme == name => {
+                return Some(s.visibility);
+            }
+            Item::Function(..) | Item::Use(..) | Item::ExternFunction(..) | Item::Type(..) => {}
         }
     }
     None

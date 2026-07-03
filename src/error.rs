@@ -5,6 +5,56 @@ pub use report::{Report, Result};
 use std::fmt::Write;
 
 #[derive(Debug)]
+pub struct ErrorUnexpectedToken {
+    found: Token,
+    expected: Vec<TokenKind>,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorUnexpectedToken {
+    pub fn new(
+        found: Token,
+        expected: &[TokenKind],
+        #[cfg(feature = "debug")] compiler_line: String,
+    ) -> Self {
+        Self {
+            found,
+            expected: expected.to_vec(),
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+}
+
+impl Report for ErrorUnexpectedToken {
+    fn filename(&self) -> &str {
+        &self.found.span.filename
+    }
+
+    fn report(&self, src: &str) -> String {
+        let span = &self.found.span;
+        let mut report = ReportBuilder::new(span, src);
+        report.message({
+            let expected = self
+                .expected
+                .iter()
+                .map(|k| format!("`{k:?}`"))
+                .collect::<Vec<_>>();
+            if expected.len() == 1 {
+                format!("expected {}", expected[0])
+            } else {
+                format!("expected one of: {}", expected.join(", "))
+            }
+        });
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
+    }
+}
+
+#[derive(Debug)]
 pub struct ErrorUnexpectedExpression {
     expr: Expr,
     expected: Vec<TokenKind>,
@@ -542,6 +592,11 @@ impl Report for Errors {
         let mut final_report = String::new();
         for error in self.errors.iter() {
             let filename = error.filename();
+            if filename == "ErrorMessage" {
+                final_report.push_str(&error.report(""));
+                final_report.push('\n');
+                continue;
+            }
             let maybe_src = std::fs::read_to_string(filename).map_err(|err| -> Box<dyn Report> {
                 Box::new(ErrorMessage(format!(
                     "could not read `{}`: {}",

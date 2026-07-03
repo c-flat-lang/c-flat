@@ -35,6 +35,7 @@ pub struct SymbolTableBuilder {
 impl Default for SymbolTableBuilder {
     fn default() -> Self {
         let mut table = SymbolTable::default();
+
         table.enter_scope("global");
 
         fn usize_ty() -> ast::TypeKind {
@@ -48,6 +49,9 @@ impl Default for SymbolTableBuilder {
                 std::iter::repeat_with(usize_ty).take(argc + 1).collect(),
             ));
         }
+
+        table.push(create_symbol("@size_of", usize_ty(), vec![]));
+
         table.exit_scope();
 
         Self {
@@ -156,7 +160,32 @@ impl SymbolTableBuilder {
     fn walk_type_def(&mut self, type_def: &ast::TypeDef) {
         match type_def {
             ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
+            ast::TypeDef::Enum(enum_def) => self.walk_enum_def(enum_def),
         }
+    }
+
+    fn walk_enum_def(&mut self, enum_def: &ast::Enum) {
+        self.table.push(Symbol {
+            visibility: enum_def.visibility,
+            name: enum_def.name.lexeme.clone(),
+            kind: SymbolKind::Enum,
+            ty: ast::Type {
+                mut_token: None,
+                kind: ast::TypeKind::Enum(ast::EnumType {
+                    name: enum_def.name.lexeme.clone(),
+                    type_params: enum_def.type_params.clone(),
+                    variants: enum_def
+                        .variants
+                        .iter()
+                        .enumerate()
+                        .map(|(i, variant)| (variant.name.lexeme.clone(), i.to_string()))
+                        .collect(),
+                    number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
+                }),
+                span: enum_def.span(),
+            },
+            ..Default::default()
+        });
     }
 
     fn walk_struct_def(&mut self, struct_def: &ast::Struct) {
@@ -164,7 +193,6 @@ impl SymbolTableBuilder {
             name: struct_def.name.lexeme.clone(),
             kind: SymbolKind::Struct,
             ty: ast::Type {
-                // We set None here cause we dont know if it is mutable at the call site.
                 mut_token: None,
                 kind: ast::TypeKind::Struct(ast::StructType {
                     name: struct_def.name.lexeme.clone(),
@@ -223,6 +251,7 @@ impl SymbolTableBuilder {
             ast::Expr::Struct(expr) => self.walk_struct_expr(expr),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
+            ast::Expr::Builtin(..) => {}
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
@@ -319,7 +348,9 @@ impl SymbolTableBuilder {
     /// flat program namespace; the loader has already verified the import path.
     fn walk_expr_path(&mut self, path: &ast::ExprPath) {
         let leaf = path.leaf();
-        if self.table.get(leaf.lexeme.as_str()).is_some() {
+        if self.table.get(leaf.lexeme.as_str()).is_some()
+            || self.table.get(path.head().lexeme.as_str()).is_some()
+        {
             return;
         }
 
@@ -398,6 +429,7 @@ pub enum SymbolKind {
     ExternFunction,
     Parameter,
     Struct,
+    Enum,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]

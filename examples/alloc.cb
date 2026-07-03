@@ -1,8 +1,6 @@
-extern C fn write_s32(s32) void;
-
-use modules::mem;
-use modules::io::io_write_s32;
-use modules::io::io_write_str;
+use std::linux::memory;
+use std::linux::io::io_write_s32;
+use std::linux::io::io_write_str;
 
 type Pair struct {
     data: [2; s32],
@@ -13,15 +11,13 @@ fn exit(code: usize) void {
 }
 
 pub fn main() void {
-    // Reinterpret the raw mmap address as a typed pointer, then write/read it.
-    let p = mem::alloc(64) as *Pair;
+    let p = memory::alloc<(Pair)>();
     p.data[0] = 13;
     p.data[1] = 29;
     let sum: s32 = p.data[0] + p.data[1]; // 42
-    mem::free(p);
+    memory::free<(Pair)>(p);
     io_write_str(&"-----\n");
     io_write_s32(sum);
-    io_write_str(&"-----\n");
-    write_s32(sum);
+    io_write_str(&"\n-----\n");
     exit(sum as usize);
 }

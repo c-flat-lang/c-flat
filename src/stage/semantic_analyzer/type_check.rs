@@ -6,7 +6,7 @@ use crate::error::{
     ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
 };
 use crate::stage::lexer::token::{Keyword as Kw, Span, Token, TokenKind};
-use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
+use crate::stage::parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
 impl Type {
@@ -159,6 +159,25 @@ impl<'st> TypeChecker<'st> {
     fn walk_type_def(&mut self, type_def: &mut ast::TypeDef) -> ast::Type {
         match type_def {
             ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
+            ast::TypeDef::Enum(enum_def) => self.walk_enum_def(enum_def),
+        }
+    }
+
+    fn walk_enum_def(&mut self, enum_def: &mut ast::Enum) -> ast::Type {
+        Type {
+            mut_token: None,
+            span: enum_def.span(),
+            kind: TypeKind::Enum(EnumType {
+                name: enum_def.name.lexeme.clone(),
+                type_params: enum_def.type_params.clone(),
+                variants: enum_def
+                    .variants
+                    .iter()
+                    .enumerate()
+                    .map(|(i, variant)| (variant.name.lexeme.clone(), i.to_string()))
+                    .collect(),
+                number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
+            }),
         }
     }
 
@@ -227,6 +246,7 @@ impl<'st> TypeChecker<'st> {
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Block(expr) => self.walk_block(expr),
+            ast::Expr::Builtin(expr) => self.walk_expr_builtin(expr),
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
@@ -356,6 +376,27 @@ impl<'st> TypeChecker<'st> {
                 mut_token: None,
             },
         }
+    }
+
+    fn walk_expr_builtin(&mut self, expr: &mut ast::ExprCall) -> ast::Type {
+        let name = match expr.caller.as_ref() {
+            ast::Expr::Identifier(token) if matches!(token.kind, TokenKind::Builtin(..)) => {
+                token.lexeme.clone()
+            }
+            c => panic!("Unknown Builtin {c:?}"),
+        };
+
+        let Some(symbol) = self.symbol_table.get(name.as_str()).cloned() else {
+            unreachable!("If seeing this then. Welp I guess I was wrong.");
+        };
+
+        for (arg, ty) in expr.args.iter_mut().zip(&symbol.params.unwrap_or_default()) {
+            self.maybe_numeric_hint(ty);
+            self.walk_expr(arg);
+            self.numeric_hint = None;
+        }
+
+        symbol.ty.clone()
     }
 
     fn walk_expr_call(&mut self, expr: &mut ast::ExprCall) -> ast::Type {
@@ -505,19 +546,20 @@ impl<'st> TypeChecker<'st> {
 
         expr.ty = array_type.clone();
 
-        let (TypeKind::Array(_, array_type) | TypeKind::Slice(array_type)) =
-            &array_type.de_ref().kind
-        else {
-            // NOTE: This probably will cause some missleading errors.
-            self.errors.push(Box::new(ErrorMissMatchedType::new(
-                array_type.clone(),
-                TypeKind::Array(0, Box::new(array_type.clone())),
-                #[cfg(feature = "debug")]
-                format!("{} {}:{}", file!(), line!(), column!()),
-            )));
-            return array_type;
-        };
-        *array_type.clone()
+        match &array_type.de_ref().kind {
+            TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
+            TypeKind::Slice(elem_ty) => *elem_ty.clone(),
+            TypeKind::Pointer(elem_ty) => *elem_ty.clone(),
+            _ => {
+                self.errors.push(Box::new(ErrorMissMatchedType::new(
+                    array_type.clone(),
+                    TypeKind::Array(0, Box::new(array_type.clone())),
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
+                array_type
+            }
+        }
     }
 
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
@@ -598,7 +640,7 @@ impl<'st> TypeChecker<'st> {
             panic!("Expected ExprArray");
         };
         let base_type = self.walk_expr(&mut member_access.base);
-        match base_type.kind {
+        match &base_type.kind {
             TypeKind::Array(size, _) if member_access.member.lexeme == "len" => {
                 let token = Token {
                     kind: TokenKind::Number,
@@ -639,9 +681,11 @@ impl<'st> TypeChecker<'st> {
                     span: expr.span(),
                     mut_token: None,
                 },
-                _ => unimplemented!("Handle member access for non struct pointer types"),
+                _ => unimplemented!(
+                    "Handle member access for non struct pointer types {base_type:#?}"
+                ),
             },
-            _ => unimplemented!("Handle member access for non array types"),
+            _ => unimplemented!("Handle member access for non array types {base_type:#?}"),
         }
     }
 

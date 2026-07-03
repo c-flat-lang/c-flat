@@ -1,12 +1,17 @@
-extern C fn write_s32(s32) void;
-extern C fn write_char(u8) void;
+use syscall::Syscall;
+
+pub type Stdio enum {// (usize) {
+    stdin,
+    stdout,
+    stderr,
+}
 
 pub fn io_write_str(string: *[u8]) void {
     syscall4(
-        1,            // SYS_write
-        1,            // stdout
-        string.data,  // pointer to bytes
-        string.len    // length
+        Syscall::write,
+        Stdio::stdout,
+        string.data,
+        string.len
     );
 }
 
@@ -51,8 +56,8 @@ pub fn io_write_s32(n: s32) void {
     }
 
     syscall3(
-        1,    // SYS_write
-        1,    // stdout
+        Syscall::write,
+        Stdio::stdout,
         &buf,
         len
     );

@@ -106,6 +106,7 @@ impl<'st> TypeResolver<'st> {
             Expr::Declare(expr_decl) => self.walk_expr_declare(expr_decl),
             Expr::Assignment(expr_assignment) => self.walk_expr_assignment(expr_assignment),
             Expr::Litral(litral) => {}
+            Expr::Builtin(expr_call) => self.walk_expr_call(expr_call),
             Expr::Call(expr_call) => self.walk_expr_call(expr_call),
             Expr::Binary(expr_binary) => self.walk_expr_binary(expr_binary),
             Expr::While(expr_while) => self.walk_expr_while(expr_while),
@@ -221,6 +222,7 @@ impl<'st> TypeResolver<'st> {
     fn walk_type_def(&mut self, type_def: &mut ast::TypeDef) {
         match type_def {
             ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
+            ast::TypeDef::Enum(enum_def) => {}
         }
     }
 
@@ -252,7 +254,7 @@ impl<'st> TypeResolver<'st> {
                 }
                 self.generic_args = None;
             }
-            TypeKind::Enum(_) => todo!("Enum"),
+            TypeKind::Enum(_) => {}
             TypeKind::Name(name) => {
                 if let Some(symbol) = self.symbol_table.get(&name.lexeme) {
                     *ty = symbol.ty.clone();

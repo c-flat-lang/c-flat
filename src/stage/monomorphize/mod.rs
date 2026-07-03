@@ -124,6 +124,9 @@ impl Monomorphizer {
                     self.rewrite_type(&mut field.ty);
                 }
             }
+            ast::Item::Type(ast::TypeDef::Enum(..)) => {
+                // For now i think we can skip this
+            }
             ast::Item::ExternFunction(ef) => {
                 for param in ef.params.iter_mut() {
                     self.rewrite_type(param);
@@ -170,6 +173,7 @@ impl Monomorphizer {
 
     fn rewrite_expr(&mut self, expr: &mut Expr) {
         match expr {
+            Expr::Builtin(call) => self.rewrite_call(call),
             Expr::Call(call) => self.rewrite_call(call),
             Expr::Struct(s) => self.rewrite_struct_expr(s),
             Expr::Return(r) => {
@@ -397,7 +401,7 @@ fn substitute_block(block: &mut ExprBlock, subst: &HashMap<String, Type>) {
 
 fn substitute_expr(expr: &mut Expr, subst: &HashMap<String, Type>) {
     match expr {
-        Expr::Call(c) => {
+        Expr::Call(c) | Expr::Builtin(c) => {
             if let Some(targs) = c.type_args.as_mut() {
                 for t in targs.iter_mut() {
                     substitute_type(t, subst);
@@ -532,6 +536,7 @@ fn mangle_type(kind: &TypeKind) -> String {
         TypeKind::Bool => "bool".into(),
         TypeKind::Void => "void".into(),
         TypeKind::Type => "type".into(),
+        TypeKind::Enum(e) => e.name.clone(),
         TypeKind::Float(n) => format!("f{n}"),
         TypeKind::SignedNumber(n) => format!("s{n}"),
         TypeKind::UnsignedNumber(n) => format!("u{n}"),
@@ -542,7 +547,6 @@ fn mangle_type(kind: &TypeKind) -> String {
         TypeKind::Array(n, inner) => format!("arr{n}_{}", mangle_type(&inner.kind)),
         TypeKind::Name(tok) => tok.lexeme.clone(),
         TypeKind::Struct(st) => st.name.clone(),
-        TypeKind::Enum(name) => name.clone(),
         TypeKind::NameWithParams(name, params) => {
             let mut s = name.lexeme.clone();
             for param in &params.params {

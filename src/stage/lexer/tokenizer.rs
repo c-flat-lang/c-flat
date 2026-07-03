@@ -1,3 +1,5 @@
+use crate::stage::lexer::token::Builtin;
+
 use super::token::{Keyword, Span, Token, TokenKind};
 pub struct Tokenizer<'a> {
     chars: std::iter::Peekable<std::str::Chars<'a>>,
@@ -25,6 +27,13 @@ impl<'a> Tokenizer<'a> {
             Some(value) if predicate(*value) => self.next_char(),
             _ => None,
         }
+    }
+
+    fn next_char_is_ascii_alphanumeric(&mut self) -> bool {
+        self.chars
+            .peek()
+            .map(|c| c.is_ascii_alphanumeric())
+            .unwrap_or(false)
     }
 
     fn peek_char(&mut self, expected: char) -> bool {
@@ -180,6 +189,21 @@ impl<'a> Tokenizer<'a> {
         value = number.to_string();
         Some(self.spanned(TokenKind::Number, value))
     }
+
+    fn parse_builtin(&mut self) -> Option<Token> {
+        let mut lexeme = String::from("@");
+        while let Some(value) =
+            self.next_char_if(|value| value.is_ascii_alphanumeric() || value == '_')
+        {
+            lexeme.push(value);
+        }
+        let kind = match lexeme.as_str() {
+            "@size_of" => TokenKind::Builtin(Builtin::SizeOf),
+            // May need to add token level errors
+            _ => panic!("Unknown builtin"),
+        };
+        Some(self.spanned(kind, lexeme))
+    }
 }
 
 impl<'a> Iterator for Tokenizer<'a> {
@@ -191,8 +215,16 @@ impl<'a> Iterator for Tokenizer<'a> {
             '0' if self.peek_char('x') || self.peek_char('X') => self.parse_hex_number(c),
             '0' if self.peek_char('b') || self.peek_char('B') => self.parse_bin_number(c),
             '0'..='9' => Some(self.parse_number(c)),
-            value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
+            value
+                if value.is_ascii_alphabetic()
+                    || (value == '_' && self.next_char_is_ascii_alphanumeric()) =>
+            {
+                Some(self.parse_identifier(value))
+            }
             value if value.is_ascii_whitespace() => self.skip_char(),
+            '@' if self.peek_char('_') || self.next_char_is_ascii_alphanumeric() => {
+                self.parse_builtin()
+            }
             '/' if self.peek_char('/') => self.skip_line(),
             '=' if self.peek_char('=') => self.double_char(TokenKind::EqualEqual, "=="),
             '>' if self.peek_char('>') => self.double_char(TokenKind::BitShiftRight, ">>"),
