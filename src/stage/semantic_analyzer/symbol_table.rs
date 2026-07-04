@@ -568,15 +568,8 @@ impl SymbolTable {
     }
 
     pub fn get_from_full_scope_path(&self, scope_path: &ScopePath, name: &str) -> Option<&Symbol> {
-        let Some(scope) = self.scopes.get(scope_path) else {
-            return None;
-        };
-
-        let Some(symbol) = scope.lookup(name) else {
-            return None;
-        };
-
-        Some(symbol)
+        let scope = self.scopes.get(scope_path)?;
+        scope.lookup(name)
     }
 
     pub fn get_mut_from_full_scope_path(
