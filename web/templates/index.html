@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -15,7 +15,9 @@
         padding: 24px;
         background: #14141e;
         color: #e6e6ee;
-        font: 14px/1.5 system-ui, sans-serif;
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
       }
       canvas {
         border: 1px solid #333;
@@ -35,20 +37,21 @@
   </head>
   <body>
     <h1>c-flat · real raylib · wasm</h1>
-    <!-- emscripten/raylib render target -->
-    <canvas id="canvas" width="640" height="480" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <canvas
+      id="canvas"
+      width="640"
+      height="480"
+      oncontextmenu="event.preventDefault()"
+      tabindex="-1"
+    ></canvas>
     <div id="log"></div>
 
     <script type="module">
-      // The c-flat program (asyncified) drives a normal main()+while loop; its
-      // `core` raylib imports are forwarded to the REAL raylib (emscripten) via
-      // the bridge. At end_drawing() we flush raylib's GL frame, then unwind the
-      // c-flat stack to yield to the browser, resuming on the next rAF.
       import { makeRaylibHost } from "./raylib_host_bridge.js";
 
       const WASM_URL = "./__WASM_FILE__";
-      const DATA_ADDR = 0x30000; // 192 KB — above the c-flat program's data
-      const STACK_SIZE = 0x8000; // 32 KB asyncify unwind buffer
+      const STACK_SIZE = 0x8000;
+      let DATA_ADDR = 0;
 
       const logEl = document.getElementById("log");
       const canvas = document.getElementById("canvas");
@@ -62,15 +65,14 @@
       let exports = null;
       let sleeping = false;
 
-      const host = makeRaylibHost(() => instance.exports.memory, canvas);
+      const host = makeRaylibHost(() => instance.exports, canvas);
       const { core } = host;
 
-      // Wrap EndDrawing: flush the real GL frame, then unwind to yield. On the
-      // next animation frame we rewind back here and continue the loop.
       const realEndDrawing = core.EndDrawing;
       core.EndDrawing = () => {
         if (!sleeping) {
-          realEndDrawing(); // Module._EndDrawing() — present the GL frame
+          realEndDrawing();
+          new Int32Array(exports.memory.buffer)[DATA_ADDR >> 2] = DATA_ADDR + 8;
           exports.asyncify_start_unwind(DATA_ADDR);
           sleeping = true;
         } else {
@@ -92,7 +94,7 @@
 
       async function main() {
         try {
-          await host.ready; // real raylib module up, canvas wired to WebGL
+          await host.ready;
         } catch (e) {
           return fail("Failed to init raylib host: " + e);
         }
@@ -107,15 +109,35 @@
         instance = res.instance;
         exports = instance.exports;
 
-        for (const fn of ["main", "asyncify_start_unwind", "asyncify_stop_unwind", "asyncify_start_rewind", "asyncify_stop_rewind", "asyncify_get_state"]) {
+        for (const fn of [
+          "main",
+          "asyncify_start_unwind",
+          "asyncify_stop_unwind",
+          "asyncify_start_rewind",
+          "asyncify_stop_rewind",
+          "asyncify_get_state",
+        ]) {
           if (typeof exports[fn] !== "function") {
-            return fail(`c-flat wasm missing export ${fn} — was it built with wasm-opt --asyncify?`);
+            return fail(
+              `c-flat wasm missing export ${fn} — was it built with wasm-opt --asyncify?`,
+            );
           }
         }
 
+        const pageIndex = exports.memory.grow(1);
+        DATA_ADDR = pageIndex * 65536;
         const view = new Int32Array(exports.memory.buffer);
         view[DATA_ADDR >> 2] = DATA_ADDR + 8;
         view[(DATA_ADDR + 4) >> 2] = DATA_ADDR + 8 + STACK_SIZE;
+
+        try {
+          const manifestResp = await fetch("./assets.json");
+          if (manifestResp.ok) {
+            await host.preloadAssets(await manifestResp.json());
+          }
+        } catch (e) {
+          return fail("Failed to preload assets: " + e);
+        }
 
         try {
           run();

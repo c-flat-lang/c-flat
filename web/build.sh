@@ -80,8 +80,24 @@ cp "$SCRIPT_DIR/raylib_host_bridge.js" "$outdir/raylib_host_bridge.js"
 cp "$SCRIPT_DIR/raylib_host.js" "$outdir/raylib_host.js"
 cp "$SCRIPT_DIR/raylib_host.wasm" "$outdir/raylib_host.wasm"
 
-echo "Built (native raylib): $outdir"
-echo "  index.html  raylib_host_bridge.js  raylib_host.{js,wasm}  $name.wasm"
+# 5. Assets: if a sibling "<name>.assets/" dir exists, copy it to the served
+#    assets/ folder and emit assets.json (the manifest the harness fetches, then
+#    writes each file into emscripten's FS before the program runs).
+assets_src="${SRC%.cb}.assets"
+if [[ -d "$assets_src" ]]; then
+  mkdir -p "$outdir/assets"
+  cp -R "$assets_src"/. "$outdir/assets/"
+  # Manifest = paths relative to the assets dir (recurses into subfolders).
+  ( cd "$assets_src" && find . -type f | sed 's#^\./##' ) \
+    | sort \
+    | awk 'BEGIN{printf "["} {printf "%s\"%s\"", (NR>1?",":""), $0} END{print "]"}' \
+    >"$outdir/assets.json"
+  echo "Built (native raylib): $outdir"
+  echo "  index.html  raylib_host_bridge.js  raylib_host.{js,wasm}  $name.wasm  assets/ (assets.json)"
+else
+  echo "Built (native raylib): $outdir"
+  echo "  index.html  raylib_host_bridge.js  raylib_host.{js,wasm}  $name.wasm"
+fi
 echo
 echo "Serve with:  python3 -m http.server -d \"$outdir\" 8000"
 echo "Then open:   http://localhost:8000/"

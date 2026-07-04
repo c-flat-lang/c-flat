@@ -1,0 +1,46 @@
+use std::raylib::init_window;
+use std::raylib::set_target_fps;
+use std::raylib::window_should_close;
+use std::raylib::begin_drawing;
+use std::raylib::end_drawing;
+use std::raylib::clear_background;
+use std::raylib::close_window;
+use std::raylib::load_texture;
+use std::raylib::unload_texture;
+use std::raylib::draw_texture;
+use std::raylib::Color;
+use std::raylib::Texture2D;
+
+pub fn main() void {
+    let screen_width: s32 = 720;
+    let screen_height: s32 = 720;
+    init_window(screen_width, screen_height, &"c-flat raylib texture\0");
+    set_target_fps(60);
+
+    let bg   = Color { .r = 30,  .g = 30,  .b = 40,  .a = 255 };
+    let tint = Color { .r = 255, .g = 255, .b = 255, .a = 255 };
+
+    let tex = load_texture(&"assets/logo.png\0");
+
+    let x:  s32 = 64;
+    let y:  s32 = 64;
+    let dx: s32 = 4;
+    let dy: s32 = 3;
+
+    while !window_should_close() {
+        x = x + dx;
+        y = y + dy;
+        if x < 0   { dx = 0 - dx; }
+        if x > screen_width-64 { dx = 0 - dx; }
+        if y < 0   { dy = 0 - dy; }
+        if y > screen_height-64 { dy = 0 - dy; }
+
+        begin_drawing();
+        clear_background(bg);
+        draw_texture(tex, x, y, tint);
+        end_drawing();
+    }
+
+    unload_texture(tex);
+    close_window();
+}

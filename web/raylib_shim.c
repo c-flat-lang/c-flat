@@ -22,3 +22,27 @@ int cf_check_collision_recs(float ax, float ay, float aw, float ah,
                             float bx, float by, float bw, float bh) {
     return CheckCollisionRecs((Rectangle){ax, ay, aw, ah}, (Rectangle){bx, by, bw, bh});
 }
+
+// Textures. LoadTexture returns a Texture2D by value; write its 5 ints to an
+// out buffer the bridge reads back. Draw/Unload reconstruct the struct from
+// scalars the bridge unpacked out of c-flat memory.
+void cf_load_texture(const char *path, int *out) {
+    Texture2D t = LoadTexture(path);
+    out[0] = (int)t.id;
+    out[1] = t.width;
+    out[2] = t.height;
+    out[3] = t.mipmaps;
+    out[4] = t.format;
+}
+
+void cf_unload_texture(unsigned int id, int width, int height, int mipmaps, int format) {
+    Texture2D t = {id, width, height, mipmaps, format};
+    UnloadTexture(t);
+}
+
+void cf_draw_texture(unsigned int id, int width, int height, int mipmaps, int format,
+                     int x, int y,
+                     unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+    Texture2D t = {id, width, height, mipmaps, format};
+    DrawTexture(t, x, y, (Color){r, g, b, a});
+}

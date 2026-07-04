@@ -13,7 +13,7 @@
 //             to interleave the real GL flush with its frame-yield)
 import createRaylibHost from "./raylib_host.js";
 
-export function makeRaylibHost(getCflatMemory, canvas) {
+export function makeRaylibHost(getCflatExports, canvas) {
   let module = null;
 
   // Hand emscripten our canvas so raylib's WebGL renders into it.
@@ -23,8 +23,28 @@ export function makeRaylibHost(getCflatMemory, canvas) {
   });
 
   // --- reads out of the c-flat module's memory ---
-  const cfU8 = () => new Uint8Array(getCflatMemory().buffer);
-  const cfDV = () => new DataView(getCflatMemory().buffer);
+  const cfMem = () => getCflatExports().memory;
+  const cfU8 = () => new Uint8Array(cfMem().buffer);
+  const cfDV = () => new DataView(cfMem().buffer);
+
+  const cfAlloc = (n) => {
+    const sp = getCflatExports().__stack_pointer;
+    const p = (sp.value + 3) & ~3;
+    sp.value = p + n;
+    return p;
+  };
+
+  // Read a Texture2D (id:u32, width,height,mipmaps,format:i32) from c-flat memory.
+  const readTexture = (ptr) => {
+    const d = cfDV();
+    return [
+      d.getUint32(ptr, true),
+      d.getInt32(ptr + 4, true),
+      d.getInt32(ptr + 8, true),
+      d.getInt32(ptr + 12, true),
+      d.getInt32(ptr + 16, true),
+    ];
+  };
 
   const readColor = (ptr) => {
     const m = cfU8();
@@ -62,13 +82,32 @@ export function makeRaylibHost(getCflatMemory, canvas) {
     }
   };
 
+  async function preloadAssets(manifest, baseUrl = "./assets/") {
+    if (!manifest || manifest.length === 0) return;
+    await ready;
+    for (const rel of manifest) {
+      const resp = await fetch(baseUrl + rel);
+      if (!resp.ok) throw new Error(`asset "${rel}": HTTP ${resp.status}`);
+      const bytes = new Uint8Array(await resp.arrayBuffer());
+      const fsPath = "/assets/" + rel;
+      const dir = fsPath.slice(0, fsPath.lastIndexOf("/"));
+      module.FS.mkdirTree(dir);
+      module.FS.writeFile(fsPath, bytes);
+    }
+  }
+
   const core = {
     // Window / lifecycle
     InitWindow: (w, h, titlePtr) =>
       withHostStr(readCStr(titlePtr), (p) => module._cf_init_window(w, h, p)),
     CloseWindow: () => module._CloseWindow(),
-    SetTargetFPS: (fps) => module._SetTargetFPS(fps),
-    WindowShouldClose: () => module._WindowShouldClose(),
+    // Force target FPS 0: otherwise raylib's WaitTime() calls emscripten_sleep(),
+    // which fights the c-flat module's Asyncify unwind. rAF paces the frames.
+    SetTargetFPS: (_fps) => module._SetTargetFPS(0),
+    // Do NOT forward to raylib — its web WindowShouldClose() also calls
+    // emscripten_sleep(), corrupting the Asyncify stack between frames. The loop
+    // runs until the browser tab is closed.
+    WindowShouldClose: () => 0,
 
     // Drawing
     BeginDrawing: () => module._BeginDrawing(),
@@ -88,17 +127,56 @@ export function makeRaylibHost(getCflatMemory, canvas) {
       );
     },
 
-    // Input / timing (raylib handles keycodes + timing internally)
     IsKeyPressed: (key) => module._IsKeyPressed(key),
-    IsGamepadButtonPressed: (pad, btn) => module._IsGamepadButtonPressed(pad, btn),
+    IsGamepadButtonPressed: (pad, btn) =>
+      module._IsGamepadButtonPressed(pad, btn),
     GetFrameTime: () => module._GetFrameTime(),
     CheckCollisionRecs: (aPtr, bPtr) => {
       const a = readRect(aPtr);
       const b = readRect(bPtr);
-      return module._cf_check_collision_recs(a[0], a[1], a[2], a[3], b[0], b[1], b[2], b[3]);
+      return module._cf_check_collision_recs(
+        a[0],
+        a[1],
+        a[2],
+        a[3],
+        b[0],
+        b[1],
+        b[2],
+        b[3],
+      );
     },
 
-    // Console output (reads from c-flat memory).
+    LoadTexture: (pathPtr) => {
+      const path = readCStr(pathPtr);
+      const outPtr = module._malloc(20);
+      const hostPath = toHostStr(path);
+      try {
+        module._cf_load_texture(hostPath, outPtr);
+        const cfPtr = cfAlloc(20);
+        const dv = cfDV();
+        for (let k = 0; k < 5; k++) {
+          dv.setInt32(
+            cfPtr + 4 * k,
+            module.getValue(outPtr + 4 * k, "i32"),
+            true,
+          );
+        }
+        return cfPtr;
+      } finally {
+        module._free(hostPath);
+        module._free(outPtr);
+      }
+    },
+    UnloadTexture: (texPtr) => {
+      const t = readTexture(texPtr);
+      module._cf_unload_texture(t[0], t[1], t[2], t[3], t[4]);
+    },
+    DrawTexture: (texPtr, x, y, colorPtr) => {
+      const t = readTexture(texPtr);
+      const [r, g, b, a] = readColor(colorPtr);
+      module._cf_draw_texture(t[0], t[1], t[2], t[3], t[4], x, y, r, g, b, a);
+    },
+
     write_char: (c) => globalThis.__cflat_log?.(String.fromCharCode(c)),
     write_int: (n) => globalThis.__cflat_log?.(String(n)),
     write: (ptr, len) => {
@@ -108,5 +186,12 @@ export function makeRaylibHost(getCflatMemory, canvas) {
     },
   };
 
-  return { core, ready, get module() { return module; } };
+  return {
+    core,
+    ready,
+    preloadAssets,
+    get module() {
+      return module;
+    },
+  };
 }
