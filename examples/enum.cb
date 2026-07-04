@@ -1,0 +1,19 @@
+use std::linux::io;
+
+type Enum enum {
+    value = 10,
+    next,
+}
+
+pub fn main() void {
+    let value: u32 = Enum::value;
+    let v: s32 = value as s32;
+    io::io_write_s32(v);
+    io::io_write_str(&"\n");
+    let next: s32 = Enum::next as s32;
+    io::io_write_s32(next);
+
+    // TODO: add user error for this code
+    // let unknown: s32 = Enum::unknown as s32;
+    // io::io_write_s32(unknown);
+}

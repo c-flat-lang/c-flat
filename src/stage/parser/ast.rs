@@ -1,8 +1,10 @@
-#![allow(unused)]
-use bitbox::{Target, text::semantic_analyzer::Symbol};
+use bitbox::Target;
 use std::fmt::Write;
 
-use crate::stage::lexer::token::{Span, Token};
+use crate::stage::{
+    lexer::token::{Span, Token},
+    semantic_analyzer::symbol_table::ScopePath,
+};
 
 #[derive(Debug, Default, Clone, Eq)]
 pub struct Type {
@@ -222,7 +224,7 @@ pub struct EnumType {
     pub name: String,
     pub type_params: Option<Vec<(Token, Type)>>,
     // We will need to add something for set values
-    pub variants: Vec<(String, String)>, // (name, default-value),
+    pub variants: Vec<(Token, String)>, // (name, default-value),
     pub number_kind: Box<TypeKind>,
 }
 
@@ -236,10 +238,10 @@ impl std::fmt::Display for TypeParams {
         let mut string = String::new();
         for (idx, param) in self.params.iter().enumerate() {
             if idx == self.params.len().saturating_sub(1) {
-                write!(&mut string, "{}", param);
+                write!(&mut string, "{}", param)?;
                 continue;
             }
-            write!(&mut string, "{}, ", param);
+            write!(&mut string, "{}, ", param)?;
         }
 
         write!(f, "{string}")
@@ -962,6 +964,21 @@ impl ExprPath {
             end,
             filename,
         }
+    }
+
+    pub fn scope_path(&self) -> ScopePath {
+        let names = self
+            .segments
+            .iter()
+            .enumerate()
+            .fold(Vec::new(), |mut acc, (index, token)| {
+                if index == self.segments.len().saturating_sub(1) {
+                    return acc;
+                }
+                acc.push(token.lexeme.clone());
+                acc
+            });
+        ScopePath(names)
     }
 
     pub fn head(&self) -> &Token {

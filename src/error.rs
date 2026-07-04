@@ -5,6 +5,39 @@ pub use report::{Report, Result};
 use std::fmt::Write;
 
 #[derive(Debug)]
+pub struct ErrorMemberAccess {
+    span: Span,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorMemberAccess {
+    pub fn new(span: Span, #[cfg(feature = "debug")] compiler_line: String) -> Self {
+        Self {
+            span,
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+}
+
+impl Report for ErrorMemberAccess {
+    fn filename(&self) -> &str {
+        &self.span.filename
+    }
+
+    fn report(&self, src: &str) -> String {
+        let span = &self.span;
+        let mut report = ReportBuilder::new(span, src);
+        report.message("unknown member");
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
+    }
+}
+
+#[derive(Debug)]
 pub struct ErrorUnexpectedToken {
     found: Token,
     expected: Vec<TokenKind>,

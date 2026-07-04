@@ -1,13 +1,13 @@
-#![allow(unused)]
 use std::str::FromStr;
 
 use super::type_resolver::TypeResolver;
 use crate::error::{
-    ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
+    ErrorMemberAccess, ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp,
+    Errors, Report, Result,
 };
 use crate::stage::lexer::token::{Keyword as Kw, Span, Token, TokenKind};
 use crate::stage::parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind};
-use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
+use crate::stage::semantic_analyzer::symbol_table::{ScopePath, SymbolTable};
 
 impl Type {
     pub fn supports_binary_op(&self, op: &TokenKind, other: &Type, span: Span) -> Option<Type> {
@@ -16,59 +16,59 @@ impl Type {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
             (
                 TypeKind::SignedTargetPointerNumber,
-                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
+                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
                 TypeKind::SignedTargetPointerNumber,
             ) => Some(self.clone()),
             (
                 TypeKind::UnsignedTargetPointerNumber,
-                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
+                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
                 TypeKind::UnsignedTargetPointerNumber,
             ) => Some(self.clone()),
             (
                 TypeKind::UnsignedNumber(lhs),
-                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
+                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
                 TypeKind::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(self.clone()),
             (
                 TypeKind::SignedNumber(lhs),
-                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
+                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
                 TypeKind::SignedNumber(rhs),
             ) if lhs == rhs => Some(self.clone()),
             (
                 TypeKind::Float(lhs),
-                (Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand),
+                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
                 TypeKind::Float(rhs),
             ) if lhs == rhs => Some(self.clone()),
 
             // (EqualEqual | Greater | GreaterEqual | Less | LessEqual) Comparison ops work on numbers and return bools
             (
                 TypeKind::UnsignedTargetPointerNumber,
-                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
                 TypeKind::UnsignedTargetPointerNumber,
             ) => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::SignedTargetPointerNumber,
-                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
                 TypeKind::SignedTargetPointerNumber,
             ) => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::UnsignedNumber(lhs),
-                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
                 TypeKind::UnsignedNumber(rhs),
             ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::SignedNumber(lhs),
-                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
                 TypeKind::SignedNumber(rhs),
             ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
             (
                 TypeKind::Float(lhs),
-                (EqualEqual | Greater | GreaterEqual | Less | LessEqual),
+                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
                 TypeKind::Float(rhs),
             ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
 
             // (AND | OR) only work on bools and return bools
-            (TypeKind::Bool, (EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or)), TypeKind::Bool) => {
+            (TypeKind::Bool, EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or), TypeKind::Bool) => {
                 Some(self.map_kind(|_| TypeKind::Bool))
             }
             _ => None,
@@ -77,11 +77,6 @@ impl Type {
             t.span = span;
             t
         })
-    }
-
-    fn resolve_overloaded_op(&self, op: &TokenKind, rhs: &str) -> Option<Type> {
-        // You could delegate this to symbol table, traits, whatever
-        None
     }
 }
 
@@ -103,7 +98,7 @@ impl<'st> TypeChecker<'st> {
     }
 
     pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
-        let mut resolver = TypeResolver::new(self.symbol_table);
+        let resolver = TypeResolver::new(self.symbol_table);
         resolver.walk_items(ast)?;
 
         for item in ast.iter_mut() {
@@ -174,7 +169,7 @@ impl<'st> TypeChecker<'st> {
                     .variants
                     .iter()
                     .enumerate()
-                    .map(|(i, variant)| (variant.name.lexeme.clone(), i.to_string()))
+                    .map(|(i, variant)| (variant.name.clone(), i.to_string()))
                     .collect(),
                 number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
             }),
@@ -220,7 +215,7 @@ impl<'st> TypeChecker<'st> {
 
             let ty = self.walk_expr(&mut statement.expr);
 
-            if let ast::Expr::Return(expr) = &*statement.expr {
+            if let ast::Expr::Return(..) = &*statement.expr {
                 last_type = ty;
             } else if statement.delem.is_some() {
                 last_type = Type {
@@ -463,13 +458,42 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_path(&mut self, path: &ast::ExprPath) -> ast::Type {
         let leaf = path.leaf();
-        let Some(symbol) = self.symbol_table.get(leaf.lexeme.as_str()) else {
+        let head = path.head();
+        let Some(symbol) = self
+            .symbol_table
+            .get_from_full_scope_path(&ScopePath::new(&[]), head.lexeme.as_str())
+        else {
             return Type {
                 kind: TypeKind::Void,
                 span: leaf.span.clone(),
                 mut_token: None,
             };
         };
+        if let TypeKind::Enum(enum_def) = &symbol.ty.kind {
+            let Some((varant, _)) = enum_def
+                .variants
+                .iter()
+                .find(|(token, _)| token.lexeme == leaf.lexeme)
+            else {
+                self.errors.push(Box::new(ErrorMemberAccess::new(
+                    leaf.span.clone(),
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
+                return Type {
+                    span: leaf.span.clone(),
+                    ..Default::default()
+                };
+            };
+
+            let kind = enum_def.number_kind.clone();
+            return Type {
+                mut_token: None,
+                kind: *kind,
+                span: varant.span.clone(),
+            };
+        }
+
         symbol.ty.clone()
     }
 
@@ -508,7 +532,7 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_array(&mut self, expr: &mut ast::ExprArray) -> Type {
         let size = expr.elements.len();
         let ty = self.walk_expr(&mut expr.elements[0]);
-        for mut element in expr.elements.iter_mut().skip(1) {
+        for element in expr.elements.iter_mut().skip(1) {
             let other = self.walk_expr(element);
             if ty != other {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
@@ -661,7 +685,7 @@ impl<'st> TypeChecker<'st> {
                 }
             }
             TypeKind::Struct(struct_def) => {
-                self.lookup_struct_member(struct_def, &member_access.member.lexeme)
+                self.lookup_struct_member(struct_def, &member_access.member)
             }
             TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
                 kind: TypeKind::UnsignedTargetPointerNumber,
@@ -675,7 +699,7 @@ impl<'st> TypeChecker<'st> {
             },
             TypeKind::Pointer(inner) => match &inner.kind {
                 TypeKind::Struct(struct_def) => {
-                    self.lookup_struct_member(struct_def, &member_access.member.lexeme)
+                    self.lookup_struct_member(struct_def, &member_access.member)
                 }
                 TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
                     kind: TypeKind::Pointer(inner_ty.clone()),
@@ -687,11 +711,29 @@ impl<'st> TypeChecker<'st> {
                     span: expr.span(),
                     mut_token: None,
                 },
-                _ => unimplemented!(
-                    "Handle member access for non struct pointer types {base_type:#?}"
-                ),
+                _ => {
+                    self.errors.push(Box::new(ErrorMemberAccess::new(
+                        expr.span(),
+                        #[cfg(feature = "debug")]
+                        format!("{} {}:{}", file!(), line!(), column!()),
+                    )));
+                    Type {
+                        span: expr.span(),
+                        ..Default::default()
+                    }
+                }
             },
-            _ => unimplemented!("Handle member access for non array types {base_type:#?}"),
+            _ => {
+                self.errors.push(Box::new(ErrorMemberAccess::new(
+                    expr.span(),
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )));
+                Type {
+                    span: expr.span(),
+                    ..Default::default()
+                }
+            }
         }
     }
 
@@ -743,7 +785,7 @@ impl<'st> TypeChecker<'st> {
         }
     }
 
-    fn lookup_struct_member(&self, struct_def: &StructType, member: &str) -> Type {
+    fn lookup_struct_member(&mut self, struct_def: &StructType, member: &Token) -> Type {
         let Some(symbol) = self.symbol_table.get(struct_def.name.as_str()) else {
             panic!(
                 "Could not find struct `{}` in symbol table",
@@ -756,11 +798,16 @@ impl<'st> TypeChecker<'st> {
                 struct_def.name
             );
         };
-        let Some(field) = members.iter().find(|f| f.name == member) else {
-            panic!(
-                "Field `{}` not found on struct `{}`",
-                member, struct_def.name
-            );
+        let Some(field) = members.iter().find(|f| f.name == member.lexeme) else {
+            self.errors.push(Box::new(ErrorMemberAccess::new(
+                member.span.clone(),
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
+            return Type {
+                span: member.span.clone(),
+                ..Default::default()
+            };
         };
         field.ty.clone()
     }

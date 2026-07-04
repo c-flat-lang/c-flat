@@ -1,10 +1,6 @@
-#![allow(unused)]
-
-use crate::error::{
-    ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp, Errors, Report, Result,
-};
-use crate::stage::lexer::token::{Span, Token};
-use crate::stage::parser::ast::{self, Expr, StructType, Type, TypeKind};
+use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
+use crate::stage::lexer::token::Token;
+use crate::stage::parser::ast::{self, Expr, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
 
 pub struct TypeResolver<'st> {
@@ -25,21 +21,53 @@ impl<'st> TypeResolver<'st> {
     }
 
     fn resolve_symbol_types(&mut self) {
-        let mut symbols: Vec<_> = self
-            .symbol_table
-            .iter_all()
-            .map(|(path, symbol)| (path, symbol.name.clone(), symbol.ty.clone()))
-            .collect();
+        let max_passes = self.symbol_table.iter_all().count().max(1);
+        for _ in 0..max_passes {
+            let mut entries: Vec<_> = self
+                .symbol_table
+                .iter_all()
+                .map(|(path, symbol)| {
+                    (
+                        path,
+                        symbol.name.clone(),
+                        symbol.ty.clone(),
+                        symbol.fields.clone(),
+                    )
+                })
+                .collect();
 
-        self.suppress_errors = true;
-        for (_, _, ty) in symbols.iter_mut() {
-            self.walk_type(ty);
-        }
-        self.suppress_errors = false;
+            let before: Vec<_> = entries
+                .iter()
+                .map(|(_, _, ty, fields)| (ty.clone(), fields.clone()))
+                .collect();
 
-        for (path, name, ty) in symbols {
-            self.symbol_table
-                .get_mut_from_full_scope_path(&path, &name, |symbol| symbol.ty = ty.clone());
+            self.suppress_errors = true;
+            for (_, _, ty, fields) in entries.iter_mut() {
+                self.walk_type(ty);
+                if let Some(fields) = fields {
+                    for field in fields.iter_mut() {
+                        self.walk_type(&mut field.ty);
+                    }
+                }
+            }
+            self.suppress_errors = false;
+
+            let changed = entries
+                .iter()
+                .map(|(_, _, ty, fields)| (ty.clone(), fields.clone()))
+                .ne(before);
+
+            for (path, name, ty, fields) in &entries {
+                self.symbol_table
+                    .get_mut_from_full_scope_path(path, name, |symbol| {
+                        symbol.ty = ty.clone();
+                        symbol.fields = fields.clone();
+                    });
+            }
+
+            if !changed {
+                break;
+            }
         }
     }
 
@@ -71,7 +99,6 @@ impl<'st> TypeResolver<'st> {
     fn walk_extern_function(&mut self, extern_function: &mut ast::ExternFunction) {
         // FIX: span is incorrect
         self.walk_type(&mut extern_function.return_type);
-        let span = extern_function.binding_name.span.clone();
         for ty in extern_function.params.iter_mut() {
             self.walk_type(ty);
         }
@@ -81,7 +108,6 @@ impl<'st> TypeResolver<'st> {
         // FIX: span is incorrect
         self.walk_type(&mut function.return_type);
         for param in function.params.iter_mut() {
-            let span = param.name.span.clone();
             self.walk_type(&mut param.ty);
         }
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
@@ -105,12 +131,12 @@ impl<'st> TypeResolver<'st> {
             Expr::Struct(expr_struct) => self.walk_expr_struct(expr_struct),
             Expr::Declare(expr_decl) => self.walk_expr_declare(expr_decl),
             Expr::Assignment(expr_assignment) => self.walk_expr_assignment(expr_assignment),
-            Expr::Litral(litral) => {}
+            Expr::Litral(..) => {}
             Expr::Builtin(expr_call) => self.walk_expr_call(expr_call),
             Expr::Call(expr_call) => self.walk_expr_call(expr_call),
             Expr::Binary(expr_binary) => self.walk_expr_binary(expr_binary),
             Expr::While(expr_while) => self.walk_expr_while(expr_while),
-            Expr::Identifier(token) => {}
+            Expr::Identifier(..) => {}
             Expr::Path(_) => {}
             Expr::IfElse(expr_if_else) => self.walk_expr_if_else(expr_if_else),
             Expr::MemberAccess(expr_member_access) => {
@@ -133,7 +159,6 @@ impl<'st> TypeResolver<'st> {
 
     fn walk_expr_declare(&mut self, expr_decl: &mut ast::ExprDecl) {
         self.walk_expr(&mut expr_decl.expr);
-        let span = expr_decl.span().clone();
         let Some(ty) = &mut expr_decl.ty else {
             return;
         };
@@ -185,7 +210,6 @@ impl<'st> TypeResolver<'st> {
     }
 
     fn walk_expr_array(&mut self, expr_array: &mut ast::ExprArray) {
-        let span = expr_array.span().clone();
         self.walk_type(&mut expr_array.ty);
         for expr in expr_array.elements.iter_mut() {
             self.walk_expr(expr);
@@ -195,14 +219,12 @@ impl<'st> TypeResolver<'st> {
     fn walk_expr_array_index(&mut self, expr_array_index: &mut ast::ExprArrayIndex) {
         self.walk_expr(&mut expr_array_index.expr);
         self.walk_expr(&mut expr_array_index.index);
-        let span = expr_array_index.span().clone();
         self.walk_type(&mut expr_array_index.ty);
     }
 
     fn walk_expr_array_repeat(&mut self, expr_array_repeat: &mut ast::ExprArrayRepeat) {
         self.walk_expr(&mut expr_array_repeat.count);
         self.walk_expr(&mut expr_array_repeat.value);
-        let span = expr_array_repeat.span().clone();
         self.walk_type(&mut expr_array_repeat.ty);
     }
 
@@ -222,7 +244,7 @@ impl<'st> TypeResolver<'st> {
     fn walk_type_def(&mut self, type_def: &mut ast::TypeDef) {
         match type_def {
             ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
-            ast::TypeDef::Enum(enum_def) => {}
+            ast::TypeDef::Enum(..) => {}
         }
     }
 

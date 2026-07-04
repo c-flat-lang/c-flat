@@ -10,7 +10,7 @@ use std::str::FromStr;
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
     ExprBlock, ExprCall, ExprDecl, ExprDeref, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot,
-    ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
+    ExprPath, ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
 };
 
 #[derive(Debug)]
@@ -187,34 +187,7 @@ impl Lowerable for Expr {
                 };
                 ctx.get_variable(&ident.lexeme)
             }
-            Expr::Path(path) => {
-                let leaf = path.leaf();
-                if ctx.symbol_table.get(&leaf.lexeme).is_some() {
-                    return ctx.get_variable(&leaf.lexeme);
-                }
-                let head = path.head();
-                let Some(symbol) = ctx.symbol_table.get(&head.lexeme) else {
-                    panic!("Undefind symbol {:?} or {:?}", path.head(), leaf);
-                };
-                match &symbol.kind {
-                    super::semantic_analyzer::symbol_table::SymbolKind::Struct => {
-                        todo!("Path Struct")
-                    }
-                    super::semantic_analyzer::symbol_table::SymbolKind::Enum => {
-                        let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
-                            panic!("incorrect SymbolKind matched with a Symbol");
-                        };
-                        let Some((_, value)) = ty.variants.iter().find(|v| v.0 == leaf.lexeme)
-                        else {
-                            panic!("Unknown variant on {}", head.lexeme);
-                        };
-                        let tmp = assembler.var(Type::Unsigned(32));
-                        assembler.assign(tmp.clone(), Operand::const_unsigned(value, 32));
-                        Some(tmp)
-                    }
-                    kind => unreachable!("PATH {kind:?}"),
-                }
-            }
+            Expr::Path(expr) => expr.lower(assembler, ctx),
             Expr::Struct(expr) => expr.lower(assembler, ctx),
             Expr::MemberAccess(expr) => expr.lower(assembler, ctx),
             Expr::Array(expr) => expr.lower(assembler, ctx),
@@ -276,6 +249,42 @@ impl Addressable for Expr {
                 Some(AddressableVar::Address(address))
             }
             _ => unreachable!(),
+        }
+    }
+}
+impl Lowerable for ExprPath {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let leaf = self.leaf();
+        let head = self.head();
+        let Some(symbol) = ctx.symbol_table.get(&head.lexeme) else {
+            panic!("Undefind symbol {:?} or {:?}", self.head(), leaf);
+        };
+        match &symbol.kind {
+            super::semantic_analyzer::symbol_table::SymbolKind::Struct => {
+                todo!("Path Struct")
+            }
+            super::semantic_analyzer::symbol_table::SymbolKind::Enum => {
+                let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
+                    panic!("incorrect SymbolKind matched with a Symbol");
+                };
+                let Some((_, value)) = ty.variants.iter().find(|v| v.0.lexeme == leaf.lexeme)
+                else {
+                    panic!("Unknown variant on {}", head.lexeme);
+                };
+                let tmp = assembler.var(Type::Unsigned(32));
+                assembler.assign(tmp.clone(), Operand::const_unsigned(value, 32));
+                Some(tmp)
+            }
+            kind => {
+                if ctx.symbol_table.get(&leaf.lexeme).is_some() {
+                    return ctx.get_variable(&leaf.lexeme);
+                }
+                unreachable!("PATH {kind:?}");
+            }
         }
     }
 }
@@ -707,7 +716,7 @@ impl Lowerable for ExprDecl {
                 .as_bitbox_type(&ctx.target)
         };
         let Some(src) = expr.lower(assembler, ctx) else {
-            panic!("Failed to return variable from expr lowering");
+            panic!("Failed to return variable from expr lowering\n{self:#?}");
         };
 
         let des = Variable::new(ident.lexeme.clone(), ty);

@@ -24,12 +24,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 STD_SRC_DIR="${STD_SRC_DIR:-"$SCRIPT_DIR/std"}"
 
-# cargo install's own default root, unless the user has overridden it.
 CARGO_INSTALL_ROOT="${CARGO_INSTALL_ROOT:-"$HOME/.cargo"}"
 STD_DEST_DIR="$CARGO_INSTALL_ROOT/lib/c-flat/std"
 
 VALID_FEATURES=("wasm-runtime" "debug")
 features=()
+skip_install_std=1
 
 usage() {
     echo "Usage: $0 [--wasm-runtime] [--debug] [--features f1,f2,...]"
@@ -73,6 +73,10 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             usage
             ;;
+        --skip-install-std)
+            skip_install_std=0
+            shift
+            ;;
         *)
             echo "error: unknown argument '$1'" >&2
             usage
@@ -99,12 +103,14 @@ if [[ ! -d "$STD_SRC_DIR" ]]; then
     exit 1
 fi
 
-echo "==> Staging std lib"
-echo "    from: $STD_SRC_DIR"
-echo "    to:   $STD_DEST_DIR"
-mkdir -p "$(dirname -- "$STD_DEST_DIR")"
-rm -rf "$STD_DEST_DIR"
-cp -R "$STD_SRC_DIR" "$STD_DEST_DIR"
+if [[ $skip_install_std -eq 1 ]]; then
+    echo "==> Staging std lib"
+    echo "    from: $STD_SRC_DIR"
+    echo "    to:   $STD_DEST_DIR"
+    mkdir -p "$(dirname -- "$STD_DEST_DIR")"
+    rm -rf "$STD_DEST_DIR"
+    cp -R "$STD_SRC_DIR" "$STD_DEST_DIR"
+fi
 
 echo "==> Running cargo install"
 cargo_args=(install --path "$SCRIPT_DIR")
