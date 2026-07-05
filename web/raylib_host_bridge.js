@@ -188,7 +188,8 @@ export function makeRaylibHost(getCflatExports, canvas) {
     CloseAudioDevice: () => module._CloseAudioDevice(),
     IsAudioDeviceReady: () => module._IsAudioDeviceReady(),
     LoadSound: (pathPtr) => {
-      const hostPath = toHostStr(readCStr(pathPtr));
+      const path = readCStr(pathPtr);
+      const hostPath = toHostStr(path);
       try {
         const h = module._cf_load_sound(hostPath);
         const cfPtr = cfAlloc(4);
