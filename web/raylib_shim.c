@@ -46,3 +46,59 @@ void cf_draw_texture(unsigned int id, int width, int height, int mipmaps, int fo
     Texture2D t = {id, width, height, mipmaps, format};
     DrawTexture(t, x, y, (Color){r, g, b, a});
 }
+
+#define CF_MAX_SOUNDS 256
+static Sound cf_sounds[CF_MAX_SOUNDS];
+static int cf_sound_count = 0;
+
+static int cf_sound_valid_handle(int h) {
+    return h >= 0 && h < cf_sound_count;
+}
+
+int cf_load_sound(const char *path) {
+    if (cf_sound_count >= CF_MAX_SOUNDS) return -1;
+    Sound s = LoadSound(path);
+    int h = cf_sound_count++;
+    cf_sounds[h] = s;
+    return h;
+}
+
+void cf_play_sound(int h) {
+    if (cf_sound_valid_handle(h)) PlaySound(cf_sounds[h]);
+}
+
+void cf_stop_sound(int h) {
+    if (cf_sound_valid_handle(h)) StopSound(cf_sounds[h]);
+}
+
+void cf_pause_sound(int h) {
+    if (cf_sound_valid_handle(h)) PauseSound(cf_sounds[h]);
+}
+
+void cf_resume_sound(int h) {
+    if (cf_sound_valid_handle(h)) ResumeSound(cf_sounds[h]);
+}
+
+int cf_is_sound_playing(int h) {
+    return cf_sound_valid_handle(h) ? IsSoundPlaying(cf_sounds[h]) : 0;
+}
+
+void cf_set_sound_volume(int h, float volume) {
+    if (cf_sound_valid_handle(h)) SetSoundVolume(cf_sounds[h], volume);
+}
+
+void cf_set_sound_pitch(int h, float pitch) {
+    if (cf_sound_valid_handle(h)) SetSoundPitch(cf_sounds[h], pitch);
+}
+
+void cf_set_sound_pan(int h, float pan) {
+    if (cf_sound_valid_handle(h)) SetSoundPan(cf_sounds[h], pan);
+}
+
+void cf_unload_sound(int h) {
+    if (cf_sound_valid_handle(h)) UnloadSound(cf_sounds[h]);
+}
+
+int cf_is_sound_valid(int h) {
+    return cf_sound_valid_handle(h) ? IsSoundValid(cf_sounds[h]) : 0;
+}

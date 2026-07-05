@@ -187,28 +187,50 @@ export function makeRaylibHost(getCflatExports, canvas) {
     InitAudioDevice: () => module._InitAudioDevice(),
     CloseAudioDevice: () => module._CloseAudioDevice(),
     IsAudioDeviceReady: () => module._IsAudioDeviceReady(),
+    LoadSound: (pathPtr) => {
+      const hostPath = toHostStr(readCStr(pathPtr));
+      try {
+        const h = module._cf_load_sound(hostPath);
+        const cfPtr = cfAlloc(4);
+        cfDV().setInt32(cfPtr, h, true);
+        return cfPtr; // Sound { handle: s32 }
+      } finally {
+        module._free(hostPath);
+      }
+    },
+    PlaySound: (soundPtr) =>
+      module._cf_play_sound(cfDV().getInt32(soundPtr, true)),
+    StopSound: (soundPtr) =>
+      module._cf_stop_sound(cfDV().getInt32(soundPtr, true)),
+    PauseSound: (soundPtr) =>
+      module._cf_pause_sound(cfDV().getInt32(soundPtr, true)),
+    ResumeSound: (soundPtr) =>
+      module._cf_resume_sound(cfDV().getInt32(soundPtr, true)),
+    IsSoundPlaying: (soundPtr) =>
+      module._cf_is_sound_playing(cfDV().getInt32(soundPtr, true)),
+    IsSoundValid: (soundPtr) =>
+      module._cf_is_sound_valid(cfDV().getInt32(soundPtr, true)),
+    UnloadSound: (soundPtr) =>
+      module._cf_unload_sound(cfDV().getInt32(soundPtr, true)),
+    SetSoundVolume: (soundPtr, volume) =>
+      module._cf_set_sound_volume(cfDV().getInt32(soundPtr, true), volume),
+    SetSoundPitch: (soundPtr, pitch) =>
+      module._cf_set_sound_pitch(cfDV().getInt32(soundPtr, true), pitch),
+    SetSoundPan: (soundPtr, pan) =>
+      module._cf_set_sound_pan(cfDV().getInt32(soundPtr, true), pan),
+
+    // Wave
     LoadWave: (sound_name) => module._LoadWave(sound_name),
     LoadWaveFromMemory: (a, b, c) => module._LoadWaveFromMemory(a, b, c),
     IsWaveValid: (wave) => module._IsWaveValid(wave),
-    LoadSound: (sound_name) => module._LoadSound(sound_name),
     LoadSoundFromWave: (wave) => module._LoadSoundFromWave(wave),
     LoadSoundAlias: (sound) => module._LoadSoundAlias(sound),
-    IsSoundValid: (sound) => module._IsSoundValid(sound),
     UpdateSound: (sound, sound_ptr, id) =>
       module._UpdateSound(sound, sound_ptr, id),
     UnloadWave: (wave) => module._UnloadWave(wave),
-    UnloadSound: (sound) => module._UnloadSound(sound),
     UnloadSoundAlias: (sound) => module._UnloadSoundAlias(sound),
     ExportWave: (wave, name) => module._ExportWave(wave, name),
     ExportWaveAsCode: (wave, name) => module._ExportWaveAsCode(wave, name),
-    PlaySound: (sound) => module._PlaySound(sound),
-    StopSound: (sound) => module._StopSound(sound),
-    PauseSound: (sound) => module._PauseSound(sound),
-    ResumeSound: (sound) => module._ResumeSound(sound),
-    IsSoundPlaying: (sound) => module._IsSoundPlaying(sound),
-    SetSoundVolume: (sound, volumn) => module._SetSoundVolume(sound, volumn),
-    SetSoundPitch: (sound, volumn) => module._SetSoundPitch(sound, volumn),
-    SetSoundPan: (sound, pan) => module._SetSoundPan(sound, pan),
     WaveCopy: (wave) => module._WaveCopy(wave),
     WaveCrop: (wave, x, y) => module._WaveCrop(wave, x, y),
     WaveFormat: (wave, a, b, c) => module._WaveFormat(wave, a, b, c),

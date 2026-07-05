@@ -1,0 +1,36 @@
+use std::raylib;
+
+pub fn main() s32 {
+    let screen_width: s32 = 640;
+    let screen_height: s32 = 480;
+
+    let background_color = Color { .r = 20, .g = 20, .b = 30, .a = 255 };
+    let text_color = Color { .r = 158, .g = 203, .b = 255, .a = 255 };
+
+    let title = "c-flat raylib sound demo\0";
+    init_window(screen_width, screen_height, &title);
+
+    init_audio_device();
+
+    let sound_path = "/assets/sound.wav\0";
+    let sound = load_sound(&sound_path);
+
+    let hint = "Press SPACE to play the sound\0";
+
+    set_target_fps(60);
+    while !window_should_close() {
+        if is_key_pressed(KeyboardKey::space) {
+            play_sound(sound);
+        }
+
+        begin_drawing();
+        clear_background(background_color);
+        draw_text(&hint, 140, 220, 24, text_color);
+        end_drawing();
+    }
+
+    unload_sound(sound);
+    close_audio_device();
+    close_window();
+    return 0;
+}

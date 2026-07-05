@@ -232,18 +232,15 @@ pub extern C fn IsMouseButtonUp as is_mouse_button_up(s32) bool;
 // Wave/Sound loading/unloading functions
 type Wave struct {
     frameCount: usize,
-    unsigned: s32,
-    unsigned: s32,
-    unsigned: s32,
-    data: usize,      // Buffer data pointer
+    sampleRate: s32,
+    sampleSize: s32,
+    channels: s32,
+    data: usize,
 }
 
 type Sound struct {
-    stream: AudioStream,
-    frameCount: usize,
+    handle: s32,
 }
-
-type AudioStream struct { }
 
 pub extern C fn InitAudioDevice as init_audio_device() void;
 pub extern C fn CloseAudioDevice as close_audio_device() void;

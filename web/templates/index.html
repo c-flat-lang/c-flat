@@ -33,6 +33,20 @@
       .err {
         color: #ff6b6b;
       }
+      #start {
+        padding: 10px 22px;
+        font: inherit;
+        font-weight: 600;
+        color: #14141e;
+        background: #9ecbff;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      #start:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
     </style>
   </head>
   <body>
@@ -44,6 +58,7 @@
       oncontextmenu="event.preventDefault()"
       tabindex="-1"
     ></canvas>
+    <button id="start" disabled>Loading…</button>
     <div id="log"></div>
 
     <script type="module">
@@ -55,6 +70,7 @@
 
       const logEl = document.getElementById("log");
       const canvas = document.getElementById("canvas");
+      const startBtn = document.getElementById("start");
       globalThis.__cflat_log = (s) => (logEl.textContent += s);
       const fail = (msg) => {
         logEl.innerHTML += `<span class="err">${msg}</span>\n`;
@@ -139,11 +155,21 @@
           return fail("Failed to preload assets: " + e);
         }
 
-        try {
-          run();
-        } catch (e) {
-          fail("Trap while running main(): " + e);
-        }
+        startBtn.textContent = "▶ Start";
+        startBtn.disabled = false;
+        startBtn.addEventListener(
+          "click",
+          () => {
+            startBtn.remove();
+            canvas.focus();
+            try {
+              run();
+            } catch (e) {
+              fail("Trap while running main(): " + e);
+            }
+          },
+          { once: true },
+        );
       }
 
       main();
