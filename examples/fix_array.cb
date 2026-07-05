@@ -1,20 +1,84 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 
-pub fn main() s32 {
+fn one_d_array() void {
+    // 1D array test
     let array: [2; s32] = [0; 2];
     let mut i: usize = 0;
     while i < array.len {
         array[i] = i as s32;
         i = i + 1;
     }
-
     i = 0;
-
     while i < array.len {
-        write_int(array[i]);
-        write_char(10);
+        write_s32(array[i]);
+        write_char('\n');
         i = i + 1;
     }
-    return 0;
+
+}
+
+fn two_d_array() void {
+    // 3 rows x 2 cols, initialized to 0
+    let mut grid = [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+    ];
+
+    let mut row: usize = 0;
+    while row < grid.len {
+        let mut col: usize = 0;
+        while col < grid[row].len {
+            grid[row][col] = (row * 10 + col) as s32;
+            col = col + 1;
+        }
+        row = row + 1;
+    }
+
+    row = 0;
+    while row < grid.len {
+        let mut col: usize = 0;
+        while col < grid[row].len {
+            write_s32(grid[row][col]);
+            write_char('\n');
+            col = col + 1;
+        }
+        row = row + 1;
+    }
+}
+
+fn boundary_check() void {
+    let array: [2; s32] = [0; 2];
+    let mut grid = [ [0, 0], [0, 0], [0, 0] ];
+    // First element
+    write_s32(array[0]);
+    write_char('\n');
+    // Last element
+    write_s32(array[array.len - 1]);
+    write_char('\n');
+    // Nested first/last element
+    write_s32(grid[0][0]);
+    write_char('\n');
+    write_s32(grid[grid.len - 1][grid[grid.len - 1].len - 1]);
+    write_char('\n');
+}
+
+pub fn main() void {
+    // one_d_array();
+    // two_d_array();
+    // boundary_check();
+    let mut grid = [ [0, 1], [2, 3], [4, 5] ];
+    write_s32(grid[0][0]); // 0
+    write_char('\n');
+    write_s32(grid[0][1]); // 1
+    write_char('\n');
+    write_s32(grid[1][0]); // 2
+    write_char('\n');
+    write_s32(grid[1][1]); // 3
+    write_char('\n');
+    write_s32(grid[2][0]); // 4
+    write_char('\n');
+    write_s32(grid[2][1]); // 5
+    write_char('\n');
 }
