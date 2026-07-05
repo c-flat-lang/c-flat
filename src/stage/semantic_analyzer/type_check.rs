@@ -739,12 +739,11 @@ impl<'st> TypeChecker<'st> {
 
     fn maybe_numeric_hint(&mut self, maybe: &Type) {
         match &maybe.kind {
-            TypeKind::Array(_, elem_ty) => {
-                self.numeric_hint = Some(Type {
-                    kind: elem_ty.kind.clone(),
-                    span: maybe.span.clone(),
-                    mut_token: None,
-                })
+            // Recurse to the innermost scalar so a nested array annotation like
+            // `[2; [2; s32]]` hints `s32` (not `[2; s32]`). Hinting an array-typed
+            // value to an integer literal would inflate its type by an array level.
+            TypeKind::Array(_, elem_ty) | TypeKind::Slice(elem_ty) => {
+                self.maybe_numeric_hint(elem_ty)
             }
             ty @ TypeKind::SignedNumber(_) => {
                 self.numeric_hint = Some(Type {

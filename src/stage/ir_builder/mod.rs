@@ -384,13 +384,14 @@ impl Lowerable for ExprArray {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ty = self.ty.as_bitbox_type(&ctx.target);
-        let size = Operand::ConstantInt(ir::ConstantInt::new(
-            (self.elements.len() * (ty.size(&ctx.target) as usize)).to_string(),
-            Type::Signed(32),
-        ));
-        let ptr = assembler.var(ty.clone());
-        assembler.alloc(ty.clone(), ptr.clone(), size);
+        let elem_ty = self.ty.as_bitbox_type(&ctx.target);
+        let full_ty = Type::Array(self.elements.len(), Box::new(elem_ty));
+        let ptr = assembler.var(full_ty.clone());
+        assembler.alloc(
+            full_ty.clone(),
+            ptr.clone(),
+            Operand::ConstantInt(ir::ConstantInt::new("1".to_string(), Type::Signed(32))),
+        );
         for (index, element) in self.elements.iter().enumerate() {
             let Some(value) = element.lower(assembler, ctx) else {
                 panic!("Failed to return variable from expr lowering in Array");
@@ -581,10 +582,9 @@ impl Lowerable for Litral {
                 let bytes = token.lexeme.as_bytes();
                 let elem_ty = Type::Unsigned(8);
                 let arr_ty = Type::Array(bytes.len(), Box::new(elem_ty.clone()));
-                let size = Operand::ConstantInt(ir::ConstantInt::new(
-                    bytes.len().to_string(),
-                    Type::Signed(32),
-                ));
+                // Count is 1: the alloc contract reserves `count * arr_ty.size()` = `len` bytes.
+                let size =
+                    Operand::ConstantInt(ir::ConstantInt::new("1".to_string(), Type::Signed(32)));
                 let ptr = assembler.var(arr_ty.clone());
                 assembler.alloc(arr_ty, ptr.clone(), size);
                 for (index, &byte) in bytes.iter().enumerate() {
@@ -974,16 +974,20 @@ impl Lowerable for ExprArrayRepeat {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ast::TypeKind::Array(count, ty) = &self.ty.kind else {
+        let ast::TypeKind::Array(count, _) = &self.ty.kind else {
             panic!("Expected array type but got {}", self.ty);
         };
-        let size = Operand::from(ConstantInt::new(
-            (count * ty.size(&ctx.target)).to_string(),
-            Type::Signed(32),
-        ));
-        let ptr = assembler.var(ty.as_bitbox_type(&ctx.target));
-        assembler.alloc(ty.as_bitbox_type(&ctx.target), ptr.clone(), size);
-        for index in 0..*count {
+        let count = *count;
+        // Allocate the full array type inline (count=1 under the `count * ty.size()`
+        // alloc contract); each iteration copies a freshly-lowered element in.
+        let full_ty = self.ty.as_bitbox_type(&ctx.target);
+        let ptr = assembler.var(full_ty.clone());
+        assembler.alloc(
+            full_ty.clone(),
+            ptr.clone(),
+            Operand::from(ConstantInt::new("1".to_string(), Type::Signed(32))),
+        );
+        for index in 0..count {
             let Some(value) = self.value.lower(assembler, ctx) else {
                 panic!("Failed to return variable from expr lowering in Array");
             };

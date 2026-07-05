@@ -64,10 +64,22 @@ fn boundary_check() void {
     write_char('\n');
 }
 
-pub fn main() void {
-    // one_d_array();
-    // two_d_array();
-    // boundary_check();
+fn shorthand() void {
+    // Nested array-repeat shorthand fighting the LHS type (Bug A + aggregate copy).
+    let mut array: [2; [2; s32]] = [[0; 2]; 2];
+    array[0][0] = 7;
+    array[1][1] = 9;
+    write_s32(array[0][0]); // 7
+    write_char('\n');
+    write_s32(array[0][1]); // 0
+    write_char('\n');
+    write_s32(array[1][0]); // 0
+    write_char('\n');
+    write_s32(array[1][1]); // 9
+    write_char('\n');
+}
+
+fn nested_indexing() void {
     let mut grid = [ [0, 1], [2, 3], [4, 5] ];
     write_s32(grid[0][0]); // 0
     write_char('\n');
@@ -81,4 +93,12 @@ pub fn main() void {
     write_char('\n');
     write_s32(grid[2][1]); // 5
     write_char('\n');
+}
+
+pub fn main() void {
+    one_d_array();
+    two_d_array();
+    boundary_check();
+    shorthand();
+    nested_indexing();
 }

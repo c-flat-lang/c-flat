@@ -239,9 +239,7 @@ impl Lower<Wasm32LowerContext<'_>> for IAlloc {
             }
             _ => {
                 self.size.lower(ctx, target)?;
-                target
-                    .assembler
-                    .i32_const(self.des.ty.element_size(&ctx.target));
+                target.assembler.i32_const(self.des.ty.size(&ctx.target));
                 target.assembler.i32_mul();
                 target.assembler.i32_add();
             }
@@ -428,23 +426,25 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
             memory_index: 0,
         };
 
-        match &self.des.ty {
-            Type::Unsigned(1..=8) => target.assembler.i32_load8_u(memarg_byte),
-            Type::Signed(1..=8) => target.assembler.i32_load8_s(memarg_byte),
-            Type::Unsigned(9..=16) => target.assembler.i32_load16_u(memarg_word),
-            Type::Signed(9..=16) => target.assembler.i32_load16_s(memarg_word),
+        if !matches!(&self.des.ty, Type::Array(..) | Type::Struct(..)) {
+            match &self.des.ty {
+                Type::Unsigned(1..=8) => target.assembler.i32_load8_u(memarg_byte),
+                Type::Signed(1..=8) => target.assembler.i32_load8_s(memarg_byte),
+                Type::Unsigned(9..=16) => target.assembler.i32_load16_u(memarg_word),
+                Type::Signed(9..=16) => target.assembler.i32_load16_s(memarg_word),
 
-            _ => match self.des.ty.clone().into() {
-                ValType::I32 => target.assembler.i32_load(memarg_dword),
-                ValType::I64 => target.assembler.i64_load(memarg_qword),
-                ValType::F32 => target.assembler.f32_load(memarg_dword),
-                ValType::F64 => target.assembler.f64_load(memarg_qword),
-                ValType::V128 => unreachable!("@elemget v128: SIMD is not produced by c-flat"),
-                ValType::Ref(_) => {
-                    unreachable!("@elemget ref: reference types are not produced by c-flat")
-                }
-            },
-        };
+                _ => match self.des.ty.clone().into() {
+                    ValType::I32 => target.assembler.i32_load(memarg_dword),
+                    ValType::I64 => target.assembler.i64_load(memarg_qword),
+                    ValType::F32 => target.assembler.f32_load(memarg_dword),
+                    ValType::F64 => target.assembler.f64_load(memarg_qword),
+                    ValType::V128 => unreachable!("@elemget v128: SIMD is not produced by c-flat"),
+                    ValType::Ref(_) => {
+                        unreachable!("@elemget ref: reference types are not produced by c-flat")
+                    }
+                },
+            };
+        }
 
         let variables = ctx.local_function_variables.get(&target.function_name);
         let Some(idx) = variables.iter().position(|v| v.name == self.des.name) else {
@@ -463,6 +463,53 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
+        if matches!(self.value.ty(), Some(Type::Array(..) | Type::Struct(..))) {
+            let size = self.value.ty().unwrap().size(&ctx.target);
+            // dest = base + offset
+            self.addr.lower(ctx, target)?;
+            match &self.addr.ty {
+                Type::Struct(s) => {
+                    let idx = self
+                        .index
+                        .as_const_usize()
+                        .expect("struct field index must be constant");
+                    let field_offset: i32 = s.fields[..idx]
+                        .iter()
+                        .map(|(_, ty)| ty.size(&ctx.target))
+                        .sum();
+                    target.assembler.i32_const(field_offset);
+                    target.assembler.i32_add();
+                }
+                Type::Pointer(inner) if matches!(inner.as_ref(), Type::Struct(_)) => {
+                    let Type::Struct(s) = inner.as_ref() else {
+                        unreachable!()
+                    };
+                    let idx = self
+                        .index
+                        .as_const_usize()
+                        .expect("struct field index must be constant");
+                    let field_offset: i32 = s.fields[..idx]
+                        .iter()
+                        .map(|(_, ty)| ty.size(&ctx.target))
+                        .sum();
+                    target.assembler.i32_const(field_offset);
+                    target.assembler.i32_add();
+                }
+                _ => {
+                    self.index.lower(ctx, target)?;
+                    target.assembler.i32_const(size);
+                    target.assembler.i32_mul();
+                    target.assembler.i32_add();
+                }
+            }
+            // src = aggregate value's address
+            self.value.lower(ctx, target)?;
+            // len
+            target.assembler.i32_const(size);
+            target.assembler.memory_copy(0, 0);
+            return Ok(());
+        }
+
         let memarg_byte = wasm_encoder::MemArg {
             offset: 0,
             align: 0,
