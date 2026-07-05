@@ -30,7 +30,7 @@ RAYLIB_LIB="${RAYLIB_LIB:-$(ls "$RAYLIB_SRC"/libraylib.web.a "$RAYLIB_SRC"/libra
 [[ -f "$RAYLIB_SRC/raylib.h" ]] || { echo "error: raylib.h not found in $RAYLIB_SRC" >&2; exit 1; }
 [[ -n "$RAYLIB_LIB" && -f "$RAYLIB_LIB" ]] || { echo "error: libraylib web .a not found in $RAYLIB_SRC" >&2; exit 1; }
 
-EXPORTS='_cf_init_window,_cf_clear_background,_cf_draw_rectangle,_cf_draw_text,_cf_check_collision_recs,_cf_load_texture,_cf_unload_texture,_cf_draw_texture,_BeginDrawing,_EndDrawing,_CloseWindow,_SetTargetFPS,_WindowShouldClose,_IsKeyPressed,_IsGamepadButtonPressed,_GetFrameTime,_malloc,_free'
+EXPORTS='_cf_init_window,_cf_clear_background,_cf_draw_rectangle,_cf_draw_text,_cf_check_collision_recs,_cf_load_texture,_cf_unload_texture,_cf_draw_texture,_BeginDrawing,_EndDrawing,_CloseWindow,_SetTargetFPS,_WindowShouldClose,_IsKeyPressed,_IsKeyDown,_IsKeyUp,_IsKeyPressed,_IsMouseButtonPressed,_IsMouseButtonDown,_IsMouseButtonReleased,_IsMouseButtonUp,_IsGamepadButtonPressed,_GetFrameTime,_InitAudioDevice,_CloseAudioDevice,_LoadWave,_LoadWaveFromMemory,_IsWaveValid,_LoadSound,_LoadSoundFromWave,_LoadSoundAlias,_IsSoundValid,_UpdateSound,_UnloadWave,_UnloadSound,_UnloadSoundAlias,_ExportWave,_ExportWaveAsCode,_PlaySound,_StopSound,_PauseSound,_ResumeSound,_IsSoundPlaying,_SetSoundVolume,_SetSoundPitch,_SetSoundPan,_WaveCopy,_WaveCrop,_WaveFormat,_LoadWaveSamples,_UnloadWaveSamples,_malloc,_free'
 
 emcc "$SCRIPT_DIR/raylib_shim.c" \
   -I"$RAYLIB_SRC" "$RAYLIB_LIB" \

@@ -128,6 +128,12 @@ export function makeRaylibHost(getCflatExports, canvas) {
     },
 
     IsKeyPressed: (key) => module._IsKeyPressed(key),
+    IsKeyDown: (key) => module._IsKeyDown(key),
+    IsKeyUp: (key) => module._IsKeyUp(key),
+    IsMouseButtonPressed: (mouse) => module._IsMouseButtonPressed(mouse),
+    IsMouseButtonDown: (mouse) => module._IsMouseButtonDown(mouse),
+    IsMouseButtonReleased: (mouse) => module._IsMouseButtonReleased(mouse),
+    IsMouseButtonUp: (mouse) => module._IsMouseButtonUp(mouse),
     IsGamepadButtonPressed: (pad, btn) =>
       module._IsGamepadButtonPressed(pad, btn),
     GetFrameTime: () => module._GetFrameTime(),
@@ -177,11 +183,48 @@ export function makeRaylibHost(getCflatExports, canvas) {
       module._cf_draw_texture(t[0], t[1], t[2], t[3], t[4], x, y, r, g, b, a);
     },
 
-    write_char: (c) => globalThis.__cflat_log?.(String.fromCharCode(c)),
-    write_int: (n) => globalThis.__cflat_log?.(String(n)),
+    // SOUND
+    InitAudioDevice: () => module._InitAudioDevice(),
+    CloseAudioDevice: () => module._CloseAudioDevice(),
+    IsAudioDeviceReady: () => module._IsAudioDeviceReady(),
+    LoadWave: (sound_name) => module._LoadWave(sound_name),
+    LoadWaveFromMemory: (a, b, c) => module._LoadWaveFromMemory(a, b, c),
+    IsWaveValid: (wave) => module._IsWaveValid(wave),
+    LoadSound: (sound_name) => module._LoadSound(sound_name),
+    LoadSoundFromWave: (wave) => module._LoadSoundFromWave(wave),
+    LoadSoundAlias: (sound) => module._LoadSoundAlias(sound),
+    IsSoundValid: (sound) => module._IsSoundValid(sound),
+    UpdateSound: (sound, sound_ptr, id) =>
+      module._UpdateSound(sound, sound_ptr, id),
+    UnloadWave: (wave) => module._UnloadWave(wave),
+    UnloadSound: (sound) => module._UnloadSound(sound),
+    UnloadSoundAlias: (sound) => module._UnloadSoundAlias(sound),
+    ExportWave: (wave, name) => module._ExportWave(wave, name),
+    ExportWaveAsCode: (wave, name) => module._ExportWaveAsCode(wave, name),
+    PlaySound: (sound) => module._PlaySound(sound),
+    StopSound: (sound) => module._StopSound(sound),
+    PauseSound: (sound) => module._PauseSound(sound),
+    ResumeSound: (sound) => module._ResumeSound(sound),
+    IsSoundPlaying: (sound) => module._IsSoundPlaying(sound),
+    SetSoundVolume: (sound, volumn) => module._SetSoundVolume(sound, volumn),
+    SetSoundPitch: (sound, volumn) => module._SetSoundPitch(sound, volumn),
+    SetSoundPan: (sound, pan) => module._SetSoundPan(sound, pan),
+    WaveCopy: (wave) => module._WaveCopy(wave),
+    WaveCrop: (wave, x, y) => module._WaveCrop(wave, x, y),
+    WaveFormat: (wave, a, b, c) => module._WaveFormat(wave, a, b, c),
+    LoadWaveSamples: (wave) => module._LoadWaveSamples(wave),
+    UnloadWaveSamples: (v) => module._UnloadWaveSamples(v),
+
+    write_bool: (n) => globalThis.__cflat_log(n ? "true" : "false"),
+    write_u8: (n) => globalThis.__cflat_log(String(n)),
+    write_char: (c) => globalThis.__cflat_log(String.fromCharCode(c)),
+    write_s32: (n) => globalThis.__cflat_log(String(n)),
+    write_u32: (n) => globalThis.__cflat_log(String(n)),
+    write_f32: (n) => globalThis.__cflat_log(String(n)),
+    write_f64: (n) => globalThis.__cflat_log(String(n)),
     write: (ptr, len) => {
       const s = new TextDecoder().decode(cfU8().subarray(ptr, ptr + len));
-      globalThis.__cflat_log?.(s);
+      globalThis.__cflat_log(s);
       return 0;
     },
   };

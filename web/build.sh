@@ -57,8 +57,14 @@ raw_wasm="$ROOT/bin/$name.wasm"
 # 1. Compile c-flat -> wasm.
 "$CFLAT" --target=wasm32 "$SRC"
 
+
 # 2. Require a main() entry (the blocking-loop model).
-if ! wasm-opt "$raw_wasm" --print 2>/dev/null | grep -q '(export "main"'; then
+wasm_print="$(wasm-opt "$raw_wasm" --enable-bulk-memory --print 2>&1)" || {
+  echo "error: wasm-opt failed to process $raw_wasm:" >&2
+  echo "$wasm_print" >&2
+  exit 1
+}
+if ! grep -q '(export "main"' <<<"$wasm_print"; then
   echo "error: a web program must export main() — a main() with a" >&2
   echo "       while (!window_should_close()) { ...begin/end_drawing... } loop." >&2
   exit 1
@@ -71,6 +77,7 @@ mkdir -p "$outdir"
 # 4. Asyncify the program (so end_drawing() yields each frame) and assemble the
 #    project against the real raylib host module.
 wasm-opt "$raw_wasm" \
+  --enable-bulk-memory \
   --asyncify \
   --pass-arg=asyncify-imports@core.EndDrawing \
   -o "$outdir/$name.wasm"
