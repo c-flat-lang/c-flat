@@ -40,12 +40,30 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
     let module = Module::new(&engine, wasm_bytes)?;
 
     let mut linker: Linker<WasiCtx> = Linker::new(&engine);
-    linker.func_wrap("core", "write_char", |a: i32| {
+    linker.func_wrap("core", "write_bool", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_char", |a: u32| {
         if let Some(c) = char::from_u32(a as u32) {
             print!("{}", c);
         }
     })?;
-    linker.func_wrap("core", "write_int", |a: i32| {
+    linker.func_wrap("core", "write_u8", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_s32", |a: i32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_u32", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_u16", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_f32", |a: f32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_f64", |a: f64| {
         print!("{}", a);
     })?;
     linker.func_wrap(
