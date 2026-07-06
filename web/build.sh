@@ -19,22 +19,53 @@
 #   web/build-raylib-host.sh                # -> web/raylib_host.{js,wasm}
 set -euo pipefail
 
+usage() {
+    echo "Usage: $0 [--local-exe] <filename>"
+    exit 1
+}
+
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 ROOT="$(cd -- "$SCRIPT_DIR/.." &>/dev/null && pwd)"
+local_exe=0
+SRC=""
 
-if [[ $# -lt 1 ]]; then
-  echo "usage: $0 <path/to/file.cb>" >&2
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --local-exe)
+            local_exe=1
+            shift
+            ;;
+        -*)
+            echo "error: unknown argument '$1'" >&2
+            usage
+            ;;
+        *)
+            if [[ -n "$SRC" ]]; then
+                echo "error: unexpected extra argument '$1'" >&2
+                usage
+            fi
+            SRC="$1"
+            shift
+            ;;
+    esac
+done
+
+if [[ -z "$SRC" ]]; then
+  echo "usage: $0 [--local-exe] <path/to/file.cb>" >&2
   exit 1
 fi
 
-SRC="$1"
 if [[ ! -f "$SRC" ]]; then
   echo "error: no such file: $SRC" >&2
   exit 1
 fi
 
-CFLAT="${CFLAT:-$ROOT/target/debug/cflat}"
-export CFLAT_STD_PATH="${CFLAT_STD_PATH:-$ROOT/std}"
+if [[ $local_exe -eq 1 ]]; then
+  CFLAT="${CFLAT:-$ROOT/target/debug/cflat}"
+  export CFLAT_STD_PATH="${CFLAT_STD_PATH:-$ROOT/std}"
+else
+  CFLAT="${CFLAT:-cflat}"
+fi
 
 command -v wasm-opt >/dev/null 2>&1 || {
   echo "error: wasm-opt not found (brew install binaryen)" >&2
