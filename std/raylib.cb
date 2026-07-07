@@ -181,6 +181,11 @@ pub type GamepadAxis enum {
     right_trigger,
 }
 
+pub type Vector2 struct {
+    x: f32,
+    y: f32,
+}
+
 pub type Rectangle struct {
     pub x: f32,
     pub y: f32,
@@ -209,9 +214,13 @@ pub extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle)
 
 // Drawing Shapes
 pub extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
+pub extern C fn DrawPoly as draw_poly(Vector2, s32, f32, f32, Color) void;
+pub extern C fn DrawPolyLines as draw_poly_lines(Vector2, s32, f32, f32, Color) void;
+pub extern C fn DrawPolyLinesEx as draw_poly_lines_ex(Vector2, s32, f32, f32, f32, Color) void;
 
 // Text
 pub extern C fn DrawText as draw_text(*[u8], s32, s32, s32, Color) void;
+pub extern C fn MeasureText as measure_text(*[u8], s32) s32;
 
 // Keyboad
 pub extern C fn IsKeyPressed as is_key_pressed(s32) bool;
@@ -226,6 +235,8 @@ pub extern C fn IsMouseButtonPressed as is_mouse_button_pressed(s32) bool;
 pub extern C fn IsMouseButtonDown as is_mouse_button_down(s32) bool;
 pub extern C fn IsMouseButtonReleased as is_mouse_button_released(s32) bool;
 pub extern C fn IsMouseButtonUp as is_mouse_button_up(s32) bool;  
+pub extern C fn GetMouseX as get_mouse_x() s32;                                    // Get mouse position X
+pub extern C fn GetMouseY as get_mouse_y() s32;
 
 // Wave/Sound loading/unloading functions
 type Wave struct {

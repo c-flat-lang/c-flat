@@ -47,6 +47,45 @@ void cf_draw_texture(unsigned int id, int width, int height, int mipmaps, int fo
     DrawTexture(t, x, y, (Color){r, g, b, a});
 }
 
+void cf_draw_poly(
+    // Vector2 center
+    float x, float y,
+    // Normal Args
+    int sides, float radius, float rotation,
+    // Color color
+    unsigned char r, unsigned char g, unsigned char b, unsigned char a
+) {
+    Vector2 center = {x, y};
+    Color color = {r, g, b, a};
+    DrawPoly(center, sides, radius, rotation, color);
+}
+
+void cf_draw_poly_lines(
+    // Vector2 center
+    float x, float y,
+    // Normal Args
+    int sides, float radius, float rotation,
+    // Color color
+    unsigned char r, unsigned char g, unsigned char b, unsigned char a
+) {
+    Vector2 center = {x, y};
+    Color color = {r, g, b, a};
+    DrawPolyLines(center, sides, radius, rotation, color);
+}
+
+void cf_draw_poly_lines_ex(
+    // Vector2 center
+    float x, float y,
+    // Normal Args
+    int sides, float radius, float rotation, float lineThick,
+    // Color color
+    unsigned char r, unsigned char g, unsigned char b, unsigned char a
+) {
+    Vector2 center = {x, y};
+    Color color = {r, g, b, a};
+    DrawPolyLinesEx(center, sides, radius, rotation, lineThick, color);
+}
+
 #define CF_MAX_SOUNDS 256
 static Sound cf_sounds[CF_MAX_SOUNDS];
 static int cf_sound_count = 0;

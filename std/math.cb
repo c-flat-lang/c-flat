@@ -10,3 +10,7 @@ pub fn min<(T: type)>(x: T, y: T) T {
     return if x < y { x } else { y };
 }
 
+pub fn abs<(T: type)>(x: T) T {
+    return if x < 0 { x * (0 - 1) } else { x };
+}
+

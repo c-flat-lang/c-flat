@@ -34,7 +34,6 @@ export function makeRaylibHost(getCflatExports, canvas) {
     return p;
   };
 
-  // Read a Texture2D (id:u32, width,height,mipmaps,format:i32) from c-flat memory.
   const readTexture = (ptr) => {
     const d = cfDV();
     return [
@@ -50,6 +49,7 @@ export function makeRaylibHost(getCflatExports, canvas) {
     const m = cfU8();
     return [m[ptr], m[ptr + 1], m[ptr + 2], m[ptr + 3]];
   };
+
   const readRect = (ptr) => {
     const d = cfDV();
     return [
@@ -59,6 +59,12 @@ export function makeRaylibHost(getCflatExports, canvas) {
       d.getFloat32(ptr + 12, true),
     ];
   };
+
+  const readVector2 = (ptr) => {
+    const d = cfDV();
+    return [d.getFloat32(ptr, true), d.getFloat32(ptr + 4, true)];
+  };
+
   const readCStr = (ptr) => {
     const m = cfU8();
     let end = ptr;
@@ -127,6 +133,42 @@ export function makeRaylibHost(getCflatExports, canvas) {
       );
     },
 
+    DrawPoly: (vector2Ptr, side, radius, rotation, colorPtr) => {
+      const [x, y] = readVector2(vector2Ptr);
+      const [r, g, b, a] = readColor(colorPtr);
+      module._cf_draw_poly(x, y, side, radius, rotation, r, g, b, a);
+    },
+    DrawPolyLines: (vector2Ptr, side, radius, rotation, colorPtr) => {
+      const [x, y] = readVector2(vector2Ptr);
+      const [r, g, b, a] = readColor(colorPtr);
+      module._cf_draw_poly_lines(x, y, side, radius, rotation, r, g, b, a);
+    },
+    DrawPolyLinesEx: (
+      vector2Ptr,
+      side,
+      radius,
+      rotation,
+      lineThick,
+      colorPtr,
+    ) => {
+      const [x, y] = readVector2(vector2Ptr);
+      const [r, g, b, a] = readColor(colorPtr);
+      module._cf_draw_poly_lines_ex(
+        x,
+        y,
+        side,
+        radius,
+        rotation,
+        lineThick,
+        r,
+        g,
+        b,
+        a,
+      );
+    },
+
+    MeasureText: (textPtr, size) =>
+      withHostStr(readCStr(textPtr), (p) => module._MeasureText(p, size)),
     IsKeyPressed: (key) => module._IsKeyPressed(key),
     IsKeyDown: (key) => module._IsKeyDown(key),
     IsKeyUp: (key) => module._IsKeyUp(key),
@@ -134,6 +176,8 @@ export function makeRaylibHost(getCflatExports, canvas) {
     IsMouseButtonDown: (mouse) => module._IsMouseButtonDown(mouse),
     IsMouseButtonReleased: (mouse) => module._IsMouseButtonReleased(mouse),
     IsMouseButtonUp: (mouse) => module._IsMouseButtonUp(mouse),
+    GetMouseX: () => module._GetMouseX(),
+    GetMouseY: () => module._GetMouseY(),
     IsGamepadButtonPressed: (pad, btn) =>
       module._IsGamepadButtonPressed(pad, btn),
     GetFrameTime: () => module._GetFrameTime(),
