@@ -257,6 +257,45 @@ impl Lower<Wasm32LowerContext<'_>> for ICall {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
+        // If the callee is a defined function returning an aggregate by value, it
+        // uses the sret convention: allocate a result buffer in *this* frame, point
+        // global 1 at it, and let the callee copy its result there. The buffer
+        // outlives the callee (it lives below the callee's frame base) and is
+        // reclaimed when this function restores its own frame.
+        if let Some(ret_ty) = target.agg_return_fns.get(&self.callee).cloned() {
+            let size = ret_ty.size(&ctx.target);
+            // buffer = current stack pointer; stash it in the sret register.
+            target.assembler.global_get(0);
+            target.assembler.global_set(1);
+            // stack pointer += size
+            target.assembler.global_get(1);
+            target.assembler.i32_const(size);
+            target.assembler.i32_add();
+            target.assembler.global_set(0);
+            // The result variable, if any, is the buffer address.
+            if let Some(variable) = &self.des {
+                let variables = ctx.local_function_variables.get(&target.function_name);
+                let Some(idx) = variables.iter().position(|v| v.name == variable.name) else {
+                    panic!("Variable {:?} not found", variable);
+                };
+                target.assembler.global_get(1);
+                target.assembler.local_set(idx as u32);
+            }
+            // Args are already-evaluated operands (no nested calls, no allocs), so
+            // global 1 still points at our buffer when the callee reads it at entry.
+            for operand in self.args.iter() {
+                operand.lower(ctx, target)?;
+            }
+            let Some(function_id) = ctx
+                .local_function_variables
+                .get_function_id(self.callee.as_str())
+            else {
+                panic!("Function {:?} not found", self.callee);
+            };
+            target.assembler.call(function_id as u32);
+            return Ok(());
+        }
+
         for operand in self.args.iter() {
             operand.lower(ctx, target)?;
         }
@@ -1046,14 +1085,29 @@ impl Lower<Wasm32LowerContext<'_>> for IReturn {
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        match self.ty.clone() {
-            Type::Void => {
-                target.assembler.return_();
-            }
-            _ => {
+        let frame_local = target.frame_local;
+        if super::is_aggregate(&self.ty) {
+            // sret: copy the aggregate to the caller-provided buffer (global 1,
+            // latched into sret_local at entry) instead of returning a pointer
+            // into this frame, which the epilogue below is about to reclaim.
+            let size = self.ty.size(&ctx.target);
+            target.assembler.local_get(target.sret_local); // dest
+            self.src.lower(ctx, target)?; // src (aggregate address)
+            target.assembler.i32_const(size); // len
+            target.assembler.memory_copy(0, 0);
+            // Epilogue: restore the stack pointer, then return no value.
+            target.assembler.local_get(frame_local);
+            target.assembler.global_set(0);
+            target.assembler.return_();
+        } else {
+            if self.ty != Type::Void {
                 self.src.lower(ctx, target)?;
-                target.assembler.return_();
             }
+            // Epilogue: restore the stack pointer. The return value (if any) is
+            // already on the operand stack and is unaffected by the global.set.
+            target.assembler.local_get(frame_local);
+            target.assembler.global_set(0);
+            target.assembler.return_();
         }
         Ok(())
     }
