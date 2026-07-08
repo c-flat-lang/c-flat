@@ -32,15 +32,15 @@ factorial_entry:
   cmp dword ptr [rbp-4], vreg(1 : Reg32)
   sete vreg(4 : Reg8)
   movzx vreg(5 : Reg64), vreg(4 : Reg8)
-  # @jumpif tmp.2_v0, %then.0
+  # @jumpif tmp.2_v0, %then_1
   # lowering jump if
   # lowering operand
   test vreg(5 : Reg64), vreg(5 : Reg64)
-  jnz factorial_then_0
-  # @jump %else.0
+  jnz factorial_then_1
+  # @jump %else_2
   # lowering jump if
-  jmp factorial_else_0
-factorial_then_0:
+  jmp factorial_else_2
+factorial_then_1:
   # @assign s32 : tmp.3_v0, 1
   # lowering assign
   # lowering operand
@@ -54,10 +54,10 @@ factorial_then_0:
   # lowering assign
   # lowering operand
   mov vreg(11 : Reg32), dword ptr [rbp-8]
-  # @jump %merge.0
+  # @jump %merge_3
   # lowering jump if
-  jmp factorial_merge_0
-factorial_else_0:
+  jmp factorial_merge_3
+factorial_else_2:
   # @assign s32 : tmp.4_v0, 1
   # lowering assign
   # lowering operand
@@ -97,10 +97,10 @@ factorial_else_0:
   # lowering assign
   # lowering operand
   mov vreg(11 : Reg32), dword ptr [rbp-8]
-  # @jump %merge.0
+  # @jump %merge_3
   # lowering jump if
-  jmp factorial_merge_0
-factorial_merge_0:
+  jmp factorial_merge_3
+factorial_merge_3:
   # @ret s32 : tmp.0_v0
   # lowering return
   mov eax, vreg(11 : Reg32)
@@ -137,12 +137,12 @@ main_entry:
   # lowering assign
   # lowering operand
   mov dword ptr [rbp-8], vreg(4 : Reg32)
-  # @call write_int(fact_result_v0)
+  # @call write_s32(fact_result_v0)
   # lowering call
   # lowering operand
   mov edi, dword ptr [rbp-8]
-  call write_int
-  # @assign s32 : tmp.2_v0, 10
+  call write_s32
+  # @assign u8 : tmp.2_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(8 : Reg64), 10
@@ -150,8 +150,8 @@ main_entry:
   # @call write_char(tmp.2_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-12], vreg(7 : Reg32)
-  mov edi, dword ptr [rbp-12]
+  mov byte ptr [rbp-9], vreg(7 : Reg8)
+  mov dil, byte ptr [rbp-9]
   call write_char
   # @ret s32 : fact_result_v0
   # lowering return

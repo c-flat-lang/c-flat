@@ -9,11 +9,14 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit,\n\"../examples/f
   (import "core" "write_int" (func (;0;) (type 0)))
   (memory (;0;) 4)
   (global (;0;) (mut i32) i32.const 0)
+  (global (;1;) (mut i32) i32.const 0)
   (export "memory" (memory 0))
   (export "__stack_pointer" (global 0))
   (export "main" (func 2))
   (func (;1;) (type 1) (param i32) (result i32)
-    (local i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
+    (local i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32)
+    global.get 0
+    local.set 15
     i32.const 1
     local.set 1
     local.get 0
@@ -52,10 +55,14 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit,\n\"../examples/f
       local.set 5
     end
     local.get 5
+    local.get 15
+    global.set 0
     return
   )
   (func (;2;) (type 2) (result i32)
-    (local i32 i32 i32 i32 i32)
+    (local i32 i32 i32 i32 i32 i32)
+    global.get 0
+    local.set 5
     i32.const 5
     local.set 0
     local.get 0
@@ -69,6 +76,8 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit,\n\"../examples/f
     call 0
     local.set 4
     local.get 3
+    local.get 5
+    global.set 0
     return
   )
 )

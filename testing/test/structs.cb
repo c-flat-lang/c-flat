@@ -1,4 +1,4 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 
 type List struct {
@@ -16,10 +16,10 @@ fn set_list(list: *List, index: usize, value: s32) void {
 
 pub fn main() s32 {
   let list: List = init_list();
-  write_int(list.data[0]);
+  write_s32(list.data[0]);
   write_char(10);
   set_list(&list, 0, 1);
-  write_int(list.data[0]);
+  write_s32(list.data[0]);
   write_char(10);
   return 0;
 }

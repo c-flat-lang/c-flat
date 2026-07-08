@@ -6,11 +6,14 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/ar
   (type (;0;) (func (result i32)))
   (memory (;0;) 4)
   (global (;0;) (mut i32) i32.const 0)
+  (global (;1;) (mut i32) i32.const 0)
   (export "memory" (memory 0))
   (export "__stack_pointer" (global 0))
   (export "main" (func 0))
   (func (;0;) (type 0) (result i32)
-    (local i32 i32)
+    (local i32 i32 i32)
+    global.get 0
+    local.set 2
     global.get 0
     local.tee 0
     i32.const 3
@@ -47,6 +50,8 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/ar
     i32.load
     local.set 1
     local.get 1
+    local.get 2
+    global.set 0
     return
   )
 )

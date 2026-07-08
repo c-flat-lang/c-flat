@@ -1,0 +1,11 @@
+                    Tokenizing testing/test/struct_member_access.cb
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+        LocalFunctionVariables
+              ControlFlowGraph
+                 StructuringIr
+              LivenessAnalysis
+                          Emit
+                       Running bin/struct_member_access.wasm

@@ -38,7 +38,7 @@
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
+                lexeme: "write_s32",
                 span: Span {
                     start: 12,
                     end: 21,
@@ -778,13 +778,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "123",
-                                            span: Span {
-                                                start: 247,
-                                                end: 250,
-                                                filename: "testing/test/ifelse.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "123",
+                                                span: Span {
+                                                    start: 247,
+                                                    end: 250,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 247,
+                                                    end: 250,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -842,13 +855,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "205",
-                                            span: Span {
-                                                start: 269,
-                                                end: 272,
-                                                filename: "testing/test/ifelse.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "205",
+                                                span: Span {
+                                                    start: 269,
+                                                    end: 272,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 269,
+                                                    end: 272,
+                                                    filename: "testing/test/ifelse.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -970,7 +996,7 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
+                                        lexeme: "write_s32",
                                         span: Span {
                                             start: 311,
                                             end: 320,
@@ -1051,13 +1077,26 @@
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: Span {
-                                                    start: 345,
-                                                    end: 347,
-                                                    filename: "testing/test/ifelse.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 345,
+                                                        end: 347,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 345,
+                                                        end: 347,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -1092,7 +1131,7 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
+                                        lexeme: "write_s32",
                                         span: Span {
                                             start: 354,
                                             end: 363,
@@ -1220,13 +1259,26 @@
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: Span {
-                                                    start: 395,
-                                                    end: 397,
-                                                    filename: "testing/test/ifelse.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 395,
+                                                        end: 397,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 395,
+                                                        end: 397,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -1272,13 +1324,26 @@
                                 expr: Some(
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: Span {
-                                                    start: 411,
-                                                    end: 412,
-                                                    filename: "testing/test/ifelse.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 411,
+                                                        end: 412,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 411,
+                                                        end: 412,
+                                                        filename: "testing/test/ifelse.cb",
+                                                    },
                                                 },
                                             },
                                         ),

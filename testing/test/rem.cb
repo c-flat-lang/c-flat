@@ -1,9 +1,9 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 
 pub fn main() void {
     let n = 11 % 2;
     write_char(10);
-    write_int(n);
+    write_s32(n);
     write_char(10);
 }

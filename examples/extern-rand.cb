@@ -2,7 +2,7 @@
 extern C fn time(s32) s32;
 extern C fn srand(s32) void;
 extern C fn rand() s32;
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 extern C fn write_u8(u8) void;
 
@@ -65,7 +65,7 @@ pub fn main() void {
         a = rand_range(0, 255) as u8;
         index = index + 1;
     }
-    write_int(index);
+    write_s32(index);
     write_char(' ');
     write_char(':');
     write_char(' ');
@@ -89,7 +89,7 @@ pub fn main() void {
     //
     // while count < 10 {
     //     let r: u8 = rand_char();
-    //     write_int(r);
+    //     write_s32(r);
     //     write_char(' ');
     //     write_char('-');
     //     write_char(' ');

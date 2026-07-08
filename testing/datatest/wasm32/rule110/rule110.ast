@@ -226,13 +226,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 260,
-                                                                        end: 261,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 260,
+                                                                            end: 261,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 260,
+                                                                            end: 261,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -274,13 +287,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 271,
-                                                                        end: 272,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 271,
+                                                                            end: 272,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 271,
+                                                                            end: 272,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -324,13 +350,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "1",
-                                                            span: Span {
-                                                                start: 282,
-                                                                end: 283,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "1",
+                                                                span: Span {
+                                                                    start: 282,
+                                                                    end: 283,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 282,
+                                                                    end: 283,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -367,13 +406,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 293,
-                                                                        end: 294,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 293,
+                                                                            end: 294,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 293,
+                                                                            end: 294,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -461,13 +513,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 310,
-                                                                        end: 311,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 310,
+                                                                            end: 311,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 310,
+                                                                            end: 311,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -509,13 +574,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 321,
-                                                                        end: 322,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 321,
+                                                                            end: 322,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 321,
+                                                                            end: 322,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -559,13 +637,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "0",
-                                                            span: Span {
-                                                                start: 332,
-                                                                end: 333,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "0",
+                                                                span: Span {
+                                                                    start: 332,
+                                                                    end: 333,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 332,
+                                                                    end: 333,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -602,13 +693,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 343,
-                                                                        end: 344,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 343,
+                                                                            end: 344,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 343,
+                                                                            end: 344,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -696,13 +800,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 360,
-                                                                        end: 361,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 360,
+                                                                            end: 361,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 360,
+                                                                            end: 361,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -744,13 +861,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 371,
-                                                                        end: 372,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 371,
+                                                                            end: 372,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 371,
+                                                                            end: 372,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -794,13 +924,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "1",
-                                                            span: Span {
-                                                                start: 382,
-                                                                end: 383,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "1",
+                                                                span: Span {
+                                                                    start: 382,
+                                                                    end: 383,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 382,
+                                                                    end: 383,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -837,13 +980,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 393,
-                                                                        end: 394,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 393,
+                                                                            end: 394,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 393,
+                                                                            end: 394,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -931,13 +1087,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 410,
-                                                                        end: 411,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 410,
+                                                                            end: 411,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 410,
+                                                                            end: 411,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -979,13 +1148,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 421,
-                                                                        end: 422,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 421,
+                                                                            end: 422,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 421,
+                                                                            end: 422,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1029,13 +1211,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "0",
-                                                            span: Span {
-                                                                start: 432,
-                                                                end: 433,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "0",
+                                                                span: Span {
+                                                                    start: 432,
+                                                                    end: 433,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 432,
+                                                                    end: 433,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -1072,13 +1267,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 443,
-                                                                        end: 444,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 443,
+                                                                            end: 444,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 443,
+                                                                            end: 444,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1166,13 +1374,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 460,
-                                                                        end: 461,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 460,
+                                                                            end: 461,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 460,
+                                                                            end: 461,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1214,13 +1435,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 471,
-                                                                        end: 472,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 471,
+                                                                            end: 472,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 471,
+                                                                            end: 472,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1264,13 +1498,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "1",
-                                                            span: Span {
-                                                                start: 482,
-                                                                end: 483,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "1",
+                                                                span: Span {
+                                                                    start: 482,
+                                                                    end: 483,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 482,
+                                                                    end: 483,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -1307,13 +1554,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 493,
-                                                                        end: 494,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 493,
+                                                                            end: 494,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 493,
+                                                                            end: 494,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1401,13 +1661,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 510,
-                                                                        end: 511,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 510,
+                                                                            end: 511,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 510,
+                                                                            end: 511,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1449,13 +1722,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 521,
-                                                                        end: 522,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 521,
+                                                                            end: 522,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 521,
+                                                                            end: 522,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1499,13 +1785,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "0",
-                                                            span: Span {
-                                                                start: 532,
-                                                                end: 533,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "0",
+                                                                span: Span {
+                                                                    start: 532,
+                                                                    end: 533,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 532,
+                                                                    end: 533,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -1542,13 +1841,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 543,
-                                                                        end: 544,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 543,
+                                                                            end: 544,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 543,
+                                                                            end: 544,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1636,13 +1948,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 560,
-                                                                        end: 561,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 560,
+                                                                            end: 561,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 560,
+                                                                            end: 561,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1684,13 +2009,26 @@
                                                         },
                                                         right: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 571,
-                                                                        end: 572,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 571,
+                                                                            end: 572,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 571,
+                                                                            end: 572,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1734,13 +2072,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "1",
-                                                            span: Span {
-                                                                start: 582,
-                                                                end: 583,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "1",
+                                                                span: Span {
+                                                                    start: 582,
+                                                                    end: 583,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 582,
+                                                                    end: 583,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -1777,13 +2128,26 @@
                                                     expr: Some(
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "1",
-                                                                    span: Span {
-                                                                        start: 593,
-                                                                        end: 594,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "1",
+                                                                        span: Span {
+                                                                            start: 593,
+                                                                            end: 594,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 593,
+                                                                            end: 594,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -1846,13 +2210,26 @@
                                 expr: Some(
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: Span {
-                                                    start: 609,
-                                                    end: 610,
-                                                    filename: "testing/test/rule110.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 609,
+                                                        end: 610,
+                                                        filename: "testing/test/rule110.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 609,
+                                                        end: 610,
+                                                        filename: "testing/test/rule110.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -1993,13 +2370,26 @@
                                         },
                                         count: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "159",
-                                                    span: Span {
-                                                        start: 673,
-                                                        end: 676,
-                                                        filename: "testing/test/rule110.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "159",
+                                                        span: Span {
+                                                            start: 673,
+                                                            end: 676,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 673,
+                                                            end: 676,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -2015,13 +2405,26 @@
                                         },
                                         value: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "0",
-                                                    span: Span {
-                                                        start: 670,
-                                                        end: 671,
-                                                        filename: "testing/test/rule110.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "0",
+                                                        span: Span {
+                                                            start: 670,
+                                                            end: 671,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 670,
+                                                            end: 671,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -2121,13 +2524,26 @@
                                         },
                                         count: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "159",
-                                                    span: Span {
-                                                        start: 714,
-                                                        end: 717,
-                                                        filename: "testing/test/rule110.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "159",
+                                                        span: Span {
+                                                            start: 714,
+                                                            end: 717,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 714,
+                                                            end: 717,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -2143,13 +2559,26 @@
                                         },
                                         value: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "0",
-                                                    span: Span {
-                                                        start: 711,
-                                                        end: 712,
-                                                        filename: "testing/test/rule110.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "0",
+                                                        span: Span {
+                                                            start: 711,
+                                                            end: 712,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 711,
+                                                            end: 712,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -2259,13 +2688,26 @@
                                                 },
                                                 right: Litral(
                                                     Integer(
-                                                        Token {
-                                                            kind: Number,
-                                                            lexeme: "1",
-                                                            span: Span {
-                                                                start: 747,
-                                                                end: 748,
-                                                                filename: "testing/test/rule110.cb",
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "1",
+                                                                span: Span {
+                                                                    start: 747,
+                                                                    end: 748,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                span: Span {
+                                                                    start: 747,
+                                                                    end: 748,
+                                                                    filename: "testing/test/rule110.cb",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -2303,13 +2745,26 @@
                                 },
                                 right: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "1",
-                                            span: Span {
-                                                start: 752,
-                                                end: 753,
-                                                filename: "testing/test/rule110.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "1",
+                                                span: Span {
+                                                    start: 752,
+                                                    end: 753,
+                                                    filename: "testing/test/rule110.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 752,
+                                                    end: 753,
+                                                    filename: "testing/test/rule110.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -2355,13 +2810,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "0",
-                                            span: Span {
-                                                start: 776,
-                                                end: 777,
-                                                filename: "testing/test/rule110.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "0",
+                                                span: Span {
+                                                    start: 776,
+                                                    end: 777,
+                                                    filename: "testing/test/rule110.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 776,
+                                                    end: 777,
+                                                    filename: "testing/test/rule110.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -2418,13 +2886,26 @@
                                         },
                                         right: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "100",
-                                                    span: Span {
-                                                        start: 797,
-                                                        end: 800,
-                                                        filename: "testing/test/rule110.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "100",
+                                                        span: Span {
+                                                            start: 797,
+                                                            end: 800,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 797,
+                                                            end: 800,
+                                                            filename: "testing/test/rule110.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -2479,13 +2960,26 @@
                                                     },
                                                     expr: Litral(
                                                         Integer(
-                                                            Token {
-                                                                kind: Number,
-                                                                lexeme: "0",
-                                                                span: Span {
-                                                                    start: 830,
-                                                                    end: 831,
-                                                                    filename: "testing/test/rule110.cb",
+                                                            IntegerLitral {
+                                                                token: Token {
+                                                                    kind: Number,
+                                                                    lexeme: "0",
+                                                                    span: Span {
+                                                                        start: 830,
+                                                                        end: 831,
+                                                                        filename: "testing/test/rule110.cb",
+                                                                    },
+                                                                },
+                                                                ty: Type {
+                                                                    mut_token: None,
+                                                                    kind: SignedNumber(
+                                                                        32,
+                                                                    ),
+                                                                    span: Span {
+                                                                        start: 830,
+                                                                        end: 831,
+                                                                        filename: "testing/test/rule110.cb",
+                                                                    },
                                                                 },
                                                             },
                                                         ),
@@ -2648,13 +3142,26 @@
                                                                                         },
                                                                                         right: Litral(
                                                                                             Integer(
-                                                                                                Token {
-                                                                                                    kind: Number,
-                                                                                                    lexeme: "0",
-                                                                                                    span: Span {
-                                                                                                        start: 896,
-                                                                                                        end: 897,
-                                                                                                        filename: "testing/test/rule110.cb",
+                                                                                                IntegerLitral {
+                                                                                                    token: Token {
+                                                                                                        kind: Number,
+                                                                                                        lexeme: "0",
+                                                                                                        span: Span {
+                                                                                                            start: 896,
+                                                                                                            end: 897,
+                                                                                                            filename: "testing/test/rule110.cb",
+                                                                                                        },
+                                                                                                    },
+                                                                                                    ty: Type {
+                                                                                                        mut_token: None,
+                                                                                                        kind: SignedNumber(
+                                                                                                            32,
+                                                                                                        ),
+                                                                                                        span: Span {
+                                                                                                            start: 896,
+                                                                                                            end: 897,
+                                                                                                            filename: "testing/test/rule110.cb",
+                                                                                                        },
                                                                                                     },
                                                                                                 },
                                                                                             ),
@@ -2675,13 +3182,26 @@
                                                                                         Statement {
                                                                                             expr: Litral(
                                                                                                 Integer(
-                                                                                                    Token {
-                                                                                                        kind: Number,
-                                                                                                        lexeme: "0",
-                                                                                                        span: Span {
-                                                                                                            start: 900,
-                                                                                                            end: 901,
-                                                                                                            filename: "testing/test/rule110.cb",
+                                                                                                    IntegerLitral {
+                                                                                                        token: Token {
+                                                                                                            kind: Number,
+                                                                                                            lexeme: "0",
+                                                                                                            span: Span {
+                                                                                                                start: 900,
+                                                                                                                end: 901,
+                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                            },
+                                                                                                        },
+                                                                                                        ty: Type {
+                                                                                                            mut_token: None,
+                                                                                                            kind: SignedNumber(
+                                                                                                                32,
+                                                                                                            ),
+                                                                                                            span: Span {
+                                                                                                                start: 900,
+                                                                                                                end: 901,
+                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                            },
                                                                                                         },
                                                                                                     },
                                                                                                 ),
@@ -2772,13 +3292,26 @@
                                                                                                                     },
                                                                                                                     right: Litral(
                                                                                                                         Integer(
-                                                                                                                            Token {
-                                                                                                                                kind: Number,
-                                                                                                                                lexeme: "1",
-                                                                                                                                span: Span {
-                                                                                                                                    start: 923,
-                                                                                                                                    end: 924,
-                                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                            IntegerLitral {
+                                                                                                                                token: Token {
+                                                                                                                                    kind: Number,
+                                                                                                                                    lexeme: "1",
+                                                                                                                                    span: Span {
+                                                                                                                                        start: 923,
+                                                                                                                                        end: 924,
+                                                                                                                                        filename: "testing/test/rule110.cb",
+                                                                                                                                    },
+                                                                                                                                },
+                                                                                                                                ty: Type {
+                                                                                                                                    mut_token: None,
+                                                                                                                                    kind: SignedNumber(
+                                                                                                                                        32,
+                                                                                                                                    ),
+                                                                                                                                    span: Span {
+                                                                                                                                        start: 923,
+                                                                                                                                        end: 924,
+                                                                                                                                        filename: "testing/test/rule110.cb",
+                                                                                                                                    },
                                                                                                                                 },
                                                                                                                             },
                                                                                                                         ),
@@ -3001,13 +3534,26 @@
                                                                                                 },
                                                                                                 right: Litral(
                                                                                                     Integer(
-                                                                                                        Token {
-                                                                                                            kind: Number,
-                                                                                                            lexeme: "1",
-                                                                                                            span: Span {
-                                                                                                                start: 997,
-                                                                                                                end: 998,
-                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                        IntegerLitral {
+                                                                                                            token: Token {
+                                                                                                                kind: Number,
+                                                                                                                lexeme: "1",
+                                                                                                                span: Span {
+                                                                                                                    start: 997,
+                                                                                                                    end: 998,
+                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                },
+                                                                                                            },
+                                                                                                            ty: Type {
+                                                                                                                mut_token: None,
+                                                                                                                kind: SignedNumber(
+                                                                                                                    32,
+                                                                                                                ),
+                                                                                                                span: Span {
+                                                                                                                    start: 997,
+                                                                                                                    end: 998,
+                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                },
                                                                                                             },
                                                                                                         },
                                                                                                     ),
@@ -3072,13 +3618,26 @@
                                                                                         Statement {
                                                                                             expr: Litral(
                                                                                                 Integer(
-                                                                                                    Token {
-                                                                                                        kind: Number,
-                                                                                                        lexeme: "0",
-                                                                                                        span: Span {
-                                                                                                            start: 1016,
-                                                                                                            end: 1017,
-                                                                                                            filename: "testing/test/rule110.cb",
+                                                                                                    IntegerLitral {
+                                                                                                        token: Token {
+                                                                                                            kind: Number,
+                                                                                                            lexeme: "0",
+                                                                                                            span: Span {
+                                                                                                                start: 1016,
+                                                                                                                end: 1017,
+                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                            },
+                                                                                                        },
+                                                                                                        ty: Type {
+                                                                                                            mut_token: None,
+                                                                                                            kind: SignedNumber(
+                                                                                                                32,
+                                                                                                            ),
+                                                                                                            span: Span {
+                                                                                                                start: 1016,
+                                                                                                                end: 1017,
+                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                            },
                                                                                                         },
                                                                                                     },
                                                                                                 ),
@@ -3169,13 +3728,26 @@
                                                                                                                     },
                                                                                                                     right: Litral(
                                                                                                                         Integer(
-                                                                                                                            Token {
-                                                                                                                                kind: Number,
-                                                                                                                                lexeme: "1",
-                                                                                                                                span: Span {
-                                                                                                                                    start: 1039,
-                                                                                                                                    end: 1040,
-                                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                            IntegerLitral {
+                                                                                                                                token: Token {
+                                                                                                                                    kind: Number,
+                                                                                                                                    lexeme: "1",
+                                                                                                                                    span: Span {
+                                                                                                                                        start: 1039,
+                                                                                                                                        end: 1040,
+                                                                                                                                        filename: "testing/test/rule110.cb",
+                                                                                                                                    },
+                                                                                                                                },
+                                                                                                                                ty: Type {
+                                                                                                                                    mut_token: None,
+                                                                                                                                    kind: SignedNumber(
+                                                                                                                                        32,
+                                                                                                                                    ),
+                                                                                                                                    span: Span {
+                                                                                                                                        start: 1039,
+                                                                                                                                        end: 1040,
+                                                                                                                                        filename: "testing/test/rule110.cb",
+                                                                                                                                    },
                                                                                                                                 },
                                                                                                                             },
                                                                                                                         ),
@@ -3437,13 +4009,26 @@
                                                                                 },
                                                                                 right: Litral(
                                                                                     Integer(
-                                                                                        Token {
-                                                                                            kind: Number,
-                                                                                            lexeme: "1",
-                                                                                            span: Span {
-                                                                                                start: 1118,
-                                                                                                end: 1119,
-                                                                                                filename: "testing/test/rule110.cb",
+                                                                                        IntegerLitral {
+                                                                                            token: Token {
+                                                                                                kind: Number,
+                                                                                                lexeme: "1",
+                                                                                                span: Span {
+                                                                                                    start: 1118,
+                                                                                                    end: 1119,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
+                                                                                            },
+                                                                                            ty: Type {
+                                                                                                mut_token: None,
+                                                                                                kind: SignedNumber(
+                                                                                                    32,
+                                                                                                ),
+                                                                                                span: Span {
+                                                                                                    start: 1118,
+                                                                                                    end: 1119,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
                                                                                             },
                                                                                         },
                                                                                     ),
@@ -3504,13 +4089,26 @@
                                                     },
                                                     right: Litral(
                                                         Integer(
-                                                            Token {
-                                                                kind: Number,
-                                                                lexeme: "0",
-                                                                span: Span {
-                                                                    start: 1144,
-                                                                    end: 1145,
-                                                                    filename: "testing/test/rule110.cb",
+                                                            IntegerLitral {
+                                                                token: Token {
+                                                                    kind: Number,
+                                                                    lexeme: "0",
+                                                                    span: Span {
+                                                                        start: 1144,
+                                                                        end: 1145,
+                                                                        filename: "testing/test/rule110.cb",
+                                                                    },
+                                                                },
+                                                                ty: Type {
+                                                                    mut_token: None,
+                                                                    kind: SignedNumber(
+                                                                        32,
+                                                                    ),
+                                                                    span: Span {
+                                                                        start: 1144,
+                                                                        end: 1145,
+                                                                        filename: "testing/test/rule110.cb",
+                                                                    },
                                                                 },
                                                             },
                                                         ),
@@ -3691,13 +4289,26 @@
                                                                                 },
                                                                                 right: Litral(
                                                                                     Integer(
-                                                                                        Token {
-                                                                                            kind: Number,
-                                                                                            lexeme: "0",
-                                                                                            span: Span {
-                                                                                                start: 1208,
-                                                                                                end: 1209,
-                                                                                                filename: "testing/test/rule110.cb",
+                                                                                        IntegerLitral {
+                                                                                            token: Token {
+                                                                                                kind: Number,
+                                                                                                lexeme: "0",
+                                                                                                span: Span {
+                                                                                                    start: 1208,
+                                                                                                    end: 1209,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
+                                                                                            },
+                                                                                            ty: Type {
+                                                                                                mut_token: None,
+                                                                                                kind: SignedNumber(
+                                                                                                    32,
+                                                                                                ),
+                                                                                                span: Span {
+                                                                                                    start: 1208,
+                                                                                                    end: 1209,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
                                                                                             },
                                                                                         },
                                                                                     ),
@@ -3742,13 +4353,26 @@
                                                                                             args: [
                                                                                                 Litral(
                                                                                                     Integer(
-                                                                                                        Token {
-                                                                                                            kind: Number,
-                                                                                                            lexeme: "32",
-                                                                                                            span: Span {
-                                                                                                                start: 1239,
-                                                                                                                end: 1241,
-                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                        IntegerLitral {
+                                                                                                            token: Token {
+                                                                                                                kind: Number,
+                                                                                                                lexeme: "32",
+                                                                                                                span: Span {
+                                                                                                                    start: 1239,
+                                                                                                                    end: 1241,
+                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                },
+                                                                                                            },
+                                                                                                            ty: Type {
+                                                                                                                mut_token: None,
+                                                                                                                kind: SignedNumber(
+                                                                                                                    32,
+                                                                                                                ),
+                                                                                                                span: Span {
+                                                                                                                    start: 1239,
+                                                                                                                    end: 1241,
+                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                },
                                                                                                             },
                                                                                                         },
                                                                                                     ),
@@ -3883,13 +4507,26 @@
                                                                                 },
                                                                                 right: Litral(
                                                                                     Integer(
-                                                                                        Token {
-                                                                                            kind: Number,
-                                                                                            lexeme: "1",
-                                                                                            span: Span {
-                                                                                                start: 1288,
-                                                                                                end: 1289,
-                                                                                                filename: "testing/test/rule110.cb",
+                                                                                        IntegerLitral {
+                                                                                            token: Token {
+                                                                                                kind: Number,
+                                                                                                lexeme: "1",
+                                                                                                span: Span {
+                                                                                                    start: 1288,
+                                                                                                    end: 1289,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
+                                                                                            },
+                                                                                            ty: Type {
+                                                                                                mut_token: None,
+                                                                                                kind: SignedNumber(
+                                                                                                    32,
+                                                                                                ),
+                                                                                                span: Span {
+                                                                                                    start: 1288,
+                                                                                                    end: 1289,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
                                                                                             },
                                                                                         },
                                                                                     ),
@@ -3934,13 +4571,26 @@
                                                                                             args: [
                                                                                                 Litral(
                                                                                                     Integer(
-                                                                                                        Token {
-                                                                                                            kind: Number,
-                                                                                                            lexeme: "42",
-                                                                                                            span: Span {
-                                                                                                                start: 1319,
-                                                                                                                end: 1321,
-                                                                                                                filename: "testing/test/rule110.cb",
+                                                                                                        IntegerLitral {
+                                                                                                            token: Token {
+                                                                                                                kind: Number,
+                                                                                                                lexeme: "42",
+                                                                                                                span: Span {
+                                                                                                                    start: 1319,
+                                                                                                                    end: 1321,
+                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                },
+                                                                                                            },
+                                                                                                            ty: Type {
+                                                                                                                mut_token: None,
+                                                                                                                kind: SignedNumber(
+                                                                                                                    32,
+                                                                                                                ),
+                                                                                                                span: Span {
+                                                                                                                    start: 1319,
+                                                                                                                    end: 1321,
+                                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                                },
                                                                                                             },
                                                                                                         },
                                                                                                     ),
@@ -4174,13 +4824,26 @@
                                                                                 },
                                                                                 right: Litral(
                                                                                     Integer(
-                                                                                        Token {
-                                                                                            kind: Number,
-                                                                                            lexeme: "1",
-                                                                                            span: Span {
-                                                                                                start: 1392,
-                                                                                                end: 1393,
-                                                                                                filename: "testing/test/rule110.cb",
+                                                                                        IntegerLitral {
+                                                                                            token: Token {
+                                                                                                kind: Number,
+                                                                                                lexeme: "1",
+                                                                                                span: Span {
+                                                                                                    start: 1392,
+                                                                                                    end: 1393,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
+                                                                                            },
+                                                                                            ty: Type {
+                                                                                                mut_token: None,
+                                                                                                kind: SignedNumber(
+                                                                                                    32,
+                                                                                                ),
+                                                                                                span: Span {
+                                                                                                    start: 1392,
+                                                                                                    end: 1393,
+                                                                                                    filename: "testing/test/rule110.cb",
+                                                                                                },
                                                                                             },
                                                                                         },
                                                                                     ),
@@ -4243,13 +4906,26 @@
                                                     args: [
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "10",
-                                                                    span: Span {
-                                                                        start: 1425,
-                                                                        end: 1427,
-                                                                        filename: "testing/test/rule110.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "10",
+                                                                        span: Span {
+                                                                            start: 1425,
+                                                                            end: 1427,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 1425,
+                                                                            end: 1427,
+                                                                            filename: "testing/test/rule110.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -4325,13 +5001,26 @@
                                                             },
                                                             right: Litral(
                                                                 Integer(
-                                                                    Token {
-                                                                        kind: Number,
-                                                                        lexeme: "1",
-                                                                        span: Span {
-                                                                            start: 1454,
-                                                                            end: 1455,
-                                                                            filename: "testing/test/rule110.cb",
+                                                                    IntegerLitral {
+                                                                        token: Token {
+                                                                            kind: Number,
+                                                                            lexeme: "1",
+                                                                            span: Span {
+                                                                                start: 1454,
+                                                                                end: 1455,
+                                                                                filename: "testing/test/rule110.cb",
+                                                                            },
+                                                                        },
+                                                                        ty: Type {
+                                                                            mut_token: None,
+                                                                            kind: SignedNumber(
+                                                                                32,
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 1454,
+                                                                                end: 1455,
+                                                                                filename: "testing/test/rule110.cb",
+                                                                            },
                                                                         },
                                                                     },
                                                                 ),
@@ -4406,13 +5095,26 @@
                                             },
                                             index: Litral(
                                                 Integer(
-                                                    Token {
-                                                        kind: Number,
-                                                        lexeme: "0",
-                                                        span: Span {
-                                                            start: 1483,
-                                                            end: 1484,
-                                                            filename: "testing/test/rule110.cb",
+                                                    IntegerLitral {
+                                                        token: Token {
+                                                            kind: Number,
+                                                            lexeme: "0",
+                                                            span: Span {
+                                                                start: 1483,
+                                                                end: 1484,
+                                                                filename: "testing/test/rule110.cb",
+                                                            },
+                                                        },
+                                                        ty: Type {
+                                                            mut_token: None,
+                                                            kind: SignedNumber(
+                                                                32,
+                                                            ),
+                                                            span: Span {
+                                                                start: 1483,
+                                                                end: 1484,
+                                                                filename: "testing/test/rule110.cb",
+                                                            },
                                                         },
                                                     },
                                                 ),

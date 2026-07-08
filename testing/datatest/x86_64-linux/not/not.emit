@@ -15,7 +15,7 @@
 main:
   push rbp
   mov rbp, rsp
-  sub rsp, 32
+  sub rsp, 16
   # -- args --
 main_entry:
   # @assign u32 : tmp.0_v0, 1
@@ -28,16 +28,16 @@ main_entry:
   test vreg(0 : Reg64), vreg(0 : Reg64)
   sete vreg(3 : Reg8)
   movzx vreg(4 : Reg64), vreg(3 : Reg8)
-  # @jumpif tmp.1_v0, %then.0
+  # @jumpif tmp.1_v0, %then_1
   # lowering jump if
   # lowering operand
   test vreg(4 : Reg64), vreg(4 : Reg64)
-  jnz main_then_0
-  # @jump %else.0
+  jnz main_then_1
+  # @jump %else_2
   # lowering jump if
-  jmp main_else_0
-main_then_0:
-  # @assign s32 : tmp.2_v0, 10
+  jmp main_else_2
+main_then_1:
+  # @assign u8 : tmp.2_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(7 : Reg64), 10
@@ -45,21 +45,21 @@ main_then_0:
   # @call write_char(tmp.2_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-4], vreg(6 : Reg32)
-  mov edi, dword ptr [rbp-4]
+  mov byte ptr [rbp-1], vreg(6 : Reg8)
+  mov dil, byte ptr [rbp-1]
   call write_char
   # @assign s32 : tmp.3_v0, 1
   # lowering assign
   # lowering operand
   mov vreg(10 : Reg64), 1
   mov vreg(9 : Reg64), vreg(10 : Reg64)
-  # @call write_int(tmp.3_v0)
+  # @call write_s32(tmp.3_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-8], vreg(9 : Reg32)
-  mov edi, dword ptr [rbp-8]
-  call write_int
-  # @assign s32 : tmp.4_v0, 10
+  mov dword ptr [rbp-5], vreg(9 : Reg32)
+  mov edi, dword ptr [rbp-5]
+  call write_s32
+  # @assign u8 : tmp.4_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(13 : Reg64), 10
@@ -67,14 +67,14 @@ main_then_0:
   # @call write_char(tmp.4_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-12], vreg(12 : Reg32)
-  mov edi, dword ptr [rbp-12]
+  mov byte ptr [rbp-6], vreg(12 : Reg8)
+  mov dil, byte ptr [rbp-6]
   call write_char
-  # @jump %merge.0
+  # @jump %merge_3
   # lowering jump if
-  jmp main_merge_0
-main_else_0:
-  # @assign s32 : tmp.5_v0, 10
+  jmp main_merge_3
+main_else_2:
+  # @assign u8 : tmp.5_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(16 : Reg64), 10
@@ -82,21 +82,21 @@ main_else_0:
   # @call write_char(tmp.5_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-16], vreg(15 : Reg32)
-  mov edi, dword ptr [rbp-16]
+  mov byte ptr [rbp-7], vreg(15 : Reg8)
+  mov dil, byte ptr [rbp-7]
   call write_char
   # @assign s32 : tmp.6_v0, 2
   # lowering assign
   # lowering operand
   mov vreg(19 : Reg64), 2
   mov vreg(18 : Reg64), vreg(19 : Reg64)
-  # @call write_int(tmp.6_v0)
+  # @call write_s32(tmp.6_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-20], vreg(18 : Reg32)
-  mov edi, dword ptr [rbp-20]
-  call write_int
-  # @assign s32 : tmp.7_v0, 10
+  mov dword ptr [rbp-11], vreg(18 : Reg32)
+  mov edi, dword ptr [rbp-11]
+  call write_s32
+  # @assign u8 : tmp.7_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(22 : Reg64), 10
@@ -104,15 +104,15 @@ main_else_0:
   # @call write_char(tmp.7_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-24], vreg(21 : Reg32)
-  mov edi, dword ptr [rbp-24]
+  mov byte ptr [rbp-12], vreg(21 : Reg8)
+  mov dil, byte ptr [rbp-12]
   call write_char
-  # @jump %merge.0
+  # @jump %merge_3
   # lowering jump if
-  jmp main_merge_0
-main_merge_0:
+  jmp main_merge_3
+main_merge_3:
 exit_main:
-  add rsp, 32
+  add rsp, 16
   mov rsp, rbp
   pop rbp
   ret

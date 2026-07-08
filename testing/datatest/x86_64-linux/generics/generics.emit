@@ -48,13 +48,13 @@ main_entry:
   lea vreg(8 : Reg64), qword ptr [rbp-16]
   mov vreg(9 : Reg64), 0
   mov vreg(10 : Reg32), [vreg(8 : Reg64) + vreg(9 : Reg64) * 1]
-  # @call write_int(tmp.3_v0)
+  # @call write_s32(tmp.3_v0)
   # lowering call
   # lowering operand
   mov dword ptr [rbp-20], vreg(10 : Reg32)
   mov edi, dword ptr [rbp-20]
-  call write_int
-  # @assign s32 : tmp.4_v0, 10
+  call write_s32
+  # @assign u8 : tmp.4_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(13 : Reg64), 10
@@ -62,8 +62,8 @@ main_entry:
   # @call write_char(tmp.4_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-24], vreg(12 : Reg32)
-  mov edi, dword ptr [rbp-24]
+  mov byte ptr [rbp-21], vreg(12 : Reg8)
+  mov dil, byte ptr [rbp-21]
   call write_char
   # @elemget s32 : tmp.5_v0, p_v0, 1
   # lowering elemget
@@ -73,13 +73,13 @@ main_entry:
   lea vreg(16 : Reg64), qword ptr [rbp-16]
   mov vreg(17 : Reg64), 4
   mov vreg(18 : Reg32), [vreg(16 : Reg64) + vreg(17 : Reg64) * 1]
-  # @call write_int(tmp.5_v0)
+  # @call write_s32(tmp.5_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-28], vreg(18 : Reg32)
-  mov edi, dword ptr [rbp-28]
-  call write_int
-  # @assign s32 : tmp.6_v0, 10
+  mov dword ptr [rbp-25], vreg(18 : Reg32)
+  mov edi, dword ptr [rbp-25]
+  call write_s32
+  # @assign u8 : tmp.6_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(21 : Reg64), 10
@@ -87,8 +87,8 @@ main_entry:
   # @call write_char(tmp.6_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-32], vreg(20 : Reg32)
-  mov edi, dword ptr [rbp-32]
+  mov byte ptr [rbp-26], vreg(20 : Reg8)
+  mov dil, byte ptr [rbp-26]
   call write_char
   # @assign s32 : tmp.7_v0, 123
   # lowering assign
@@ -103,23 +103,23 @@ main_entry:
   # @call s32 : tmp.9_v0 add__s32(tmp.7_v0, tmp.8_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-36], vreg(23 : Reg32)
+  mov dword ptr [rbp-30], vreg(23 : Reg32)
   # lowering operand
-  mov dword ptr [rbp-40], vreg(26 : Reg32)
-  mov edi, dword ptr [rbp-36]
-  mov esi, dword ptr [rbp-40]
+  mov dword ptr [rbp-34], vreg(26 : Reg32)
+  mov edi, dword ptr [rbp-30]
+  mov esi, dword ptr [rbp-34]
   call add__s32
   mov vreg(29 : Reg64), rax
   # @assign s32 : num0_v0, tmp.9_v0
   # lowering assign
   # lowering operand
-  mov dword ptr [rbp-44], vreg(29 : Reg32)
-  # @call write_int(num0_v0)
+  mov dword ptr [rbp-38], vreg(29 : Reg32)
+  # @call write_s32(num0_v0)
   # lowering call
   # lowering operand
-  mov edi, dword ptr [rbp-44]
-  call write_int
-  # @assign s32 : tmp.10_v0, 10
+  mov edi, dword ptr [rbp-38]
+  call write_s32
+  # @assign u8 : tmp.10_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(33 : Reg64), 10
@@ -127,8 +127,8 @@ main_entry:
   # @call write_char(tmp.10_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-48], vreg(32 : Reg32)
-  mov edi, dword ptr [rbp-48]
+  mov byte ptr [rbp-39], vreg(32 : Reg8)
+  mov dil, byte ptr [rbp-39]
   call write_char
   # @assign s32 : tmp.11_v0, 100
   # lowering assign
@@ -143,23 +143,23 @@ main_entry:
   # @call s32 : tmp.13_v0 add__s32(tmp.11_v0, tmp.12_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-52], vreg(35 : Reg32)
+  mov dword ptr [rbp-43], vreg(35 : Reg32)
   # lowering operand
-  mov dword ptr [rbp-56], vreg(38 : Reg32)
-  mov edi, dword ptr [rbp-52]
-  mov esi, dword ptr [rbp-56]
+  mov dword ptr [rbp-47], vreg(38 : Reg32)
+  mov edi, dword ptr [rbp-43]
+  mov esi, dword ptr [rbp-47]
   call add__s32
   mov vreg(41 : Reg64), rax
   # @assign s32 : num1_v0, tmp.13_v0
   # lowering assign
   # lowering operand
-  mov dword ptr [rbp-60], vreg(41 : Reg32)
-  # @call write_int(num1_v0)
+  mov dword ptr [rbp-51], vreg(41 : Reg32)
+  # @call write_s32(num1_v0)
   # lowering call
   # lowering operand
-  mov edi, dword ptr [rbp-60]
-  call write_int
-  # @assign s32 : tmp.14_v0, 10
+  mov edi, dword ptr [rbp-51]
+  call write_s32
+  # @assign u8 : tmp.14_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(45 : Reg64), 10
@@ -167,8 +167,8 @@ main_entry:
   # @call write_char(tmp.14_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-64], vreg(44 : Reg32)
-  mov edi, dword ptr [rbp-64]
+  mov byte ptr [rbp-52], vreg(44 : Reg8)
+  mov dil, byte ptr [rbp-52]
   call write_char
   # @assign s32 : tmp.15_v0, 0
   # lowering assign

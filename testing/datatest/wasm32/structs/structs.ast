@@ -38,7 +38,7 @@
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
+                lexeme: "write_s32",
                 span: Span {
                     start: 12,
                     end: 21,
@@ -404,13 +404,26 @@
                                                         },
                                                         count: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "2",
-                                                                    span: Span {
-                                                                        start: 167,
-                                                                        end: 168,
-                                                                        filename: "testing/test/structs.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "2",
+                                                                        span: Span {
+                                                                            start: 167,
+                                                                            end: 168,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 167,
+                                                                            end: 168,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -426,13 +439,26 @@
                                                         },
                                                         value: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: Span {
-                                                                        start: 164,
-                                                                        end: 165,
-                                                                        filename: "testing/test/structs.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 164,
+                                                                            end: 165,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 164,
+                                                                            end: 165,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -938,7 +964,7 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
+                                        lexeme: "write_s32",
                                         span: Span {
                                             start: 334,
                                             end: 343,
@@ -1003,13 +1029,26 @@
                                             },
                                             index: Litral(
                                                 Integer(
-                                                    Token {
-                                                        kind: Number,
-                                                        lexeme: "0",
-                                                        span: Span {
-                                                            start: 354,
-                                                            end: 355,
-                                                            filename: "testing/test/structs.cb",
+                                                    IntegerLitral {
+                                                        token: Token {
+                                                            kind: Number,
+                                                            lexeme: "0",
+                                                            span: Span {
+                                                                start: 354,
+                                                                end: 355,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
+                                                        },
+                                                        ty: Type {
+                                                            mut_token: None,
+                                                            kind: SignedNumber(
+                                                                32,
+                                                            ),
+                                                            span: Span {
+                                                                start: 354,
+                                                                end: 355,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                     },
                                                 ),
@@ -1085,13 +1124,26 @@
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: Span {
-                                                    start: 372,
-                                                    end: 374,
-                                                    filename: "testing/test/structs.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 372,
+                                                        end: 374,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 372,
+                                                        end: 374,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -1171,26 +1223,52 @@
                                     ),
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: Span {
-                                                    start: 395,
-                                                    end: 396,
-                                                    filename: "testing/test/structs.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 395,
+                                                        end: 396,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 395,
+                                                        end: 396,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             },
                                         ),
                                     ),
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "1",
-                                                span: Span {
-                                                    start: 398,
-                                                    end: 399,
-                                                    filename: "testing/test/structs.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "1",
+                                                    span: Span {
+                                                        start: 398,
+                                                        end: 399,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 398,
+                                                        end: 399,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -1225,7 +1303,7 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
+                                        lexeme: "write_s32",
                                         span: Span {
                                             start: 404,
                                             end: 413,
@@ -1290,13 +1368,26 @@
                                             },
                                             index: Litral(
                                                 Integer(
-                                                    Token {
-                                                        kind: Number,
-                                                        lexeme: "0",
-                                                        span: Span {
-                                                            start: 424,
-                                                            end: 425,
-                                                            filename: "testing/test/structs.cb",
+                                                    IntegerLitral {
+                                                        token: Token {
+                                                            kind: Number,
+                                                            lexeme: "0",
+                                                            span: Span {
+                                                                start: 424,
+                                                                end: 425,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
+                                                        },
+                                                        ty: Type {
+                                                            mut_token: None,
+                                                            kind: SignedNumber(
+                                                                32,
+                                                            ),
+                                                            span: Span {
+                                                                start: 424,
+                                                                end: 425,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                     },
                                                 ),
@@ -1372,13 +1463,26 @@
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: Span {
-                                                    start: 442,
-                                                    end: 444,
-                                                    filename: "testing/test/structs.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 442,
+                                                        end: 444,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 442,
+                                                        end: 444,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -1424,13 +1528,26 @@
                                 expr: Some(
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: Span {
-                                                    start: 456,
-                                                    end: 457,
-                                                    filename: "testing/test/structs.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 456,
+                                                        end: 457,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 456,
+                                                        end: 457,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             },
                                         ),

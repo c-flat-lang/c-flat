@@ -1,4 +1,4 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 
 fn fib(n: s32, a: s32, b: s32) s32 {
@@ -10,7 +10,7 @@ fn fib(n: s32, a: s32, b: s32) s32 {
 
 pub fn main() s32 {
   let value = fib(55, 0, 1);
-  write_int(value);
+  write_s32(value);
   write_char(10);
   return 0;
 }

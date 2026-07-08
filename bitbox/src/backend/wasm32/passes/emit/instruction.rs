@@ -414,6 +414,10 @@ impl Lower<Wasm32LowerContext<'_>> for IElemGet {
                 }
 
                 ty => {
+                    let ty = match ty {
+                        Type::Array(_, e) => e.as_ref(),
+                        other => other,
+                    };
                     self.index.lower(ctx, target)?;
                     target.assembler.i32_const(ty.size(&ctx.target));
                     target.assembler.i32_mul();
@@ -620,6 +624,10 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
                     };
                 }
                 elem_ty => {
+                    let elem_ty = match elem_ty {
+                        Type::Array(_, e) => e.as_ref(),
+                        other => other,
+                    };
                     self.addr.lower(ctx, target)?;
                     self.index.lower(ctx, target)?;
                     target.assembler.i32_const(elem_ty.size(&ctx.target));

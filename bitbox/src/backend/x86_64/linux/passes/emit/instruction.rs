@@ -1396,7 +1396,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         // Array/pointer element store: index * element_size stride. For a raw
         // pointer the stride is the pointee size, not the pointer's own size.
         let element_size = match &self.addr.ty {
-            Type::Pointer(inner) => inner.size(&ctx.target),
+            Type::Pointer(inner) => match inner.as_ref() {
+                Type::Array(_, e) => e.size(&ctx.target),
+                _ => inner.size(&ctx.target),
+            },
             _ => self.addr.ty.element_size(&ctx.target),
         };
 

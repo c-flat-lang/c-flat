@@ -1,0 +1,95 @@
+                    Tokenizing testing/test/struct_member_access.cb
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+                     LoweredIr
+        LocalFunctionVariables
+              ControlFlowGraph
+              LivenessAnalysis
+            PhiNodeElimination
+                          Emit
+.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 16
+  # -- args --
+main_entry:
+  # @alloc FooBar : tmp.0_v0, 1
+  # lowering alloc
+  # @alloc Bar : tmp.1_v0, 1
+  # lowering alloc
+  # @alloc Foo : tmp.2_v0, 1
+  # lowering alloc
+  # @assign s32 : tmp.3_v0, 100
+  # lowering assign
+  # lowering operand
+  mov vreg(4 : Reg64), 100
+  mov vreg(3 : Reg64), vreg(4 : Reg64)
+  # @elemset Foo : tmp.2_v0, 0, tmp.3_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(6 : Reg64), 0
+  # lowering operand
+  lea vreg(7 : Reg64), qword ptr [rbp-12]
+  mov vreg(8 : Reg64), 0
+  mov [vreg(7 : Reg64) + vreg(8 : Reg64) * 1], vreg(3 : Reg32)
+  # @elemset Bar : tmp.1_v0, 0, tmp.2_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(9 : Reg64), 0
+  # lowering operand
+  lea vreg(10 : Reg64), qword ptr [rbp-8]
+  mov vreg(11 : Reg64), vreg(10 : Reg64)
+  add vreg(11 : Reg64), 0
+  lea vreg(12 : Reg64), qword ptr [rbp-12]
+  mov vreg(13 : Reg64), 0
+  mov vreg(15 : Reg64), 0
+  mov vreg(14 : Reg32), [vreg(12 : Reg64) + vreg(13 : Reg64) * 1]
+  mov [vreg(11 : Reg64) + vreg(15 : Reg64) * 1], vreg(14 : Reg32)
+  # @elemset FooBar : tmp.0_v0, 0, tmp.1_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(16 : Reg64), 0
+  # lowering operand
+  lea vreg(17 : Reg64), qword ptr [rbp-4]
+  mov vreg(18 : Reg64), vreg(17 : Reg64)
+  add vreg(18 : Reg64), 0
+  lea vreg(19 : Reg64), qword ptr [rbp-8]
+  mov vreg(20 : Reg64), 0
+  mov vreg(22 : Reg64), 0
+  mov vreg(21 : Reg32), [vreg(19 : Reg64) + vreg(20 : Reg64) * 1]
+  mov [vreg(18 : Reg64) + vreg(22 : Reg64) * 1], vreg(21 : Reg32)
+  # @assign FooBar : foobar_v0, tmp.0_v0
+  # lowering assign
+  # @elemget Bar : tmp.4_v0, foobar_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(23 : Reg64), 0
+  # @elemget Foo : tmp.5_v0, tmp.4_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(25 : Reg64), 0
+  # @elemget s32 : tmp.6_v0, tmp.5_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(27 : Reg64), 0
+  lea vreg(28 : Reg64), qword ptr [rbp-4]
+  mov vreg(29 : Reg64), 0
+  mov vreg(30 : Reg32), [vreg(28 : Reg64) + vreg(29 : Reg64) * 1]
+  # @ret s32 : tmp.6_v0
+  # lowering return
+  mov eax, vreg(30 : Reg32)
+  jmp exit_main
+exit_main:
+  add rsp, 16
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

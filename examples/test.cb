@@ -1,19 +1,17 @@
-extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
+// comment out to run on x86
 extern C fn write(*[u8], usize) void;
 
 use std::fmt;
+// uncomment to run on linux
+// use std::linux::io;
 
 fn number_to_c_string(score: s32, out: *[11; u8]) void {
-    let mut buffer: [11; u8] = "          \0";
-    write(&buffer, buffer.len);
-    write_char('\n');
+    let mut buffer: [11; u8] = [0;11];
     fmt::convert_s32_to_array(score, &buffer);
-    write(&buffer, buffer.len);
-    write_char('\n');
 
     let mut start: usize = 0;
-    while start < 11 and buffer[start] == 32 {
+    while start < 11 and buffer[start] == 0 {
         start = start + 1;
     }
 
@@ -24,21 +22,16 @@ fn number_to_c_string(score: s32, out: *[11; u8]) void {
         i = i + 1;
         idx = idx + 1;
     }
-    write(&buffer, buffer.len);
-    write_char('\n');
 }
 
 pub fn main() void {
     let value = 32;
-    let text: [11; u8] = "-----------";
-    // number_to_c_string(value, &text);
-    // write(&text, text.len);
-    // write_char('\n');
-
-
-    fmt::convert_s32_to_array(value, &text);
-    write_char('"');
+    let text: [11; u8] = [0;11];
+    number_to_c_string(value, &text);
+    // use to run on wasm
     write(&text, text.len);
-    write_char('"');
     write_char('\n');
+
+    // uncomment to run on linux
+    // io_write_str(&text);
 }

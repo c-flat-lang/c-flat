@@ -30,31 +30,31 @@ max_s32_entry:
   cmp dword ptr [rbp-4], vreg(4 : Reg32)
   setg vreg(2 : Reg8)
   movzx vreg(3 : Reg64), vreg(2 : Reg8)
-  # @jumpif tmp.1_v0, %then.0
+  # @jumpif tmp.1_v0, %then_1
   # lowering jump if
   # lowering operand
   test vreg(3 : Reg64), vreg(3 : Reg64)
-  jnz max_s32_then_0
-  # @jump %else.0
+  jnz max_s32_then_1
+  # @jump %else_2
   # lowering jump if
-  jmp max_s32_else_0
-max_s32_then_0:
+  jmp max_s32_else_2
+max_s32_then_1:
   # @assign s32 : tmp.0_v0, x_v0
   # lowering assign
   # lowering operand
   mov vreg(6 : Reg32), dword ptr [rbp-4]
-  # @jump %merge.0
+  # @jump %merge_3
   # lowering jump if
-  jmp max_s32_merge_0
-max_s32_else_0:
+  jmp max_s32_merge_3
+max_s32_else_2:
   # @assign s32 : tmp.0_v0, y_v0
   # lowering assign
   # lowering operand
   mov vreg(6 : Reg32), dword ptr [rbp-8]
-  # @jump %merge.0
+  # @jump %merge_3
   # lowering jump if
-  jmp max_s32_merge_0
-max_s32_merge_0:
+  jmp max_s32_merge_3
+max_s32_merge_3:
   # @ret s32 : tmp.0_v0
   # lowering return
   mov eax, vreg(6 : Reg32)
@@ -84,31 +84,31 @@ min_s32_entry:
   cmp dword ptr [rbp-4], vreg(4 : Reg32)
   setl vreg(2 : Reg8)
   movzx vreg(3 : Reg64), vreg(2 : Reg8)
-  # @jumpif tmp.1_v0, %then.0
+  # @jumpif tmp.1_v0, %then_5
   # lowering jump if
   # lowering operand
   test vreg(3 : Reg64), vreg(3 : Reg64)
-  jnz min_s32_then_0
-  # @jump %else.0
+  jnz min_s32_then_5
+  # @jump %else_6
   # lowering jump if
-  jmp min_s32_else_0
-min_s32_then_0:
+  jmp min_s32_else_6
+min_s32_then_5:
   # @assign s32 : tmp.0_v0, x_v0
   # lowering assign
   # lowering operand
   mov vreg(6 : Reg32), dword ptr [rbp-4]
-  # @jump %merge.0
+  # @jump %merge_7
   # lowering jump if
-  jmp min_s32_merge_0
-min_s32_else_0:
+  jmp min_s32_merge_7
+min_s32_else_6:
   # @assign s32 : tmp.0_v0, y_v0
   # lowering assign
   # lowering operand
   mov vreg(6 : Reg32), dword ptr [rbp-8]
-  # @jump %merge.0
+  # @jump %merge_7
   # lowering jump if
-  jmp min_s32_merge_0
-min_s32_merge_0:
+  jmp min_s32_merge_7
+min_s32_merge_7:
   # @ret s32 : tmp.0_v0
   # lowering return
   mov eax, vreg(6 : Reg32)
@@ -156,12 +156,12 @@ main_entry:
   # lowering assign
   # lowering operand
   mov dword ptr [rbp-12], vreg(8 : Reg32)
-  # @call write_int(result_v0)
+  # @call write_s32(result_v0)
   # lowering call
   # lowering operand
   mov edi, dword ptr [rbp-12]
-  call write_int
-  # @assign s32 : tmp.3_v0, 10
+  call write_s32
+  # @assign u8 : tmp.3_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(12 : Reg64), 10
@@ -169,8 +169,8 @@ main_entry:
   # @call write_char(tmp.3_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-16], vreg(11 : Reg32)
-  mov edi, dword ptr [rbp-16]
+  mov byte ptr [rbp-13], vreg(11 : Reg8)
+  mov dil, byte ptr [rbp-13]
   call write_char
   # @call s32 : tmp.4_v0 max_s32(x_v0, y_v0)
   # lowering call
@@ -180,13 +180,13 @@ main_entry:
   mov esi, dword ptr [rbp-8]
   call max_s32
   mov vreg(14 : Reg64), rax
-  # @call write_int(tmp.4_v0)
+  # @call write_s32(tmp.4_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-20], vreg(14 : Reg32)
-  mov edi, dword ptr [rbp-20]
-  call write_int
-  # @assign s32 : tmp.5_v0, 10
+  mov dword ptr [rbp-17], vreg(14 : Reg32)
+  mov edi, dword ptr [rbp-17]
+  call write_s32
+  # @assign u8 : tmp.5_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(17 : Reg64), 10
@@ -194,8 +194,8 @@ main_entry:
   # @call write_char(tmp.5_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-24], vreg(16 : Reg32)
-  mov edi, dword ptr [rbp-24]
+  mov byte ptr [rbp-18], vreg(16 : Reg8)
+  mov dil, byte ptr [rbp-18]
   call write_char
   # @assign s32 : tmp.6_v0, 0
   # lowering assign

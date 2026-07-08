@@ -1,5 +1,5 @@
 extern C fn write_char(u8) void;
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 
 type Pair<(T: type)> struct {
     first: T,
@@ -19,17 +19,17 @@ fn add<(T: type)>(x: T, y: T) T {
 
 pub fn main() s32 {
     let p: Pair<(s32)> = make_pair<(s32)>(10, 20);
-    write_int(p.first);
+    write_s32(p.first);
     write_char(10);
-    write_int(p.second);
+    write_s32(p.second);
     write_char(10);
 
     let num0 = add<(s32)>(123, 321);
-    write_int(num0);
+    write_s32(num0);
     write_char(10);
 
     let num1 = add(100, 44);
-    write_int(num1);
+    write_s32(num1);
     write_char(10);
 
     return 0;

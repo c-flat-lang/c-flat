@@ -110,13 +110,26 @@
                                         },
                                         count: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "2",
-                                                    span: Span {
-                                                        start: 50,
-                                                        end: 51,
-                                                        filename: "testing/test/fix_arrays.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "2",
+                                                        span: Span {
+                                                            start: 50,
+                                                            end: 51,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 50,
+                                                            end: 51,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -132,13 +145,26 @@
                                         },
                                         value: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "0",
-                                                    span: Span {
-                                                        start: 47,
-                                                        end: 48,
-                                                        filename: "testing/test/fix_arrays.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "0",
+                                                        span: Span {
+                                                            start: 47,
+                                                            end: 48,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 47,
+                                                            end: 48,
+                                                            filename: "testing/test/fix_arrays.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -214,13 +240,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "0",
-                                            span: Span {
-                                                start: 77,
-                                                end: 78,
-                                                filename: "testing/test/fix_arrays.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "0",
+                                                span: Span {
+                                                    start: 77,
+                                                    end: 78,
+                                                    filename: "testing/test/fix_arrays.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 77,
+                                                    end: 78,
+                                                    filename: "testing/test/fix_arrays.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -484,13 +523,26 @@
                                                             },
                                                             right: Litral(
                                                                 Integer(
-                                                                    Token {
-                                                                        kind: Number,
-                                                                        lexeme: "1",
-                                                                        span: Span {
-                                                                            start: 151,
-                                                                            end: 152,
-                                                                            filename: "testing/test/fix_arrays.cb",
+                                                                    IntegerLitral {
+                                                                        token: Token {
+                                                                            kind: Number,
+                                                                            lexeme: "1",
+                                                                            span: Span {
+                                                                                start: 151,
+                                                                                end: 152,
+                                                                                filename: "testing/test/fix_arrays.cb",
+                                                                            },
+                                                                        },
+                                                                        ty: Type {
+                                                                            mut_token: None,
+                                                                            kind: SignedNumber(
+                                                                                32,
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 151,
+                                                                                end: 152,
+                                                                                filename: "testing/test/fix_arrays.cb",
+                                                                            },
                                                                         },
                                                                     },
                                                                 ),
@@ -543,13 +595,26 @@
                                 expr: Some(
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: Span {
-                                                    start: 171,
-                                                    end: 172,
-                                                    filename: "testing/test/fix_arrays.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 171,
+                                                        end: 172,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 171,
+                                                        end: 172,
+                                                        filename: "testing/test/fix_arrays.cb",
+                                                    },
                                                 },
                                             },
                                         ),
