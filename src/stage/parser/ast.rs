@@ -1018,9 +1018,21 @@ impl ExprMemberAccess {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IntegerLitral {
+    pub token: Token,
+    pub ty: Type,
+}
+
+impl IntegerLitral {
+    pub fn span(&self) -> Span {
+        self.token.span.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Litral {
     String(Token),
-    Integer(Token),
+    Integer(IntegerLitral),
     Float(Token),
     Char(Token),
     BoolTrue(Token),
@@ -1031,7 +1043,7 @@ impl Litral {
     pub fn span(&self) -> Span {
         match self {
             Litral::String(token) => token.span.clone(),
-            Litral::Integer(token) => token.span.clone(),
+            Litral::Integer(i) => i.span(),
             Litral::Float(token) => token.span.clone(),
             Litral::Char(token) => token.span.clone(),
             Litral::BoolTrue(token) => token.span.clone(),

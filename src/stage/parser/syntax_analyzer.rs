@@ -878,7 +878,18 @@ impl Parser {
                     expr: Box::new(expr),
                 }))
             }
-            TokenKind::Number => Ok(ast::Expr::Litral(ast::Litral::Integer(token))),
+            TokenKind::Number => {
+                let span = token.span.clone();
+                let integer_litral = ast::IntegerLitral {
+                    token,
+                    ty: ast::Type {
+                        mut_token: None,
+                        kind: ast::TypeKind::SignedNumber(32),
+                        span,
+                    },
+                };
+                Ok(ast::Expr::Litral(ast::Litral::Integer(integer_litral)))
+            }
             TokenKind::Float => Ok(ast::Expr::Litral(ast::Litral::Float(token))),
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),
             TokenKind::Char => Ok(ast::Expr::Litral(ast::Litral::Char(token))),

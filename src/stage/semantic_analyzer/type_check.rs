@@ -327,13 +327,16 @@ impl<'st> TypeChecker<'st> {
         value_type
     }
 
-    fn walk_expr_litral(&mut self, expr: &ast::Litral) -> ast::Type {
+    fn walk_expr_litral(&mut self, expr: &mut ast::Litral) -> ast::Type {
         match expr {
-            ast::Litral::Integer(_) => self.numeric_hint.clone().unwrap_or(Type {
-                kind: TypeKind::SignedNumber(32),
-                span: expr.span(),
-                mut_token: None,
-            }),
+            ast::Litral::Integer(integer_litral) => {
+                let ty = self
+                    .numeric_hint
+                    .clone()
+                    .unwrap_or(integer_litral.ty.clone());
+                integer_litral.ty = ty.clone();
+                ty
+            }
             ast::Litral::Float(_) => self.numeric_hint.clone().unwrap_or(Type {
                 kind: TypeKind::Float(32),
                 span: expr.span(),
@@ -578,7 +581,11 @@ impl<'st> TypeChecker<'st> {
             TypeKind::Slice(elem_ty) => *elem_ty.clone(),
             TypeKind::Pointer(inner) => match &inner.kind {
                 TypeKind::Slice(elem_ty) => *elem_ty.clone(),
-                _ => (**inner).clone(),
+                TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
+                _ => {
+                    eprintln!("walk_expr_array_index {:#?}", inner);
+                    (**inner).clone()
+                }
             },
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
@@ -640,9 +647,10 @@ impl<'st> TypeChecker<'st> {
             return value_type;
         };
 
+        // TODO: handle type here? Do we ignore here?
         expr.ty = Type {
             kind: TypeKind::Array(
-                count_token.lexeme.parse::<usize>().unwrap(),
+                count_token.token.lexeme.parse::<usize>().unwrap(),
                 Box::new(value_type.clone()),
             ),
             span: expr.span(),
@@ -677,7 +685,15 @@ impl<'st> TypeChecker<'st> {
                     lexeme: size.to_string(),
                     span: expr.span(),
                 };
-                *expr = ast::Expr::Litral(ast::Litral::Integer(token));
+                let integer_litral = ast::IntegerLitral {
+                    token,
+                    ty: Type {
+                        mut_token: None,
+                        kind: TypeKind::UnsignedTargetPointerNumber,
+                        span: expr.span(),
+                    },
+                };
+                *expr = ast::Expr::Litral(ast::Litral::Integer(integer_litral));
                 Type {
                     kind: TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),

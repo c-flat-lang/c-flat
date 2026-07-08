@@ -284,6 +284,11 @@ pub extern C fn WaveFormat as wave_format(*Wave, s32, s32, s32) void;
 pub extern C fn LoadWaveSamples as load_wave_samples(Wave) *f32;
 pub extern C fn UnloadWaveSamples as unload_wave_samples(*f32) void;
 
+// Random number
+
+pub extern C fn SetRandomSeed as set_random_seed(u32) void;
+pub extern C fn GetRandomValue as get_random_value(s32, s32) s32;
+
 // Texture loading functions
 // Note: These functions require GPU access
 

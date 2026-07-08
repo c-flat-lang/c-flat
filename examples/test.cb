@@ -1,16 +1,44 @@
-type Foo struct {
-    number: s32,
+extern C fn write_s32(s32) void;
+extern C fn write_char(u8) void;
+extern C fn write(*[u8], usize) void;
+
+use std::fmt;
+
+fn number_to_c_string(score: s32, out: *[11; u8]) void {
+    let mut buffer: [11; u8] = "          \0";
+    write(&buffer, buffer.len);
+    write_char('\n');
+    fmt::convert_s32_to_array(score, &buffer);
+    write(&buffer, buffer.len);
+    write_char('\n');
+
+    let mut start: usize = 0;
+    while start < 11 and buffer[start] == 32 {
+        start = start + 1;
+    }
+
+    let mut i: usize = 0;
+    let mut idx: usize = start;
+    while idx < 11 {
+        out[i] = buffer[idx];
+        i = i + 1;
+        idx = idx + 1;
+    }
+    write(&buffer, buffer.len);
+    write_char('\n');
 }
 
-type Bar struct {
-    foo: Foo,
-}
+pub fn main() void {
+    let value = 32;
+    let text: [11; u8] = "-----------";
+    // number_to_c_string(value, &text);
+    // write(&text, text.len);
+    // write_char('\n');
 
-type FooBar struct {
-    bar: Bar,
-}
 
-pub fn main() s32 {
-    let foobar = FooBar { .bar = Bar { .foo = Foo { .number = 100 } } };
-    return foobar.bar.foo.number;
+    fmt::convert_s32_to_array(value, &text);
+    write_char('"');
+    write(&text, text.len);
+    write_char('"');
+    write_char('\n');
 }

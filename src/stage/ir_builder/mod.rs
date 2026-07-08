@@ -359,7 +359,15 @@ impl Lowerable for ExprMemberAccess {
                 ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
                 _ => panic!("Expected pointer to struct type in MemberAccess"),
             },
-            _ => panic!("Expected struct type in MemberAccess"),
+            ir::Type::Array(size, _) => {
+                // HACK: I think we could maybe handle this better.
+                let ty = Type::Unsigned(ctx.target.target_pointer_size());
+                let des = assembler.var(ty.clone());
+                let index = Operand::ConstantInt(ConstantInt::new(size.to_string(), ty));
+                assembler.assign(des.clone(), index);
+                return Some(des);
+            }
+            ty => panic!("Expected struct type in MemberAccess but found {ty}"),
         };
         let Some((idx, (_, field_ty))) = fields
             .iter()
@@ -575,7 +583,7 @@ impl Lowerable for Litral {
     fn lower(
         &self,
         assembler: &mut AssemblerBuilder,
-        _ctx: &mut LoweringContext,
+        ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         match self {
             ast::Litral::String(token) => {
@@ -607,16 +615,14 @@ impl Lowerable for Litral {
                 }
                 Some(ptr)
             }
-            ast::Litral::Integer(token) => {
-                let fits_i32 = token.lexeme.replace('_', "").parse::<i32>().is_ok();
-                let bits = if fits_i32 { 32 } else { 64 };
-                let ty = if fits_i32 {
-                    Type::Signed(32)
-                } else {
-                    Type::Unsigned(64)
-                };
+            ast::Litral::Integer(integer_litral) => {
+                let ty = integer_litral.ty.as_bitbox_type(&ctx.target);
+                let bits: u8 = (ty.size(&ctx.target) * 4) as u8;
                 let var = assembler.var(ty);
-                assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, bits));
+                assembler.assign(
+                    var.clone(),
+                    Operand::const_unsigned(&integer_litral.token.lexeme, bits),
+                );
                 Some(var)
             }
             ast::Litral::Float(token) => {

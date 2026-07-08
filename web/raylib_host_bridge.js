@@ -281,6 +281,9 @@ export function makeRaylibHost(getCflatExports, canvas) {
     WaveFormat: (wave, a, b, c) => module._WaveFormat(wave, a, b, c),
     LoadWaveSamples: (wave) => module._LoadWaveSamples(wave),
     UnloadWaveSamples: (v) => module._UnloadWaveSamples(v),
+    // Random number
+    SetRandomSeed: (seed) => module._SetRandomSeed(seed),
+    GetRandomValue: (min, max) => module._GetRandomValue(min, max),
 
     write_bool: (n) => globalThis.__cflat_log(n ? "true" : "false"),
     write_u8: (n) => globalThis.__cflat_log(String(n)),

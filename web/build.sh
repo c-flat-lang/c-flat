@@ -90,7 +90,7 @@ raw_wasm="$ROOT/bin/$name.wasm"
 
 
 # 2. Require a main() entry (the blocking-loop model).
-wasm_print="$(wasm-opt "$raw_wasm" --enable-bulk-memory --print 2>&1)" || {
+wasm_print="$(wasm-opt "$raw_wasm" --enable-bulk-memory --enable-nontrapping-float-to-int --print 2>&1)" || {
   echo "error: wasm-opt failed to process $raw_wasm:" >&2
   echo "$wasm_print" >&2
   exit 1
@@ -109,6 +109,7 @@ mkdir -p "$outdir"
 #    project against the real raylib host module.
 wasm-opt "$raw_wasm" \
   --enable-bulk-memory \
+  --enable-nontrapping-float-to-int \
   --asyncify \
   --pass-arg=asyncify-imports@core.EndDrawing \
   -o "$outdir/$name.wasm"

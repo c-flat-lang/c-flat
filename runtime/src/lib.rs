@@ -71,12 +71,12 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
         "write",
         |mut ctx: Caller<'_, WasiCtx>, ptr: i32, len: i32| {
             let Some(exported_memory) = ctx.get_export("memory") else {
-                return 1;
+                return;
             };
 
             let Some(memory) = exported_memory.into_memory() else {
                 println!("Memory export not found");
-                return 1;
+                return;
             };
 
             // let offset_ptr = iovs_ptr as usize;
@@ -93,8 +93,6 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
 
             print!("{}", String::from_utf8(string.clone()).unwrap());
             std::io::stdout().flush().unwrap();
-
-            0
         },
     )?;
 
