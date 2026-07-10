@@ -196,6 +196,88 @@ This means we may need to generate more then one X Type depending on how many Ge
             Self::Void => 0,
         }
     }
+
+    pub fn compair_enum(&self, kind: &TypeKind) -> bool {
+        match (self, kind) {
+            (TypeKind::Enum(a), TypeKind::Enum(b)) => a.number_kind.compair_enum(&b.number_kind),
+            (TypeKind::Enum(a), TypeKind::UnsignedNumber(_)) => a.number_kind.compair_enum(kind),
+            (TypeKind::UnsignedNumber(_), TypeKind::Enum(b)) => self.compair_enum(&b.number_kind),
+            (TypeKind::UnsignedNumber(lhs), TypeKind::UnsignedNumber(rhs)) => lhs == rhs,
+            _ => false,
+        }
+    }
+
+    pub fn compair(&self, other: &TypeKind) -> bool {
+        match self {
+            TypeKind::Array(len, elem) => match other {
+                TypeKind::Array(other_len, other_elem) => {
+                    elem.kind.compair(&other_elem.kind) && len == other_len
+                }
+                _ => false,
+            },
+
+            TypeKind::Bool => matches!(other, TypeKind::Bool),
+
+            TypeKind::Enum(_) => self.compair_enum(other),
+
+            TypeKind::Float(bits) => match other {
+                TypeKind::Float(other_bits) => bits == other_bits,
+                _ => false,
+            },
+
+            TypeKind::Name(token) => match other {
+                TypeKind::Name(other_token) => token == other_token,
+                _ => false,
+            },
+
+            TypeKind::NameWithParams(token, type_params) => match other {
+                TypeKind::NameWithParams(other_token, other_params) => {
+                    token == other_token
+                        && type_params.len() == other_params.len()
+                        && type_params
+                            .params
+                            .iter()
+                            .zip(other_params.params.iter())
+                            .all(|(a, b)| a.kind.compair(&b.kind))
+                }
+                _ => false,
+            },
+
+            TypeKind::Pointer(inner) => match other {
+                TypeKind::Pointer(other_inner) => inner.kind.compair(&other_inner.kind),
+                _ => false,
+            },
+
+            TypeKind::SignedNumber(bits) => match other {
+                TypeKind::SignedNumber(other_bits) => bits == other_bits,
+                _ => false,
+            },
+
+            TypeKind::SignedTargetPointerNumber => {
+                matches!(other, TypeKind::SignedTargetPointerNumber)
+            }
+
+            TypeKind::Slice(inner) => match other {
+                TypeKind::Slice(other_inner) => inner.kind.compair(&other_inner.kind),
+                _ => false,
+            },
+
+            TypeKind::Struct(struct_type) => match other {
+                TypeKind::Struct(other_struct) => struct_type.name == other_struct.name,
+                _ => false,
+            },
+
+            TypeKind::Type => matches!(other, TypeKind::Type),
+
+            TypeKind::UnsignedNumber(_) => self.compair_enum(other),
+
+            TypeKind::UnsignedTargetPointerNumber => {
+                matches!(other, TypeKind::UnsignedTargetPointerNumber)
+            }
+
+            TypeKind::Void => matches!(other, TypeKind::Void),
+        }
+    }
 }
 
 impl std::fmt::Display for TypeKind {
@@ -231,6 +313,16 @@ pub struct EnumType {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeParams {
     pub params: Vec<Type>,
+}
+
+impl TypeParams {
+    pub const fn len(&self) -> usize {
+        self.params.len()
+    }
+
+    pub const fn is_empty(&self) -> bool {
+        self.params.is_empty()
+    }
 }
 
 impl std::fmt::Display for TypeParams {

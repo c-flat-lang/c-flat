@@ -126,6 +126,22 @@ export function makeRaylibHost(getCflatExports, canvas) {
       const [r, g, b, a] = readColor(cPtr);
       module._cf_draw_rectangle(x, y, w, h, r, g, b, a);
     },
+    DrawLineEx: (startVecPtr, endVecPtr, thick, colorPtr) => {
+      const [start_x, start_y] = readVector2(startVecPtr);
+      const [end_x, end_y] = readVector2(endVecPtr);
+      const [r, g, b, a] = readColor(colorPtr);
+      module._cf_draw_line_ex(
+        start_x,
+        start_y,
+        end_x,
+        end_y,
+        thick,
+        r,
+        g,
+        b,
+        a,
+      );
+    },
     DrawText: (textPtr, x, y, fontSize, cPtr) => {
       const [r, g, b, a] = readColor(cPtr);
       withHostStr(readCStr(textPtr), (p) =>

@@ -326,7 +326,10 @@ impl Lowerable for ExprStruct {
                 })
                 .unwrap_or_else(|| {
                     let Some(default) = &symbol_field.default_value else {
-                        panic!("Failed to return variable from expr lowering in Struct field");
+                        panic!(
+                            "Failed to return variable from expr lowering in Struct field {:#?}",
+                            symbol_field.ty.span.clone()
+                        );
                     };
                     default
                         .lower(assembler, ctx)
@@ -1098,7 +1101,7 @@ impl Lowerable for ExprNot {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         let src_var = self.expr.lower(assembler, ctx)?;
-        let des = assembler.var(src_var.ty.clone());
+        let des = assembler.var(Type::Unsigned(32));
         assembler.not(des.clone(), src_var);
         Some(des)
     }

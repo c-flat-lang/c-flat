@@ -9,6 +9,17 @@ use crate::stage::lexer::token::{Keyword as Kw, Span, Token, TokenKind};
 use crate::stage::parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::{ScopePath, SymbolTable};
 
+fn unsigned_kind_of(t: &TypeKind) -> Option<&TypeKind> {
+    match t {
+        TypeKind::UnsignedNumber(_) => Some(t),
+        TypeKind::Enum(EnumType { number_kind, .. }) => match &**number_kind {
+            TypeKind::UnsignedNumber(_) => Some(&**number_kind),
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
 impl Type {
     pub fn supports_binary_op(&self, op: &TokenKind, other: &Type, span: Span) -> Option<Type> {
         use TokenKind::*;
@@ -52,10 +63,17 @@ impl Type {
                 TypeKind::SignedTargetPointerNumber,
             ) => Some(self.map_kind(|_| TypeKind::Bool)),
             (
-                TypeKind::UnsignedNumber(lhs),
+                lhs_ty @ (TypeKind::Enum(_) | TypeKind::UnsignedNumber(_)),
                 EqualEqual | Greater | GreaterEqual | Less | LessEqual,
-                TypeKind::UnsignedNumber(rhs),
-            ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
+                rhs_ty @ (TypeKind::Enum(_) | TypeKind::UnsignedNumber(_)),
+            ) => match (unsigned_kind_of(lhs_ty), unsigned_kind_of(rhs_ty)) {
+                (Some(TypeKind::UnsignedNumber(lhs)), Some(TypeKind::UnsignedNumber(rhs)))
+                    if lhs == rhs =>
+                {
+                    Some(self.map_kind(|_| TypeKind::Bool))
+                }
+                _ => None,
+            },
             (
                 TypeKind::SignedNumber(lhs),
                 EqualEqual | Greater | GreaterEqual | Less | LessEqual,
@@ -140,7 +158,10 @@ impl<'st> TypeChecker<'st> {
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
-        if calulated_return_type.kind != function.return_type.kind {
+        if !calulated_return_type
+            .kind
+            .compair(&function.return_type.kind)
+        {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 calulated_return_type,
                 function.return_type.kind.clone(),
@@ -286,13 +307,13 @@ impl<'st> TypeChecker<'st> {
         self.numeric_hint = None;
         if lhs != rhs {
             self.errors.push(Box::new({
-                let mut error = ErrorMissMatchedType::new(
+                let error = ErrorMissMatchedType::new(
                     rhs,
                     lhs.kind.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
-                );
-                error.alt_span(expr.left.span());
+                )
+                .alt_span(expr.left.span());
                 error
             }));
         }
@@ -456,6 +477,15 @@ impl<'st> TypeChecker<'st> {
                 mut_token: None,
             };
         };
+
+        // match &symbol.ty.kind {
+        //     TypeKind::Enum(enum_type) => Type {
+        //         mut_token: None,
+        //         kind: (*enum_type.number_kind).clone(),
+        //         span: expr.span.clone(),
+        //     },
+        //     _ => symbol.ty.clone(),
+        // }
         symbol.ty.clone()
     }
 
@@ -472,30 +502,6 @@ impl<'st> TypeChecker<'st> {
                 mut_token: None,
             };
         };
-        if let TypeKind::Enum(enum_def) = &symbol.ty.kind {
-            let Some((varant, _)) = enum_def
-                .variants
-                .iter()
-                .find(|(token, _)| token.lexeme == leaf.lexeme)
-            else {
-                self.errors.push(Box::new(ErrorMemberAccess::new(
-                    leaf.span.clone(),
-                    #[cfg(feature = "debug")]
-                    format!("{} {}:{}", file!(), line!(), column!()),
-                )));
-                return Type {
-                    span: leaf.span.clone(),
-                    ..Default::default()
-                };
-            };
-
-            let kind = enum_def.number_kind.clone();
-            return Type {
-                mut_token: None,
-                kind: *kind,
-                span: varant.span.clone(),
-            };
-        }
 
         symbol.ty.clone()
     }
@@ -508,7 +514,8 @@ impl<'st> TypeChecker<'st> {
                 TypeKind::Bool,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
-            );
+            )
+            .alt_span(expr.condition.span());
             self.errors.push(Box::new(error));
         }
         let then_branch_type = self.walk_block(&mut expr.then_branch);

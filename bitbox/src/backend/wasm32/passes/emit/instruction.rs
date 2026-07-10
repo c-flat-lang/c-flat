@@ -879,9 +879,25 @@ impl Lower<Wasm32LowerContext<'_>> for IGte {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
+
+        let is_signed = matches!(self.lhs.ty(), Some(Type::Signed(_)));
+
         match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_ge_u(),
-            ValType::I64 => target.assembler.i64_ge_u(),
+            ValType::I32 => {
+                if is_signed {
+                    // however signedness is tracked in your AST/type info
+                    target.assembler.i32_ge_s()
+                } else {
+                    target.assembler.i32_ge_u()
+                }
+            }
+            ValType::I64 => {
+                if is_signed {
+                    target.assembler.i64_ge_s()
+                } else {
+                    target.assembler.i64_ge_u()
+                }
+            }
             ValType::F32 => target.assembler.f32_ge(),
             ValType::F64 => target.assembler.f64_ge(),
             ValType::V128 => unreachable!("@gte v128: SIMD is not produced by c-flat"),
@@ -902,22 +918,43 @@ impl Lower<Wasm32LowerContext<'_>> for IGte {
 
 impl Lower<Wasm32LowerContext<'_>> for IRem {
     type Output = ();
-
     fn lower(
         &self,
         ctx: &mut crate::backend::Context,
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
-        self.lhs.lower(ctx, target)?;
-        self.rhs.lower(ctx, target)?;
-
         match &self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_rem_s(),
-            ValType::I64 => target.assembler.i64_rem_s(),
-            // wasm has no float remainder instruction; `%` on floats is rejected
-            // by the type checker.
-            ValType::F32 => unreachable!("@rem f32: `%` on floats is not supported"),
-            ValType::F64 => unreachable!("@rem f64: `%` on floats is not supported"),
+            ValType::I32 => {
+                self.lhs.lower(ctx, target)?;
+                self.rhs.lower(ctx, target)?;
+                target.assembler.i32_rem_s();
+            }
+            ValType::I64 => {
+                self.lhs.lower(ctx, target)?;
+                self.rhs.lower(ctx, target)?;
+                target.assembler.i64_rem_s();
+            }
+            ValType::F32 => {
+                // fmod-style remainder: lhs - trunc(lhs / rhs) * rhs
+                self.lhs.lower(ctx, target)?; // kept for final subtraction
+                self.lhs.lower(ctx, target)?; // numerator
+                self.rhs.lower(ctx, target)?; // denominator
+                target.assembler.f32_div();
+                target.assembler.f32_trunc();
+                self.rhs.lower(ctx, target)?; // for multiplication
+                target.assembler.f32_mul();
+                target.assembler.f32_sub();
+            }
+            ValType::F64 => {
+                self.lhs.lower(ctx, target)?;
+                self.lhs.lower(ctx, target)?;
+                self.rhs.lower(ctx, target)?;
+                target.assembler.f64_div();
+                target.assembler.f64_trunc();
+                self.rhs.lower(ctx, target)?;
+                target.assembler.f64_mul();
+                target.assembler.f64_sub();
+            }
             ValType::V128 => unreachable!("@rem v128: SIMD is not produced by c-flat"),
             ValType::Ref(_) => unreachable!("@rem ref: reference types are not produced by c-flat"),
         };
@@ -930,7 +967,6 @@ impl Lower<Wasm32LowerContext<'_>> for IRem {
             panic!("Variable {:?} not found", self.des);
         };
         target.assembler.local_set(idx as u32);
-
         Ok(())
     }
 }

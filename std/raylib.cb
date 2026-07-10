@@ -214,6 +214,7 @@ pub extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle)
 
 // Drawing Shapes
 pub extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
+pub extern C fn DrawLineEx as draw_line_ex(Vector2, Vector2, f32, Color) void;
 pub extern C fn DrawPoly as draw_poly(Vector2, s32, f32, f32, Color) void;
 pub extern C fn DrawPolyLines as draw_poly_lines(Vector2, s32, f32, f32, Color) void;
 pub extern C fn DrawPolyLinesEx as draw_poly_lines_ex(Vector2, s32, f32, f32, f32, Color) void;

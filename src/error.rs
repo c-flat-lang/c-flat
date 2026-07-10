@@ -164,8 +164,9 @@ impl ErrorMissMatchedType {
         }
     }
 
-    pub fn alt_span(&mut self, alt_span: Span) {
+    pub fn alt_span(mut self, alt_span: Span) -> Self {
         self.alt_span = Some(alt_span);
+        self
     }
 }
 
