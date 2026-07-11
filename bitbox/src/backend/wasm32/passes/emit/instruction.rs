@@ -620,7 +620,11 @@ impl Lower<Wasm32LowerContext<'_>> for IElemSet {
                     match field_ty.size(&ctx.target) {
                         1 => target.assembler.i32_store8(memarg_byte),
                         2 => target.assembler.i32_store16(memarg_word),
-                        _ => target.assembler.i32_store(memarg_dword),
+                        _ => match field_ty {
+                            Type::Float(0..=32) => target.assembler.f32_store(memarg_dword),
+                            Type::Float(33..=64) => target.assembler.f64_store(memarg_dword),
+                            _ => target.assembler.i32_store(memarg_dword),
+                        },
                     };
                 }
                 elem_ty => {

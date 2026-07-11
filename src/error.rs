@@ -235,8 +235,8 @@ impl Report for ErrorUnsupportedBinaryOp {
 
     fn report(&self, src: &str) -> String {
         let span = Span {
-            start: self.lhs.span.start,
-            end: self.rhs.span.end,
+            start: self.op.span.start,
+            end: self.op.span.end,
             filename: self.rhs.span.filename.clone(),
         };
         let mut report = ReportBuilder::new(&span, src);

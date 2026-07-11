@@ -429,10 +429,23 @@ impl<'st> TypeChecker<'st> {
             unreachable!("If seeing this then. Welp I guess I was wrong.");
         };
 
+        let expected_arg_count = symbol.params.as_ref().map(|v| v.len()).unwrap_or_default();
+
         for (arg, ty) in expr.args.iter_mut().zip(&symbol.params.unwrap_or_default()) {
             self.maybe_numeric_hint(ty);
             self.walk_expr(arg);
             self.numeric_hint = None;
+        }
+
+        // TODO: Make this a user error
+        if expr.args.len() != expected_arg_count {
+            panic!(
+                "function: {} @ index {} expected {} args but found {}",
+                symbol.name,
+                expr.span().start,
+                expected_arg_count,
+                expr.args.len()
+            );
         }
 
         symbol.ty.clone()
