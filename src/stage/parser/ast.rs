@@ -1124,7 +1124,7 @@ impl IntegerLitral {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Litral {
     String(Token),
-    Integer(IntegerLitral),
+    Integer(Box<IntegerLitral>),
     Float(Token),
     Char(Token),
     BoolTrue(Token),

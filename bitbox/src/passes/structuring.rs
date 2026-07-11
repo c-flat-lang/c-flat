@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use super::Pass;
 use crate::{
-    ir::{
-        BasicBlock, BlockId, Instruction, Operand, Type, Variable, instruction::IIfElse,
-    },
+    ir::{BasicBlock, BlockId, Instruction, Operand, Type, Variable, instruction::IIfElse},
     passes::{DebugPass, PassOutput},
 };
 #[cfg(feature = "uuids")]
@@ -397,4 +395,3 @@ fn renumber_local_blocks(blocks: &mut [BasicBlock]) {
         b.id = BlockId(i);
     }
 }
-

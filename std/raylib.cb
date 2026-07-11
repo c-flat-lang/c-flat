@@ -245,7 +245,7 @@ type Wave struct {
     sampleRate: s32,
     sampleSize: s32,
     channels: s32,
-    data: usize,
+    data: *[u8],
 }
 
 type Sound struct {

@@ -888,7 +888,9 @@ impl Parser {
                         span,
                     },
                 };
-                Ok(ast::Expr::Litral(ast::Litral::Integer(integer_litral)))
+                Ok(ast::Expr::Litral(ast::Litral::Integer(Box::new(
+                    integer_litral,
+                ))))
             }
             TokenKind::Float => Ok(ast::Expr::Litral(ast::Litral::Float(token))),
             TokenKind::String => Ok(ast::Expr::Litral(ast::Litral::String(token))),

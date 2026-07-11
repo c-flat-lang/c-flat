@@ -307,14 +307,13 @@ impl<'st> TypeChecker<'st> {
         self.numeric_hint = None;
         if lhs != rhs {
             self.errors.push(Box::new({
-                let error = ErrorMissMatchedType::new(
+                ErrorMissMatchedType::new(
                     rhs,
                     lhs.kind.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )
-                .alt_span(expr.left.span());
-                error
+                .alt_span(expr.left.span())
             }));
         }
         lhs
@@ -426,7 +425,7 @@ impl<'st> TypeChecker<'st> {
         };
 
         let Some(symbol) = self.symbol_table.get(name.as_str()).cloned() else {
-            unreachable!("If seeing this then. Welp I guess I was wrong.");
+            unreachable!("unhandled error: Unknown function {}", name);
         };
 
         let expected_arg_count = symbol.params.as_ref().map(|v| v.len()).unwrap_or_default();
@@ -713,7 +712,7 @@ impl<'st> TypeChecker<'st> {
                         span: expr.span(),
                     },
                 };
-                *expr = ast::Expr::Litral(ast::Litral::Integer(integer_litral));
+                *expr = ast::Expr::Litral(ast::Litral::Integer(Box::new(integer_litral)));
                 Type {
                     kind: TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),
