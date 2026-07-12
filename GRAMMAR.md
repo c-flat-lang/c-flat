@@ -13,7 +13,7 @@ $$
     [\text{TypeParams}] &\to \text{<(} \ [\text{Ident}] : [\text{Type}] (, [\text{Ident}] : [\text{Type}])^* \ \text{)>} \\
     [\text{TypeArgs}] &\to \text{<(} \ [\text{Type}] (, [\text{Type}])^* \ \text{)>} \\
     [\text{StructBody}] &\to ([\text{VarDecl}] \mid [\text{TypeDef}] \mid [\text{FnDecl}])^* \\
-    [\text{EnumDef}] &\to \text{enum} \ [\text{Ident}] \ \{ [\text{EnumValues}] \} \\
+    [\text{EnumDef}] &\to \text{type} \ [\text{Ident}] \ \text{enum} \ \{ [\text{EnumValues}] \} \\
     [\text{EnumValues}] &\to [\text{Ident}] (, [\text{Ident}])^* \\
     [\text{ForLoop}] &\to \text{for} \ ( [\text{Ident}] \ \text{in} \ [\text{Expr}] ) \ \{ [\text{Stmt}]^* \} \\
     [\text{MethodCall}] &\to [\text{Expr}] . [\text{Ident}] ( [\text{Args}]? ) \\

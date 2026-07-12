@@ -32,7 +32,7 @@ features=()
 skip_install_std=1
 
 usage() {
-    echo "Usage: $0 [--wasm-runtime] [--debug] [--features f1,f2,...]"
+    echo "Usage: $0 [--wasm-runtime] [--debug] [--features f1,f2,...] [--skip-install-std]"
     echo
     echo "Valid features: ${VALID_FEATURES[*]}"
     exit 1
