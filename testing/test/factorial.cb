@@ -1,4 +1,4 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 
 fn factorial(n: s32) s32 {
@@ -16,7 +16,7 @@ fn factorial(n: s32) s32 {
 pub fn main() s32 {
   let input = 5;
   let fact_result = factorial(input);
-  write_int(fact_result);
+  write_s32(fact_result);
   write_char(10);
   return fact_result;
 }

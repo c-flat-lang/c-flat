@@ -1,8 +1,10 @@
-#![allow(unused)]
-use bitbox::{Target, text::semantic_analyzer::Symbol};
+use bitbox::Target;
 use std::fmt::Write;
 
-use crate::stage::lexer::token::{Span, Token};
+use crate::stage::{
+    lexer::token::{Span, Token},
+    semantic_analyzer::symbol_table::ScopePath,
+};
 
 #[derive(Debug, Default, Clone, Eq)]
 pub struct Type {
@@ -194,6 +196,88 @@ This means we may need to generate more then one X Type depending on how many Ge
             Self::Void => 0,
         }
     }
+
+    pub fn compair_enum(&self, kind: &TypeKind) -> bool {
+        match (self, kind) {
+            (TypeKind::Enum(a), TypeKind::Enum(b)) => a.number_kind.compair_enum(&b.number_kind),
+            (TypeKind::Enum(a), TypeKind::UnsignedNumber(_)) => a.number_kind.compair_enum(kind),
+            (TypeKind::UnsignedNumber(_), TypeKind::Enum(b)) => self.compair_enum(&b.number_kind),
+            (TypeKind::UnsignedNumber(lhs), TypeKind::UnsignedNumber(rhs)) => lhs == rhs,
+            _ => false,
+        }
+    }
+
+    pub fn compair(&self, other: &TypeKind) -> bool {
+        match self {
+            TypeKind::Array(len, elem) => match other {
+                TypeKind::Array(other_len, other_elem) => {
+                    elem.kind.compair(&other_elem.kind) && len == other_len
+                }
+                _ => false,
+            },
+
+            TypeKind::Bool => matches!(other, TypeKind::Bool),
+
+            TypeKind::Enum(_) => self.compair_enum(other),
+
+            TypeKind::Float(bits) => match other {
+                TypeKind::Float(other_bits) => bits == other_bits,
+                _ => false,
+            },
+
+            TypeKind::Name(token) => match other {
+                TypeKind::Name(other_token) => token == other_token,
+                _ => false,
+            },
+
+            TypeKind::NameWithParams(token, type_params) => match other {
+                TypeKind::NameWithParams(other_token, other_params) => {
+                    token == other_token
+                        && type_params.len() == other_params.len()
+                        && type_params
+                            .params
+                            .iter()
+                            .zip(other_params.params.iter())
+                            .all(|(a, b)| a.kind.compair(&b.kind))
+                }
+                _ => false,
+            },
+
+            TypeKind::Pointer(inner) => match other {
+                TypeKind::Pointer(other_inner) => inner.kind.compair(&other_inner.kind),
+                _ => false,
+            },
+
+            TypeKind::SignedNumber(bits) => match other {
+                TypeKind::SignedNumber(other_bits) => bits == other_bits,
+                _ => false,
+            },
+
+            TypeKind::SignedTargetPointerNumber => {
+                matches!(other, TypeKind::SignedTargetPointerNumber)
+            }
+
+            TypeKind::Slice(inner) => match other {
+                TypeKind::Slice(other_inner) => inner.kind.compair(&other_inner.kind),
+                _ => false,
+            },
+
+            TypeKind::Struct(struct_type) => match other {
+                TypeKind::Struct(other_struct) => struct_type.name == other_struct.name,
+                _ => false,
+            },
+
+            TypeKind::Type => matches!(other, TypeKind::Type),
+
+            TypeKind::UnsignedNumber(_) => self.compair_enum(other),
+
+            TypeKind::UnsignedTargetPointerNumber => {
+                matches!(other, TypeKind::UnsignedTargetPointerNumber)
+            }
+
+            TypeKind::Void => matches!(other, TypeKind::Void),
+        }
+    }
 }
 
 impl std::fmt::Display for TypeKind {
@@ -222,7 +306,7 @@ pub struct EnumType {
     pub name: String,
     pub type_params: Option<Vec<(Token, Type)>>,
     // We will need to add something for set values
-    pub variants: Vec<(String, String)>, // (name, default-value),
+    pub variants: Vec<(Token, String)>, // (name, default-value),
     pub number_kind: Box<TypeKind>,
 }
 
@@ -231,15 +315,25 @@ pub struct TypeParams {
     pub params: Vec<Type>,
 }
 
+impl TypeParams {
+    pub const fn len(&self) -> usize {
+        self.params.len()
+    }
+
+    pub const fn is_empty(&self) -> bool {
+        self.params.is_empty()
+    }
+}
+
 impl std::fmt::Display for TypeParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut string = String::new();
         for (idx, param) in self.params.iter().enumerate() {
             if idx == self.params.len().saturating_sub(1) {
-                write!(&mut string, "{}", param);
+                write!(&mut string, "{}", param)?;
                 continue;
             }
-            write!(&mut string, "{}, ", param);
+            write!(&mut string, "{}, ", param)?;
         }
 
         write!(f, "{string}")
@@ -964,6 +1058,21 @@ impl ExprPath {
         }
     }
 
+    pub fn scope_path(&self) -> ScopePath {
+        let names = self
+            .segments
+            .iter()
+            .enumerate()
+            .fold(Vec::new(), |mut acc, (index, token)| {
+                if index == self.segments.len().saturating_sub(1) {
+                    return acc;
+                }
+                acc.push(token.lexeme.clone());
+                acc
+            });
+        ScopePath(names)
+    }
+
     pub fn head(&self) -> &Token {
         self.segments
             .first()
@@ -1001,9 +1110,21 @@ impl ExprMemberAccess {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IntegerLitral {
+    pub token: Token,
+    pub ty: Type,
+}
+
+impl IntegerLitral {
+    pub fn span(&self) -> Span {
+        self.token.span.clone()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Litral {
     String(Token),
-    Integer(Token),
+    Integer(Box<IntegerLitral>),
     Float(Token),
     Char(Token),
     BoolTrue(Token),
@@ -1014,7 +1135,7 @@ impl Litral {
     pub fn span(&self) -> Span {
         match self {
             Litral::String(token) => token.span.clone(),
-            Litral::Integer(token) => token.span.clone(),
+            Litral::Integer(i) => i.span(),
             Litral::Float(token) => token.span.clone(),
             Litral::Char(token) => token.span.clone(),
             Litral::BoolTrue(token) => token.span.clone(),

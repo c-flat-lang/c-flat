@@ -38,7 +38,7 @@
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
+                lexeme: "write_s32",
                 span: Span {
                     start: 12,
                     end: 21,
@@ -246,13 +246,26 @@
                                         },
                                         count: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "2",
-                                                    span: Span {
-                                                        start: 122,
-                                                        end: 123,
-                                                        filename: "testing/test/while.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "2",
+                                                        span: Span {
+                                                            start: 122,
+                                                            end: 123,
+                                                            filename: "testing/test/while.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 122,
+                                                            end: 123,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -268,13 +281,26 @@
                                         },
                                         value: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "0",
-                                                    span: Span {
-                                                        start: 119,
-                                                        end: 120,
-                                                        filename: "testing/test/while.cb",
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "0",
+                                                        span: Span {
+                                                            start: 119,
+                                                            end: 120,
+                                                            filename: "testing/test/while.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 119,
+                                                            end: 120,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -350,13 +376,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "0",
-                                            span: Span {
-                                                start: 150,
-                                                end: 151,
-                                                filename: "testing/test/while.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "0",
+                                                span: Span {
+                                                    start: 150,
+                                                    end: 151,
+                                                    filename: "testing/test/while.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 150,
+                                                    end: 151,
+                                                    filename: "testing/test/while.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -555,7 +594,7 @@
                                                     caller: Identifier(
                                                         Token {
                                                             kind: Identifier,
-                                                            lexeme: "write_int",
+                                                            lexeme: "write_s32",
                                                             span: Span {
                                                                 start: 217,
                                                                 end: 226,
@@ -636,13 +675,26 @@
                                                     args: [
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "32",
-                                                                    span: Span {
-                                                                        start: 254,
-                                                                        end: 256,
-                                                                        filename: "testing/test/while.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "32",
+                                                                        span: Span {
+                                                                            start: 254,
+                                                                            end: 256,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 254,
+                                                                            end: 256,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -677,7 +729,7 @@
                                                     caller: Identifier(
                                                         Token {
                                                             kind: Identifier,
-                                                            lexeme: "write_int",
+                                                            lexeme: "write_s32",
                                                             span: Span {
                                                                 start: 267,
                                                                 end: 276,
@@ -758,13 +810,26 @@
                                                     args: [
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "10",
-                                                                    span: Span {
-                                                                        start: 300,
-                                                                        end: 302,
-                                                                        filename: "testing/test/while.cb",
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "10",
+                                                                        span: Span {
+                                                                            start: 300,
+                                                                            end: 302,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 300,
+                                                                            end: 302,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
                                                                     },
                                                                 },
                                                             ),
@@ -840,13 +905,26 @@
                                                             },
                                                             right: Litral(
                                                                 Integer(
-                                                                    Token {
-                                                                        kind: Number,
-                                                                        lexeme: "1",
-                                                                        span: Span {
-                                                                            start: 321,
-                                                                            end: 322,
-                                                                            filename: "testing/test/while.cb",
+                                                                    IntegerLitral {
+                                                                        token: Token {
+                                                                            kind: Number,
+                                                                            lexeme: "1",
+                                                                            span: Span {
+                                                                                start: 321,
+                                                                                end: 322,
+                                                                                filename: "testing/test/while.cb",
+                                                                            },
+                                                                        },
+                                                                        ty: Type {
+                                                                            mut_token: None,
+                                                                            kind: SignedNumber(
+                                                                                32,
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 321,
+                                                                                end: 322,
+                                                                                filename: "testing/test/while.cb",
+                                                                            },
                                                                         },
                                                                     },
                                                                 ),

@@ -1,0 +1,140 @@
+use std::raylib;
+use std::math;
+
+type GameState struct {
+    screen_width: s32,
+    screen_height: s32,
+    bg: Color,
+    board: Board,
+}
+
+type HexTile struct {
+    value: u32 = 0,
+    exists: bool = false,
+}
+
+type Board struct {
+    tiles: [5; [5; HexTile]],
+    offset_x: s32,
+    offset_y: s32,
+
+    // Defaults
+    radius: s32 = 2,
+    hex_size: f32 = 60.0,
+}
+
+fn Board_new(screen_width: s32, screen_height: s32) Board {
+    let mut b = Board {
+        .offset_x = screen_width / 2,
+        .offset_y = screen_height / 2,
+        .tiles = [
+            [HexTile{},HexTile{},HexTile{},HexTile{},HexTile{}],
+            [HexTile{},HexTile{},HexTile{},HexTile{},HexTile{}],
+            [HexTile{},HexTile{},HexTile{},HexTile{},HexTile{}],
+            [HexTile{},HexTile{},HexTile{},HexTile{},HexTile{}],
+            [HexTile{},HexTile{},HexTile{},HexTile{},HexTile{}],
+        ],
+    };
+
+    let radius: s32 = b.radius;
+    let mut row: usize = 0;
+    while row < 5 {
+        let mut col: usize = 0;
+        while col < 5 {
+            let q = (col as s32) - radius;
+            let r = (row as s32) - radius;
+            let s = (q * (0 - 1)) - r;
+            let dist = max<(s32)>(max<(s32)>(abs<(s32)>(q), abs<(s32)>(r)), abs<(s32)>(s));
+            b.tiles[row][col].exists = dist <= radius;
+            col = col + 1;
+        }
+        row = row + 1;
+    }
+    return b;
+}
+
+fn Board_draw(self: *Board, gs: *GameState) void {
+    let white = Color {.r=255,.g=255,.b=255,.a=255};
+
+    let mut row: usize = 0;
+    while row < 5 {
+        let mut col: usize = 0;
+        while col < 5 {
+            let tile = self.tiles[row][col];
+            if tile.exists {
+                let q: s32 = (col as s32) - self.radius;
+                let r: s32 = (row as s32) - self.radius;
+                let pixel: Vector2 = axial_to_pixel(q, r, self.hex_size);
+
+                let center = Vector2 {
+                    .x = pixel.x + (self.offset_x as f32),
+                    .y = pixel.y + (self.offset_y as f32),
+                };
+
+                draw_hex(center, self.hex_size, white, true);
+            }
+
+            col = col + 1;
+        }
+        row = row + 1;
+    }
+}
+
+fn axial_to_pixel(q: s32, r: s32, size: f32) Vector2 {
+    let SQRT3: f32 = 1.7320508;
+    let x = size * 1.5 * (q as f32);
+    let mut y_row = r as f32;
+    let two: s32 = 2;
+    let col_offset: f32 = if !(q % two == 0) { 0.5 } else { 0.0 };
+    let y = size * SQRT3 * (y_row + col_offset);
+    let vec = Vector2 { .x = x, .y = y };
+    return vec;
+}
+
+fn draw_hex(center: Vector2, size: f32, color: Color, filled: bool) void {
+    if (filled) {
+        draw_poly(center, 6, size, 0.0, color);
+    }
+    let black = Color {.r=0,.g=0,.b=0,.a=255};
+    draw_poly_lines_ex(center, 6, size, 0.0, 2.0, black);
+}
+
+pub fn main() void {
+    let screen_width = 720;
+    let screen_height = 720;
+
+    init_window(screen_width, screen_height, &"c-flat raylib game jam entry attempt\0");
+    set_target_fps(60);
+
+    let color_white = Color {.r=255, .g=255, .b=255, .a=255};
+    let text = "LETS GO!!!!!!!!!!!!\0";
+    let text_size = 40;
+    let text_width = measure_text(&text, text_size);
+    let cx = screen_width  / 2 - (text_width / 2);
+    let cy = screen_height / 2 - text_size;
+
+    let gs = GameState {
+        .screen_width = screen_width,
+        .screen_height = screen_height,
+        .bg = Color {
+            .r = 0x14,
+            .g = 0x14,
+            .b = 0x1E,
+            .a = 0xFF,
+        },
+        .board = Board_new(screen_width, screen_height),
+    };
+
+    while !window_should_close() {
+        // UPDATE
+
+        begin_drawing();
+        clear_background(gs.bg);
+
+        // DARW
+        Board_draw(&gs.board, &gs);
+
+        end_drawing();
+    }
+    close_window();
+}

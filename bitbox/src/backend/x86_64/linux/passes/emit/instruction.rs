@@ -335,7 +335,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJumpIf {
         target
             .assembler
             .test(cond.clone(), cond.clone())
-            .jnz(format!("{}_{}", target.function_name, &self.label));
+            .jnz(format!("{}_{}", target.function_name, self.label));
 
         Ok(())
     }
@@ -411,7 +411,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IJump {
         target.assembler.comment("lowering jump if");
         target
             .assembler
-            .jmp(format!("{}_{}", target.function_name, &self.label));
+            .jmp(format!("{}_{}", target.function_name, self.label));
 
         Ok(())
     }
@@ -1219,6 +1219,105 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
             target.assembler.materialize_address(&base_ptr)
         };
 
+        if matches!(self.value.ty(), Some(Type::Array(..) | Type::Struct(..))) {
+            let size = self.value.ty().unwrap().size(&ctx.target) as usize;
+            let dst = target.assembler.alloc.vreg::<Reg64>();
+            target.assembler.mov(dst, base);
+            match &self.addr.ty {
+                Type::Struct(s) => {
+                    let idx = match &self.index {
+                        Operand::ConstantInt(c) => c.parse::<usize>()?,
+                        _ => panic!("IElemSet: dynamic struct field index not supported"),
+                    };
+                    target
+                        .assembler
+                        .add(dst, s.field_offset(idx, &ctx.target) as i64);
+                }
+                Type::Pointer(inner) if matches!(inner.as_ref(), Type::Struct(_)) => {
+                    let Type::Struct(s) = inner.as_ref() else {
+                        unreachable!()
+                    };
+                    let idx = match &self.index {
+                        Operand::ConstantInt(c) => c.parse::<usize>()?,
+                        _ => panic!("IElemSet: dynamic struct field index not supported"),
+                    };
+                    target
+                        .assembler
+                        .add(dst, s.field_offset(idx, &ctx.target) as i64);
+                }
+                _ => {
+                    let idx_reg = target.assembler.materialize_value(&index);
+                    let sz = target
+                        .assembler
+                        .materialize_value(&Location::Imm(size as i64));
+                    target.assembler.imul(idx_reg, sz);
+                    target.assembler.add(dst, idx_reg);
+                }
+            }
+            let src = target.assembler.materialize_address(&value);
+            let full_qwords = size / 8;
+            let remainder = size % 8;
+            for i in 0..full_qwords {
+                let off = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(off, (i * 8) as i64);
+                let chunk = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.load_indexed(src, off, 1, chunk.into());
+                let off2 = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(off2, (i * 8) as i64);
+                target.assembler.store_indexed(dst, off2, 1, chunk);
+            }
+            if remainder > 0 {
+                let base_off = (full_qwords * 8) as i64;
+                let load_off = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(load_off, base_off);
+                let chunk = target.assembler.alloc.vreg::<Reg64>();
+                let store_off = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(store_off, base_off);
+                match remainder {
+                    1 => {
+                        target.assembler.load_indexed(
+                            src,
+                            load_off,
+                            1,
+                            chunk.cast_to::<Reg8>().into(),
+                        );
+                        target
+                            .assembler
+                            .store_indexed(dst, store_off, 1, chunk.cast_to::<Reg8>());
+                    }
+                    2 => {
+                        target.assembler.load_indexed(
+                            src,
+                            load_off,
+                            1,
+                            chunk.cast_to::<Reg16>().into(),
+                        );
+                        target
+                            .assembler
+                            .store_indexed(dst, store_off, 1, chunk.cast_to::<Reg16>());
+                    }
+                    3 | 4 => {
+                        target.assembler.load_indexed(
+                            src,
+                            load_off,
+                            1,
+                            chunk.cast_to::<Reg32>().into(),
+                        );
+                        target
+                            .assembler
+                            .store_indexed(dst, store_off, 1, chunk.cast_to::<Reg32>());
+                    }
+                    _ => {
+                        target
+                            .assembler
+                            .load_indexed(src, load_off, 1, chunk.into());
+                        target.assembler.store_indexed(dst, store_off, 1, chunk);
+                    }
+                }
+            }
+            return Ok(());
+        }
+
         // Struct fields: use field_offset with scale=1. `base` above already
         // holds the struct's address — the storage slot for a struct value, or
         // the loaded pointer value for a `*Struct` member write.
@@ -1297,7 +1396,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemSet {
         // Array/pointer element store: index * element_size stride. For a raw
         // pointer the stride is the pointee size, not the pointer's own size.
         let element_size = match &self.addr.ty {
-            Type::Pointer(inner) => inner.size(&ctx.target),
+            Type::Pointer(inner) => match inner.as_ref() {
+                Type::Array(_, e) => e.size(&ctx.target),
+                _ => inner.size(&ctx.target),
+            },
             _ => self.addr.ty.element_size(&ctx.target),
         };
 
@@ -1359,6 +1461,23 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IElemGet {
         // rather than loading a value into a register.
         // Read the constant index from self.index directly, since Operand::lower returns Reg not Imm.
         if matches!(self.des.ty, Type::Array(..) | Type::Struct(..)) {
+            if !matches!(self.index, Operand::ConstantInt(_)) {
+                let stride = self.des.ty.size(&ctx.target);
+                let idx_reg = target.assembler.materialize_value(&index);
+                let stride_reg = target
+                    .assembler
+                    .materialize_value(&Location::Imm(stride as i64));
+                target.assembler.imul(idx_reg, stride_reg);
+                let base = target.assembler.materialize_address(resolved_base);
+                let addr = target.assembler.alloc.vreg::<Reg64>();
+                target.assembler.mov(addr, base);
+                target.assembler.add(addr, idx_reg);
+                target
+                    .assembler
+                    .alloc
+                    .store_variable(&self.des, Location::Reg(addr));
+                return Ok(());
+            }
             let byte_offset: i32 = match (&self.ptr.ty(), &self.index) {
                 (Some(Type::Struct(s)), Operand::ConstantInt(c)) => {
                     s.field_offset(c.parse::<usize>()?, &ctx.target)

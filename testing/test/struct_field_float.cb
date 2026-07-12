@@ -1,0 +1,20 @@
+extern C fn write_f32(f32) void;
+
+type Foo struct {
+    a: s32 = 0,
+    b: s32 = 0,
+    c: f32 = 0.0,
+}
+
+fn set_c(self: *Foo) void {
+    self.a = 0;
+    self.b = 2;
+    self.c = 1.0;
+}
+
+pub fn main() void {
+    let foo = Foo {};
+    write_f32(foo.c);
+    set_c(&foo);
+    write_f32(foo.c);
+}

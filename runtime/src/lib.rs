@@ -11,7 +11,7 @@ pub fn run(file_path: &str) -> Result<()> {
         run_wasm(&data)?;
     } else if file_path.ends_with(".bb") {
         let Ok(data) = std::fs::read_to_string(file_path) else {
-            return Err(anyhow!("Failed to read file {}", &file_path));
+            return Err(anyhow!("Failed to read file {}", file_path));
         };
         run_bitbeat(data)?;
     } else {
@@ -40,12 +40,30 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
     let module = Module::new(&engine, wasm_bytes)?;
 
     let mut linker: Linker<WasiCtx> = Linker::new(&engine);
-    linker.func_wrap("core", "write_char", |a: i32| {
-        if let Some(c) = char::from_u32(a as u32) {
+    linker.func_wrap("core", "write_bool", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_char", |a: u32| {
+        if let Some(c) = char::from_u32(a) {
             print!("{}", c);
         }
     })?;
-    linker.func_wrap("core", "write_int", |a: i32| {
+    linker.func_wrap("core", "write_u8", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_s32", |a: i32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_u32", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_u16", |a: u32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_f32", |a: f32| {
+        print!("{}", a);
+    })?;
+    linker.func_wrap("core", "write_f64", |a: f64| {
         print!("{}", a);
     })?;
     linker.func_wrap(
@@ -53,12 +71,12 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
         "write",
         |mut ctx: Caller<'_, WasiCtx>, ptr: i32, len: i32| {
             let Some(exported_memory) = ctx.get_export("memory") else {
-                return 1;
+                return;
             };
 
             let Some(memory) = exported_memory.into_memory() else {
                 println!("Memory export not found");
-                return 1;
+                return;
             };
 
             // let offset_ptr = iovs_ptr as usize;
@@ -75,8 +93,6 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
 
             print!("{}", String::from_utf8(string.clone()).unwrap());
             std::io::stdout().flush().unwrap();
-
-            0
         },
     )?;
 

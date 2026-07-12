@@ -7,6 +7,11 @@ bitbox/bin
 
 notes/
 
+# Web/raylib toolchain (emsdk + raylib source) and generated raylib host module
+web/vendor/
+web/raylib_host.js
+web/raylib_host.wasm
+
 # Remove Cargo.lock from gitignore if creating an executable, leave it for libraries
 # More information here https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html
 Cargo.lock

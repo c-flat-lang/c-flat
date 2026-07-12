@@ -5,6 +5,39 @@ pub use report::{Report, Result};
 use std::fmt::Write;
 
 #[derive(Debug)]
+pub struct ErrorMemberAccess {
+    span: Span,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorMemberAccess {
+    pub fn new(span: Span, #[cfg(feature = "debug")] compiler_line: String) -> Self {
+        Self {
+            span,
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+}
+
+impl Report for ErrorMemberAccess {
+    fn filename(&self) -> &str {
+        &self.span.filename
+    }
+
+    fn report(&self, src: &str) -> String {
+        let span = &self.span;
+        let mut report = ReportBuilder::new(span, src);
+        report.message("unknown member");
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
+    }
+}
+
+#[derive(Debug)]
 pub struct ErrorUnexpectedToken {
     found: Token,
     expected: Vec<TokenKind>,
@@ -131,8 +164,9 @@ impl ErrorMissMatchedType {
         }
     }
 
-    pub fn alt_span(&mut self, alt_span: Span) {
+    pub fn alt_span(mut self, alt_span: Span) -> Self {
         self.alt_span = Some(alt_span);
+        self
     }
 }
 
@@ -201,8 +235,8 @@ impl Report for ErrorUnsupportedBinaryOp {
 
     fn report(&self, src: &str) -> String {
         let span = Span {
-            start: self.lhs.span.start,
-            end: self.rhs.span.end,
+            start: self.op.span.start,
+            end: self.op.span.end,
             filename: self.rhs.span.filename.clone(),
         };
         let mut report = ReportBuilder::new(&span, src);
@@ -497,10 +531,7 @@ impl Report for ErrorUnexpectedTopLevelItem {
 
     fn report(&self, src: &str) -> String {
         let mut report = ReportBuilder::new(&self.found.span, src);
-        report.message(format!(
-            "unexpected top level item `{}`",
-            &self.found.lexeme
-        ));
+        report.message(format!("unexpected top level item `{}`", self.found.lexeme));
 
         let mut note = String::new();
         write!(

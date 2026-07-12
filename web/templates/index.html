@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>c-flat · real raylib · wasm</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px;
+        background: #14141e;
+        color: #e6e6ee;
+        font:
+          14px/1.5 system-ui,
+          sans-serif;
+      }
+      canvas {
+        border: 1px solid #333;
+        background: #000;
+      }
+      #log {
+        width: 640px;
+        min-height: 1.5em;
+        white-space: pre-wrap;
+        font-family: monospace;
+        color: #9ecbff;
+      }
+      .err {
+        color: #ff6b6b;
+      }
+      #start {
+        padding: 10px 22px;
+        font: inherit;
+        font-weight: 600;
+        color: #14141e;
+        background: #9ecbff;
+        border: 0;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      #start:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>c-flat · real raylib · wasm</h1>
+    <canvas
+      id="canvas"
+      width="640"
+      height="480"
+      oncontextmenu="event.preventDefault()"
+      tabindex="-1"
+    ></canvas>
+    <button id="start" disabled>Loading…</button>
+    <div id="log"></div>
+
+    <script type="module">
+      import { makeRaylibHost } from "./raylib_host_bridge.js";
+
+      const WASM_URL = "./__WASM_FILE__";
+      const STACK_SIZE = 0x8000;
+      let DATA_ADDR = 0;
+
+      const logEl = document.getElementById("log");
+      const canvas = document.getElementById("canvas");
+      const startBtn = document.getElementById("start");
+      globalThis.__cflat_log = (s) => (logEl.textContent += s);
+      const fail = (msg) => {
+        logEl.innerHTML += `<span class="err">${msg}</span>\n`;
+        console.error(msg);
+      };
+
+      let instance = null;
+      let exports = null;
+      let sleeping = false;
+
+      const host = makeRaylibHost(() => instance.exports, canvas);
+      const { core } = host;
+
+      const realEndDrawing = core.EndDrawing;
+      core.EndDrawing = () => {
+        if (!sleeping) {
+          realEndDrawing();
+          new Int32Array(exports.memory.buffer)[DATA_ADDR >> 2] = DATA_ADDR + 8;
+          exports.asyncify_start_unwind(DATA_ADDR);
+          sleeping = true;
+        } else {
+          exports.asyncify_stop_rewind();
+          sleeping = false;
+        }
+      };
+
+      function run() {
+        exports.main();
+        if (exports.asyncify_get_state() === 1) {
+          exports.asyncify_stop_unwind();
+          requestAnimationFrame(() => {
+            exports.asyncify_start_rewind(DATA_ADDR);
+            run();
+          });
+        }
+      }
+
+      async function main() {
+        try {
+          await host.ready;
+        } catch (e) {
+          return fail("Failed to init raylib host: " + e);
+        }
+
+        let res;
+        try {
+          const bytes = await (await fetch(WASM_URL)).arrayBuffer();
+          res = await WebAssembly.instantiate(bytes, { core });
+        } catch (e) {
+          return fail("Failed to load/instantiate c-flat wasm: " + e);
+        }
+        instance = res.instance;
+        exports = instance.exports;
+
+        for (const fn of [
+          "main",
+          "asyncify_start_unwind",
+          "asyncify_stop_unwind",
+          "asyncify_start_rewind",
+          "asyncify_stop_rewind",
+          "asyncify_get_state",
+        ]) {
+          if (typeof exports[fn] !== "function") {
+            return fail(
+              `c-flat wasm missing export ${fn} — was it built with wasm-opt --asyncify?`,
+            );
+          }
+        }
+
+        const pageIndex = exports.memory.grow(1);
+        DATA_ADDR = pageIndex * 65536;
+        const view = new Int32Array(exports.memory.buffer);
+        view[DATA_ADDR >> 2] = DATA_ADDR + 8;
+        view[(DATA_ADDR + 4) >> 2] = DATA_ADDR + 8 + STACK_SIZE;
+
+        try {
+          const manifestResp = await fetch("./assets.json");
+          if (manifestResp.ok) {
+            await host.preloadAssets(await manifestResp.json());
+          }
+        } catch (e) {
+          return fail("Failed to preload assets: " + e);
+        }
+
+        startBtn.textContent = "▶ Start";
+        startBtn.disabled = false;
+        startBtn.addEventListener(
+          "click",
+          () => {
+            startBtn.remove();
+            canvas.focus();
+            try {
+              run();
+            } catch (e) {
+              fail("Trap while running main(): " + e);
+            }
+          },
+          { once: true },
+        );
+      }
+
+      main();
+    </script>
+  </body>
+</html>

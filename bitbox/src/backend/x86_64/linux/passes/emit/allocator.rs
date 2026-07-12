@@ -175,9 +175,8 @@ impl Allocator {
     pub fn alloc_stack(&mut self, ty: &Type, count: i32) -> Stack {
         let elem_size = Stack::access_size(ty);
         let alloc_size = match &ty {
-            Type::Array(len, _) => elem_size * (*len as i32),
             Type::Struct(s) => s.size(&crate::Target::X86_64Linux),
-            _ => elem_size * count,
+            _ => ty.size(&crate::Target::X86_64Linux) * count,
         };
 
         self.stack_memory_offset += alloc_size;

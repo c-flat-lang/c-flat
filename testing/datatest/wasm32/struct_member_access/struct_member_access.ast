@@ -1,0 +1,718 @@
+                    Tokenizing testing/test/struct_member_access.cb
+                        Parser
+=== testing/test/struct_member_access.cb ===
+[
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 0,
+                        end: 4,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Foo",
+                    span: Span {
+                        start: 5,
+                        end: 8,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 9,
+                        end: 15,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "number",
+                            span: Span {
+                                start: 22,
+                                end: 28,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 28,
+                                end: 29,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: SignedNumber(
+                                32,
+                            ),
+                            span: Span {
+                                start: 30,
+                                end: 33,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 16,
+                        end: 17,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 35,
+                        end: 36,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 38,
+                        end: 42,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Bar",
+                    span: Span {
+                        start: 43,
+                        end: 46,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 47,
+                        end: 53,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "foo",
+                            span: Span {
+                                start: 60,
+                                end: 63,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 63,
+                                end: 64,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "Foo",
+                                    span: Span {
+                                        start: 65,
+                                        end: 68,
+                                        filename: "testing/test/struct_member_access.cb",
+                                    },
+                                },
+                            ),
+                            span: Span {
+                                start: 65,
+                                end: 68,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 54,
+                        end: 55,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 70,
+                        end: 71,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 73,
+                        end: 77,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "FooBar",
+                    span: Span {
+                        start: 78,
+                        end: 84,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 85,
+                        end: 91,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "bar",
+                            span: Span {
+                                start: 98,
+                                end: 101,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 101,
+                                end: 102,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "Bar",
+                                    span: Span {
+                                        start: 103,
+                                        end: 106,
+                                        filename: "testing/test/struct_member_access.cb",
+                                    },
+                                },
+                            ),
+                            span: Span {
+                                start: 103,
+                                end: 106,
+                                filename: "testing/test/struct_member_access.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 92,
+                        end: 93,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 108,
+                        end: 109,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 115,
+                    end: 117,
+                    filename: "testing/test/struct_member_access.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 118,
+                    end: 122,
+                    filename: "testing/test/struct_member_access.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                span: Span {
+                    start: 125,
+                    end: 128,
+                    filename: "testing/test/struct_member_access.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 129,
+                        end: 130,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Declare(
+                            ExprDecl {
+                                let_token: Token {
+                                    kind: Keyword(
+                                        Let,
+                                    ),
+                                    lexeme: "let",
+                                    span: Span {
+                                        start: 135,
+                                        end: 138,
+                                        filename: "testing/test/struct_member_access.cb",
+                                    },
+                                },
+                                mutable: false,
+                                ty: None,
+                                ident: Token {
+                                    kind: Identifier,
+                                    lexeme: "foobar",
+                                    span: Span {
+                                        start: 139,
+                                        end: 145,
+                                        filename: "testing/test/struct_member_access.cb",
+                                    },
+                                },
+                                expr: Struct(
+                                    ExprStruct {
+                                        name: Token {
+                                            kind: Identifier,
+                                            lexeme: "FooBar",
+                                            span: Span {
+                                                start: 148,
+                                                end: 154,
+                                                filename: "testing/test/struct_member_access.cb",
+                                            },
+                                        },
+                                        type_args: None,
+                                        open_brace: Token {
+                                            kind: LeftBrace,
+                                            lexeme: "{",
+                                            span: Span {
+                                                start: 155,
+                                                end: 156,
+                                                filename: "testing/test/struct_member_access.cb",
+                                            },
+                                        },
+                                        init_fields: [
+                                            InitField {
+                                                dot: Token {
+                                                    kind: Dot,
+                                                    lexeme: ".",
+                                                    span: Span {
+                                                        start: 157,
+                                                        end: 158,
+                                                        filename: "testing/test/struct_member_access.cb",
+                                                    },
+                                                },
+                                                name: Token {
+                                                    kind: Identifier,
+                                                    lexeme: "bar",
+                                                    span: Span {
+                                                        start: 158,
+                                                        end: 161,
+                                                        filename: "testing/test/struct_member_access.cb",
+                                                    },
+                                                },
+                                                equal: Token {
+                                                    kind: Equal,
+                                                    lexeme: "=",
+                                                    span: Span {
+                                                        start: 162,
+                                                        end: 163,
+                                                        filename: "testing/test/struct_member_access.cb",
+                                                    },
+                                                },
+                                                expr: Struct(
+                                                    ExprStruct {
+                                                        name: Token {
+                                                            kind: Identifier,
+                                                            lexeme: "Bar",
+                                                            span: Span {
+                                                                start: 164,
+                                                                end: 167,
+                                                                filename: "testing/test/struct_member_access.cb",
+                                                            },
+                                                        },
+                                                        type_args: None,
+                                                        open_brace: Token {
+                                                            kind: LeftBrace,
+                                                            lexeme: "{",
+                                                            span: Span {
+                                                                start: 168,
+                                                                end: 169,
+                                                                filename: "testing/test/struct_member_access.cb",
+                                                            },
+                                                        },
+                                                        init_fields: [
+                                                            InitField {
+                                                                dot: Token {
+                                                                    kind: Dot,
+                                                                    lexeme: ".",
+                                                                    span: Span {
+                                                                        start: 170,
+                                                                        end: 171,
+                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                    },
+                                                                },
+                                                                name: Token {
+                                                                    kind: Identifier,
+                                                                    lexeme: "foo",
+                                                                    span: Span {
+                                                                        start: 171,
+                                                                        end: 174,
+                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                    },
+                                                                },
+                                                                equal: Token {
+                                                                    kind: Equal,
+                                                                    lexeme: "=",
+                                                                    span: Span {
+                                                                        start: 175,
+                                                                        end: 176,
+                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                    },
+                                                                },
+                                                                expr: Struct(
+                                                                    ExprStruct {
+                                                                        name: Token {
+                                                                            kind: Identifier,
+                                                                            lexeme: "Foo",
+                                                                            span: Span {
+                                                                                start: 177,
+                                                                                end: 180,
+                                                                                filename: "testing/test/struct_member_access.cb",
+                                                                            },
+                                                                        },
+                                                                        type_args: None,
+                                                                        open_brace: Token {
+                                                                            kind: LeftBrace,
+                                                                            lexeme: "{",
+                                                                            span: Span {
+                                                                                start: 181,
+                                                                                end: 182,
+                                                                                filename: "testing/test/struct_member_access.cb",
+                                                                            },
+                                                                        },
+                                                                        init_fields: [
+                                                                            InitField {
+                                                                                dot: Token {
+                                                                                    kind: Dot,
+                                                                                    lexeme: ".",
+                                                                                    span: Span {
+                                                                                        start: 183,
+                                                                                        end: 184,
+                                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                                    },
+                                                                                },
+                                                                                name: Token {
+                                                                                    kind: Identifier,
+                                                                                    lexeme: "number",
+                                                                                    span: Span {
+                                                                                        start: 184,
+                                                                                        end: 190,
+                                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                                    },
+                                                                                },
+                                                                                equal: Token {
+                                                                                    kind: Equal,
+                                                                                    lexeme: "=",
+                                                                                    span: Span {
+                                                                                        start: 191,
+                                                                                        end: 192,
+                                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                                    },
+                                                                                },
+                                                                                expr: Litral(
+                                                                                    Integer(
+                                                                                        IntegerLitral {
+                                                                                            token: Token {
+                                                                                                kind: Number,
+                                                                                                lexeme: "100",
+                                                                                                span: Span {
+                                                                                                    start: 193,
+                                                                                                    end: 196,
+                                                                                                    filename: "testing/test/struct_member_access.cb",
+                                                                                                },
+                                                                                            },
+                                                                                            ty: Type {
+                                                                                                mut_token: None,
+                                                                                                kind: SignedNumber(
+                                                                                                    32,
+                                                                                                ),
+                                                                                                span: Span {
+                                                                                                    start: 193,
+                                                                                                    end: 196,
+                                                                                                    filename: "testing/test/struct_member_access.cb",
+                                                                                                },
+                                                                                            },
+                                                                                        },
+                                                                                    ),
+                                                                                ),
+                                                                            },
+                                                                        ],
+                                                                        close_brace: Token {
+                                                                            kind: RightBrace,
+                                                                            lexeme: "}",
+                                                                            span: Span {
+                                                                                start: 197,
+                                                                                end: 198,
+                                                                                filename: "testing/test/struct_member_access.cb",
+                                                                            },
+                                                                        },
+                                                                    },
+                                                                ),
+                                                            },
+                                                        ],
+                                                        close_brace: Token {
+                                                            kind: RightBrace,
+                                                            lexeme: "}",
+                                                            span: Span {
+                                                                start: 199,
+                                                                end: 200,
+                                                                filename: "testing/test/struct_member_access.cb",
+                                                            },
+                                                        },
+                                                    },
+                                                ),
+                                            },
+                                        ],
+                                        close_brace: Token {
+                                            kind: RightBrace,
+                                            lexeme: "}",
+                                            span: Span {
+                                                start: 201,
+                                                end: 202,
+                                                filename: "testing/test/struct_member_access.cb",
+                                            },
+                                        },
+                                    },
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 202,
+                                    end: 203,
+                                    filename: "testing/test/struct_member_access.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 208,
+                                        end: 214,
+                                        filename: "testing/test/struct_member_access.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    MemberAccess(
+                                        ExprMemberAccess {
+                                            base: MemberAccess(
+                                                ExprMemberAccess {
+                                                    base: MemberAccess(
+                                                        ExprMemberAccess {
+                                                            base: Identifier(
+                                                                Token {
+                                                                    kind: Identifier,
+                                                                    lexeme: "foobar",
+                                                                    span: Span {
+                                                                        start: 215,
+                                                                        end: 221,
+                                                                        filename: "testing/test/struct_member_access.cb",
+                                                                    },
+                                                                },
+                                                            ),
+                                                            dot: Token {
+                                                                kind: Dot,
+                                                                lexeme: ".",
+                                                                span: Span {
+                                                                    start: 221,
+                                                                    end: 222,
+                                                                    filename: "testing/test/struct_member_access.cb",
+                                                                },
+                                                            },
+                                                            member: Token {
+                                                                kind: Identifier,
+                                                                lexeme: "bar",
+                                                                span: Span {
+                                                                    start: 222,
+                                                                    end: 225,
+                                                                    filename: "testing/test/struct_member_access.cb",
+                                                                },
+                                                            },
+                                                        },
+                                                    ),
+                                                    dot: Token {
+                                                        kind: Dot,
+                                                        lexeme: ".",
+                                                        span: Span {
+                                                            start: 225,
+                                                            end: 226,
+                                                            filename: "testing/test/struct_member_access.cb",
+                                                        },
+                                                    },
+                                                    member: Token {
+                                                        kind: Identifier,
+                                                        lexeme: "foo",
+                                                        span: Span {
+                                                            start: 226,
+                                                            end: 229,
+                                                            filename: "testing/test/struct_member_access.cb",
+                                                        },
+                                                    },
+                                                },
+                                            ),
+                                            dot: Token {
+                                                kind: Dot,
+                                                lexeme: ".",
+                                                span: Span {
+                                                    start: 229,
+                                                    end: 230,
+                                                    filename: "testing/test/struct_member_access.cb",
+                                                },
+                                            },
+                                            member: Token {
+                                                kind: Identifier,
+                                                lexeme: "number",
+                                                span: Span {
+                                                    start: 230,
+                                                    end: 236,
+                                                    filename: "testing/test/struct_member_access.cb",
+                                                },
+                                            },
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 236,
+                                    end: 237,
+                                    filename: "testing/test/struct_member_access.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 238,
+                        end: 239,
+                        filename: "testing/test/struct_member_access.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

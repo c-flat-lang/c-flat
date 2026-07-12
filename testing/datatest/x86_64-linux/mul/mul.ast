@@ -38,7 +38,7 @@
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
+                lexeme: "write_s32",
                 span: Span {
                     start: 12,
                     end: 21,
@@ -222,13 +222,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "10",
-                                            span: Span {
-                                                start: 105,
-                                                end: 107,
-                                                filename: "testing/test/mul.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "10",
+                                                span: Span {
+                                                    start: 105,
+                                                    end: 107,
+                                                    filename: "testing/test/mul.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 105,
+                                                    end: 107,
+                                                    filename: "testing/test/mul.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -286,13 +299,26 @@
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "5",
-                                            span: Span {
-                                                start: 126,
-                                                end: 127,
-                                                filename: "testing/test/mul.cb",
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "5",
+                                                span: Span {
+                                                    start: 126,
+                                                    end: 127,
+                                                    filename: "testing/test/mul.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 126,
+                                                    end: 127,
+                                                    filename: "testing/test/mul.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -338,13 +364,26 @@
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: Span {
-                                                    start: 145,
-                                                    end: 147,
-                                                    filename: "testing/test/mul.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 145,
+                                                        end: 147,
+                                                        filename: "testing/test/mul.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 145,
+                                                        end: 147,
+                                                        filename: "testing/test/mul.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -379,7 +418,7 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
+                                        lexeme: "write_s32",
                                         span: Span {
                                             start: 154,
                                             end: 163,
@@ -484,13 +523,26 @@
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: Span {
-                                                    start: 187,
-                                                    end: 189,
-                                                    filename: "testing/test/mul.cb",
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 187,
+                                                        end: 189,
+                                                        filename: "testing/test/mul.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 187,
+                                                        end: 189,
+                                                        filename: "testing/test/mul.cb",
+                                                    },
                                                 },
                                             },
                                         ),

@@ -1,4 +1,4 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
 
 pub fn main() s32 {
@@ -6,9 +6,9 @@ pub fn main() s32 {
     let mut i: usize = 0;
     while i < array.len {
         let value = array[i];
-        write_int(value);
+        write_s32(value);
         write_char(32);
-        write_int(i);
+        write_s32(i);
         write_char(10);
         i = i + 1;
     }

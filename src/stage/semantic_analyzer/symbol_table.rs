@@ -178,7 +178,16 @@ impl SymbolTableBuilder {
                         .variants
                         .iter()
                         .enumerate()
-                        .map(|(i, variant)| (variant.name.lexeme.clone(), i.to_string()))
+                        .map(|(i, variant)| {
+                            (
+                                variant.name.clone(),
+                                variant
+                                    .value
+                                    .as_ref()
+                                    .map(|v| v.lexeme.clone())
+                                    .unwrap_or(i.to_string()),
+                            )
+                        })
                         .collect(),
                     number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
                 }),
@@ -476,10 +485,10 @@ impl Scope {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ScopePath(Vec<String>);
+pub struct ScopePath(pub Vec<String>);
 
 impl ScopePath {
-    fn new(parts: &[String]) -> Self {
+    pub fn new(parts: &[String]) -> Self {
         Self(parts.to_vec())
     }
 
@@ -556,6 +565,11 @@ impl SymbolTable {
         {
             f(symbol);
         }
+    }
+
+    pub fn get_from_full_scope_path(&self, scope_path: &ScopePath, name: &str) -> Option<&Symbol> {
+        let scope = self.scopes.get(scope_path)?;
+        scope.lookup(name)
     }
 
     pub fn get_mut_from_full_scope_path(

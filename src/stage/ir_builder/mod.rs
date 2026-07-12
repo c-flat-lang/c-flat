@@ -10,7 +10,7 @@ use std::str::FromStr;
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
     ExprBlock, ExprCall, ExprDecl, ExprDeref, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot,
-    ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
+    ExprPath, ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
 };
 
 #[derive(Debug)]
@@ -187,34 +187,7 @@ impl Lowerable for Expr {
                 };
                 ctx.get_variable(&ident.lexeme)
             }
-            Expr::Path(path) => {
-                let leaf = path.leaf();
-                if ctx.symbol_table.get(&leaf.lexeme).is_some() {
-                    return ctx.get_variable(&leaf.lexeme);
-                }
-                let head = path.head();
-                let Some(symbol) = ctx.symbol_table.get(&head.lexeme) else {
-                    panic!("Undefind symbol {:?} or {:?}", path.head(), leaf);
-                };
-                match &symbol.kind {
-                    super::semantic_analyzer::symbol_table::SymbolKind::Struct => {
-                        todo!("Path Struct")
-                    }
-                    super::semantic_analyzer::symbol_table::SymbolKind::Enum => {
-                        let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
-                            panic!("incorrect SymbolKind matched with a Symbol");
-                        };
-                        let Some((_, value)) = ty.variants.iter().find(|v| v.0 == leaf.lexeme)
-                        else {
-                            panic!("Unknown variant on {}", head.lexeme);
-                        };
-                        let tmp = assembler.var(Type::Unsigned(32));
-                        assembler.assign(tmp.clone(), Operand::const_unsigned(value, 32));
-                        Some(tmp)
-                    }
-                    kind => unreachable!("PATH {kind:?}"),
-                }
-            }
+            Expr::Path(expr) => expr.lower(assembler, ctx),
             Expr::Struct(expr) => expr.lower(assembler, ctx),
             Expr::MemberAccess(expr) => expr.lower(assembler, ctx),
             Expr::Array(expr) => expr.lower(assembler, ctx),
@@ -279,6 +252,42 @@ impl Addressable for Expr {
         }
     }
 }
+impl Lowerable for ExprPath {
+    fn lower(
+        &self,
+        assembler: &mut AssemblerBuilder,
+        ctx: &mut LoweringContext,
+    ) -> Option<Variable> {
+        let leaf = self.leaf();
+        let head = self.head();
+        let Some(symbol) = ctx.symbol_table.get(&head.lexeme) else {
+            panic!("Undefind symbol {:?} or {:?}", self.head(), leaf);
+        };
+        match &symbol.kind {
+            super::semantic_analyzer::symbol_table::SymbolKind::Struct => {
+                todo!("Path Struct")
+            }
+            super::semantic_analyzer::symbol_table::SymbolKind::Enum => {
+                let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
+                    panic!("incorrect SymbolKind matched with a Symbol");
+                };
+                let Some((_, value)) = ty.variants.iter().find(|v| v.0.lexeme == leaf.lexeme)
+                else {
+                    panic!("Unknown variant on {}", head.lexeme);
+                };
+                let tmp = assembler.var(Type::Unsigned(32));
+                assembler.assign(tmp.clone(), Operand::const_unsigned(value, 32));
+                Some(tmp)
+            }
+            kind => {
+                if ctx.symbol_table.get(&leaf.lexeme).is_some() {
+                    return ctx.get_variable(&leaf.lexeme);
+                }
+                unreachable!("PATH {kind:?}");
+            }
+        }
+    }
+}
 
 impl Lowerable for ExprStruct {
     fn lower(
@@ -317,7 +326,10 @@ impl Lowerable for ExprStruct {
                 })
                 .unwrap_or_else(|| {
                     let Some(default) = &symbol_field.default_value else {
-                        panic!("Failed to return variable from expr lowering in Struct field");
+                        panic!(
+                            "Failed to return variable from expr lowering in Struct field {:#?}",
+                            symbol_field.ty.span.clone()
+                        );
                     };
                     default
                         .lower(assembler, ctx)
@@ -350,7 +362,15 @@ impl Lowerable for ExprMemberAccess {
                 ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
                 _ => panic!("Expected pointer to struct type in MemberAccess"),
             },
-            _ => panic!("Expected struct type in MemberAccess"),
+            ir::Type::Array(size, _) => {
+                // HACK: I think we could maybe handle this better.
+                let ty = Type::Unsigned(ctx.target.target_pointer_size());
+                let des = assembler.var(ty.clone());
+                let index = Operand::ConstantInt(ConstantInt::new(size.to_string(), ty));
+                assembler.assign(des.clone(), index);
+                return Some(des);
+            }
+            ty => panic!("Expected struct type in MemberAccess but found {ty}"),
         };
         let Some((idx, (_, field_ty))) = fields
             .iter()
@@ -375,13 +395,14 @@ impl Lowerable for ExprArray {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ty = self.ty.as_bitbox_type(&ctx.target);
-        let size = Operand::ConstantInt(ir::ConstantInt::new(
-            (self.elements.len() * (ty.size(&ctx.target) as usize)).to_string(),
-            Type::Signed(32),
-        ));
-        let ptr = assembler.var(ty.clone());
-        assembler.alloc(ty.clone(), ptr.clone(), size);
+        let elem_ty = self.ty.as_bitbox_type(&ctx.target);
+        let full_ty = Type::Array(self.elements.len(), Box::new(elem_ty));
+        let ptr = assembler.var(full_ty.clone());
+        assembler.alloc(
+            full_ty.clone(),
+            ptr.clone(),
+            Operand::ConstantInt(ir::ConstantInt::new("1".to_string(), Type::Signed(32))),
+        );
         for (index, element) in self.elements.iter().enumerate() {
             let Some(value) = element.lower(assembler, ctx) else {
                 panic!("Failed to return variable from expr lowering in Array");
@@ -439,76 +460,88 @@ impl Lowerable for ExprIfElse {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let id = assembler.next_label_id();
-        let condition_label = format!("cond.{id}");
-        let then_label = format!("then.{id}");
-        let else_label = format!("else.{id}");
-        let merge_label = format!("merge.{id}");
-
         let result_var = if self.ty.kind == ast::TypeKind::Void {
             None
         } else {
             Some(assembler.var(self.ty.as_bitbox_type(&ctx.target)))
         };
 
-        // Condition block
-        if !assembler.is_current_block_empty() {
-            assembler.create_block(&condition_label);
-        }
-        let cond_var = self
+        let mut var = vec![];
+
+        #[cfg(not(feature = "uuids"))]
+        let counter = assembler.counter();
+        #[cfg(not(feature = "uuids"))]
+        let label_counter = assembler.label_counter();
+
+        // Condition
+        let mut cond_blocks = vec![];
+        let mut cond_assembler = AssemblerBuilder::new(&mut cond_blocks, &mut var);
+        #[cfg(not(feature = "uuids"))]
+        cond_assembler
+            .with_counter(counter)
+            .with_label_counter(label_counter);
+        cond_assembler.create_block("cond");
+        let cond_result = self
             .condition
-            .lower(assembler, ctx)
+            .lower(&mut cond_assembler, ctx)
             .expect("condition must produce a value");
+        #[cfg(not(feature = "uuids"))]
+        let counter = cond_assembler.counter();
+        #[cfg(not(feature = "uuids"))]
+        let label_counter = cond_assembler.label_counter();
 
-        assembler.jump_if(cond_var, &then_label);
-        let condition_jump_label = if self.else_branch.is_none() {
-            &merge_label
-        } else {
-            &else_label
-        };
-        assembler.jump(condition_jump_label);
-
-        // Then block
-        let then_label = assembler.create_block(&then_label);
-        if let Some(val) = self.then_branch.lower(assembler, ctx)
+        // Then branch
+        var.clear();
+        let mut then_blocks = vec![];
+        let mut then_assembler = AssemblerBuilder::new(&mut then_blocks, &mut var);
+        #[cfg(not(feature = "uuids"))]
+        then_assembler
+            .with_counter(counter)
+            .with_label_counter(label_counter);
+        then_assembler.create_block("then");
+        if let Some(val) = self.then_branch.lower(&mut then_assembler, ctx)
             && let Some(res) = &result_var
         {
-            assembler.assign(res.clone(), val);
+            then_assembler.assign(res.clone(), val);
         }
-        assembler.jump(&merge_label);
+        #[cfg(not(feature = "uuids"))]
+        let counter = then_assembler.counter();
+        #[cfg(not(feature = "uuids"))]
+        let label_counter = then_assembler.label_counter();
 
-        // Else block (optional)
-        let else_label = if let Some(else_b) = &self.else_branch {
-            let else_l = assembler.create_block(else_label);
-            if let Some(val) = else_b.lower(assembler, ctx)
+        // Else branch
+        var.clear();
+        let mut else_blocks = vec![];
+        if let Some(else_b) = &self.else_branch {
+            let mut else_assembler = AssemblerBuilder::new(&mut else_blocks, &mut var);
+            #[cfg(not(feature = "uuids"))]
+            else_assembler
+                .with_counter(counter)
+                .with_label_counter(label_counter);
+            else_assembler.create_block("else");
+            if let Some(val) = else_b.lower(&mut else_assembler, ctx)
                 && let Some(res) = &result_var
             {
-                assembler.assign(res.clone(), val);
+                else_assembler.assign(res.clone(), val);
             }
-            assembler.jump(&merge_label);
-            Some(else_l)
+            #[cfg(not(feature = "uuids"))]
+            assembler
+                .with_counter(else_assembler.counter())
+                .with_label_counter(else_assembler.label_counter());
         } else {
-            None
-        };
-
-        // Merge block
-        assembler.create_block(&merge_label);
-
-        // Phi node if result is needed
-        if let Some(result) = &result_var {
-            let mut phi_entries = vec![(then_label, result.clone())];
-
-            if let Some(el_label) = else_label {
-                phi_entries.push((el_label, result.clone()));
-            } else {
-                // No else branch — you may want to initialize `result_var` before the if
-                // For now, we can duplicate the value from then or use a default.
-                // Simple solution: initialize before condition
-            }
-
-            assembler.phi(result.clone(), phi_entries);
+            #[cfg(not(feature = "uuids"))]
+            assembler
+                .with_counter(counter)
+                .with_label_counter(label_counter);
         }
 
+        assembler.if_else(
+            cond_blocks,
+            cond_result,
+            then_blocks,
+            else_blocks,
+            result_var.clone(),
+        );
         result_var
     }
 }
@@ -553,17 +586,16 @@ impl Lowerable for Litral {
     fn lower(
         &self,
         assembler: &mut AssemblerBuilder,
-        _ctx: &mut LoweringContext,
+        ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         match self {
             ast::Litral::String(token) => {
                 let bytes = token.lexeme.as_bytes();
                 let elem_ty = Type::Unsigned(8);
                 let arr_ty = Type::Array(bytes.len(), Box::new(elem_ty.clone()));
-                let size = Operand::ConstantInt(ir::ConstantInt::new(
-                    bytes.len().to_string(),
-                    Type::Signed(32),
-                ));
+                // Count is 1: the alloc contract reserves `count * arr_ty.size()` = `len` bytes.
+                let size =
+                    Operand::ConstantInt(ir::ConstantInt::new("1".to_string(), Type::Signed(32)));
                 let ptr = assembler.var(arr_ty.clone());
                 assembler.alloc(arr_ty, ptr.clone(), size);
                 for (index, &byte) in bytes.iter().enumerate() {
@@ -586,16 +618,14 @@ impl Lowerable for Litral {
                 }
                 Some(ptr)
             }
-            ast::Litral::Integer(token) => {
-                let fits_i32 = token.lexeme.replace('_', "").parse::<i32>().is_ok();
-                let bits = if fits_i32 { 32 } else { 64 };
-                let ty = if fits_i32 {
-                    Type::Signed(32)
-                } else {
-                    Type::Unsigned(64)
-                };
+            ast::Litral::Integer(integer_litral) => {
+                let ty = integer_litral.ty.as_bitbox_type(&ctx.target);
+                let bits: u8 = (ty.size(&ctx.target) * 4) as u8;
                 let var = assembler.var(ty);
-                assembler.assign(var.clone(), Operand::const_unsigned(&token.lexeme, bits));
+                assembler.assign(
+                    var.clone(),
+                    Operand::const_unsigned(&integer_litral.token.lexeme, bits),
+                );
                 Some(var)
             }
             ast::Litral::Float(token) => {
@@ -707,7 +737,7 @@ impl Lowerable for ExprDecl {
                 .as_bitbox_type(&ctx.target)
         };
         let Some(src) = expr.lower(assembler, ctx) else {
-            panic!("Failed to return variable from expr lowering");
+            panic!("Failed to return variable from expr lowering\n{self:#?}");
         };
 
         let des = Variable::new(ident.lexeme.clone(), ty);
@@ -953,16 +983,20 @@ impl Lowerable for ExprArrayRepeat {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ast::TypeKind::Array(count, ty) = &self.ty.kind else {
+        let ast::TypeKind::Array(count, _) = &self.ty.kind else {
             panic!("Expected array type but got {}", self.ty);
         };
-        let size = Operand::from(ConstantInt::new(
-            (count * ty.size(&ctx.target)).to_string(),
-            Type::Signed(32),
-        ));
-        let ptr = assembler.var(ty.as_bitbox_type(&ctx.target));
-        assembler.alloc(ty.as_bitbox_type(&ctx.target), ptr.clone(), size);
-        for index in 0..*count {
+        let count = *count;
+        // Allocate the full array type inline (count=1 under the `count * ty.size()`
+        // alloc contract); each iteration copies a freshly-lowered element in.
+        let full_ty = self.ty.as_bitbox_type(&ctx.target);
+        let ptr = assembler.var(full_ty.clone());
+        assembler.alloc(
+            full_ty.clone(),
+            ptr.clone(),
+            Operand::from(ConstantInt::new("1".to_string(), Type::Signed(32))),
+        );
+        for index in 0..count {
             let Some(value) = self.value.lower(assembler, ctx) else {
                 panic!("Failed to return variable from expr lowering in Array");
             };
@@ -1067,7 +1101,7 @@ impl Lowerable for ExprNot {
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
         let src_var = self.expr.lower(assembler, ctx)?;
-        let des = assembler.var(src_var.ty.clone());
+        let des = assembler.var(Type::Unsigned(32));
         assembler.not(des.clone(), src_var);
         Some(des)
     }

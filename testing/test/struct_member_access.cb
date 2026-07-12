@@ -1,0 +1,16 @@
+type Foo struct {
+    number: s32,
+}
+
+type Bar struct {
+    foo: Foo,
+}
+
+type FooBar struct {
+    bar: Bar,
+}
+
+pub fn main() s32 {
+    let foobar = FooBar { .bar = Bar { .foo = Foo { .number = 100 } } };
+    return foobar.bar.foo.number;
+}
