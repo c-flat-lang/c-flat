@@ -254,7 +254,7 @@ impl Report for ErrorUndefinedSymbol {
 
     fn report(&self, src: &str) -> String {
         ReportBuilder::new(&self.found.span, src)
-            .message(format!("undefined symbol `{}`", &self.found.lexeme))
+            .message(format!("undefined symbol `{}`", self.found.lexeme))
             .build()
     }
 }
