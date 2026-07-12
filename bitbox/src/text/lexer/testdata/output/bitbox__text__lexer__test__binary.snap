@@ -1,71 +1,71 @@
 ---
 source: bitbox/src/text/lexer/test.rs
-expression: snapshot_lexing(contents)
+expression: "snapshot_lexing(\"../../../examples/array.bitbox\", & contents)"
 ---
 public function main() s32 {
-^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: 0..6 }
-       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: 7..15 }
-                ^^^^ Token { kind: Identifier, lexeme: "main", span: 16..20 }
-                    ^ Token { kind: LeftParen, lexeme: "(", span: 20..21 }
-                     ^ Token { kind: RightParen, lexeme: ")", span: 21..22 }
-                       ^^^ Token { kind: Identifier, lexeme: "s32", span: 23..26 }
-                           ^^ Token { kind: LeftBrace, lexeme: "{", span: 27..29 }
+^^^^^^ Token { kind: Keyword(Public), lexeme: "public", span: Span { start: 0, end: 6, filename: "../../../examples/array.bitbox" } }
+       ^^^^^^^^ Token { kind: Keyword(Function), lexeme: "function", span: Span { start: 7, end: 15, filename: "../../../examples/array.bitbox" } }
+                ^^^^ Token { kind: Identifier, lexeme: "main", span: Span { start: 16, end: 20, filename: "../../../examples/array.bitbox" } }
+                    ^ Token { kind: LeftParen, lexeme: "(", span: Span { start: 20, end: 21, filename: "../../../examples/array.bitbox" } }
+                     ^ Token { kind: RightParen, lexeme: ")", span: Span { start: 21, end: 22, filename: "../../../examples/array.bitbox" } }
+                       ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 23, end: 26, filename: "../../../examples/array.bitbox" } }
+                           ^^ Token { kind: LeftBrace, lexeme: "{", span: Span { start: 27, end: 29, filename: "../../../examples/array.bitbox" } }
   %entry:
-  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: 31..38 }
+  ^^^^^^^ Token { kind: LabelDefinition, lexeme: "entry", span: Span { start: 31, end: 38, filename: "../../../examples/array.bitbox" } }
     @alloc s32 : arr, 3
-^ Token { kind: Delimiter, lexeme: "\\n", span: 38..39 }
-    ^^^^^^ Token { kind: Instruction(Alloc), lexeme: "@alloc", span: 43..49 }
-           ^^^ Token { kind: Identifier, lexeme: "s32", span: 50..53 }
-               ^ Token { kind: Colon, lexeme: ":", span: 54..55 }
-                 ^^^ Token { kind: Identifier, lexeme: "arr", span: 56..59 }
-                    ^ Token { kind: Comma, lexeme: ",", span: 59..60 }
-                      ^ Token { kind: Number, lexeme: "3", span: 61..62 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 38, end: 39, filename: "../../../examples/array.bitbox" } }
+    ^^^^^^ Token { kind: Instruction(Alloc), lexeme: "@alloc", span: Span { start: 43, end: 49, filename: "../../../examples/array.bitbox" } }
+           ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 50, end: 53, filename: "../../../examples/array.bitbox" } }
+               ^ Token { kind: Colon, lexeme: ":", span: Span { start: 54, end: 55, filename: "../../../examples/array.bitbox" } }
+                 ^^^ Token { kind: Identifier, lexeme: "arr", span: Span { start: 56, end: 59, filename: "../../../examples/array.bitbox" } }
+                    ^ Token { kind: Comma, lexeme: ",", span: Span { start: 59, end: 60, filename: "../../../examples/array.bitbox" } }
+                      ^ Token { kind: Number, lexeme: "3", span: Span { start: 61, end: 62, filename: "../../../examples/array.bitbox" } }
     @elemset s32 : arr, 0, 100
-^ Token { kind: Delimiter, lexeme: "\\n", span: 62..63 }
-    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: 67..75 }
-             ^^^ Token { kind: Identifier, lexeme: "s32", span: 76..79 }
-                 ^ Token { kind: Colon, lexeme: ":", span: 80..81 }
-                   ^^^ Token { kind: Identifier, lexeme: "arr", span: 82..85 }
-                      ^ Token { kind: Comma, lexeme: ",", span: 85..86 }
-                        ^ Token { kind: Number, lexeme: "0", span: 87..88 }
-                         ^ Token { kind: Comma, lexeme: ",", span: 88..89 }
-                           ^^^ Token { kind: Number, lexeme: "100", span: 90..93 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 62, end: 63, filename: "../../../examples/array.bitbox" } }
+    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: Span { start: 67, end: 75, filename: "../../../examples/array.bitbox" } }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 76, end: 79, filename: "../../../examples/array.bitbox" } }
+                 ^ Token { kind: Colon, lexeme: ":", span: Span { start: 80, end: 81, filename: "../../../examples/array.bitbox" } }
+                   ^^^ Token { kind: Identifier, lexeme: "arr", span: Span { start: 82, end: 85, filename: "../../../examples/array.bitbox" } }
+                      ^ Token { kind: Comma, lexeme: ",", span: Span { start: 85, end: 86, filename: "../../../examples/array.bitbox" } }
+                        ^ Token { kind: Number, lexeme: "0", span: Span { start: 87, end: 88, filename: "../../../examples/array.bitbox" } }
+                         ^ Token { kind: Comma, lexeme: ",", span: Span { start: 88, end: 89, filename: "../../../examples/array.bitbox" } }
+                           ^^^ Token { kind: Number, lexeme: "100", span: Span { start: 90, end: 93, filename: "../../../examples/array.bitbox" } }
     @elemset s32 : arr, 1, 200
-^ Token { kind: Delimiter, lexeme: "\\n", span: 93..94 }
-    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: 98..106 }
-             ^^^ Token { kind: Identifier, lexeme: "s32", span: 107..110 }
-                 ^ Token { kind: Colon, lexeme: ":", span: 111..112 }
-                   ^^^ Token { kind: Identifier, lexeme: "arr", span: 113..116 }
-                      ^ Token { kind: Comma, lexeme: ",", span: 116..117 }
-                        ^ Token { kind: Number, lexeme: "1", span: 118..119 }
-                         ^ Token { kind: Comma, lexeme: ",", span: 119..120 }
-                           ^^^ Token { kind: Number, lexeme: "200", span: 121..124 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 93, end: 94, filename: "../../../examples/array.bitbox" } }
+    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: Span { start: 98, end: 106, filename: "../../../examples/array.bitbox" } }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 107, end: 110, filename: "../../../examples/array.bitbox" } }
+                 ^ Token { kind: Colon, lexeme: ":", span: Span { start: 111, end: 112, filename: "../../../examples/array.bitbox" } }
+                   ^^^ Token { kind: Identifier, lexeme: "arr", span: Span { start: 113, end: 116, filename: "../../../examples/array.bitbox" } }
+                      ^ Token { kind: Comma, lexeme: ",", span: Span { start: 116, end: 117, filename: "../../../examples/array.bitbox" } }
+                        ^ Token { kind: Number, lexeme: "1", span: Span { start: 118, end: 119, filename: "../../../examples/array.bitbox" } }
+                         ^ Token { kind: Comma, lexeme: ",", span: Span { start: 119, end: 120, filename: "../../../examples/array.bitbox" } }
+                           ^^^ Token { kind: Number, lexeme: "200", span: Span { start: 121, end: 124, filename: "../../../examples/array.bitbox" } }
     @elemset s32 : arr, 2, 300
-^ Token { kind: Delimiter, lexeme: "\\n", span: 124..125 }
-    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: 129..137 }
-             ^^^ Token { kind: Identifier, lexeme: "s32", span: 138..141 }
-                 ^ Token { kind: Colon, lexeme: ":", span: 142..143 }
-                   ^^^ Token { kind: Identifier, lexeme: "arr", span: 144..147 }
-                      ^ Token { kind: Comma, lexeme: ",", span: 147..148 }
-                        ^ Token { kind: Number, lexeme: "2", span: 149..150 }
-                         ^ Token { kind: Comma, lexeme: ",", span: 150..151 }
-                           ^^^ Token { kind: Number, lexeme: "300", span: 152..155 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 124, end: 125, filename: "../../../examples/array.bitbox" } }
+    ^^^^^^^^ Token { kind: Instruction(ElemSet), lexeme: "@elemset", span: Span { start: 129, end: 137, filename: "../../../examples/array.bitbox" } }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 138, end: 141, filename: "../../../examples/array.bitbox" } }
+                 ^ Token { kind: Colon, lexeme: ":", span: Span { start: 142, end: 143, filename: "../../../examples/array.bitbox" } }
+                   ^^^ Token { kind: Identifier, lexeme: "arr", span: Span { start: 144, end: 147, filename: "../../../examples/array.bitbox" } }
+                      ^ Token { kind: Comma, lexeme: ",", span: Span { start: 147, end: 148, filename: "../../../examples/array.bitbox" } }
+                        ^ Token { kind: Number, lexeme: "2", span: Span { start: 149, end: 150, filename: "../../../examples/array.bitbox" } }
+                         ^ Token { kind: Comma, lexeme: ",", span: Span { start: 150, end: 151, filename: "../../../examples/array.bitbox" } }
+                           ^^^ Token { kind: Number, lexeme: "300", span: Span { start: 152, end: 155, filename: "../../../examples/array.bitbox" } }
     @elemget s32: ret, arr, 1
-^ Token { kind: Delimiter, lexeme: "\\n", span: 155..156 }
-    ^^^^^^^^ Token { kind: Instruction(ElemGet), lexeme: "@elemget", span: 160..168 }
-             ^^^ Token { kind: Identifier, lexeme: "s32", span: 169..172 }
-                ^ Token { kind: Colon, lexeme: ":", span: 172..173 }
-                  ^^^ Token { kind: Identifier, lexeme: "ret", span: 174..177 }
-                     ^ Token { kind: Comma, lexeme: ",", span: 177..178 }
-                       ^^^ Token { kind: Identifier, lexeme: "arr", span: 179..182 }
-                          ^ Token { kind: Comma, lexeme: ",", span: 182..183 }
-                            ^ Token { kind: Number, lexeme: "1", span: 184..185 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 155, end: 156, filename: "../../../examples/array.bitbox" } }
+    ^^^^^^^^ Token { kind: Instruction(ElemGet), lexeme: "@elemget", span: Span { start: 160, end: 168, filename: "../../../examples/array.bitbox" } }
+             ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 169, end: 172, filename: "../../../examples/array.bitbox" } }
+                ^ Token { kind: Colon, lexeme: ":", span: Span { start: 172, end: 173, filename: "../../../examples/array.bitbox" } }
+                  ^^^ Token { kind: Identifier, lexeme: "ret", span: Span { start: 174, end: 177, filename: "../../../examples/array.bitbox" } }
+                     ^ Token { kind: Comma, lexeme: ",", span: Span { start: 177, end: 178, filename: "../../../examples/array.bitbox" } }
+                       ^^^ Token { kind: Identifier, lexeme: "arr", span: Span { start: 179, end: 182, filename: "../../../examples/array.bitbox" } }
+                          ^ Token { kind: Comma, lexeme: ",", span: Span { start: 182, end: 183, filename: "../../../examples/array.bitbox" } }
+                            ^ Token { kind: Number, lexeme: "1", span: Span { start: 184, end: 185, filename: "../../../examples/array.bitbox" } }
     @ret s32 : ret
-^ Token { kind: Delimiter, lexeme: "\\n", span: 185..186 }
-    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: 190..194 }
-         ^^^ Token { kind: Identifier, lexeme: "s32", span: 195..198 }
-             ^ Token { kind: Colon, lexeme: ":", span: 199..200 }
-               ^^^ Token { kind: Identifier, lexeme: "ret", span: 201..204 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 185, end: 186, filename: "../../../examples/array.bitbox" } }
+    ^^^^ Token { kind: Instruction(Ret), lexeme: "@ret", span: Span { start: 190, end: 194, filename: "../../../examples/array.bitbox" } }
+         ^^^ Token { kind: Identifier, lexeme: "s32", span: Span { start: 195, end: 198, filename: "../../../examples/array.bitbox" } }
+             ^ Token { kind: Colon, lexeme: ":", span: Span { start: 199, end: 200, filename: "../../../examples/array.bitbox" } }
+               ^^^ Token { kind: Identifier, lexeme: "ret", span: Span { start: 201, end: 204, filename: "../../../examples/array.bitbox" } }
 }
-^ Token { kind: Delimiter, lexeme: "\\n", span: 204..205 }
-^^ Token { kind: RightBrace, lexeme: "}", span: 205..207 }
+^ Token { kind: Delimiter, lexeme: "\\n", span: Span { start: 204, end: 205, filename: "../../../examples/array.bitbox" } }
+^^ Token { kind: RightBrace, lexeme: "}", span: Span { start: 205, end: 207, filename: "../../../examples/array.bitbox" } }

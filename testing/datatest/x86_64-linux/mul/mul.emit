@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/mul.cb
                         Parser
               SemanticAnalyzer
                    TypeChecker
@@ -15,7 +15,7 @@
 main:
   push rbp
   mov rbp, rsp
-  sub rsp, 32
+  sub rsp, 16
   # -- args --
 main_entry:
   # @assign s32 : tmp.0_v0, 10
@@ -36,7 +36,7 @@ main_entry:
   # lowering assign
   # lowering operand
   mov dword ptr [rbp-8], vreg(4 : Reg32)
-  # @assign s32 : tmp.2_v0, 10
+  # @assign u8 : tmp.2_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(9 : Reg64), 10
@@ -44,8 +44,8 @@ main_entry:
   # @call write_char(tmp.2_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-12], vreg(8 : Reg32)
-  mov edi, dword ptr [rbp-12]
+  mov byte ptr [rbp-9], vreg(8 : Reg8)
+  mov dil, byte ptr [rbp-9]
   call write_char
   # @mul s32 : tmp.3_v0, a_v0, b_v0
   # lowering mul
@@ -53,13 +53,13 @@ main_entry:
   # lowering operand
   mov vreg(11 : Reg32), dword ptr [rbp-4]
   imul vreg(11 : Reg32), dword ptr [rbp-8]
-  # @call write_int(tmp.3_v0)
+  # @call write_s32(tmp.3_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-16], vreg(11 : Reg32)
-  mov edi, dword ptr [rbp-16]
-  call write_int
-  # @assign s32 : tmp.4_v0, 10
+  mov dword ptr [rbp-13], vreg(11 : Reg32)
+  mov edi, dword ptr [rbp-13]
+  call write_s32
+  # @assign u8 : tmp.4_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(14 : Reg64), 10
@@ -67,11 +67,11 @@ main_entry:
   # @call write_char(tmp.4_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-20], vreg(13 : Reg32)
-  mov edi, dword ptr [rbp-20]
+  mov byte ptr [rbp-14], vreg(13 : Reg8)
+  mov dil, byte ptr [rbp-14]
   call write_char
 exit_main:
-  add rsp, 32
+  add rsp, 16
   mov rsp, rbp
   pop rbp
   ret

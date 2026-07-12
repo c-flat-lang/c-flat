@@ -1,0 +1,54 @@
+pub fn max<(T: type)>(x: T, y: T) T {
+    return if x > y { x } else { y };
+}
+
+pub fn min<(T: type)>(x: T, y: T) T {
+    return if x < y { x } else { y };
+}
+
+pub fn abs<(T: type)>(x: T) T {
+    return if x < 0 { x * (0 - 1) } else { x };
+}
+
+// TODO: Make a const once implemented
+pub fn PI() f32 {
+    return 3.14159265358979323846;
+}
+
+// TODO: Make a const once implemented
+pub fn TAU() f32 {
+    return PI() * 2.0;
+}
+
+fn normalize_angle(x: f32) f32 {
+    let neg_one: f32 = 0.0 - 1.0;
+    let xx: f32 = x % TAU();
+    if xx > PI() {
+        xx = xx - TAU();
+    }
+    if xx < (PI() * neg_one) {
+        xx = xx + TAU();
+    }
+    return xx;
+}
+
+pub fn sin(x: f32) f32 {
+    let neg_one: f32 = 0.0 - 1.0;
+    let x: f32 = normalize_angle(x);
+    let term: f32 = x;
+    let sum: f32 = term;
+    let x2: f32 = x * x;
+    let sign: f32 = neg_one;
+    let i = 3;
+    while i < 16 {
+        term = term * x2 / ((i as f32) * ((i - 1) as f32));
+        sum = term * sign + sum;
+        sign = sign * neg_one;
+        i = i + 2;
+    }
+    return sum;
+}
+
+pub fn cos(x: f32) f32 {
+    return sin(x + PI() / 2.0);
+}

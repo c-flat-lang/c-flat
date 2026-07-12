@@ -1,0 +1,15 @@
+pub fn isAlpha(c: u8) bool {
+    return (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');
+}
+
+pub fn isNumber(c: u8) bool {
+    return c >= '0' and c <= '9';
+}
+
+pub fn isAlphaNumeric(c: u8) bool {
+    return isAlpha(c) or isNumber(c);
+}
+
+pub fn isWhiteSpace(c: u8) bool {
+    return c == '\n' or c == '\t' or c == ' ';
+}

@@ -1,33 +1,112 @@
 use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
-use crate::stage::lexer::token::Token;
+use crate::stage::lexer::token::{Span, Token};
 
-use crate::stage::parser::ast::{self, Expr};
+use crate::stage::parser::ast;
 use std::collections::HashMap;
+
+fn ty(kind: ast::TypeKind) -> ast::Type {
+    ast::Type {
+        mut_token: None,
+        kind,
+        span: Span::new("builtin"),
+    }
+}
+
+fn create_symbol(name: &str, return_type: ast::TypeKind, args: Vec<ast::TypeKind>) -> Symbol {
+    Symbol {
+        name: name.to_string(),
+        ty: ty(return_type),
+        visibility: ast::Visibility::Public,
+        kind: SymbolKind::Function,
+        is_mutable: false,
+        params: Some(args.into_iter().map(ty).collect()),
+        binding_name: None,
+        fields: None,
+    }
+}
 
 #[derive(Debug)]
 pub struct SymbolTableBuilder {
     pub table: SymbolTable,
     errors: Vec<Box<dyn Report>>,
+    current_source: Option<(String, String)>,
 }
 
 impl Default for SymbolTableBuilder {
     fn default() -> Self {
         let mut table = SymbolTable::default();
+
         table.enter_scope("global");
+
+        fn usize_ty() -> ast::TypeKind {
+            ast::TypeKind::UnsignedTargetPointerNumber
+        }
+
+        for argc in 1..=6 {
+            table.push(create_symbol(
+                &format!("syscall{}", argc),
+                ast::TypeKind::UnsignedTargetPointerNumber,
+                std::iter::repeat_with(usize_ty).take(argc + 1).collect(),
+            ));
+        }
+
+        table.push(create_symbol("@size_of", usize_ty(), vec![]));
+
         table.exit_scope();
 
         Self {
             table,
             errors: Vec::new(),
+            current_source: None,
         }
     }
 }
 
 impl SymbolTableBuilder {
     pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable> {
+        self.collect_signatures(items);
+        self.collect_bodies(items);
+        self.finish()
+    }
+
+    pub fn set_source(&mut self, filename: impl Into<String>, source: impl Into<String>) {
+        self.current_source = Some((filename.into(), source.into()));
+    }
+
+    fn push_error(&mut self, error: Box<dyn Report>) {
+        let error = match &self.current_source {
+            Some((filename, source)) => Box::new(crate::error::ScopedReport::new(
+                filename.clone(),
+                source.clone(),
+                error,
+            )) as Box<dyn Report>,
+            None => error,
+        };
+        self.errors.push(error);
+    }
+
+    pub fn collect_signatures(&mut self, items: &[ast::Item]) {
         for item in items {
-            self.walk_item(item);
+            match item {
+                ast::Item::Function(function) => self.walk_function_signature(function),
+                ast::Item::Type(type_def) => self.walk_type_def(type_def),
+                ast::Item::Use(_) => {}
+                ast::Item::ExternFunction(extern_function) => {
+                    self.walk_extern_function(extern_function)
+                }
+            }
         }
+    }
+
+    pub fn collect_bodies(&mut self, items: &[ast::Item]) {
+        for item in items {
+            if let ast::Item::Function(function) = item {
+                self.walk_function_body(function);
+            }
+        }
+    }
+
+    pub fn finish(self) -> Result<SymbolTable> {
         if !self.errors.is_empty() {
             return Err(Box::new(Errors {
                 errors: self.errors,
@@ -36,28 +115,12 @@ impl SymbolTableBuilder {
         Ok(self.table)
     }
 
-    fn walk_item(&mut self, item: &ast::Item) {
-        match item {
-            ast::Item::Function(function) => self.walk_function(function),
-            ast::Item::Type(type_def) => self.walk_type_def(type_def),
-            ast::Item::Use(r#use) => self.walk_use(r#use),
-            ast::Item::ExternFunction(extern_function) => {
-                self.walk_extern_function(extern_function)
-            }
-        }
-    }
-
-    fn walk_use(&mut self, _: &ast::Use) {
-        todo!()
-    }
-
-    fn walk_function(&mut self, function: &ast::Function) {
+    fn walk_function_signature(&mut self, function: &ast::Function) {
         let ast::Function {
             visibility,
             name,
             params,
             return_type,
-            body,
             ..
         } = function;
 
@@ -70,6 +133,13 @@ impl SymbolTableBuilder {
             params: Some(params.iter().map(|param| param.ty.clone()).collect()),
             ..Default::default()
         });
+    }
+
+    fn walk_function_body(&mut self, function: &ast::Function) {
+        let ast::Function {
+            name, params, body, ..
+        } = function;
+
         self.table.enter_scope(&name.lexeme);
 
         for param in params {
@@ -90,7 +160,41 @@ impl SymbolTableBuilder {
     fn walk_type_def(&mut self, type_def: &ast::TypeDef) {
         match type_def {
             ast::TypeDef::Struct(struct_def) => self.walk_struct_def(struct_def),
+            ast::TypeDef::Enum(enum_def) => self.walk_enum_def(enum_def),
         }
+    }
+
+    fn walk_enum_def(&mut self, enum_def: &ast::Enum) {
+        self.table.push(Symbol {
+            visibility: enum_def.visibility,
+            name: enum_def.name.lexeme.clone(),
+            kind: SymbolKind::Enum,
+            ty: ast::Type {
+                mut_token: None,
+                kind: ast::TypeKind::Enum(ast::EnumType {
+                    name: enum_def.name.lexeme.clone(),
+                    type_params: enum_def.type_params.clone(),
+                    variants: enum_def
+                        .variants
+                        .iter()
+                        .enumerate()
+                        .map(|(i, variant)| {
+                            (
+                                variant.name.clone(),
+                                variant
+                                    .value
+                                    .as_ref()
+                                    .map(|v| v.lexeme.clone())
+                                    .unwrap_or(i.to_string()),
+                            )
+                        })
+                        .collect(),
+                    number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
+                }),
+                span: enum_def.span(),
+            },
+            ..Default::default()
+        });
     }
 
     fn walk_struct_def(&mut self, struct_def: &ast::Struct) {
@@ -98,10 +202,10 @@ impl SymbolTableBuilder {
             name: struct_def.name.lexeme.clone(),
             kind: SymbolKind::Struct,
             ty: ast::Type {
-                // We set None here cause we dont know if it is mutable at the call site.
                 mut_token: None,
                 kind: ast::TypeKind::Struct(ast::StructType {
                     name: struct_def.name.lexeme.clone(),
+                    type_params: struct_def.type_params.clone(),
                     fields: struct_def
                         .fields
                         .iter()
@@ -156,31 +260,34 @@ impl SymbolTableBuilder {
             ast::Expr::Struct(expr) => self.walk_struct_expr(expr),
             ast::Expr::Assignment(expr) => self.walk_expr_assignment(expr),
             ast::Expr::Declare(expr) => self.walk_expr_declare(expr),
+            ast::Expr::Builtin(..) => {}
             ast::Expr::Call(expr) => self.walk_expr_call(expr),
             ast::Expr::Binary(expr) => self.walk_expr_binary(expr),
             ast::Expr::Identifier(expr) => self.walk_expr_identifier(expr),
+            ast::Expr::Path(expr) => self.walk_expr_path(expr),
             ast::Expr::IfElse(expr) => self.walk_expr_if_else(expr),
-            Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
-            Expr::Return(..) => todo!(),
-            Expr::Litral(..) => {}
-            Expr::Array(expr_array) => {
+            ast::Expr::MemberAccess(expr) => self.walk_expr_member_access(expr),
+            ast::Expr::Return(expr) => self.walk_expr_return(expr),
+            ast::Expr::Litral(..) => {}
+            ast::Expr::Array(expr_array) => {
                 for expr in expr_array.elements.iter() {
                     self.walk_expr(expr);
                 }
             }
-            Expr::ArrayIndex(expr) => {
+            ast::Expr::ArrayIndex(expr) => {
                 self.walk_expr(&expr.expr);
                 self.walk_expr(&expr.index);
             }
-            Expr::ArrayRepeat(_) => {
+            ast::Expr::ArrayRepeat(_) => {
                 unreachable!("No need to do anything")
             }
-            Expr::While(expr) => self.walk_expr_while(expr),
-            Expr::Block(block) => self.walk_block(block),
-            Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
-            Expr::Not(expr) => self.walk_expr(&expr.expr),
-            Expr::Grouping(expr_grouping) => self.walk_expr(&expr_grouping.expr),
-            Expr::TypeCast(cast) => self.walk_expr(&cast.expr),
+            ast::Expr::While(expr) => self.walk_expr_while(expr),
+            ast::Expr::Block(block) => self.walk_block(block),
+            ast::Expr::AddressOf(expr) => self.walk_expr(&expr.expr),
+            ast::Expr::Deref(expr) => self.walk_expr(&expr.base),
+            ast::Expr::Not(expr) => self.walk_expr(&expr.expr),
+            ast::Expr::Grouping(expr_grouping) => self.walk_expr(&expr_grouping.expr),
+            ast::Expr::TypeCast(cast) => self.walk_expr(&cast.expr),
         }
     }
 
@@ -242,7 +349,27 @@ impl SymbolTableBuilder {
         let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
         #[cfg(feature = "debug")]
         let error = ErrorUndefinedSymbol::TokenDebug(token.clone(), compiler_line);
-        self.errors.push(Box::new(error));
+
+        self.push_error(Box::new(error));
+    }
+
+    /// A `::`-qualified reference. v1 resolves it to the final segment within the
+    /// flat program namespace; the loader has already verified the import path.
+    fn walk_expr_path(&mut self, path: &ast::ExprPath) {
+        let leaf = path.leaf();
+        if self.table.get(leaf.lexeme.as_str()).is_some()
+            || self.table.get(path.head().lexeme.as_str()).is_some()
+        {
+            return;
+        }
+
+        #[cfg(not(feature = "debug"))]
+        let error = ErrorUndefinedSymbol::Token(leaf.clone());
+        #[cfg(feature = "debug")]
+        let compiler_line = format!("{} {}:{}", file!(), line!(), column!());
+        #[cfg(feature = "debug")]
+        let error = ErrorUndefinedSymbol::TokenDebug(leaf.clone(), compiler_line);
+        self.push_error(Box::new(error));
     }
 
     fn walk_expr_if_else(&mut self, expr: &ast::ExprIfElse) {
@@ -275,6 +402,13 @@ impl SymbolTableBuilder {
         self.walk_expr(base);
     }
 
+    fn walk_expr_return(&mut self, expr: &ast::ExprReturn) {
+        let Some(ret_expr) = &expr.expr else {
+            return;
+        };
+        self.walk_expr(ret_expr);
+    }
+
     fn walk_extern_function(&mut self, extern_function: &ast::ExternFunction) {
         let ast::ExternFunction {
             visibility,
@@ -304,6 +438,7 @@ pub enum SymbolKind {
     ExternFunction,
     Parameter,
     Struct,
+    Enum,
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -350,10 +485,10 @@ impl Scope {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ScopePath(Vec<String>);
+pub struct ScopePath(pub Vec<String>);
 
 impl ScopePath {
-    fn new(parts: &[String]) -> Self {
+    pub fn new(parts: &[String]) -> Self {
         Self(parts.to_vec())
     }
 
@@ -432,6 +567,11 @@ impl SymbolTable {
         }
     }
 
+    pub fn get_from_full_scope_path(&self, scope_path: &ScopePath, name: &str) -> Option<&Symbol> {
+        let scope = self.scopes.get(scope_path)?;
+        scope.lookup(name)
+    }
+
     pub fn get_mut_from_full_scope_path(
         &mut self,
         scope_path: &ScopePath,
@@ -480,13 +620,26 @@ impl SymbolTable {
 mod tests {
     use super::*;
     use crate::stage::Stage;
+    use crate::stage::lexer::token::{Keyword, TokenKind};
     use pretty_assertions::assert_eq;
+
+    fn create_span(range: std::ops::Range<usize>) -> Span {
+        Span {
+            start: range.start,
+            end: range.end,
+            filename: "test".to_string(),
+        }
+    }
 
     fn create_ty(kind: ast::TypeKind) -> ast::Type {
         ast::Type {
             kind,
-            span: 0..1,
-            ..Default::default()
+            span: create_span(0..0),
+            mut_token: Some(Token::new(
+                TokenKind::Keyword(Keyword::Mut),
+                "mut",
+                create_span(0..0),
+            )),
         }
     }
 
@@ -604,12 +757,14 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer.run(src);
-        let ast = crate::stage::parser::Parser::default().run(tokens).unwrap();
+        let tokens = crate::stage::lexer::Lexer.run(("test_build_symbol_table", src));
+        let ast = crate::stage::parser::Parser::default()
+            .run(("test_build_symbol_table", tokens))
+            .unwrap();
         let symbol_table = match SymbolTableBuilder::default().build(&ast) {
             Ok(table) => table,
             Err(errors) => {
-                eprintln!("{}", errors.report("symbol_table.cb", src));
+                eprintln!("{}", errors.report(src));
                 return;
             }
         };
@@ -622,7 +777,7 @@ mod tests {
                 kind: SymbolKind::Function,
                 ty: ast::Type {
                     kind: ast::TypeKind::SignedNumber(32),
-                    span: 32..35,
+                    span: create_span(32..35),
                     ..Default::default()
                 },
                 is_mutable: false,
@@ -630,12 +785,12 @@ mod tests {
                 params: Some(vec![
                     ast::Type {
                         kind: ast::TypeKind::SignedNumber(32),
-                        span: 19..22,
+                        span: create_span(19..22),
                         ..Default::default()
                     },
                     ast::Type {
                         kind: ast::TypeKind::SignedNumber(32),
-                        span: 27..30,
+                        span: create_span(27..30),
                         ..Default::default()
                     },
                 ]),

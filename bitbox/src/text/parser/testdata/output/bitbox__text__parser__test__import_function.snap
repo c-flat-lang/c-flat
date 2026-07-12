@@ -1,13 +1,17 @@
 ---
 source: bitbox/src/text/parser/test.rs
-expression: snapshot_parsing(contents)
+expression: "snapshot_parsing(\"../../../examples/import_function.bitbox\", & contents)"
 ---
 Err(
     ErrorExpectedToken {
         actual: Token {
             kind: Star,
             lexeme: "*",
-            span: 61..62,
+            span: Span {
+                start: 61,
+                end: 62,
+                filename: "../../../examples/import_function.bitbox",
+            },
         },
         expected: Identifier,
     },

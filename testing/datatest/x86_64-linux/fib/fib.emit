@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/fib.cb
                         Parser
               SemanticAnalyzer
                    TypeChecker
@@ -36,23 +36,20 @@ fib_entry:
   cmp dword ptr [rbp-4], vreg(3 : Reg32)
   sete vreg(6 : Reg8)
   movzx vreg(7 : Reg64), vreg(6 : Reg8)
-  # @jumpif tmp.1_v0, %then.0
+  # @jumpif tmp.1_v0, %then_1
   # lowering jump if
   # lowering operand
   test vreg(7 : Reg64), vreg(7 : Reg64)
-  jnz fib_then_0
-  # @jump %merge.0
+  jnz fib_then_1
+  # @jump %merge_3
   # lowering jump if
-  jmp fib_merge_0
-fib_then_0:
+  jmp fib_merge_3
+fib_then_1:
   # @ret s32 : a_v0
   # lowering return
   mov eax, dword ptr [rbp-8]
   jmp exit_fib
-  # @jump %merge.0
-  # lowering jump if
-  jmp fib_merge_0
-fib_merge_0:
+fib_merge_3:
   # @assign s32 : tmp.2_v0, 1
   # lowering assign
   # lowering operand
@@ -131,12 +128,12 @@ main_entry:
   # lowering assign
   # lowering operand
   mov dword ptr [rbp-16], vreg(9 : Reg32)
-  # @call write_int(value_v0)
+  # @call write_s32(value_v0)
   # lowering call
   # lowering operand
   mov edi, dword ptr [rbp-16]
-  call write_int
-  # @assign s32 : tmp.4_v0, 10
+  call write_s32
+  # @assign u8 : tmp.4_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(13 : Reg64), 10
@@ -144,8 +141,8 @@ main_entry:
   # @call write_char(tmp.4_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-20], vreg(12 : Reg32)
-  mov edi, dword ptr [rbp-20]
+  mov byte ptr [rbp-17], vreg(12 : Reg8)
+  mov dil, byte ptr [rbp-17]
   call write_char
   # @assign s32 : tmp.5_v0, 0
   # lowering assign

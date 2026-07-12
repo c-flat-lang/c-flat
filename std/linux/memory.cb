@@ -1,0 +1,71 @@
+use syscall::Syscall;
+// Allocate `size` bytes. Returns a rawptr, or 0 on failure.
+pub fn alloc<(T: type)>() *T {
+    // let PROT_READ:  usize = 0x1;
+    // let PROT_WRITE: usize = 0x2;
+    let PROT_READ_PROT_WRITE: usize = 0x3;
+    let MAP_PRIVATE:   usize = 0x02;
+    let MAP_ANONYMOUS: usize = 0x20;
+    let MAP_PRIVATE_MAP_ANONYMOUS: usize = 0x22;
+    let MAP_FAILED: usize = 0xffffffffffffffff;
+    let fd_anon:    usize = 0xffffffffffffffff;  // -1, required by mmap for anonymous
+
+    let result: usize = syscall6(
+        Syscall::mmap,
+        0,                            // addr: let kernel choose
+        @size_of<(T)>(),              // length
+        PROT_READ_PROT_WRITE,         // PROT_READ | PROT_WRITE,       // prot
+        MAP_PRIVATE_MAP_ANONYMOUS,    // MAP_PRIVATE | MAP_ANONYMOUS,  // flags: no file backing
+        fd_anon,                      // fd: -1 for anonymous
+        0                             // offset: must be 0 for anonymous
+    );
+
+    if result == MAP_FAILED {
+        return 0;
+    }
+
+    return result as *T;
+}
+
+pub fn alloc_many<(T: type)>(count: usize) *T {
+    let PROT_READ_PROT_WRITE: usize = 0x3;
+    let MAP_PRIVATE:   usize = 0x02;
+    let MAP_ANONYMOUS: usize = 0x20;
+    let MAP_PRIVATE_MAP_ANONYMOUS: usize = 0x22;
+    let MAP_FAILED: usize = 0xffffffffffffffff;
+    let fd_anon:    usize = 0xffffffffffffffff;  // -1, required by mmap for anonymous
+
+    let result: usize = syscall6(
+        Syscall::mmap,
+        0,                            // addr: let kernel choose
+        @size_of<(T)>() * count,      // length
+        PROT_READ_PROT_WRITE,         // PROT_READ | PROT_WRITE,       // prot
+        MAP_PRIVATE_MAP_ANONYMOUS,    // MAP_PRIVATE | MAP_ANONYMOUS,  // flags: no file backing
+        fd_anon,                      // fd: -1 for anonymous
+        0                             // offset: must be 0 for anonymous
+    );
+
+    if result == MAP_FAILED {
+        return 0;
+    }
+
+    return result as *T;
+}
+
+// Free a pointer previously returned by alloc.
+// `size` must match what was passed to alloc — mmap tracks by region.
+pub fn destroy<(T: type)>(ptr: *T) void {
+    syscall2(
+        Syscall::munmap,
+        ptr,
+        @size_of<(T)>(),
+    );
+}
+
+pub fn free_many<(T: type)>(ptr: *T, count: usize) void {
+    syscall2(
+        Syscall::munmap,
+        ptr,
+        @size_of<(T)>() * count,
+    );
+}

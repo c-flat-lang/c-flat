@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/text/parser/test.rs
-expression: snapshot_parsing(contents)
+expression: "snapshot_parsing(\"../../../examples/looping.bitbox\", & contents)"
 ---
 Ok(
     Module {
@@ -9,21 +9,33 @@ Ok(
                 name: Token {
                     kind: Identifier,
                     lexeme: "main",
-                    span: 16..20,
+                    span: Span {
+                        start: 16,
+                        end: 20,
+                        filename: "../../../examples/looping.bitbox",
+                    },
                 },
                 visibility: Public,
                 params: [],
                 return_type: Token {
                     kind: Identifier,
                     lexeme: "s32",
-                    span: 23..26,
+                    span: Span {
+                        start: 23,
+                        end: 26,
+                        filename: "../../../examples/looping.bitbox",
+                    },
                 },
                 block: [
                     BasicBlock {
                         label: Token {
                             kind: LabelDefinition,
                             lexeme: "entry",
-                            span: 31..38,
+                            span: Span {
+                                start: 31,
+                                end: 38,
+                                filename: "../../../examples/looping.bitbox",
+                            },
                         },
                         instructions: [
                             Instruction {
@@ -32,17 +44,29 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 49..51,
+                                        span: Span {
+                                            start: 49,
+                                            end: 51,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "start",
-                                        span: 54..59,
+                                        span: Span {
+                                            start: 54,
+                                            end: 59,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "0",
-                                        span: 61..62,
+                                        span: Span {
+                                            start: 61,
+                                            end: 62,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -52,7 +76,11 @@ Ok(
                                     Token {
                                         kind: Label,
                                         lexeme: "loop",
-                                        span: 73..78,
+                                        span: Span {
+                                            start: 73,
+                                            end: 78,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -62,7 +90,11 @@ Ok(
                         label: Token {
                             kind: LabelDefinition,
                             lexeme: "loop",
-                            span: 82..88,
+                            span: Span {
+                                start: 82,
+                                end: 88,
+                                filename: "../../../examples/looping.bitbox",
+                            },
                         },
                         instructions: [
                             Instruction {
@@ -71,32 +103,56 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 98..100,
+                                        span: Span {
+                                            start: 98,
+                                            end: 100,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 103..109,
+                                        span: Span {
+                                            start: 103,
+                                            end: 109,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Label,
                                         lexeme: "entry",
-                                        span: 113..119,
+                                        span: Span {
+                                            start: 113,
+                                            end: 119,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "start",
-                                        span: 121..126,
+                                        span: Span {
+                                            start: 121,
+                                            end: 126,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Label,
                                         lexeme: "loop",
-                                        span: 130..135,
+                                        span: Span {
+                                            start: 130,
+                                            end: 135,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "next",
-                                        span: 137..141,
+                                        span: Span {
+                                            start: 137,
+                                            end: 141,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -106,22 +162,38 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 154..156,
+                                        span: Span {
+                                            start: 154,
+                                            end: 156,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "is_running",
-                                        span: 159..169,
+                                        span: Span {
+                                            start: 159,
+                                            end: 169,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 171..177,
+                                        span: Span {
+                                            start: 171,
+                                            end: 177,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "10",
-                                        span: 179..181,
+                                        span: Span {
+                                            start: 179,
+                                            end: 181,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -131,22 +203,38 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 191..193,
+                                        span: Span {
+                                            start: 191,
+                                            end: 193,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "next",
-                                        span: 196..200,
+                                        span: Span {
+                                            start: 196,
+                                            end: 200,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 202..208,
+                                        span: Span {
+                                            start: 202,
+                                            end: 208,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Number,
                                         lexeme: "1",
-                                        span: 210..211,
+                                        span: Span {
+                                            start: 210,
+                                            end: 211,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -156,12 +244,20 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "is_running",
-                                        span: 225..235,
+                                        span: Span {
+                                            start: 225,
+                                            end: 235,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Label,
                                         lexeme: "exit",
-                                        span: 237..242,
+                                        span: Span {
+                                            start: 237,
+                                            end: 242,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -171,7 +267,11 @@ Ok(
                                     Token {
                                         kind: Label,
                                         lexeme: "loop",
-                                        span: 253..258,
+                                        span: Span {
+                                            start: 253,
+                                            end: 258,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },
@@ -181,7 +281,11 @@ Ok(
                         label: Token {
                             kind: LabelDefinition,
                             lexeme: "exit",
-                            span: 262..268,
+                            span: Span {
+                                start: 262,
+                                end: 268,
+                                filename: "../../../examples/looping.bitbox",
+                            },
                         },
                         instructions: [
                             Instruction {
@@ -190,12 +294,20 @@ Ok(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "u8",
-                                        span: 278..280,
+                                        span: Span {
+                                            start: 278,
+                                            end: 280,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                     Token {
                                         kind: Identifier,
                                         lexeme: "result",
-                                        span: 283..289,
+                                        span: Span {
+                                            start: 283,
+                                            end: 289,
+                                            filename: "../../../examples/looping.bitbox",
+                                        },
                                     },
                                 ],
                             },

@@ -1,0 +1,668 @@
+pub type Syscall enum {// (usize) {
+    /// 0x00 unsigned int fd char *buf size_t count - - -
+    read,
+    /// 0x01 unsigned int fd const char *buf size_t count    -   -   -
+    write,
+    /// 0x02 const char *filename    int flags   umode_t mode    -   -   -
+    open,
+    /// 0x03 unsigned int fd -   -   -   -   -
+    close,
+    /// 0x04 const char *filename    struct __old_kernel_stat *statbuf   -   -   -   -
+    stat,
+    /// 0x05 unsigned int fd struct __old_kernel_stat *statbuf   -   -   -   -
+    fstat,
+    /// 0x06 const char *filename    struct __old_kernel_stat *statbuf   -   -   -   -
+    lstat,
+    /// 0x07 struct pollfd *ufds unsigned int nfds   int timeout -   -   -
+    poll,
+    /// 0x08 unsigned int fd off_t offset    unsigned int whence -   -   -
+    lseek,
+    /// 0x09 ?   ?   ?   ?   ?   ?
+    mmap,
+    /// 0x0a unsigned long start size_t len  unsigned long prot  -   -   -
+    mprotect,
+    /// 0x0b unsigned long addr  size_t len  -   -   -   -
+    munmap,
+    /// 0x0c unsigned long brk   -   -   -   -   -
+    brk,
+    /// 0x0d int const struct sigaction *    struct sigaction *  size_t  -   -
+    rt_sigaction,
+    /// 0x0e int how sigset_t *set   sigset_t *oset  size_t sigsetsize   -   -
+    rt_sigprocmask,
+    /// 0x0f ?   ?   ?   ?   ?   ?
+    rt_sigreturn,
+    /// 0x10 unsigned int fd unsigned int cmd    unsigned long arg   -   -   -
+    ioctl,
+    /// 0x11 unsigned int fd char *buf   size_t count    loff_t pos  -   -
+    pread64,
+    /// 0x12 unsigned int fd const char *buf size_t count    loff_t pos  -   -
+    pwrite64,
+    /// 0x13 unsigned long fd    const struct iovec *vec unsigned long vlen  -   -   -
+    readv,
+    /// 0x14 unsigned long fd    const struct iovec *vec unsigned long vlen  -   -   -
+    writev,
+    /// 0x15 const char *filename    int mode    -   -   -   -
+    access,
+    /// 0x16 int *fildes -   -   -   -   -
+    pipe,
+    /// 0x17 int n   fd_set *inp fd_set *outp    fd_set *exp struct timeval *tvp -
+    select,
+    /// 0x18 -   -   -   -   -   -
+    sched_yield,
+    /// 0x19 unsigned long addr  unsigned long old_len   unsigned long new_len   unsigned long flags unsigned long new_addr  -
+    mremap,
+    /// 0x1a unsigned long start size_t len  int flags   -   -   -
+    msync,
+    /// 0x1b unsigned long start size_t len  unsigned char * vec -   -   -
+    mincore,
+    /// 0x1c unsigned long start size_t len  int behavior    -   -   -
+    madvise,
+    /// 0x1d key_t key   size_t size int flag    -   -   -
+    shmget,
+    /// 0x1e int shmid   char *shmaddr   int shmflg  -   -   -
+    shmat,
+    /// 0x1f int shmid   int cmd struct shmid_ds *buf    -   -   -
+    shmctl,
+    /// 0x20 unsigned int fildes -   -   -   -   -
+    dup,
+    /// 0x21 unsigned int oldfd  unsigned int newfd  -   -   -   -
+    dup2,
+    /// 0x22 -   -   -   -   -   -
+    pause,
+    /// 0x23 struct __kernel_timespec *rqtp  struct __kernel_timespec *rmtp  -   -   -   -
+    nanosleep,
+    /// 0x24 int which   struct itimerval *value -   -   -   -
+    getitimer,
+    /// 0x25 unsigned int seconds    -   -   -   -   -
+    alarm,
+    /// 0x26 int which   struct itimerval *value struct itimerval *ovalue    -   -   -
+    setitimer,
+    /// 0x27 -   -   -   -   -   -
+    getpid,
+    /// 0x28 int out_fd  int in_fd   off_t *offset   size_t count    -   -
+    sendfile,
+    /// 0x29 int int int -   -   -
+    socket,
+    /// 0x2a int struct sockaddr *   int -   -   -
+    connect,
+    /// 0x2b int struct sockaddr *   int *   -   -   -
+    accept,
+    /// 0x2c int void *  size_t  unsigned    struct sockaddr *   int
+    sendto,
+    /// 0x2d int void *  size_t  unsigned    struct sockaddr *   int *
+    recvfrom,
+    /// 0x2e int fd  struct user_msghdr *msg unsigned flags  -   -   -
+    sendmsg,
+    /// 0x2f int fd  struct user_msghdr *msg unsigned flags  -   -   -
+    recvmsg,
+    /// 0x30 int int -   -   -   -
+    shutdown,
+    /// 0x31 int struct sockaddr *   int -   -   -
+    bind,
+    /// 0x32 int int -   -   -   -
+    listen,
+    /// 0x33 int struct sockaddr *   int *   -   -   -
+    getsockname,
+    /// 0x34 int struct sockaddr *   int *   -   -   -
+    getpeername,
+    /// 0x35 int int int int *   -   -
+    socketpair,
+    /// 0x36 int fd  int level   int optname char *optval    int optlen  -
+    setsockopt,
+    /// 0x37 int fd  int level   int optname char *optval    int *optlen -
+    getsockopt,
+    /// 0x38 unsigned long   unsigned long   int *   int *   unsigned long   -
+    clone,
+    /// 0x39 -   -   -   -   -   -
+    fork,
+    /// 0x3a -   -   -   -   -   -
+    vfork,
+    /// 0x3b const char *filename    const char *const *argv const char *const *envp -   -   -
+    execve,
+    /// 0x3c int error_code  -   -   -   -   -
+    exit,
+    /// 0x3d pid_t pid   int *stat_addr  int options struct rusage *ru   -   -
+    wait4,
+    /// 0x3e pid_t pid   int sig -   -   -   -
+    kill,
+    /// 0x3f struct old_utsname *    -   -   -   -   -
+    uname,
+    /// 0x40 key_t key   int nsems   int semflg  -   -   -
+    semget,
+    /// 0x41 int semid   struct sembuf *sops unsigned nsops  -   -   -
+    semop,
+    /// 0x42 int semid   int semnum  int cmd unsigned long arg   -   -
+    semctl,
+    /// 0x43 char *shmaddr   -   -   -   -   -
+    shmdt,
+    /// 0x44 key_t key   int msgflg  -   -   -   -
+    msgget,
+    /// 0x45 int msqid   struct msgbuf *msgp size_t msgsz    int msgflg  -   -
+    msgsnd,
+    /// 0x46 int msqid   struct msgbuf *msgp size_t msgsz    long msgtyp int msgflg  -
+    msgrcv,
+    /// 0x47 int msqid   int cmd struct msqid_ds *buf    -   -   -
+    msgctl,
+    /// 0x48 unsigned int fd unsigned int cmd    unsigned long arg   -   -   -
+    fcntl,
+    /// 0x49 unsigned int fd unsigned int cmd    -   -   -   -
+    flock,
+    /// 0x4a unsigned int fd -   -   -   -   -
+    fsync,
+    /// 0x4b unsigned int fd -   -   -   -   -
+    fdatasync,
+    /// 0x4c const char *path    long length -   -   -   -
+    truncate,
+    /// 0x4d unsigned int fd unsigned long length    -   -   -   -
+    ftruncate,
+    /// 0x4e unsigned int fd struct linux_dirent *dirent unsigned int count  -   -   -
+    getdents,
+    /// 0x4f char *buf   unsigned long size  -   -   -   -
+    getcwd,
+    /// 0x50 const char *filename    -   -   -   -   -
+    chdir,
+    /// 0x51 unsigned int fd -   -   -   -   -
+    fchdir,
+    /// 0x52 const char *oldname const char *newname -   -   -   -
+    rename,
+    /// 0x53 const char *pathname    umode_t mode    -   -   -   -
+    mkdir,
+    /// 0x54 const char *pathname    -   -   -   -   -
+    rmdir,
+    /// 0x55 const char *pathname    umode_t mode    -   -   -   -
+    creat,
+    /// 0x56 const char *oldname const char *newname -   -   -   -
+    link,
+    /// 0x57 const char *pathname    -   -   -   -   -
+    unlink,
+    /// 0x58 const char *old const char *new -   -   -   -
+    symlink,
+    /// 0x59 const char *path    char *buf   int bufsiz  -   -   -
+    readlink,
+    /// 0x5a const char *filename    umode_t mode    -   -   -   -
+    chmod,
+    /// 0x5b unsigned int fd umode_t mode    -   -   -   -
+    fchmod,
+    /// 0x5c const char *filename    uid_t user  gid_t group -   -   -
+    chown,
+    /// 0x5d unsigned int fd uid_t user  gid_t group -   -   -
+    fchown,
+    /// 0x5e const char *filename    uid_t user  gid_t group -   -   -
+    lchown,
+    /// 0x5f int mask    -   -   -   -   -
+    umask,
+    /// 0x60 struct timeval *tv  struct timezone *tz -   -   -   -
+    gettimeofday,
+    /// 0x61 unsigned int resource   struct rlimit *rlim -   -   -   -
+    getrlimit,
+    /// 0x62 int who struct rusage *ru   -   -   -   -
+    getrusage,
+    /// 0x63 struct sysinfo *info    -   -   -   -   -
+    sysinfo,
+    /// 0x64 struct tms *tbuf    -   -   -   -   -
+    times,
+    /// 0x65 long request    long pid    unsigned long addr  unsigned long data  -   -
+    ptrace,
+    /// 0x66 -   -   -   -   -   -
+    getuid,
+    /// 0x67 int type    char *buf   int len -   -   -
+    syslog,
+    /// 0x68 -   -   -   -   -   -
+    getgid,
+    /// 0x69 uid_t uid   -   -   -   -   -
+    setuid,
+    /// 0x6a gid_t gid   -   -   -   -   -
+    setgid,
+    /// 0x6b -   -   -   -   -   -
+    geteuid,
+    /// 0x6c -   -   -   -   -   -
+    getegid,
+    /// 0x6d pid_t pid   pid_t pgid  -   -   -   -
+    setpgid,
+    /// 0x6e -   -   -   -   -   -
+    getppid,
+    /// 0x6f -   -   -   -   -   -
+    getpgrp,
+    /// 0x70 -   -   -   -   -   -
+    setsid,
+    /// 0x71 uid_t ruid  uid_t euid  -   -   -   -
+    setreuid,
+    /// 0x72 gid_t rgid  gid_t egid  -   -   -   -
+    setregid,
+    /// 0x73 int gidsetsize  gid_t *grouplist    -   -   -   -
+    getgroups,
+    /// 0x74 int gidsetsize  gid_t *grouplist    -   -   -   -
+    setgroups,
+    /// 0x75 uid_t ruid  uid_t euid  uid_t suid  -   -   -
+    setresuid,
+    /// 0x76 uid_t *ruid uid_t *euid uid_t *suid -   -   -
+    getresuid,
+    /// 0x77 gid_t rgid  gid_t egid  gid_t sgid  -   -   -
+    setresgid,
+    /// 0x78 gid_t *rgid gid_t *egid gid_t *sgid -   -   -
+    getresgid,
+    /// 0x79 pid_t pid   -   -   -   -   -
+    getpgid,
+    /// 0x7a uid_t uid   -   -   -   -   -
+    setfsuid,
+    /// 0x7b gid_t gid   -   -   -   -   -
+    setfsgid,
+    /// 0x7c pid_t pid   -   -   -   -   -
+    getsid,
+    /// 0x7d cap_user_header_t header    cap_user_data_t dataptr -   -   -   -
+    capget,
+    /// 0x7e cap_user_header_t header    const cap_user_data_t data  -   -   -   -
+    capset,
+    /// 0x7f sigset_t *set   size_t sigsetsize   -   -   -   -
+    rt_sigpending,
+    /// 0x80 const sigset_t *uthese  siginfo_t *uinfo    const struct __kernel_timespec *uts size_t sigsetsize   -   -
+    rt_sigtimedwait,
+    /// 0x81 pid_t pid   int sig siginfo_t *uinfo    -   -   -
+    rt_sigqueueinfo,
+    /// 0x82 sigset_t *unewset   size_t sigsetsize   -   -   -   -
+    rt_sigsuspend,
+    /// 0x83 const struct sigaltstack *uss   struct sigaltstack *uoss    -   -   -   -
+    sigaltstack,
+    /// 0x84 char *filename  struct utimbuf *times   -   -   -   -
+    utime,
+    /// 0x85 const char *filename    umode_t mode    unsigned dev    -   -   -
+    mknod,
+    /// 0x86 const char *library -   -   -   -   -
+    uselib,
+    /// 0x87 unsigned int personality    -   -   -   -   -
+    personality,
+    /// 0x88 unsigned dev    struct ustat *ubuf  -   -   -   -
+    ustat,
+    /// 0x89 const char * path   struct statfs *buf  -   -   -   -
+    statfs,
+    /// 0x8a unsigned int fd struct statfs *buf  -   -   -   -
+    fstatfs,
+    /// 0x8b int option  unsigned long arg1  unsigned long arg2  -   -   -
+    sysfs,
+    /// 0x8c int which   int who -   -   -   -
+    getpriority,
+    /// 0x8d int which   int who int niceval -   -   -
+    setpriority,
+    /// 0x8e pid_t pid   struct sched_param *param   -   -   -   -
+    sched_setparam,
+    /// 0x8f pid_t pid   struct sched_param *param   -   -   -   -
+    sched_getparam,
+    /// 0x90 pid_t pid   int policy  struct sched_param *param   -   -   -
+    sched_setscheduler,
+    /// 0x91 pid_t pid   -   -   -   -   -
+    sched_getscheduler,
+    /// 0x92 int policy  -   -   -   -   -
+    sched_get_priority_max,
+    /// 0x93 int policy  -   -   -   -   -
+    sched_get_priority_min,
+    /// 0x94 pid_t pid   struct __kernel_timespec *interval  -   -   -   -
+    sched_rr_get_interval,
+    /// 0x95 unsigned long start size_t len  -   -   -   -
+    mlock,
+    /// 0x96 unsigned long start size_t len  -   -   -   -
+    munlock,
+    /// 0x97 int flags   -   -   -   -   -
+    mlockall,
+    /// 0x98 -   -   -   -   -   -
+    munlockall,
+    /// 0x99 -   -   -   -   -   -
+    vhangup,
+    /// 0x9a ?   ?   ?   ?   ?   ?
+    modify_ldt,
+    /// 0x9b const char *new_root    const char *put_old -   -   -   -
+    pivot_root,
+    /// 0x9c ?   ?   ?   ?   ?   ?
+    _sysctl,
+    /// 0x9d int option  unsigned long arg2  unsigned long arg3  unsigned long arg4  unsigned long arg5  -
+    prctl,
+    /// 0x9e ?   ?   ?   ?   ?   ?
+    arch_prctl,
+    /// 0x9f struct __kernel_timex *txc_p    -   -   -   -   -
+    adjtimex,
+    /// 0xa0 unsigned int resource   struct rlimit *rlim -   -   -   -
+    setrlimit,
+    /// 0xa1 const char *filename    -   -   -   -   -
+    chroot,
+    /// 0xa2 -   -   -   -   -   -
+    sync,
+    /// 0xa3 const char *name    -   -   -   -   -
+    acct,
+    /// 0xa4 struct timeval *tv  struct timezone *tz -   -   -   -
+    settimeofday,
+    /// 0xa5 char *dev_name  char *dir_name  char *type  unsigned long flags void *data  -
+    mount,
+    /// 0xa6 ?   ?   ?   ?   ?   ?
+    umount2,
+    /// 0xa7 const char *specialfile int swap_flags  -   -   -   -
+    swapon,
+    /// 0xa8 const char *specialfile -   -   -   -   -
+    swapoff,
+    /// 0xa9 int magic1  int magic2  unsigned int cmd    void *arg   -   -
+    reboot,
+    /// 0xaa char *name  int len -   -   -   -
+    sethostname,
+    /// 0xab char *name  int len -   -   -   -
+    setdomainname,
+    /// 0xac ?   ?   ?   ?   ?   ?
+    iopl,
+    /// 0xad unsigned long from  unsigned long num   int on  -   -   -
+    ioperm,
+    /// 0xae ?   ?   ?   ?   ?   ?
+    create_module,
+    /// 0xaf void *umod  unsigned long len   const char *uargs   -   -   -
+    init_module,
+    /// 0xb0 const char *name_user   unsigned int flags  -   -   -   -
+    delete_module,
+    /// 0xb1 ?   ?   ?   ?   ?   ?
+    get_kernel_syms,
+    /// 0xb2 ?   ?   ?   ?   ?   ?
+    query_module,
+    /// 0xb3 unsigned int cmd    const char *special qid_t id    void *addr  -   -
+    quotactl,
+    /// 0xb4 ?   ?   ?   ?   ?   ?
+    nfsservctl,
+    /// 0xb5 ?   ?   ?   ?   ?   ?
+    getpmsg,
+    /// 0xb6 ?   ?   ?   ?   ?   ?
+    putpmsg,
+    /// 0xb7 ?   ?   ?   ?   ?   ?
+    afs_syscall,
+    /// 0xb8 ?   ?   ?   ?   ?   ?
+    tuxcall,
+    /// 0xb9 ?   ?   ?   ?   ?   ?
+    security,
+    /// 0xba -   -   -   -   -   -
+    gettid,
+    /// 0xbb int fd  loff_t offset   size_t count    -   -   -
+    readahead,
+    /// 0xbc const char *path    const char *name    const void *value   size_t size int flags   -
+    setxattr,
+    /// 0xbd const char *path    const char *name    const void *value   size_t size int flags   -
+    lsetxattr,
+    /// 0xbe int fd  const char *name    const void *value   size_t size int flags   -
+    fsetxattr,
+    /// 0xbf const char *path    const char *name    void *value size_t size -   -
+    getxattr,
+    /// 0xc0 const char *path    const char *name    void *value size_t size -   -
+    lgetxattr,
+    /// 0xc1 int fd  const char *name    void *value size_t size -   -
+    fgetxattr,
+    /// 0xc2 const char *path    char *list  size_t size -   -   -
+    listxattr,
+    /// 0xc3 const char *path    char *list  size_t size -   -   -
+    llistxattr,
+    /// 0xc4 int fd  char *list  size_t size -   -   -
+    flistxattr,
+    /// 0xc5 const char *path    const char *name    -   -   -   -
+    removexattr,
+    /// 0xc6 const char *path    const char *name    -   -   -   -
+    lremovexattr,
+    /// 0xc7 int fd  const char *name    -   -   -   -
+    fremovexattr,
+    /// 0xc8 pid_t pid   int sig -   -   -   -
+    tkill,
+    /// 0xc9 time_t *tloc    -   -   -   -   -
+    time,
+    /// 0xca u32 *uaddr  int op  u32 val struct __kernel_timespec *utime u32 *uaddr2 u32 val3
+    futex,
+    /// 0xcb pid_t pid   unsigned int len    unsigned long *user_mask_ptr    -   -   -
+    sched_setaffinity,
+    /// 0xcc pid_t pid   unsigned int len    unsigned long *user_mask_ptr    -   -   -
+    sched_getaffinity,
+    /// 0xcd ?   ?   ?   ?   ?   ?
+    set_thread_area,
+    /// 0xce unsigned nr_reqs    aio_context_t *ctx  -   -   -   -
+    io_setup,
+    /// 0xcf aio_context_t ctx   -   -   -   -   -
+    io_destroy,
+    /// 0xd0 aio_context_t ctx_id    long min_nr long nr struct io_event *events struct __kernel_timespec *timeout   -
+    io_getevents,
+    /// 0xd1 aio_context_t   long    struct iocb * * -   -   -
+    io_submit,
+    /// 0xd2 aio_context_t ctx_id    struct iocb *iocb   struct io_event *result -   -   -
+    io_cancel,
+    /// 0xd3 ?   ?   ?   ?   ?   ?
+    get_thread_area,
+    /// 0xd4 u64 cookie64    char *buf   size_t len  -   -   -
+    lookup_dcookie,
+    /// 0xd5 int size    -   -   -   -   -
+    epoll_create,
+    /// 0xd6 ?   ?   ?   ?   ?   ?
+    epoll_ctl_old,
+    /// 0xd7 ?   ?   ?   ?   ?   ?
+    epoll_wait_old,
+    /// 0xd8 unsigned long start unsigned long size  unsigned long prot  unsigned long pgoff unsigned long flags -
+    remap_file_pages,
+    /// 0xd9 unsigned int fd struct linux_dirent64 *dirent   unsigned int count  -   -   -
+    getdents64,
+    /// 0xda int *tidptr -   -   -   -   -
+    set_tid_address,
+    /// 0xdb -   -   -   -   -   -
+    restart_syscall,
+    /// 0xdc int semid   struct sembuf *sops unsigned nsops  const struct __kernel_timespec *timeout -   -
+    semtimedop,
+    /// 0xdd int fd  loff_t offset   size_t len  int advice  -   -
+    fadvise64,
+    /// 0xde clockid_t which_clock   struct sigevent *timer_event_spec   timer_t * created_timer_id  -   -   -
+    timer_create,
+    /// 0xdf timer_t timer_id    int flags   const struct __kernel_itimerspec *new_setting   struct __kernel_itimerspec *old_setting -   -
+    timer_settime,
+    /// 0xe0 timer_t timer_id    struct __kernel_itimerspec *setting -   -   -   -
+    timer_gettime,
+    /// 0xe1 timer_t timer_id    -   -   -   -   -
+    timer_getoverrun,
+    /// 0xe2 timer_t timer_id    -   -   -   -   -
+    timer_delete,
+    /// 0xe3 clockid_t which_clock   const struct __kernel_timespec *tp  -   -   -   -
+    clock_settime,
+    /// 0xe4 clockid_t which_clock   struct __kernel_timespec *tp    -   -   -   -
+    clock_gettime,
+    /// 0xe5 clockid_t which_clock   struct __kernel_timespec *tp    -   -   -   -
+    clock_getres,
+    /// 0xe6 clockid_t which_clock   int flags   const struct __kernel_timespec *rqtp    struct __kernel_timespec *rmtp  -   -
+    clock_nanosleep,
+    /// 0xe7 int error_code  -   -   -   -   -
+    exit_group,
+    /// 0xe8 int epfd    struct epoll_event *events  int maxevents   int timeout -   -
+    epoll_wait,
+    /// 0xe9 int epfd    int op  int fd  struct epoll_event *event   -   -
+    epoll_ctl,
+    /// 0xea pid_t tgid  pid_t pid   int sig -   -   -
+    tgkill,
+    /// 0xeb char *filename  struct timeval *utimes  -   -   -   -
+    utimes,
+    /// 0xec ?   ?   ?   ?   ?   ?
+    vserver,
+    /// 0xed unsigned long start unsigned long len   unsigned long mode  const unsigned long *nmask  unsigned long maxnode   unsigned flags
+    mbind,
+    /// 0xee int mode    const unsigned long *nmask  unsigned long maxnode   -   -   -
+    set_mempolicy,
+    /// 0xef int *policy unsigned long *nmask    unsigned long maxnode   unsigned long addr  unsigned long flags -
+    get_mempolicy,
+    /// 0xf0 const char *name    int oflag   umode_t mode    struct mq_attr *attr    -   -
+    mq_open,
+    /// 0xf1 const char *name    -   -   -   -   -
+    mq_unlink,
+    /// 0xf2 mqd_t mqdes const char *msg_ptr size_t msg_len  unsigned int msg_prio   const struct __kernel_timespec *abs_timeout -
+    mq_timedsend,
+    /// 0xf3 mqd_t mqdes char *msg_ptr   size_t msg_len  unsigned int *msg_prio  const struct __kernel_timespec *abs_timeout -
+    mq_timedreceive,
+    /// 0xf4 mqd_t mqdes const struct sigevent *notification -   -   -   -
+    mq_notify,
+    /// 0xf5 mqd_t mqdes const struct mq_attr *mqstat    struct mq_attr *omqstat -   -   -
+    mq_getsetattr,
+    /// 0xf6 unsigned long entry unsigned long nr_segments   struct kexec_segment *segments  unsigned long flags -   -
+    kexec_load,
+    /// 0xf7 int which   pid_t pid   struct siginfo *infop   int options struct rusage *ru   -
+    waitid,
+    /// 0xf8 const char *_type   const char *_description    const void *_payload    size_t plen key_serial_t destringid -
+    add_key,
+    /// 0xf9 const char *_type   const char *_description    const char *_callout_info   key_serial_t destringid -   -
+    request_key,
+    /// 0xfa int cmd unsigned long arg2  unsigned long arg3  unsigned long arg4  unsigned long arg5  -
+    keyctl,
+    /// 0xfb int which   int who int ioprio  -   -   -
+    ioprio_set,
+    /// 0xfc int which   int who -   -   -   -
+    ioprio_get,
+    /// 0xfd -   -   -   -   -   -
+    inotify_init,
+    /// 0xfe int fd  const char *path    u32 mask    -   -   -
+    inotify_add_watch,
+    /// 0xff int fd  __s32 wd    -   -   -   -
+    inotify_rm_watch,
+    /// 0x100    pid_t pid   unsigned long maxnode   const unsigned long *from   const unsigned long *to -   -
+    migrate_pages,
+    /// 0x101    int dfd const char *filename    int flags   umode_t mode    -   -
+    openat,
+    /// 0x102    int dfd const char * pathname   umode_t mode    -   -   -
+    mkdirat,
+    /// 0x103    int dfd const char * filename   umode_t mode    unsigned dev    -   -
+    mknodat,
+    /// 0x104    int dfd const char *filename    uid_t user  gid_t group int flag    -
+    fchownat,
+    /// 0x105    int dfd const char *filename    struct timeval *utimes  -   -   -
+    futimesat,
+    /// 0x106    int dfd const char *filename    struct stat *statbuf    int flag    -   -
+    newfstatat,
+    /// 0x107    int dfd const char * pathname   int flag    -   -   -
+    unlinkat,
+    /// 0x108    int olddfd  const char * oldname    int newdfd  const char * newname    -   -
+    renameat,
+    /// 0x109    int olddfd  const char *oldname int newdfd  const char *newname int flags   -
+    linkat,
+    /// 0x10a    const char * oldname    int newdfd  const char * newname    -   -   -
+    symlinkat,
+    /// 0x10b    int dfd const char *path    char *buf   int bufsiz  -   -
+    readlinkat,
+    /// 0x10c    int dfd const char * filename   umode_t mode    -   -   -
+    fchmodat,
+    /// 0x10d    int dfd const char *filename    int mode    -   -   -
+    faccessat,
+    /// 0x10e    int fd_set *    fd_set *    fd_set *    struct __kernel_timespec *  void *
+    pselect6,
+    /// 0x10f    struct pollfd * unsigned int    struct __kernel_timespec *  const sigset_t *    size_t  -
+    ppoll,
+    /// 0x110    unsigned long unshare_flags -   -   -   -   -
+    unshare,
+    /// 0x111    struct robust_list_head *head   size_t len  -   -   -   -
+    set_robust_list,
+    /// 0x112    int pid struct robust_list_head * *head_ptr size_t *len_ptr -   -   -
+    get_robust_list,
+    /// 0x113    int fd_in   loff_t *off_in  int fd_out  loff_t *off_out size_t len  unsigned int flags
+    splice,
+    /// 0x114    int fdin    int fdout   size_t len  unsigned int flags  -   -
+    tee,
+    /// 0x115    int fd  loff_t offset   loff_t nbytes   unsigned int flags  -   -
+    sync_file_range,
+    /// 0x116    int fd  const struct iovec *iov unsigned long nr_segs   unsigned int flags  -   -
+    vmsplice,
+    /// 0x117    pid_t pid   unsigned long nr_pages  const void * *pages const int *nodes    int *status int flags
+    move_pages,
+    /// 0x118    int dfd const char *filename    struct __kernel_timespec *utimes    int flags   -   -
+    utimensat,
+    /// 0x119    int epfd    struct epoll_event *events  int maxevents   int timeout const sigset_t *sigmask size_t sigsetsize
+    epoll_pwait,
+    /// 0x11a    int ufd sigset_t *user_mask size_t sizemask -   -   -
+    signalfd,
+    /// 0x11b    int clockid int flags   -   -   -   -
+    timerfd_create,
+    /// 0x11c    unsigned int count  -   -   -   -   -
+    eventfd,
+    /// 0x11d    int fd  int mode    loff_t offset   loff_t len  -   -
+    fallocate,
+    /// 0x11e    int ufd int flags   const struct __kernel_itimerspec *utmr  struct __kernel_itimerspec *otmr    -   -
+    timerfd_settime,
+    /// 0x11f    int ufd struct __kernel_itimerspec *otmr    -   -   -   -
+    timerfd_gettime,
+    /// 0x120    int struct sockaddr *   int *   int -   -
+    accept4,
+    /// 0x121    int ufd sigset_t *user_mask size_t sizemask int flags   -   -
+    signalfd4,
+    /// 0x122    unsigned int count  int flags   -   -   -   -
+    eventfd2,
+    /// 0x123    int flags   -   -   -   -   -
+    epoll_create1,
+    /// 0x124    unsigned int oldfd  unsigned int newfd  int flags   -   -   -
+    dup3,
+    /// 0x125    int *fildes int flags   -   -   -   -
+    pipe2,
+    /// 0x126    int flags   -   -   -   -   -
+    inotify_init1,
+    /// 0x127    unsigned long fd    const struct iovec *vec unsigned long vlen  unsigned long pos_l unsigned long pos_h -
+    preadv,
+    /// 0x128    unsigned long fd    const struct iovec *vec unsigned long vlen  unsigned long pos_l unsigned long pos_h -
+    pwritev,
+    /// 0x129    pid_t tgid  pid_t pid   int sig siginfo_t *uinfo    -   -
+    rt_tgsigqueueinfo,
+    /// 0x12a    struct perf_event_attr *attr_uptr   pid_t pid   int cpu int group_fd    unsigned long flags -
+    perf_event_open,
+    /// 0x12b    int fd  struct mmsghdr *msg unsigned int vlen   unsigned flags  struct __kernel_timespec *timeout   -
+    recvmmsg,
+    /// 0x12c    unsigned int flags  unsigned int event_f_flags  -   -   -   -
+    fanotify_init,
+    /// 0x12d    int fanotify_fd unsigned int flags  u64 mask    int fd  const char *pathname    -
+    fanotify_mark,
+    /// 0x12e    pid_t pid   unsigned int resource   const struct rlimit64 *new_rlim struct rlimit64 *old_rlim   -   -
+    prlimit64,
+    /// 0x12f    int dfd const char *name    struct file_handle *handle  int *mnt_id int flag    -
+    name_to_handle_at,
+    /// 0x130    int mountdirfd  struct file_handle *handle  int flags   -   -   -
+    open_by_handle_at,
+    /// 0x131    clockid_t which_clock   struct __kernel_timex *tx   -   -   -   -
+    clock_adjtime,
+    /// 0x132    int fd  -   -   -   -   -
+    syncfs,
+    /// 0x133    int fd  struct mmsghdr *msg unsigned int vlen   unsigned flags  -   -
+    sendmmsg,
+    /// 0x134    int fd  int nstype  -   -   -   -
+    setns,
+    /// 0x135    unsigned *cpu   unsigned *node  struct getcpu_cache *cache  -   -   -
+    getcpu,
+    /// 0x136    pid_t pid   const struct iovec *lvec    unsigned long liovcnt   const struct iovec *rvec    unsigned long riovcnt   unsigned long flags
+    process_vm_readv,
+    /// 0x137    pid_t pid   const struct iovec *lvec    unsigned long liovcnt   const struct iovec *rvec    unsigned long riovcnt   unsigned long flags
+    process_vm_writev,
+    /// 0x138    pid_t pid1  pid_t pid2  int type    unsigned long idx1  unsigned long idx2  -
+    kcmp,
+    /// 0x139    int fd  const char *uargs   int flags   -   -   -
+    finit_module,
+    /// 0x13a    pid_t pid   struct sched_attr *attr unsigned int flags  -   -   -
+    sched_setattr,
+    /// 0x13b    pid_t pid   struct sched_attr *attr unsigned int size   unsigned int flags  -   -
+    sched_getattr,
+    /// 0x13c    int olddfd  const char *oldname int newdfd  const char *newname unsigned int flags  -
+    renameat2,
+    /// 0x13d    unsigned int op unsigned int flags  void *uargs -   -   -
+    seccomp,
+    /// 0x13e    char *buf   size_t count    unsigned int flags  -   -   -
+    getrandom,
+    /// 0x13f    const char *uname_ptr   unsigned int flags  -   -   -   -
+    memfd_create,
+    /// 0x140    int kernel_fd   int initrd_fd   unsigned long cmdline_len   const char *cmdline_ptr unsigned long flags -
+    kexec_file_load,
+    /// 0x141    int cmd union bpf_attr *attr    unsigned int size   -   -   -
+    bpf,
+    /// 0x142    int dfd const char *filename    const char *const *argv const char *const *envp int flags   -
+    execveat,
+    /// 0x143    int flags   -   -   -   -   -
+    userfaultfd,
+    /// 0x144    int cmd int flags   -   -   -   -
+    membarrier,
+    /// 0x145    unsigned long start size_t len  int flags   -   -   -
+    mlock2,
+    /// 0x146    int fd_in   loff_t *off_in  int fd_out  loff_t *off_out size_t len  unsigned int flags
+    copy_file_range,
+    /// 0x147    unsigned long fd    const struct iovec *vec unsigned long vlen  unsigned long pos_l unsigned long pos_h rwf_t flags
+    preadv2,
+    /// 0x148    unsigned long fd    const struct iovec *vec unsigned long vlen  unsigned long pos_l unsigned long pos_h rwf_t flags
+    pwritev2,
+    /// 0x149    unsigned long start size_t len  unsigned long prot  int pkey    -   -
+    pkey_mprotect,
+    /// 0x14a    unsigned long flags unsigned long init_val  -   -   -   -
+    pkey_alloc,
+    /// 0x14b    int pkey    -   -   -   -   -
+    pkey_free,
+    /// 0x14c    int dfd const char *path    unsigned flags  unsigned mask   struct statx *buffer    -
+    statx,
+}

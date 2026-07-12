@@ -1,0 +1,39 @@
+/// Caller supplys buffer
+pub fn convert_s32_to_array(n: s32, buf: *[11; u8]) void {
+    let ARRAY_LEN: usize = 11;
+    let mut pos: usize = ARRAY_LEN;
+    let is_neg: bool = n < 0;
+
+    let s32MAX: s32 = 2147483648 * (0 - 1);
+    if n == s32MAX {
+        let lit: [11; u8] = ['-', '2', '1', '4', '7', '4', '8', '3', '6', '4', '8'];
+        let mut i: usize = 0;
+        while i < ARRAY_LEN {
+            buf[i] = lit[i];
+            i = i + 1;
+        }
+        return;
+    }
+
+    let val: usize = if is_neg {
+        (0 - n) as usize
+    } else {
+        n as usize
+    };
+
+    if val == 0 {
+        pos = pos - 1;
+        buf[pos] = '0';
+    } else {
+        while val > 0 {
+            pos = pos - 1;
+            buf[pos] = (('0' as usize) + val % 10) as u8;
+            val = val / 10;
+        }
+    }
+
+    if is_neg {
+        pos = pos - 1;
+        buf[pos] = '-';
+    }
+}

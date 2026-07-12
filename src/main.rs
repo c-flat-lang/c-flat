@@ -7,20 +7,11 @@ fn main() {
     use bitbox::passes::PassOutput;
 
     let cli_options = Cli::parse();
-    let source = std::fs::read_to_string(&cli_options.file_path).unwrap_or_else(|err| {
-        eprintln!("Error reading file {}: {}", cli_options.file_path, err);
-        std::process::exit(1);
-    });
-    let source = if cli_options.unix_newlines {
-        source.replace("\r\n", "\n")
-    } else {
-        source
-    };
 
-    let mut module = match front_end_compiler(&source, &cli_options) {
+    let mut module = match front_end_compiler(&cli_options) {
         Ok(module) => module,
         Err(err) => {
-            let errors = err.report(&cli_options.file_path, &source);
+            let errors = err.report("");
             eprintln!("{}", errors);
             std::process::exit(1);
         }

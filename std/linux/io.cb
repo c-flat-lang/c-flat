@@ -1,0 +1,64 @@
+use syscall::Syscall;
+
+pub type Stdio enum {// (usize) {
+    stdin,
+    stdout,
+    stderr,
+}
+
+pub fn io_write_str(string: *[u8]) void {
+    syscall4(
+        Syscall::write,
+        Stdio::stdout,
+        string.data,
+        string.len
+    );
+}
+
+pub fn io_write_s32(n: s32) void {
+    let buf: [11; u8] = [0; 11];
+    let pos: usize = 11;
+    let is_neg: bool = n < 0;
+
+    if n == 2147483648 * (0 - 1) {
+        syscall3(1, 1, "-2147483648", 11);
+        return;
+    }
+
+    let val: usize = if is_neg {
+        (0 - n) as usize
+    } else {
+        n as usize
+    };
+
+    if val == 0 {
+        pos = pos - 1;
+        buf[pos] = '0';
+    } else {
+        while val > 0 {
+            pos = pos - 1;
+            buf[pos] = (('0' as usize) + val % 10) as u8;
+            val = val / 10;
+        }
+    }
+
+    if is_neg {
+        pos = pos - 1;
+        buf[pos] = '-';
+    }
+
+    let len: usize = 11 - pos;
+
+    let i: usize = 0;
+    while i < len {
+        buf[i] = buf[pos + i];
+        i = i + 1;
+    }
+
+    syscall3(
+        Syscall::write,
+        Stdio::stdout,
+        &buf,
+        len
+    );
+}

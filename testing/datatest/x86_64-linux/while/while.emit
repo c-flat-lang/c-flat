@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/while.cb
                         Parser
               SemanticAnalyzer
                    TypeChecker
@@ -15,38 +15,38 @@
 main:
   push rbp
   mov rbp, rsp
-  sub rsp, 64
+  sub rsp, 32
   # -- args --
 main_entry:
-  # @alloc s32 : tmp.0_v0, 8
+  # @alloc [2 x s32] : tmp.0_v0, 1
   # lowering alloc
   # @assign s32 : tmp.1_v0, 0
   # lowering assign
   # lowering operand
   mov vreg(2 : Reg64), 0
   mov vreg(1 : Reg64), vreg(2 : Reg64)
-  # @elemset s32 : tmp.0_v0, 0, tmp.1_v0
+  # @elemset [2 x s32] : tmp.0_v0, 0, tmp.1_v0
   # lowering elemset
   # lowering operand
   mov vreg(4 : Reg64), 0
   # lowering operand
-  lea vreg(5 : Reg64), qword ptr [rbp-32]
+  lea vreg(5 : Reg64), qword ptr [rbp-8]
   mov [vreg(5 : Reg64) + vreg(4 : Reg64) * 4], vreg(1 : Reg32)
   # @assign s32 : tmp.2_v0, 0
   # lowering assign
   # lowering operand
   mov vreg(7 : Reg64), 0
   mov vreg(6 : Reg64), vreg(7 : Reg64)
-  # @elemset s32 : tmp.0_v0, 1, tmp.2_v0
+  # @elemset [2 x s32] : tmp.0_v0, 1, tmp.2_v0
   # lowering elemset
   # lowering operand
   mov vreg(9 : Reg64), 1
   # lowering operand
-  lea vreg(10 : Reg64), qword ptr [rbp-32]
+  lea vreg(10 : Reg64), qword ptr [rbp-8]
   mov [vreg(10 : Reg64) + vreg(9 : Reg64) * 4], vreg(6 : Reg32)
   # @assign [2 x s32] : array_v0, tmp.0_v0
   # lowering assign
-  # @assign s32 : tmp.3_v0, 0
+  # @assign u64 : tmp.3_v0, 0
   # lowering assign
   # lowering operand
   mov vreg(12 : Reg64), 0
@@ -54,12 +54,12 @@ main_entry:
   # @assign u64 : i_v0, tmp.3_v0
   # lowering assign
   # lowering operand
-  mov qword ptr [rbp-40], vreg(11 : Reg64)
+  mov qword ptr [rbp-16], vreg(11 : Reg64)
   # @jump %start_lo
   # lowering jump if
   jmp main_start_loop_0
 main_start_loop_0:
-  # @assign s32 : tmp.4_v0, 2
+  # @assign u64 : tmp.4_v0, 2
   # lowering assign
   # lowering operand
   mov vreg(16 : Reg64), 2
@@ -68,7 +68,7 @@ main_start_loop_0:
   # lowering lt
   # lowering operand
   # lowering operand
-  cmp qword ptr [rbp-40], vreg(15 : Reg64)
+  cmp qword ptr [rbp-16], vreg(15 : Reg64)
   setl vreg(18 : Reg8)
   movzx vreg(19 : Reg64), vreg(18 : Reg8)
   # @jumpif tmp.5_v0, %body_loo
@@ -84,19 +84,19 @@ main_body_loop_1:
   # lowering elemget
   # lowering operand
   # lowering operand
-  mov vreg(21 : Reg64), qword ptr [rbp-40]
-  lea vreg(22 : Reg64), qword ptr [rbp-32]
+  mov vreg(21 : Reg64), qword ptr [rbp-16]
+  lea vreg(22 : Reg64), qword ptr [rbp-8]
   mov vreg(23 : Reg32), [vreg(22 : Reg64) + vreg(21 : Reg64) * 4]
   # @assign s32 : value_v0, tmp.6_v0
   # lowering assign
   # lowering operand
-  mov dword ptr [rbp-44], vreg(23 : Reg32)
-  # @call write_int(value_v0)
+  mov dword ptr [rbp-20], vreg(23 : Reg32)
+  # @call write_s32(value_v0)
   # lowering call
   # lowering operand
-  mov edi, dword ptr [rbp-44]
-  call write_int
-  # @assign s32 : tmp.7_v0, 32
+  mov edi, dword ptr [rbp-20]
+  call write_s32
+  # @assign u8 : tmp.7_v0, 32
   # lowering assign
   # lowering operand
   mov vreg(27 : Reg64), 32
@@ -104,15 +104,15 @@ main_body_loop_1:
   # @call write_char(tmp.7_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-48], vreg(26 : Reg32)
-  mov edi, dword ptr [rbp-48]
+  mov byte ptr [rbp-21], vreg(26 : Reg8)
+  mov dil, byte ptr [rbp-21]
   call write_char
-  # @call write_int(i_v0)
+  # @call write_s32(i_v0)
   # lowering call
   # lowering operand
-  mov rdi, qword ptr [rbp-40]
-  call write_int
-  # @assign s32 : tmp.8_v0, 10
+  mov rdi, qword ptr [rbp-16]
+  call write_s32
+  # @assign u8 : tmp.8_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(30 : Reg64), 10
@@ -120,10 +120,10 @@ main_body_loop_1:
   # @call write_char(tmp.8_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-52], vreg(29 : Reg32)
-  mov edi, dword ptr [rbp-52]
+  mov byte ptr [rbp-22], vreg(29 : Reg8)
+  mov dil, byte ptr [rbp-22]
   call write_char
-  # @assign s32 : tmp.9_v0, 1
+  # @assign u64 : tmp.9_v0, 1
   # lowering assign
   # lowering operand
   mov vreg(33 : Reg64), 1
@@ -132,27 +132,31 @@ main_body_loop_1:
   # lowering add
   # lowering operand
   # lowering operand
-  mov vreg(35 : Reg64), qword ptr [rbp-40]
+  mov vreg(35 : Reg64), qword ptr [rbp-16]
   add vreg(35 : Reg64), vreg(32 : Reg64)
   # @assign u64 : i_v0, tmp.10_v0
   # lowering assign
   # lowering operand
-  mov qword ptr [rbp-40], vreg(35 : Reg64)
+  mov qword ptr [rbp-16], vreg(35 : Reg64)
   # @jump %start_lo
   # lowering jump if
   jmp main_start_loop_0
 main_exit_loop_2:
-  # @cast s32 : tmp.11_v0, i_v0, unsigned-to-signed
+  # @cast s32 : tmp.12_v0, i_v0, truncate
   # lowering cast
   # lowering operand
-  mov vreg(38 : Reg64), qword ptr [rbp-40]
-  mov vreg(39 : Reg64), vreg(38 : Reg64)
+  mov vreg(38 : Reg64), qword ptr [rbp-16]
+  mov vreg(39 : Reg32), vreg(38 : Reg32)
+  # @cast s32 : tmp.11_v0, tmp.12_v0, unsigned-to-signed
+  # lowering cast
+  # lowering operand
+  mov vreg(41 : Reg64), vreg(39 : Reg64)
   # @ret s32 : tmp.11_v0
   # lowering return
-  mov eax, vreg(39 : Reg32)
+  mov eax, vreg(41 : Reg32)
   jmp exit_main
 exit_main:
-  add rsp, 64
+  add rsp, 32
   mov rsp, rbp
   pop rbp
   ret

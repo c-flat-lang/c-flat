@@ -8,7 +8,7 @@ fn main() {
     let cli_options = cli::Cli::parse();
 
     let src = std::fs::read_to_string(&cli_options.file_path).expect("Could not read file");
-    let tokens = lex(&src);
+    let tokens = lex(&cli_options.file_path, &src);
 
     if matches!(cli_options.debug_mode, Some(cli::DebugMode::Token)) {
         for token in tokens {
@@ -17,12 +17,12 @@ fn main() {
         std::process::exit(0);
     }
 
-    let maybe_ast = Parser::new(tokens).parse();
+    let maybe_ast = Parser::new(&cli_options.file_path, tokens).parse();
 
     let ast = match maybe_ast {
         Ok(ast) => ast,
         Err(err) => {
-            println!("{}", err.report(&cli_options.file_path, &src));
+            println!("{}", err.report(&src));
             std::process::exit(1);
         }
     };
@@ -35,7 +35,7 @@ fn main() {
     let symbol_table = match SymbolTableBuilder::default().build(&ast) {
         Ok(table) => table,
         Err(errors) => {
-            eprintln!("{}", errors.report(&cli_options.file_path, &src));
+            eprintln!("{}", errors.report(&src));
             std::process::exit(1);
         }
     };

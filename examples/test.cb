@@ -1,0 +1,6 @@
+extern C fn write_s32(s32) void;
+
+pub fn main() void {
+    let big_ass_array: [11000; u8] = [0;11000];
+    write_s32(big_ass_array.len as s32);
+}

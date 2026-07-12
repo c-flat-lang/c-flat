@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/void.cb
                         Parser
               SemanticAnalyzer
                    TypeChecker
@@ -10,10 +10,17 @@
                           Emit
 (module
   (type (;0;) (func))
-  (memory (;0;) 1)
+  (memory (;0;) 4)
   (global (;0;) (mut i32) i32.const 0)
+  (global (;1;) (mut i32) i32.const 0)
   (export "memory" (memory 0))
   (export "__stack_pointer" (global 0))
   (export "main" (func 0))
-  (func (;0;) (type 0))
+  (func (;0;) (type 0)
+    (local i32)
+    global.get 0
+    local.set 0
+    local.get 0
+    global.set 0
+  )
 )

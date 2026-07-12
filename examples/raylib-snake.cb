@@ -1,88 +1,24 @@
 // BUILD WITH
-// cargo run --features "debug" -- \
-// --target=x86_64-linux \
 // # this may need to be adjusted depending on where raylib is on your system
-// --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" \
-// examples/raylib-snake.cb
-
-// runtime.c
-extern C fn write_int(s32) void;
+// cargo run --features "debug" -- --target=x86_64-linux --link "-L/opt/raylib/libs -lraylib -lGL -lm -lpthread -ldl -lrt -lX11" examples/raylib-snake.cb
 extern C fn write_u8(u8) void;
-extern C fn write_float(f32) void;
 extern C fn write_char(u8) void;
 
-// RAYLIB
-type Rectangle struct {
-    x: f32,
-    y: f32,
-    width: f32,
-    height: f32,
-}
+use std::raylib;
+use std::random;
+use std::fmt;
+use std::linux::io;
+use std::ascii;
+use std::array_list::ArrayList;
 
-type Color struct {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-}
-
-extern C fn InitWindow as init_window(s32, s32, ref [u8]) void;
-extern C fn BeginDrawing as begin_drawing() void;
-extern C fn EndDrawing as end_drawing() void;
-extern C fn CloseWindow as close_window() void;
-extern C fn SetTargetFPS as set_target_fps(s32) void;
-extern C fn WindowShouldClose as window_should_close() bool;
-extern C fn ClearBackground as clear_background(Color) void;
-extern C fn DrawText as draw_text(ref [u8], s32, s32, s32, s32) void;
-extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
-extern C fn IsKeyPressed as is_key_pressed(s32) bool;
-extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
-extern C fn GetFrameTime as get_frame_time() f32;
-extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
-
-// libc
-extern C fn time(s32) s32;
-extern C fn srand(s32) void;
-extern C fn rand() s32;
-
-fn debug_int(c: u8, n: s32) void {
-    write_char(c);
-    write_char(58); // :
-    write_char(32); // space
-    write_int(n);
-    write_char(10); // newline
-}
-
-fn debug_float(c: u8, n: f32) void {
-    write_char(c);
-    write_char(58); // :
-    write_char(32); // space
-    write_float(n);
-    write_char(10); // newline
-}
-
-fn debug_u8(c: u8, n: u8) void {
-    write_char(c);
-    write_char(58); // :
-    write_char(32); // space
-    write_u8(n);
-    write_char(10); // newline
-}
-
-fn rand_range(min: s32, max: s32) s32 {
-    if min == max {
-        return min;
-    }
-    let r: s32 = rand();
-    return min + (r % (max - min));
-}
-
-fn rand_bool() bool {
-    let r: s32 = rand();
-    let min: s32 = 0;
-    let max: s32 = 2;
-    let results = min + (r % (max - min));
-    return results == 1;
+fn rand_color() Color {
+    let color: Color = Color {
+        .r = random::rand_range(0, 255) as u8,
+        .g = random::rand_range(0, 255) as u8,
+        .b = random::rand_range(0, 255) as u8,
+        .a = 255,
+    };
+    return color;
 }
 
 fn playerIsCollidingWithFood(px: s32, py: s32, fx: s32, fy: s32) bool {
@@ -103,36 +39,87 @@ fn playerIsCollidingWithFood(px: s32, py: s32, fx: s32, fy: s32) bool {
     return check_collision_recs(player_rect, food_rect);
 }
 
+fn update_score_string(text: *[11; u8], score: s32, out: *[11; u8]) void {
+    let mut buffer:[11; u8] = [0;11];
+    let base_x = 10;
+    let base_y = 10;
+    let text_size = 30;
+    fmt::convert_s32_to_array(score, &buffer);
+
+    let mut buffer_index: usize = buffer.len - 1;
+    let mut text_index: usize = text.*.len - 1;
+    let mut percent_count: usize = 0;
+    let mut buffer_exhausted: bool = false;
+
+    while text_index > 0 and percent_count < 4 {
+        let c: u8 = text.*[text_index]
+        if c == '%' {
+            percent_count = percent_count + 1;
+            if !buffer_exhausted and ascii::isNumber(buffer[buffer_index]) {
+                out.*[text_index] = buffer[buffer_index];
+                if buffer_index == 0 {
+                    buffer_exhausted = true;
+                } else {
+                    buffer_index = buffer_index - 1;
+                }
+            } else {
+                out.*[text_index] = ' ';
+                buffer_exhausted = true;
+            }
+        }
+        text_index = text_index - 1;
+    }
+}
+
+type Direction enum {
+    up,
+    down,
+    left,
+    right,
+}
+
+type Player struct {
+    x: s32,
+    y: s32,
+    body_x: ArrayList<(s32)>,
+    body_y: ArrayList<(s32)>,
+    color: ArrayList<(Color)>,
+    speed: f32,
+    direction: Direction,
+}
+
 pub fn main() s32 {
-    srand(time(0));
+    random::init_random();
 
     let background_color = Color {
-        .r = 40 as u8,
-        .g = 44 as u8,
-        .b = 52 as u8,
-        .a = 255 as u8,
+        .r = 40,
+        .g = 44,
+        .b = 52,
+        .a = 255,
+    };
+
+    let text_color = Color {
+        .r = 0,
+        .g = 0,
+        .b = 0,
+        .a = 255,
     };
 
     let player_color = Color {
-        .r = 90 as u8,
-        .g = 157 as u8,
-        .b = 51 as u8,
-        .a = 255 as u8,
+        .r = 90,
+        .g = 157,
+        .b = 51,
+        .a = 255,
     };
 
     let player_body_color = Color {
-        .r = 57 as u8,
-        .g = 137 as u8,
-        .b = 52 as u8,
-        .a = 255 as u8,
+        .r = 57,
+        .g = 137,
+        .b = 52,
+        .a = 255,
     };
 
-    let food_color = Color {
-        .r = rand_range(0, 255) as u8,
-        .g = rand_range(0, 255) as u8,
-        .b = rand_range(0, 255) as u8,
-        .a = 255 as u8,
-    };
+    let mut food_color = rand_color();
 
     // KEYCODES
     let key_w: s32 = 87;
@@ -147,8 +134,10 @@ pub fn main() s32 {
     let GAMEPAD_BUTTON_LEFT_FACE_LEFT: s32 = 4;
 
     let CELL_SIZE: s32 = 32;
-    let screen_width: s32 = 40 * CELL_SIZE;
-    let screen_height: s32 = 25 * CELL_SIZE;
+    let CELL_WIDTH: s32 = 40;
+    let CELL_HEIGHT: s32 = 25;
+    let screen_width: s32 = CELL_WIDTH * CELL_SIZE;
+    let screen_height: s32 = CELL_HEIGHT * CELL_SIZE;
 
     let DIRECTION_UP: u8 = 0;
     let DIRECTION_DOWN: u8 = 1;
@@ -158,7 +147,6 @@ pub fn main() s32 {
     // PLAYER
     let player_x: s32 = screen_width / (2 * CELL_SIZE);
     let player_y: s32 = screen_height / (2 * CELL_SIZE);
-    let player_body: [32; u8] = [0;32];
     let player_body_x: [32; s32] = [0;32];
     let player_body_y: [32; s32] = [0;32];
     let player_body_index: usize = 0;
@@ -169,33 +157,21 @@ pub fn main() s32 {
 
 
     // FOOD
-    let food_x: s32 = rand_range(0, screen_width / CELL_SIZE);
-    let food_y: s32 = rand_range(0, screen_height / CELL_SIZE);
+    let food_x: s32 = random::rand_range(0, CELL_WIDTH);
+    let food_y: s32 = random::rand_range(0, CELL_HEIGHT);
 
-    let title = #"raylib c-flat snake demo\0"#;
+    let title = "raylib c-flat snake demo\0";
     init_window(screen_width, screen_height, &title);
 
-    let text = #"Score: \0"#;
-    let score = #"0\0"#;
+    let text_template = "Score: %%%%\0";
+    let text = "Score: %%%%\0";
+    let score: s32 = 0;
+    update_score_string(&text_template, score, &text);
 
     set_target_fps(60);
     while !window_should_close() {
         // --------------UPDATE--------------
         let delta = get_frame_time();
-
-        if is_key_pressed(key_space) {
-            score[0] = score[0] + 1 as u8;
-            let r: u8 = (rand_range(0, 255) as u8);
-            food_color.r = r;
-            debug_u8(114, r);
-            let g: u8 = (rand_range(0, 255) as u8);
-            food_color.g = g;
-            debug_u8(103, g);
-            let b: u8 = (rand_range(0, 255) as u8);
-            food_color.b = b;
-            debug_u8(98, b);
-            debug_u8(97, food_color.a);
-        }
 
         if is_key_pressed(key_w) {
             player_direction = DIRECTION_UP;
@@ -250,16 +226,19 @@ pub fn main() s32 {
 
 
             if is_collided {
-                player_body[player_body_index] = 1;
                 player_body_x[player_body_index] = prev_x;
                 player_body_y[player_body_index] = prev_y;
                 player_body_index = player_body_index + 1;
-                food_x = rand_range(0, screen_width / CELL_SIZE);
-                food_y = rand_range(0, screen_width / CELL_SIZE);
-                score[0] = score[0] + 1 as u8;
-                food_color.r = rand_range(0, 255) as u8;
-                food_color.g = rand_range(0, 255) as u8;
-                food_color.b = rand_range(0, 255) as u8;
+                food_x = random::rand_range(0, CELL_WIDTH);
+                food_y = random::rand_range(0, CELL_HEIGHT);
+                score = score + 1;
+                update_score_string(&text_template, score, &text);
+                // TODO: figure out why this is not allowing to be set here.
+                // let new_food_color = rand_color();
+                // food_color = new_food_color;
+                // food_color.r = new_food_color.r;
+                // food_color.g = new_food_color.g;
+                // food_color.b = new_food_color.b;
             }
 
 
@@ -317,8 +296,7 @@ pub fn main() s32 {
             player_color
         );
 
-        draw_text(&text, 10, 10, 30, 0xFF_00_00_00);
-        draw_text(&score, 120, 10, 30, 0xFF_00_00_00);
+        draw_text(&text, 10, 10, 30, text_color);
 
         end_drawing();
     }

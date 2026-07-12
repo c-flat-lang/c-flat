@@ -1,14 +1,5 @@
-extern C fn write_char(u8) void;
-
-fn println(string: ref [u8]) void {
-    let mut i: usize = 0;
-    while i < string.len {
-        write_char(string[i]);
-        i = i + 1;
-    }
-    write_char(10);
-}
+use std::linux::io::io_write_str;
 
 pub fn main() void {
-    println(&#"Hello, World!"#);
+    io_write_str(&"Hello, World!\n");
 }

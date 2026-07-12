@@ -1,31 +1,28 @@
-                     Tokenizer
+                    Tokenizing testing/test/not.cb
                         Parser
               SemanticAnalyzer
                    TypeChecker
             IR Code Generation
-extern write_int (s32) -> void
+extern write_s32 (s32) -> void
 extern write_char (u8) -> void
 [31mpublic[0m [31mfunction[0m [35mmain[0m() void{
   %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@if[0m [1;36mtmp.1_v0[0m:
     [34m@assign[0m [33mu32[0m : [1;36mtmp.0_v0[0m, [33m1[0m
     [34m@not[0m [33mu32[0m : [1;36mtmp.1_v0[0m, [1;36mtmp.0_v0[0m
-    [34m@jumpif[0m [1;36mtmp.1_v0[0m, %[1;36mthen.0[0m
-    [34m@jump[0m %[1;36melse.0[0m
-  %[33mthen.0[0m: [2;38;2;128;128;128m// 1[0m
-    [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m10[0m
+  then:
+    [34m@assign[0m [33mu8[0m : [1;36mtmp.2_v0[0m, [33m10[0m
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.2_v0[0m)
     [34m@assign[0m [33ms32[0m : [1;36mtmp.3_v0[0m, [33m1[0m
-    [34m@call[0m [35mwrite_int[0m([1;36mtmp.3_v0[0m)
-    [34m@assign[0m [33ms32[0m : [1;36mtmp.4_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_s32[0m([1;36mtmp.3_v0[0m)
+    [34m@assign[0m [33mu8[0m : [1;36mtmp.4_v0[0m, [33m10[0m
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.4_v0[0m)
-    [34m@jump[0m %[1;36mmerge.0[0m
-  %[33melse.0[0m: [2;38;2;128;128;128m// 2[0m
-    [34m@assign[0m [33ms32[0m : [1;36mtmp.5_v0[0m, [33m10[0m
+  else:
+    [34m@assign[0m [33mu8[0m : [1;36mtmp.5_v0[0m, [33m10[0m
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.5_v0[0m)
     [34m@assign[0m [33ms32[0m : [1;36mtmp.6_v0[0m, [33m2[0m
-    [34m@call[0m [35mwrite_int[0m([1;36mtmp.6_v0[0m)
-    [34m@assign[0m [33ms32[0m : [1;36mtmp.7_v0[0m, [33m10[0m
+    [34m@call[0m [35mwrite_s32[0m([1;36mtmp.6_v0[0m)
+    [34m@assign[0m [33mu8[0m : [1;36mtmp.7_v0[0m, [33m10[0m
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.7_v0[0m)
-    [34m@jump[0m %[1;36mmerge.0[0m
-  %[33mmerge.0[0m: [2;38;2;128;128;128m// 3[0m
+
 }

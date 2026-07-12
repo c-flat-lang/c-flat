@@ -267,7 +267,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
     ) -> Result<Self::Output, crate::error::Error> {
         target
             .assembler
-            .define_label(format!("{}_{}", target.function_name, &self.label));
+            .define_label(format!("{}_{}", target.function_name, self.label));
 
         for (instr_index, instruction) in self.instructions.iter().enumerate() {
             target
@@ -318,12 +318,12 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Rem(irem) => irem.lower(ctx, target)?,
             ir::Instruction::Jump(ijump) => ijump.lower(ctx, target)?,
             ir::Instruction::JumpIf(ijump) => ijump.lower(ctx, target)?,
-            ir::Instruction::Load(..) => todo!("load"),
+            ir::Instruction::Load(iload) => iload.lower(ctx, target)?,
             ir::Instruction::Lt(ilt) => ilt.lower(ctx, target)?,
             ir::Instruction::Lte(ilte) => ilte.lower(ctx, target)?,
             ir::Instruction::Mul(imul) => imul.lower(ctx, target)?,
             ir::Instruction::NoOp(..) => todo!(),
-            ir::Instruction::Or(..) => todo!("or"),
+            ir::Instruction::Or(ior) => ior.lower(ctx, target)?,
             ir::Instruction::Phi(..) | ir::Instruction::Loop(..) | ir::Instruction::IfElse(..) => {
                 unreachable!(
                     "Lowering pass should be used before x86_64 emit pass {:?}",
@@ -336,6 +336,9 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::Instruction {
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
+            ir::Instruction::BitShiftRight(ibsr) => ibsr.lower(ctx, target)?,
+            ir::Instruction::BitWiseAnd(ibwand) => ibwand.lower(ctx, target)?,
+            ir::Instruction::Syscall(isyscall) => isyscall.lower(ctx, target)?,
         }
         Ok(())
     }

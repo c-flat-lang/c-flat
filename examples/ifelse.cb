@@ -1,18 +1,28 @@
-extern C fn write_int(s32) void;
+extern C fn write_s32(s32) void;
 extern C fn write_char(u8) void;
+
+fn print_number(n: s32) void {
+    write_s32(n);
+    write_char('\n');
+}
 
 pub fn main() void {
     let a = 10;
     let b = 5;
 
     if a < b {
-        write_int(1);
-        write_char(10);
+        print_number(1);
     } else if a > b {
-        write_int(2);
-        write_char(10);
+        print_number(2);
     } else {
-        write_int(3);
-        write_char(10);
+        print_number(3);
+    }
+
+    if true {
+        if true {
+            if true {
+                print_number(4);
+            }
+        }
     }
 }

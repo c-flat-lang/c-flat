@@ -1,0 +1,23 @@
+use std::linux::memory;
+use std::linux::io::io_write_s32;
+use std::linux::io::io_write_str;
+
+type Pair struct {
+    data: [2; s32],
+}
+
+fn exit(code: usize) void {
+    syscall1(60, code);
+}
+
+pub fn main() void {
+    let p = memory::alloc<(Pair)>();
+    p.data[0] = 13;
+    p.data[1] = 29;
+    let sum: s32 = p.data[0] + p.data[1]; // 42
+    memory::free<(Pair)>(p);
+    io_write_str(&"-----\n");
+    io_write_s32(sum);
+    io_write_str(&"\n-----\n");
+    exit(sum as usize);
+}

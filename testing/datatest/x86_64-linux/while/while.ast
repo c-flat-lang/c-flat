@@ -1,5 +1,6 @@
-                     Tokenizer
+                    Tokenizing testing/test/while.cb
                         Parser
+=== testing/test/while.cb ===
 [
     ExternFunction(
         ExternFunction {
@@ -9,24 +10,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 0..6,
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/while.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 9..11,
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/while.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 7..8,
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/while.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
-                span: 12..21,
+                lexeme: "write_s32",
+                span: Span {
+                    start: 12,
+                    end: 21,
+                    filename: "testing/test/while.cb",
+                },
             },
             local_name: None,
             params: [
@@ -35,13 +52,21 @@
                     kind: SignedNumber(
                         32,
                     ),
-                    span: 22..25,
+                    span: Span {
+                        start: 22,
+                        end: 25,
+                        filename: "testing/test/while.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 27..31,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/while.cb",
+                },
             },
         },
     ),
@@ -53,24 +78,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 33..39,
+                span: Span {
+                    start: 33,
+                    end: 39,
+                    filename: "testing/test/while.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 42..44,
+                span: Span {
+                    start: 42,
+                    end: 44,
+                    filename: "testing/test/while.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 40..41,
+                span: Span {
+                    start: 40,
+                    end: 41,
+                    filename: "testing/test/while.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_char",
-                span: 45..55,
+                span: Span {
+                    start: 45,
+                    end: 55,
+                    filename: "testing/test/while.cb",
+                },
             },
             local_name: None,
             params: [
@@ -79,13 +120,21 @@
                     kind: UnsignedNumber(
                         8,
                     ),
-                    span: 56..58,
+                    span: Span {
+                        start: 56,
+                        end: 58,
+                        filename: "testing/test/while.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 60..64,
+                span: Span {
+                    start: 60,
+                    end: 64,
+                    filename: "testing/test/while.cb",
+                },
             },
         },
     ),
@@ -97,12 +146,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 71..73,
+                span: Span {
+                    start: 71,
+                    end: 73,
+                    filename: "testing/test/while.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 74..78,
+                span: Span {
+                    start: 74,
+                    end: 78,
+                    filename: "testing/test/while.cb",
+                },
             },
             type_args: None,
             params: [],
@@ -111,13 +168,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 81..84,
+                span: Span {
+                    start: 81,
+                    end: 84,
+                    filename: "testing/test/while.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 85..86,
+                    span: Span {
+                        start: 85,
+                        end: 86,
+                        filename: "testing/test/while.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -128,7 +193,11 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 91..94,
+                                    span: Span {
+                                        start: 91,
+                                        end: 94,
+                                        filename: "testing/test/while.cb",
+                                    },
                                 },
                                 mutable: true,
                                 ty: Some(
@@ -141,56 +210,118 @@
                                                 kind: SignedNumber(
                                                     32,
                                                 ),
-                                                span: 110..113,
+                                                span: Span {
+                                                    start: 110,
+                                                    end: 113,
+                                                    filename: "testing/test/while.cb",
+                                                },
                                             },
                                         ),
-                                        span: 106..114,
+                                        span: Span {
+                                            start: 106,
+                                            end: 114,
+                                            filename: "testing/test/while.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "array",
-                                    span: 99..104,
+                                    span: Span {
+                                        start: 99,
+                                        end: 104,
+                                        filename: "testing/test/while.cb",
+                                    },
                                 },
                                 expr: ArrayRepeat(
                                     ExprArrayRepeat {
                                         open_bracket: Token {
                                             kind: LeftBracket,
                                             lexeme: "[",
-                                            span: 117..118,
+                                            span: Span {
+                                                start: 117,
+                                                end: 118,
+                                                filename: "testing/test/while.cb",
+                                            },
                                         },
                                         count: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "2",
-                                                    span: 122..123,
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "2",
+                                                        span: Span {
+                                                            start: 122,
+                                                            end: 123,
+                                                            filename: "testing/test/while.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 122,
+                                                            end: 123,
+                                                            filename: "testing/test/while.cb",
+                                                        },
+                                                    },
                                                 },
                                             ),
                                         ),
                                         semicolon: Token {
                                             kind: Semicolon,
                                             lexeme: ";",
-                                            span: 120..121,
+                                            span: Span {
+                                                start: 120,
+                                                end: 121,
+                                                filename: "testing/test/while.cb",
+                                            },
                                         },
                                         value: Litral(
                                             Integer(
-                                                Token {
-                                                    kind: Number,
-                                                    lexeme: "0",
-                                                    span: 119..120,
+                                                IntegerLitral {
+                                                    token: Token {
+                                                        kind: Number,
+                                                        lexeme: "0",
+                                                        span: Span {
+                                                            start: 119,
+                                                            end: 120,
+                                                            filename: "testing/test/while.cb",
+                                                        },
+                                                    },
+                                                    ty: Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        span: Span {
+                                                            start: 119,
+                                                            end: 120,
+                                                            filename: "testing/test/while.cb",
+                                                        },
+                                                    },
                                                 },
                                             ),
                                         ),
                                         close_bracket: Token {
                                             kind: RightBracket,
                                             lexeme: "]",
-                                            span: 124..125,
+                                            span: Span {
+                                                start: 124,
+                                                end: 125,
+                                                filename: "testing/test/while.cb",
+                                            },
                                         },
                                         ty: Type {
                                             mut_token: None,
                                             kind: Void,
-                                            span: 0..1,
+                                            span: Span {
+                                                start: 0,
+                                                end: 0,
+                                                filename: "",
+                                            },
                                         },
                                     },
                                 ),
@@ -200,7 +331,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 125..126,
+                                span: Span {
+                                    start: 125,
+                                    end: 126,
+                                    filename: "testing/test/while.cb",
+                                },
                             },
                         ),
                     },
@@ -212,27 +347,56 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 131..134,
+                                    span: Span {
+                                        start: 131,
+                                        end: 134,
+                                        filename: "testing/test/while.cb",
+                                    },
                                 },
                                 mutable: true,
                                 ty: Some(
                                     Type {
                                         mut_token: None,
                                         kind: UnsignedTargetPointerNumber,
-                                        span: 142..147,
+                                        span: Span {
+                                            start: 142,
+                                            end: 147,
+                                            filename: "testing/test/while.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "i",
-                                    span: 139..140,
+                                    span: Span {
+                                        start: 139,
+                                        end: 140,
+                                        filename: "testing/test/while.cb",
+                                    },
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "0",
-                                            span: 150..151,
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "0",
+                                                span: Span {
+                                                    start: 150,
+                                                    end: 151,
+                                                    filename: "testing/test/while.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 150,
+                                                    end: 151,
+                                                    filename: "testing/test/while.cb",
+                                                },
+                                            },
                                         },
                                     ),
                                 ),
@@ -242,7 +406,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 151..152,
+                                span: Span {
+                                    start: 151,
+                                    end: 152,
+                                    filename: "testing/test/while.cb",
+                                },
                             },
                         ),
                     },
@@ -254,7 +422,11 @@
                                         While,
                                     ),
                                     lexeme: "while",
-                                    span: 157..162,
+                                    span: Span {
+                                        start: 157,
+                                        end: 162,
+                                        filename: "testing/test/while.cb",
+                                    },
                                 },
                                 condition: Binary(
                                     ExprBinary {
@@ -262,13 +434,21 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "i",
-                                                span: 163..164,
+                                                span: Span {
+                                                    start: 163,
+                                                    end: 164,
+                                                    filename: "testing/test/while.cb",
+                                                },
                                             },
                                         ),
                                         op: Token {
                                             kind: Less,
                                             lexeme: "<",
-                                            span: 165..166,
+                                            span: Span {
+                                                start: 165,
+                                                end: 166,
+                                                filename: "testing/test/while.cb",
+                                            },
                                         },
                                         right: MemberAccess(
                                             ExprMemberAccess {
@@ -276,18 +456,30 @@
                                                     Token {
                                                         kind: Identifier,
                                                         lexeme: "array",
-                                                        span: 167..172,
+                                                        span: Span {
+                                                            start: 167,
+                                                            end: 172,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 ),
                                                 dot: Token {
                                                     kind: Dot,
                                                     lexeme: ".",
-                                                    span: 172..173,
+                                                    span: Span {
+                                                        start: 172,
+                                                        end: 173,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                                 member: Token {
                                                     kind: Identifier,
                                                     lexeme: "len",
-                                                    span: 173..176,
+                                                    span: Span {
+                                                        start: 173,
+                                                        end: 176,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             },
                                         ),
@@ -297,7 +489,11 @@
                                     open_brace: Token {
                                         kind: LeftBrace,
                                         lexeme: "{",
-                                        span: 177..178,
+                                        span: Span {
+                                            start: 177,
+                                            end: 178,
+                                            filename: "testing/test/while.cb",
+                                        },
                                     },
                                     statements: [
                                         Statement {
@@ -308,14 +504,22 @@
                                                             Let,
                                                         ),
                                                         lexeme: "let",
-                                                        span: 187..190,
+                                                        span: Span {
+                                                            start: 187,
+                                                            end: 190,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     mutable: false,
                                                     ty: None,
                                                     ident: Token {
                                                         kind: Identifier,
                                                         lexeme: "value",
-                                                        span: 191..196,
+                                                        span: Span {
+                                                            start: 191,
+                                                            end: 196,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     expr: ArrayIndex(
                                                         ExprArrayIndex {
@@ -323,30 +527,50 @@
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "array",
-                                                                    span: 199..204,
+                                                                    span: Span {
+                                                                        start: 199,
+                                                                        end: 204,
+                                                                        filename: "testing/test/while.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             open_bracket: Token {
                                                                 kind: LeftBracket,
                                                                 lexeme: "[",
-                                                                span: 204..205,
+                                                                span: Span {
+                                                                    start: 204,
+                                                                    end: 205,
+                                                                    filename: "testing/test/while.cb",
+                                                                },
                                                             },
                                                             index: Identifier(
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "i",
-                                                                    span: 205..206,
+                                                                    span: Span {
+                                                                        start: 205,
+                                                                        end: 206,
+                                                                        filename: "testing/test/while.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             close_bracket: Token {
                                                                 kind: RightBracket,
                                                                 lexeme: "]",
-                                                                span: 206..207,
+                                                                span: Span {
+                                                                    start: 206,
+                                                                    end: 207,
+                                                                    filename: "testing/test/while.cb",
+                                                                },
                                                             },
                                                             ty: Type {
                                                                 mut_token: None,
                                                                 kind: Void,
-                                                                span: 0..1,
+                                                                span: Span {
+                                                                    start: 0,
+                                                                    end: 0,
+                                                                    filename: "",
+                                                                },
                                                             },
                                                         },
                                                     ),
@@ -356,7 +580,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 207..208,
+                                                    span: Span {
+                                                        start: 207,
+                                                        end: 208,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -366,29 +594,45 @@
                                                     caller: Identifier(
                                                         Token {
                                                             kind: Identifier,
-                                                            lexeme: "write_int",
-                                                            span: 217..226,
+                                                            lexeme: "write_s32",
+                                                            span: Span {
+                                                                start: 217,
+                                                                end: 226,
+                                                                filename: "testing/test/while.cb",
+                                                            },
                                                         },
                                                     ),
                                                     type_args: None,
                                                     left_paren: Token {
                                                         kind: LeftParen,
                                                         lexeme: "(",
-                                                        span: 226..227,
+                                                        span: Span {
+                                                            start: 226,
+                                                            end: 227,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     args: [
                                                         Identifier(
                                                             Token {
                                                                 kind: Identifier,
                                                                 lexeme: "value",
-                                                                span: 227..232,
+                                                                span: Span {
+                                                                    start: 227,
+                                                                    end: 232,
+                                                                    filename: "testing/test/while.cb",
+                                                                },
                                                             },
                                                         ),
                                                     ],
                                                     right_paren: Token {
                                                         kind: RightParen,
                                                         lexeme: ")",
-                                                        span: 232..233,
+                                                        span: Span {
+                                                            start: 232,
+                                                            end: 233,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -396,7 +640,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 233..234,
+                                                    span: Span {
+                                                        start: 233,
+                                                        end: 234,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -407,22 +655,47 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "write_char",
-                                                            span: 243..253,
+                                                            span: Span {
+                                                                start: 243,
+                                                                end: 253,
+                                                                filename: "testing/test/while.cb",
+                                                            },
                                                         },
                                                     ),
                                                     type_args: None,
                                                     left_paren: Token {
                                                         kind: LeftParen,
                                                         lexeme: "(",
-                                                        span: 253..254,
+                                                        span: Span {
+                                                            start: 253,
+                                                            end: 254,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     args: [
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "32",
-                                                                    span: 254..256,
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "32",
+                                                                        span: Span {
+                                                                            start: 254,
+                                                                            end: 256,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 254,
+                                                                            end: 256,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
+                                                                    },
                                                                 },
                                                             ),
                                                         ),
@@ -430,7 +703,11 @@
                                                     right_paren: Token {
                                                         kind: RightParen,
                                                         lexeme: ")",
-                                                        span: 256..257,
+                                                        span: Span {
+                                                            start: 256,
+                                                            end: 257,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -438,7 +715,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 257..258,
+                                                    span: Span {
+                                                        start: 257,
+                                                        end: 258,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -448,29 +729,45 @@
                                                     caller: Identifier(
                                                         Token {
                                                             kind: Identifier,
-                                                            lexeme: "write_int",
-                                                            span: 267..276,
+                                                            lexeme: "write_s32",
+                                                            span: Span {
+                                                                start: 267,
+                                                                end: 276,
+                                                                filename: "testing/test/while.cb",
+                                                            },
                                                         },
                                                     ),
                                                     type_args: None,
                                                     left_paren: Token {
                                                         kind: LeftParen,
                                                         lexeme: "(",
-                                                        span: 276..277,
+                                                        span: Span {
+                                                            start: 276,
+                                                            end: 277,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     args: [
                                                         Identifier(
                                                             Token {
                                                                 kind: Identifier,
                                                                 lexeme: "i",
-                                                                span: 277..278,
+                                                                span: Span {
+                                                                    start: 277,
+                                                                    end: 278,
+                                                                    filename: "testing/test/while.cb",
+                                                                },
                                                             },
                                                         ),
                                                     ],
                                                     right_paren: Token {
                                                         kind: RightParen,
                                                         lexeme: ")",
-                                                        span: 278..279,
+                                                        span: Span {
+                                                            start: 278,
+                                                            end: 279,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -478,7 +775,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 279..280,
+                                                    span: Span {
+                                                        start: 279,
+                                                        end: 280,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -489,22 +790,47 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "write_char",
-                                                            span: 289..299,
+                                                            span: Span {
+                                                                start: 289,
+                                                                end: 299,
+                                                                filename: "testing/test/while.cb",
+                                                            },
                                                         },
                                                     ),
                                                     type_args: None,
                                                     left_paren: Token {
                                                         kind: LeftParen,
                                                         lexeme: "(",
-                                                        span: 299..300,
+                                                        span: Span {
+                                                            start: 299,
+                                                            end: 300,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     args: [
                                                         Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "10",
-                                                                    span: 300..302,
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "10",
+                                                                        span: Span {
+                                                                            start: 300,
+                                                                            end: 302,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 300,
+                                                                            end: 302,
+                                                                            filename: "testing/test/while.cb",
+                                                                        },
+                                                                    },
                                                                 },
                                                             ),
                                                         ),
@@ -512,7 +838,11 @@
                                                     right_paren: Token {
                                                         kind: RightParen,
                                                         lexeme: ")",
-                                                        span: 302..303,
+                                                        span: Span {
+                                                            start: 302,
+                                                            end: 303,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
@@ -520,7 +850,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 303..304,
+                                                    span: Span {
+                                                        start: 303,
+                                                        end: 304,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -531,13 +865,21 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "i",
-                                                            span: 313..314,
+                                                            span: Span {
+                                                                start: 313,
+                                                                end: 314,
+                                                                filename: "testing/test/while.cb",
+                                                            },
                                                         },
                                                     ),
                                                     equal: Token {
                                                         kind: Equal,
                                                         lexeme: "=",
-                                                        span: 315..316,
+                                                        span: Span {
+                                                            start: 315,
+                                                            end: 316,
+                                                            filename: "testing/test/while.cb",
+                                                        },
                                                     },
                                                     right: Binary(
                                                         ExprBinary {
@@ -545,20 +887,45 @@
                                                                 Token {
                                                                     kind: Identifier,
                                                                     lexeme: "i",
-                                                                    span: 317..318,
+                                                                    span: Span {
+                                                                        start: 317,
+                                                                        end: 318,
+                                                                        filename: "testing/test/while.cb",
+                                                                    },
                                                                 },
                                                             ),
                                                             op: Token {
                                                                 kind: Plus,
                                                                 lexeme: "+",
-                                                                span: 319..320,
+                                                                span: Span {
+                                                                    start: 319,
+                                                                    end: 320,
+                                                                    filename: "testing/test/while.cb",
+                                                                },
                                                             },
                                                             right: Litral(
                                                                 Integer(
-                                                                    Token {
-                                                                        kind: Number,
-                                                                        lexeme: "1",
-                                                                        span: 321..322,
+                                                                    IntegerLitral {
+                                                                        token: Token {
+                                                                            kind: Number,
+                                                                            lexeme: "1",
+                                                                            span: Span {
+                                                                                start: 321,
+                                                                                end: 322,
+                                                                                filename: "testing/test/while.cb",
+                                                                            },
+                                                                        },
+                                                                        ty: Type {
+                                                                            mut_token: None,
+                                                                            kind: SignedNumber(
+                                                                                32,
+                                                                            ),
+                                                                            span: Span {
+                                                                                start: 321,
+                                                                                end: 322,
+                                                                                filename: "testing/test/while.cb",
+                                                                            },
+                                                                        },
                                                                     },
                                                                 ),
                                                             ),
@@ -570,7 +937,11 @@
                                                 Token {
                                                     kind: Semicolon,
                                                     lexeme: ";",
-                                                    span: 322..323,
+                                                    span: Span {
+                                                        start: 322,
+                                                        end: 323,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                         },
@@ -578,7 +949,11 @@
                                     close_brace: Token {
                                         kind: RightBrace,
                                         lexeme: "}",
-                                        span: 328..329,
+                                        span: Span {
+                                            start: 328,
+                                            end: 329,
+                                            filename: "testing/test/while.cb",
+                                        },
                                     },
                                 },
                             },
@@ -593,7 +968,11 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 334..340,
+                                    span: Span {
+                                        start: 334,
+                                        end: 340,
+                                        filename: "testing/test/while.cb",
+                                    },
                                 },
                                 expr: Some(
                                     TypeCast(
@@ -603,13 +982,21 @@
                                                     As,
                                                 ),
                                                 lexeme: "as",
-                                                span: 343..345,
+                                                span: Span {
+                                                    start: 343,
+                                                    end: 345,
+                                                    filename: "testing/test/while.cb",
+                                                },
                                             },
                                             expr: Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "i",
-                                                    span: 341..342,
+                                                    span: Span {
+                                                        start: 341,
+                                                        end: 342,
+                                                        filename: "testing/test/while.cb",
+                                                    },
                                                 },
                                             ),
                                             target_type: Type {
@@ -617,7 +1004,11 @@
                                                 kind: SignedNumber(
                                                     32,
                                                 ),
-                                                span: 346..349,
+                                                span: Span {
+                                                    start: 346,
+                                                    end: 349,
+                                                    filename: "testing/test/while.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -628,7 +1019,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 349..350,
+                                span: Span {
+                                    start: 349,
+                                    end: 350,
+                                    filename: "testing/test/while.cb",
+                                },
                             },
                         ),
                     },
@@ -636,7 +1031,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 351..352,
+                    span: Span {
+                        start: 351,
+                        end: 352,
+                        filename: "testing/test/while.cb",
+                    },
                 },
             },
         },

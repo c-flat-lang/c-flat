@@ -1,0 +1,308 @@
+// RAYLIB
+pub type KeyboardKey enum {
+    space = 32,
+    apostrophe = 39,  // '
+    comma = 44,  // ,
+    minus = 45,  // -
+    period = 46,  // .
+    slash = 47,  // /
+    num_0 = 48,
+    num_1 = 49,
+    num_2 = 50,
+    num_3 = 51,
+    num_4 = 52,
+    num_5 = 53,
+    num_6 = 54,
+    num_7 = 55,
+    num_8 = 56,
+    num_9 = 57,
+    semicolon = 59,  // ;
+    equal = 61,  // =
+    a = 65,
+    b = 66,
+    c = 67,
+    d = 68,
+    e = 69,
+    f = 70,
+    g = 71,
+    h = 72,
+    i = 73,
+    j = 74,
+    k = 75,
+    l = 76,
+    m = 77,
+    n = 78,
+    o = 79,
+    p = 80,
+    q = 81,
+    r = 82,
+    s = 83,
+    t = 84,
+    u = 85,
+    v = 86,
+    w = 87,
+    x = 88,
+    y = 89,
+    z = 90,
+    left_bracket = 91,  // [
+    backslash = 92,  // \
+    right_bracket = 93,  // ]
+    grave_accent = 96,  // `
+    world_1 = 161, // non-US #1
+    world_2 = 162, // non-US #2
+    
+    // = Function, keys
+    escape = 256,
+    enter = 257,
+    tab = 258,
+    backspace = 259,
+    insert = 260,
+    delete = 261,
+    right = 262,
+    left = 263,
+    down = 264,
+    up = 265,
+    page_up = 266,
+    page_down = 267,
+    home = 268,
+    end = 269,
+    caps_lock = 280,
+    scroll_lock = 281,
+    num_lock = 282,
+    print_screen = 283,
+    pause = 284,
+    f1 = 290,
+    f2 = 291,
+    f3 = 292,
+    f4 = 293,
+    f5 = 294,
+    f6 = 295,
+    f7 = 296,
+    f8 = 297,
+    f9 = 298,
+    f10 = 299,
+    f11 = 300,
+    f12 = 301,
+    f13 = 302,
+    f14 = 303,
+    f15 = 304,
+    f16 = 305,
+    f17 = 306,
+    f18 = 307,
+    f19 = 308,
+    f20 = 309,
+    f21 = 310,
+    f22 = 311,
+    f23 = 312,
+    f24 = 313,
+    f25 = 314,
+    kp_0 = 320,
+    kp_1 = 321,
+    kp_2 = 322,
+    kp_3 = 323,
+    kp_4 = 324,
+    kp_5 = 325,
+    kp_6 = 326,
+    kp_7 = 327,
+    kp_8 = 328,
+    kp_9 = 329,
+    kp_decimal = 330,
+    kp_divide = 331,
+    kp_multiply = 332,
+    kp_subtract = 333,
+    kp_add = 334,
+    kp_enter = 335,
+    kp_equal = 336,
+    left_shift = 340,
+    left_control = 341,
+    left_alt = 342,
+    left_super = 343,
+    right_shift = 344,
+    right_control = 345,
+    right_alt = 346,
+    right_super = 347,
+    menu = 348,
+}
+
+pub type MouseButton enum {
+    left,
+    right,
+    middle,
+    n4,
+    n5,
+    n6,
+    n7,
+    n8,
+}
+
+pub type Joystick enum {
+    j1,
+    j2,
+    j3,
+    j4,
+    j5,
+    j6,
+    j7,
+    j8,
+    j9,
+    j10,
+    j11,
+    j12,
+    j13,
+    j14,
+    j15,
+    j16,
+}
+
+pub type GamepadButton enum {
+    a,
+    b,
+    x,
+    y,
+    left_bumper,
+    right_bumper,
+    back,
+    start,
+    guide,
+    left_thumb,
+    right_thumb,
+    dpad_up,
+    dpad_right,
+    dpad_down,
+    dpad_left,
+}
+
+pub type GamepadAxis enum {
+    left_x,
+    left_y,
+    right_x,
+    right_y,
+    left_trigger,
+    right_trigger,
+}
+
+pub type Vector2 struct {
+    x: f32,
+    y: f32,
+}
+
+pub type Rectangle struct {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+pub type Color struct {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
+}
+
+pub extern C fn InitWindow as init_window(s32, s32, *[u8]) void;
+pub extern C fn BeginDrawing as begin_drawing() void;
+pub extern C fn EndDrawing as end_drawing() void;
+pub extern C fn CloseWindow as close_window() void;
+pub extern C fn SetTargetFPS as set_target_fps(s32) void;
+pub extern C fn WindowShouldClose as window_should_close() bool;
+pub extern C fn ClearBackground as clear_background(Color) void;
+pub extern C fn GetFrameTime as get_frame_time() f32;
+
+// Collision
+pub extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
+
+// Drawing Shapes
+pub extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
+pub extern C fn DrawLineEx as draw_line_ex(Vector2, Vector2, f32, Color) void;
+pub extern C fn DrawPoly as draw_poly(Vector2, s32, f32, f32, Color) void;
+pub extern C fn DrawPolyLines as draw_poly_lines(Vector2, s32, f32, f32, Color) void;
+pub extern C fn DrawPolyLinesEx as draw_poly_lines_ex(Vector2, s32, f32, f32, f32, Color) void;
+
+// Text
+pub extern C fn DrawText as draw_text(*[u8], s32, s32, s32, Color) void;
+pub extern C fn MeasureText as measure_text(*[u8], s32) s32;
+
+// Keyboad
+pub extern C fn IsKeyPressed as is_key_pressed(s32) bool;
+pub extern C fn IsKeyDown as is_key_down(s32) bool;
+pub extern C fn IsKeyUp as is_key_up(s32) bool;
+
+// Gamepad
+pub extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
+
+// Mouse
+pub extern C fn IsMouseButtonPressed as is_mouse_button_pressed(s32) bool;
+pub extern C fn IsMouseButtonDown as is_mouse_button_down(s32) bool;
+pub extern C fn IsMouseButtonReleased as is_mouse_button_released(s32) bool;
+pub extern C fn IsMouseButtonUp as is_mouse_button_up(s32) bool;  
+pub extern C fn GetMouseX as get_mouse_x() s32;                                    // Get mouse position X
+pub extern C fn GetMouseY as get_mouse_y() s32;
+
+// Wave/Sound loading/unloading functions
+type Wave struct {
+    frameCount: usize,
+    sampleRate: s32,
+    sampleSize: s32,
+    channels: s32,
+    data: *[u8],
+}
+
+type Sound struct {
+    handle: s32,
+}
+
+pub extern C fn InitAudioDevice as init_audio_device() void;
+pub extern C fn CloseAudioDevice as close_audio_device() void;
+pub extern C fn IsAudioDeviceReady as is_audio_device_ready() bool;
+
+pub extern C fn LoadWave as load_wave(*[u8]) Wave;
+pub extern C fn LoadWaveFromMemory as load_wave_from_memory(*[u8], *[u8], s32) Wave;
+pub extern C fn IsWaveValid as is_wave_valid(Wave) bool;
+pub extern C fn LoadSound as load_sound(*[u8]) Sound;
+pub extern C fn LoadSoundFromWave as load_sound_from_wave(Wave) Sound;
+pub extern C fn LoadSoundAlias as load_sound_alias(Sound) Sound;
+pub extern C fn IsSoundValid as is_sound_valid(Sound) bool;
+pub extern C fn UpdateSound as update_sound(Sound, *Sound, s32) void;
+pub extern C fn UnloadWave as unload_wave(Wave) void;
+pub extern C fn UnloadSound as unload_sound(Sound) void;
+pub extern C fn UnloadSoundAlias as unload_sound_alias(Sound) void;
+pub extern C fn ExportWave as export_wave(Wave, *[u8]) bool;
+pub extern C fn ExportWaveAsCode as export_wave_as_code(Wave, *[u8]) bool;
+
+// Wave/Sound management functions
+pub extern C fn PlaySound as play_sound(Sound) void;
+pub extern C fn StopSound as stop_sound(Sound) void;
+pub extern C fn PauseSound as pause_sound(Sound) void;
+pub extern C fn ResumeSound as resume_sound(Sound) void;
+pub extern C fn IsSoundPlaying as is_sound_playing(Sound) bool;
+pub extern C fn SetSoundVolume as set_sound_volume(Sound, f32) void;
+pub extern C fn SetSoundPitch as set_sound_pitch(Sound, f32) void;
+pub extern C fn SetSoundPan as set_sound_pan(Sound, f32) void;
+pub extern C fn WaveCopy as wave_copy(Wave) Wave;
+pub extern C fn WaveCrop as wave_crop(*Wave, s32, s32) void;
+pub extern C fn WaveFormat as wave_format(*Wave, s32, s32, s32) void;
+pub extern C fn LoadWaveSamples as load_wave_samples(Wave) *f32;
+pub extern C fn UnloadWaveSamples as unload_wave_samples(*f32) void;
+
+// Random number
+
+pub extern C fn SetRandomSeed as set_random_seed(u32) void;
+pub extern C fn GetRandomValue as get_random_value(s32, s32) s32;
+
+// Texture loading functions
+// Note: These functions require GPU access
+
+pub type Texture2D struct {
+    id: usize,
+    width: s32,
+    height: s32,
+    mipmaps: s32,
+    format: s32,
+}
+
+pub extern C fn LoadTexture as load_texture(*[u8]) Texture2D; 
+pub extern C fn UnloadTexture as unload_texture(Texture2D) void; 
+
+// Texture drawing functions
+pub extern C fn DrawTexture as draw_texture(Texture2D, s32, s32, Color) void;

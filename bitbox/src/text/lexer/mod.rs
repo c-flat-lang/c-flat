@@ -4,6 +4,6 @@ pub mod token;
 #[cfg(test)]
 mod test;
 
-pub fn lex(src: &str) -> Vec<token::Token> {
-    scanner::Lexer::new(src).collect()
+pub fn lex(filename: &str, src: &str) -> Vec<token::Token> {
+    scanner::Lexer::new(filename, src).collect()
 }

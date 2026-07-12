@@ -1,24 +1,16 @@
-#![allow(unused)]
-use bitbox::{Target, text::semantic_analyzer::Symbol};
+use bitbox::Target;
 use std::fmt::Write;
 
-use crate::stage::lexer::token::{Span, Token};
+use crate::stage::{
+    lexer::token::{Span, Token},
+    semantic_analyzer::symbol_table::ScopePath,
+};
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Default, Clone, Eq)]
 pub struct Type {
     pub mut_token: Option<Token>,
     pub kind: TypeKind,
     pub span: Span,
-}
-
-impl Default for Type {
-    fn default() -> Self {
-        Self {
-            mut_token: None,
-            kind: TypeKind::default(),
-            span: 0..1,
-        }
-    }
 }
 
 impl std::fmt::Display for Type {
@@ -57,7 +49,7 @@ impl Type {
     pub fn de_ref(&self) -> &Type {
         let mut ty = self;
 
-        while let TypeKind::Ref(inner) = &ty.kind {
+        while let TypeKind::Pointer(inner) = &ty.kind {
             ty = inner;
         }
 
@@ -69,14 +61,13 @@ impl Type {
 pub enum TypeKind {
     Array(usize, Box<Type>),
     Bool,
-    /// unimplemented!
-    Enum(String),
+    Enum(EnumType),
     Float(u8),
     /// Simple Custom `Type` with no `TypeArgs`
-    Name(String),
+    Name(Token),
     /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
-    Ref(Box<Type>),
+    Pointer(Box<Type>),
     SignedNumber(u8),
     /// isize
     SignedTargetPointerNumber,
@@ -98,11 +89,12 @@ impl TypeKind {
                 Box::new(ty.kind.as_bitbox_type(target_pointer_size)),
             ),
             Self::Bool => bitbox::ir::Type::Unsigned(32),
-            Self::Enum(name) => todo!("{name}"),
+            Self::Enum(..) => bitbox::ir::Type::Unsigned(32),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
             Self::Name(name) => {
                 unreachable!(
-                    "Type::Name({name}).as_bitbox_type() should be handled in type_resolver"
+                    "Type::Name({}).as_bitbox_type() should be handled in type_resolver",
+                    name.lexeme
                 )
             }
             Self::NameWithParams(name, params) => {
@@ -111,7 +103,7 @@ impl TypeKind {
                     name.lexeme
                 )
             }
-            Self::Ref(inner) => {
+            Self::Pointer(inner) => {
                 bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
             }
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
@@ -159,9 +151,12 @@ This means we may need to generate more then one X Type depending on how many Ge
         match self {
             Self::Array(count, ty) => count * ty.kind.size(target_pointer_size),
             Self::Bool => 1,
-            Self::Enum(_) => todo!("Size of enum"),
+            Self::Enum(..) => 4, // TODO: This will change once we can set the enum number type
             Self::Name(name) => {
-                unreachable!("Type::Name({name}).size() should be handled in type_resolver")
+                unreachable!(
+                    "Type::Name({}).size() should be handled in type_resolver",
+                    name.lexeme
+                )
             }
             Self::NameWithParams(name, params) => {
                 unreachable!(
@@ -169,7 +164,7 @@ This means we may need to generate more then one X Type depending on how many Ge
                     name.lexeme
                 )
             }
-            Self::Ref(_) => 64,
+            Self::Pointer(_) => 64,
             Self::SignedTargetPointerNumber => unreachable!(
                 "ssize or SignedTargetPointerNumber should be handled in type_resolver"
             ),
@@ -201,6 +196,88 @@ This means we may need to generate more then one X Type depending on how many Ge
             Self::Void => 0,
         }
     }
+
+    pub fn compair_enum(&self, kind: &TypeKind) -> bool {
+        match (self, kind) {
+            (TypeKind::Enum(a), TypeKind::Enum(b)) => a.number_kind.compair_enum(&b.number_kind),
+            (TypeKind::Enum(a), TypeKind::UnsignedNumber(_)) => a.number_kind.compair_enum(kind),
+            (TypeKind::UnsignedNumber(_), TypeKind::Enum(b)) => self.compair_enum(&b.number_kind),
+            (TypeKind::UnsignedNumber(lhs), TypeKind::UnsignedNumber(rhs)) => lhs == rhs,
+            _ => false,
+        }
+    }
+
+    pub fn compair(&self, other: &TypeKind) -> bool {
+        match self {
+            TypeKind::Array(len, elem) => match other {
+                TypeKind::Array(other_len, other_elem) => {
+                    elem.kind.compair(&other_elem.kind) && len == other_len
+                }
+                _ => false,
+            },
+
+            TypeKind::Bool => matches!(other, TypeKind::Bool),
+
+            TypeKind::Enum(_) => self.compair_enum(other),
+
+            TypeKind::Float(bits) => match other {
+                TypeKind::Float(other_bits) => bits == other_bits,
+                _ => false,
+            },
+
+            TypeKind::Name(token) => match other {
+                TypeKind::Name(other_token) => token == other_token,
+                _ => false,
+            },
+
+            TypeKind::NameWithParams(token, type_params) => match other {
+                TypeKind::NameWithParams(other_token, other_params) => {
+                    token == other_token
+                        && type_params.len() == other_params.len()
+                        && type_params
+                            .params
+                            .iter()
+                            .zip(other_params.params.iter())
+                            .all(|(a, b)| a.kind.compair(&b.kind))
+                }
+                _ => false,
+            },
+
+            TypeKind::Pointer(inner) => match other {
+                TypeKind::Pointer(other_inner) => inner.kind.compair(&other_inner.kind),
+                _ => false,
+            },
+
+            TypeKind::SignedNumber(bits) => match other {
+                TypeKind::SignedNumber(other_bits) => bits == other_bits,
+                _ => false,
+            },
+
+            TypeKind::SignedTargetPointerNumber => {
+                matches!(other, TypeKind::SignedTargetPointerNumber)
+            }
+
+            TypeKind::Slice(inner) => match other {
+                TypeKind::Slice(other_inner) => inner.kind.compair(&other_inner.kind),
+                _ => false,
+            },
+
+            TypeKind::Struct(struct_type) => match other {
+                TypeKind::Struct(other_struct) => struct_type.name == other_struct.name,
+                _ => false,
+            },
+
+            TypeKind::Type => matches!(other, TypeKind::Type),
+
+            TypeKind::UnsignedNumber(_) => self.compair_enum(other),
+
+            TypeKind::UnsignedTargetPointerNumber => {
+                matches!(other, TypeKind::UnsignedTargetPointerNumber)
+            }
+
+            TypeKind::Void => matches!(other, TypeKind::Void),
+        }
+    }
 }
 
 impl std::fmt::Display for TypeKind {
@@ -208,11 +285,11 @@ impl std::fmt::Display for TypeKind {
         match self {
             Self::Array(size, ty) => write!(f, "[{}; {}]", size, ty),
             Self::Bool => write!(f, "bool"),
+            Self::Enum(symbol) => write!(f, "{}", symbol.name),
             Self::Float(n) => write!(f, "f{}", n),
-            Self::Enum(name) => write!(f, "{}", name),
-            Self::Name(name) => write!(f, "{}", name),
+            Self::Name(name) => write!(f, "{}", name.lexeme),
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
-            Self::Ref(ty) => write!(f, "ref {ty}"),
+            Self::Pointer(ty) => write!(f, "*{ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
             Self::SignedTargetPointerNumber => write!(f, "ssize"),
             Self::Slice(ty) => write!(f, "[{ty}]"),
@@ -224,10 +301,28 @@ impl std::fmt::Display for TypeKind {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EnumType {
+    pub name: String,
+    pub type_params: Option<Vec<(Token, Type)>>,
+    // We will need to add something for set values
+    pub variants: Vec<(Token, String)>, // (name, default-value),
+    pub number_kind: Box<TypeKind>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TypeParams {
     pub params: Vec<Type>,
+}
+
+impl TypeParams {
+    pub const fn len(&self) -> usize {
+        self.params.len()
+    }
+
+    pub const fn is_empty(&self) -> bool {
+        self.params.is_empty()
+    }
 }
 
 impl std::fmt::Display for TypeParams {
@@ -235,18 +330,20 @@ impl std::fmt::Display for TypeParams {
         let mut string = String::new();
         for (idx, param) in self.params.iter().enumerate() {
             if idx == self.params.len().saturating_sub(1) {
-                write!(&mut string, "{}", param);
+                write!(&mut string, "{}", param)?;
                 continue;
             }
-            write!(&mut string, "{}, ", param);
+            write!(&mut string, "{}, ", param)?;
         }
 
         write!(f, "{string}")
     }
 }
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructType {
     pub name: String,
+    pub type_params: Option<Vec<(Token, Type)>>,
     pub fields: Vec<(String, Type)>,
     pub packed: bool,
 }
@@ -309,13 +406,19 @@ pub struct ExternFunction {
 
 impl ExternFunction {
     pub fn span(&self) -> Span {
+        let filename = self.extern_token.span.filename.clone();
         let start = self.extern_token.span.start;
         let end = self
             .local_name
             .as_ref()
             .map(|n| n.span.end)
             .unwrap_or(self.binding_name.span.end);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 
     pub fn name(&self) -> &str {
@@ -332,6 +435,23 @@ pub struct Use {
     pub path: Vec<Token>,
 }
 
+impl Use {
+    pub fn span(&self) -> Span {
+        let filename = self.use_token.span.filename.clone().clone();
+        let start = self.use_token.span.clone();
+        let end = self
+            .path
+            .last()
+            .map(|token| token.span.end)
+            .unwrap_or(start.end);
+        Span {
+            start: start.start,
+            end,
+            filename,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Field {
     pub visibility: Visibility,
@@ -343,13 +463,18 @@ pub struct Field {
 
 impl Field {
     pub fn span(&self) -> Span {
+        let filename = self.name.span.filename.clone().clone();
         let start = self.name.span.clone();
         let end = self
             .default_expr
             .as_ref()
             .map(|d| d.span().end)
             .unwrap_or(start.end);
-        start.start..end
+        Span {
+            start: start.start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -367,18 +492,58 @@ pub struct Struct {
 
 impl Struct {
     pub fn span(&self) -> Span {
+        let filename = self.type_token.span.filename.clone();
         let start = self.type_token.span.start;
         let end = self.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Variant {
+    pub name: Token,
+    pub equals: Option<Token>,
+    pub value: Option<Token>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Enum {
+    pub visibility: Visibility,
+    pub type_token: Token,
+    pub name: Token,
+    pub type_params: Option<Vec<(Token, Type)>>,
+    pub enum_token: Token,
+    pub variants: Vec<Variant>,
+    pub open_brace: Token,
+    pub close_brace: Token,
+}
+
+impl Enum {
+    pub fn span(&self) -> Span {
+        let filename = self.type_token.span.filename.clone();
+        let start = self.type_token.span.start;
+        let end = self.close_brace.span.end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum TypeDef {
     Struct(Struct),
+    Enum(Enum),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     pub visibility: Visibility,
     pub fn_token: Token,
@@ -398,9 +563,15 @@ pub struct ExprBlock {
 
 impl ExprBlock {
     pub fn span(&self) -> Span {
+        let filename = self.open_brace.span.filename.clone();
         let start = self.open_brace.span.start;
         let end = self.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -412,9 +583,36 @@ pub struct ExprAddressOf {
 
 impl ExprAddressOf {
     pub fn span(&self) -> Span {
+        let filename = self.ampersand.span.filename.clone();
         let start = self.ampersand.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprDeref {
+    pub base: Box<Expr>,
+    pub dot: Token,
+    pub star: Token,
+}
+
+impl ExprDeref {
+    pub fn span(&self) -> Span {
+        let filename = self.base.span().filename.clone();
+        let start = self.base.span().start;
+        let end = self.star.span.end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -426,9 +624,15 @@ pub struct ExprNot {
 
 impl ExprNot {
     pub fn span(&self) -> Span {
+        let filename = self.bang.span.filename.clone();
         let start = self.bang.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -440,13 +644,19 @@ pub struct Statement {
 
 impl Statement {
     pub fn span(&self) -> Span {
+        let filename = self.expr.span().filename.clone();
         let start = self.expr.span();
         let end = self.delem.as_ref().map(|d| d.span.end).unwrap_or(start.end);
-        start.start..end
+
+        Span {
+            start: start.start,
+            end,
+            filename,
+        }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Param {
     pub name: Token,
     pub ty: Type,
@@ -454,54 +664,63 @@ pub struct Param {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Expr {
-    Return(ExprReturn),
-    Struct(ExprStruct),
-    Declare(ExprDecl),
-    Assignment(ExprAssignment),
-    Litral(Litral),
-    Call(ExprCall),
-    Binary(ExprBinary),
-    While(ExprWhile),
-    Identifier(Token),
-    IfElse(ExprIfElse),
-    MemberAccess(ExprMemberAccess),
+    AddressOf(ExprAddressOf),
     Array(ExprArray),
     ArrayIndex(ExprArrayIndex),
     ArrayRepeat(ExprArrayRepeat),
+    Assignment(ExprAssignment),
+    Binary(ExprBinary),
     Block(ExprBlock),
-    AddressOf(ExprAddressOf),
-    Not(ExprNot),
+    Builtin(ExprCall),
+    Call(ExprCall),
+    Declare(ExprDecl),
+    Deref(ExprDeref),
     Grouping(ExprGrouping),
+    Identifier(Token),
+    IfElse(ExprIfElse),
+    Litral(Litral),
+    MemberAccess(ExprMemberAccess),
+    Not(ExprNot),
+    Path(ExprPath),
+    Return(ExprReturn),
+    Struct(ExprStruct),
     TypeCast(ExprTypeCast),
+    While(ExprWhile),
 }
 
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Self::Return(expr) => expr.span(),
-            Self::Struct(expr) => expr.span(),
-            Self::Declare(expr) => expr.span(),
-            Self::Assignment(expr) => expr.span(),
-            Self::Litral(litral) => litral.span(),
-            Self::Call(expr) => expr.span(),
-            Self::Binary(expr) => expr.span(),
-            Self::While(expr) => expr.span(),
-            Self::Identifier(token) => token.span.clone(),
-            Self::IfElse(expr) => expr.span(),
-            Self::MemberAccess(expr) => expr.span(),
+            Self::AddressOf(expr) => expr.span(),
             Self::Array(expr) => expr.span(),
             Self::ArrayIndex(expr) => expr.span(),
             Self::ArrayRepeat(expr) => expr.span(),
+            Self::Assignment(expr) => expr.span(),
+            Self::Binary(expr) => expr.span(),
             Self::Block(expr) => expr.span(),
-            Self::AddressOf(expr) => expr.span(),
-            Self::Not(expr) => expr.span(),
+            Self::Builtin(expr) => expr.span(),
+            Self::Call(expr) => expr.span(),
+            Self::Declare(expr) => expr.span(),
+            Self::Deref(expr) => expr.span(),
             Self::Grouping(expr) => expr.span(),
+            Self::Identifier(token) => token.span.clone(),
+            Self::IfElse(expr) => expr.span(),
+            Self::Litral(litral) => litral.span(),
+            Self::MemberAccess(expr) => expr.span(),
+            Self::Not(expr) => expr.span(),
+            Self::Path(expr) => expr.span(),
+            Self::Return(expr) => expr.span(),
+            Self::Struct(expr) => expr.span(),
             Self::TypeCast(expr) => expr.span(),
+            Self::While(expr) => expr.span(),
         }
     }
 
     pub fn is_addressable(&self) -> bool {
-        matches!(self, Expr::Identifier(..) | Expr::ArrayIndex(..))
+        matches!(
+            self,
+            Expr::Identifier(..) | Expr::ArrayIndex(..) | Expr::MemberAccess(..)
+        )
     }
 }
 
@@ -514,9 +733,15 @@ pub struct ExprTypeCast {
 
 impl ExprTypeCast {
     pub fn span(&self) -> Span {
+        let filename = self.as_token.span.filename.clone();
         let start = self.as_token.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -529,9 +754,15 @@ pub struct ExprGrouping {
 
 impl ExprGrouping {
     pub fn span(&self) -> Span {
+        let filename = self.open_paren.span.filename.clone();
         let start = self.open_paren.span.start;
         let end = self.close_paren.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -545,9 +776,15 @@ pub struct ExprArray {
 
 impl ExprArray {
     pub fn span(&self) -> Span {
+        let filename = self.open_bracket.span.filename.clone();
         let start = self.open_bracket.span.start;
         let end = self.close_bracket.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -562,9 +799,15 @@ pub struct ExprArrayIndex {
 
 impl ExprArrayIndex {
     pub fn span(&self) -> Span {
+        let filename = self.expr.span().filename.clone();
         let start = self.expr.span().start;
         let end = self.close_bracket.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -580,9 +823,15 @@ pub struct ExprArrayRepeat {
 
 impl ExprArrayRepeat {
     pub fn span(&self) -> Span {
+        let filename = self.open_bracket.span.filename.clone();
         let start = self.open_bracket.span.start;
         let end = self.close_bracket.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -594,9 +843,15 @@ pub struct ExprReturn {
 
 impl ExprReturn {
     pub fn span(&self) -> Span {
+        let filename = self.return_token.span.filename.clone();
         let start = self.return_token.span.start;
         let end = self.expr.as_ref().map(|e| e.span().end).unwrap_or(start);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -610,9 +865,15 @@ pub struct InitField {
 
 impl InitField {
     pub fn span(&self) -> Span {
+        let filename = self.dot.span.filename.clone();
         let start = self.dot.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -627,9 +888,15 @@ pub struct ExprStruct {
 
 impl ExprStruct {
     pub fn span(&self) -> Span {
+        let filename = self.name.span.filename.clone();
         let start = self.name.span.start;
         let end = self.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -644,9 +911,15 @@ pub struct ExprDecl {
 
 impl ExprDecl {
     pub fn span(&self) -> Span {
+        let filename = self.let_token.span.filename.clone();
         let start = self.let_token.span.start;
         let end = self.expr.span().end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -659,9 +932,15 @@ pub struct ExprAssignment {
 
 impl ExprAssignment {
     pub fn span(&self) -> Span {
-        let start = self.left.span();
-        let end = self.right.span();
-        start.start..end.end
+        let filename = self.left.span().filename.clone();
+        let start = self.left.span().start;
+        let end = self.right.span().end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -676,9 +955,15 @@ pub struct ExprCall {
 
 impl ExprCall {
     pub fn span(&self) -> Span {
-        let start = self.caller.span();
+        let filename = self.caller.span().filename.clone();
+        let start = self.caller.span().start;
         let end = self.right_paren.span.end;
-        start.start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -691,9 +976,15 @@ pub struct ExprBinary {
 
 impl ExprBinary {
     pub fn span(&self) -> Span {
-        let start = self.left.span();
-        let end = self.right.span();
-        start.start..end.end
+        let filename = self.left.span().filename.clone();
+        let start = self.left.span().start;
+        let end = self.right.span().end;
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -706,9 +997,15 @@ pub struct ExprWhile {
 
 impl ExprWhile {
     pub fn span(&self) -> Span {
+        let filename = self.while_token.span.filename.clone();
         let start = self.while_token.span.start;
         let end = self.body.close_brace.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
     }
 }
 
@@ -724,13 +1021,70 @@ pub struct ExprIfElse {
 
 impl ExprIfElse {
     pub fn span(&self) -> Span {
+        let filename = self.if_token.span.filename.clone();
         let start = self.if_token.span.start;
         let end = self
             .else_branch
             .as_ref()
             .map(|b| b.span().end)
             .unwrap_or(self.then_branch.close_brace.span.end);
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
+    }
+}
+
+/// A `::` qualified path used in expression position, `math::add` or
+/// `foo::bar::baz`. The segments preserve their source tokens for spans and
+/// error reporting.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExprPath {
+    pub segments: Vec<Token>,
+}
+
+impl ExprPath {
+    pub fn span(&self) -> Span {
+        let filename = self.segments[0].span.filename.clone();
+        let start = self.segments.first().map(|t| t.span.start).unwrap_or(0);
+        let end = self.segments.last().map(|t| t.span.end).unwrap_or(start);
+
+        Span {
+            start,
+            end,
+            filename,
+        }
+    }
+
+    pub fn scope_path(&self) -> ScopePath {
+        let names = self
+            .segments
+            .iter()
+            .enumerate()
+            .fold(Vec::new(), |mut acc, (index, token)| {
+                if index == self.segments.len().saturating_sub(1) {
+                    return acc;
+                }
+                acc.push(token.lexeme.clone());
+                acc
+            });
+        ScopePath(names)
+    }
+
+    pub fn head(&self) -> &Token {
+        self.segments
+            .first()
+            .expect("ExprPath must have first segment")
+    }
+
+    /// The final segment, which names the item being referred to. v1 resolves a
+    /// path to this segment within the flat program namespace.
+    pub fn leaf(&self) -> &Token {
+        self.segments
+            .last()
+            .expect("ExprPath must have at least one segment")
     }
 }
 
@@ -743,16 +1097,34 @@ pub struct ExprMemberAccess {
 
 impl ExprMemberAccess {
     pub fn span(&self) -> Span {
+        let filename = self.base.span().filename.clone();
         let start = self.base.span().start;
         let end = self.member.span.end;
-        start..end
+
+        Span {
+            start,
+            end,
+            filename,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IntegerLitral {
+    pub token: Token,
+    pub ty: Type,
+}
+
+impl IntegerLitral {
+    pub fn span(&self) -> Span {
+        self.token.span.clone()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Litral {
     String(Token),
-    Integer(Token),
+    Integer(Box<IntegerLitral>),
     Float(Token),
     Char(Token),
     BoolTrue(Token),
@@ -763,7 +1135,7 @@ impl Litral {
     pub fn span(&self) -> Span {
         match self {
             Litral::String(token) => token.span.clone(),
-            Litral::Integer(token) => token.span.clone(),
+            Litral::Integer(i) => i.span(),
             Litral::Float(token) => token.span.clone(),
             Litral::Char(token) => token.span.clone(),
             Litral::BoolTrue(token) => token.span.clone(),

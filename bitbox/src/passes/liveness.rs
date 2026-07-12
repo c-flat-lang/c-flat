@@ -2,9 +2,9 @@ use crate::{
     ir::{
         BasicBlock, BlockId, Instruction, Variable,
         instruction::{
-            IAdd, IAlloc, IAnd, IAssign, ICall, ICast, ICmp, ICopy, IDiv, IElemGet, IElemSet, IGt,
-            IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte, IMul, INoOp, INot, IOr, IPhi,
-            IRef, IRem, IReturn, ISub, IXOr,
+            IAdd, IAlloc, IAnd, IAssign, IBitShiftRight, IBitWiseAnd, ICall, ICast, ICmp, ICopy,
+            IDiv, IElemGet, IElemSet, IGt, IGte, IIfElse, IJump, IJumpIf, ILoad, ILoop, ILt, ILte,
+            IMul, INoOp, INot, IOr, IPhi, IRef, IRem, IReturn, ISub, ISyscall, IXOr,
         },
     },
     passes::{DebugPass, PassOutput},
@@ -42,7 +42,21 @@ macro_rules! liveness_ops {
 }
 
 liveness_ops!(
-    IAdd, ISub, IMul, IDiv, ICmp, IGt, IGte, IRem, ILt, ILte, IAnd, IOr, IXOr
+    IAdd,
+    ISub,
+    IMul,
+    IDiv,
+    ICmp,
+    IGt,
+    IGte,
+    IRem,
+    ILt,
+    ILte,
+    IAnd,
+    IOr,
+    IXOr,
+    IBitShiftRight,
+    IBitWiseAnd,
 );
 
 impl LivenessAnalysis for IAssign {
@@ -316,6 +330,24 @@ impl LivenessAnalysis for ICast {
     }
 }
 
+impl LivenessAnalysis for ISyscall {
+    fn uses(&self) -> Vec<Variable> {
+        let mut vars = vec![];
+        for arg in self.args.iter() {
+            if let crate::ir::Operand::Variable(v) = arg {
+                vars.push(v.clone());
+            }
+        }
+        vars
+    }
+    fn defines(&self) -> Vec<Variable> {
+        let Some(v) = self.des.as_ref() else {
+            return vec![];
+        };
+        vec![v.clone()]
+    }
+}
+
 impl crate::ir::Instruction {
     pub fn uses(&self) -> Vec<Variable> {
         match self {
@@ -349,6 +381,9 @@ impl crate::ir::Instruction {
             Self::Ref(i) => i.uses(),
             Self::Not(i) => i.uses(),
             Self::Cast(i) => i.uses(),
+            Self::BitShiftRight(i) => i.uses(),
+            Self::BitWiseAnd(i) => i.uses(),
+            Self::Syscall(i) => i.uses(),
         }
     }
 
@@ -384,6 +419,9 @@ impl crate::ir::Instruction {
             Self::Ref(i) => i.defines(),
             Self::Not(i) => i.defines(),
             Self::Cast(i) => i.defines(),
+            Self::BitShiftRight(i) => i.defines(),
+            Self::BitWiseAnd(i) => i.defines(),
+            Self::Syscall(i) => i.defines(),
         }
     }
 }

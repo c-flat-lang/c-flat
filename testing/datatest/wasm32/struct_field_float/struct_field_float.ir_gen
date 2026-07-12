@@ -1,0 +1,32 @@
+                    Tokenizing testing/test/struct_field_float.cb
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+extern write_f32 (f32) -> void
+[31mfunction[0m [35mset_c[0m([1;36mself_v0[0m: [33m*Foo[0m, ) void{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.0_v0[0m, [33m0[0m
+    [34m@elemset[0m [33m*Foo[0m : [1;36mself_v0[0m, [33m0[0m, [1;36mtmp.0_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m2[0m
+    [34m@elemset[0m [33m*Foo[0m : [1;36mself_v0[0m, [33m1[0m, [1;36mtmp.1_v0[0m
+    [34m@assign[0m [33mf32[0m : [1;36mtmp.2_v0[0m, [33m1.0[0m
+    [34m@elemset[0m [33m*Foo[0m : [1;36mself_v0[0m, [33m2[0m, [1;36mtmp.2_v0[0m
+}
+[31mpublic[0m [31mfunction[0m [35mmain[0m() void{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@alloc[0m [33mFoo[0m : [1;36mtmp.0_v0[0m, [33m1[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.1_v0[0m, [33m0[0m
+    [34m@elemset[0m [33mFoo[0m : [1;36mtmp.0_v0[0m, [33m0[0m, [1;36mtmp.1_v0[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m0[0m
+    [34m@elemset[0m [33mFoo[0m : [1;36mtmp.0_v0[0m, [33m1[0m, [1;36mtmp.2_v0[0m
+    [34m@assign[0m [33mf32[0m : [1;36mtmp.3_v0[0m, [33m0.0[0m
+    [34m@elemset[0m [33mFoo[0m : [1;36mtmp.0_v0[0m, [33m2[0m, [1;36mtmp.3_v0[0m
+    [34m@assign[0m [33mFoo[0m : [1;36mfoo_v0[0m, [1;36mtmp.0_v0[0m
+    [34m@elemget[0m [33mf32[0m : [1;36mtmp.4_v0[0m, [1;36mfoo_v0[0m, [33m2[0m
+    [34m@call[0m [35mwrite_f32[0m([1;36mtmp.4_v0[0m)
+    [34m@ref[0m [33m*Foo[0m : [1;36mtmp.5_v0[0m, [1;36mfoo_v0[0m
+    [34m@call[0m [35mset_c[0m([1;36mtmp.5_v0[0m)
+    [34m@elemget[0m [33mf32[0m : [1;36mtmp.6_v0[0m, [1;36mfoo_v0[0m, [33m2[0m
+    [34m@call[0m [35mwrite_f32[0m([1;36mtmp.6_v0[0m)
+}

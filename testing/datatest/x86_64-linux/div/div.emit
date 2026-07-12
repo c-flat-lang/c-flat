@@ -1,4 +1,4 @@
-                     Tokenizer
+                    Tokenizing testing/test/div.cb
                         Parser
               SemanticAnalyzer
                    TypeChecker
@@ -32,15 +32,15 @@ main_entry:
   # lowering div
   # lowering operand
   # lowering operand
-  mov rax, vreg(0 : Reg64)
-  cqo
+  mov eax, vreg(0 : Reg32)
+  cdq
   idiv vreg(3 : Reg64)
-  mov vreg(6 : Reg64), rax
+  mov vreg(6 : Reg32), eax
   # @assign s32 : n_v0, tmp.2_v0
   # lowering assign
   # lowering operand
   mov dword ptr [rbp-4], vreg(6 : Reg32)
-  # @assign s32 : tmp.3_v0, 10
+  # @assign u8 : tmp.3_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(10 : Reg64), 10
@@ -48,15 +48,15 @@ main_entry:
   # @call write_char(tmp.3_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-8], vreg(9 : Reg32)
-  mov edi, dword ptr [rbp-8]
+  mov byte ptr [rbp-5], vreg(9 : Reg8)
+  mov dil, byte ptr [rbp-5]
   call write_char
-  # @call write_int(n_v0)
+  # @call write_s32(n_v0)
   # lowering call
   # lowering operand
   mov edi, dword ptr [rbp-4]
-  call write_int
-  # @assign s32 : tmp.4_v0, 10
+  call write_s32
+  # @assign u8 : tmp.4_v0, 10
   # lowering assign
   # lowering operand
   mov vreg(13 : Reg64), 10
@@ -64,8 +64,8 @@ main_entry:
   # @call write_char(tmp.4_v0)
   # lowering call
   # lowering operand
-  mov dword ptr [rbp-12], vreg(12 : Reg32)
-  mov edi, dword ptr [rbp-12]
+  mov byte ptr [rbp-6], vreg(12 : Reg8)
+  mov dil, byte ptr [rbp-6]
   call write_char
 exit_main:
   add rsp, 16

@@ -1,8 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::backend::x86_64::linux::Function;
 use crate::backend::x86_64::linux::passes::emit::assembler::{
-    Instruction, Location, MemIndexed, PhysReg, Reg, Reg8, Reg16, Reg32, RegKind, XmmReg,
+    Instruction, Location, MemIndexed, PhysReg, Reg, Reg8, Reg16, Reg32, RegConstraint, RegKind,
+    XmmReg,
 };
 use crate::passes::PassOutput;
 
@@ -13,7 +14,7 @@ pub struct VirtRegRewritePass;
 /// Rax and Rdx are intentionally excluded: they are implicitly clobbered by
 /// cqo/idiv (Rax = dividend/quotient, Rdx = remainder) and Rax is the call
 /// return register. Allocating vregs there would corrupt live values.
-const SCRATCH_POOL: [PhysReg; 7] = [
+const SCRATCH_POOL: [PhysReg; 12] = [
     PhysReg::R10,
     PhysReg::R11,
     PhysReg::Rcx,
@@ -21,7 +22,27 @@ const SCRATCH_POOL: [PhysReg; 7] = [
     PhysReg::Rdi,
     PhysReg::R8,
     PhysReg::R9,
+    // Callee-saved — must be preserved across calls (push/pop in prolog/epilog)
+    PhysReg::Rbx,
+    PhysReg::R12,
+    PhysReg::R13,
+    PhysReg::R14,
+    PhysReg::R15,
 ];
+
+const CALLEE_SAVED: &[PhysReg] = &[
+    PhysReg::Rbx,
+    PhysReg::R12,
+    PhysReg::R13,
+    PhysReg::R14,
+    PhysReg::R15,
+];
+
+/// Index in `SCRATCH_POOL` of the first callee-saved register. Pool slots
+/// before this are caller-saved (clobbered by `call`/`syscall`); slots from
+/// here on are callee-saved and survive a call once the prolog/epilog save
+/// them.
+const CALLEE_SAVED_START: usize = 7;
 
 const XMM_SCRATCH_POOL: [XmmReg; 16] = [
     XmmReg::Xmm0,
@@ -66,13 +87,22 @@ impl crate::passes::Pass for VirtRegRewritePass {
 
 /// Visit all `Location` operands of an instruction (read-only).
 fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
+    // Helper that visits a Location AND recurses into MemIndexed sub-regs
+    let mut visit = |loc: &Location| {
+        f(loc);
+        if let Location::MemIndexed(mi) = loc {
+            f(&Location::Reg(mi.base));
+            f(&Location::Reg(mi.index));
+        }
+    };
+
     match instr {
         Instruction::Add(a, b)
         | Instruction::And(a, b)
         | Instruction::Cmp(a, b)
         | Instruction::Lea(a, b)
         | Instruction::Mov(a, b)
-        | Instruction::Movezx(a, b)
+        | Instruction::Movzx(a, b)
         | Instruction::Sub(a, b)
         | Instruction::Test(a, b)
         | Instruction::Imul(a, b)
@@ -90,17 +120,17 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Ucomiss(a, b)
         | Instruction::Ucomisd(a, b)
         | Instruction::Cvtsi2ss(a, b)
-        | Instruction::Cvtsi2sd(a, b) => {
-            f(a);
-            f(b);
-            for loc in [a, b] {
-                if let Location::MemIndexed(mi) = loc {
-                    let base_loc = Location::Reg(mi.base);
-                    let idx_loc = Location::Reg(mi.index);
-                    f(&base_loc);
-                    f(&idx_loc);
-                }
-            }
+        | Instruction::Sar(a, b)
+        | Instruction::Shr(a, b)
+        | Instruction::Cvtss2sd(a, b)
+        | Instruction::Cvtsd2ss(a, b)
+        | Instruction::Cvttss2si(a, b)
+        | Instruction::Cvttsd2si(a, b)
+        | Instruction::Cvtsi2sd(a, b)
+        | Instruction::Movsx(a, b)
+        | Instruction::Xor(a, b) => {
+            visit(a);
+            visit(b);
         }
         Instruction::Pop(a)
         | Instruction::Push(a)
@@ -108,13 +138,24 @@ fn for_each_location<F: FnMut(&Location)>(instr: &Instruction, mut f: F) {
         | Instruction::Setg(a)
         | Instruction::Setge(a)
         | Instruction::Setl(a)
+        | Instruction::Setle(a)
         | Instruction::Seta(a)
         | Instruction::Setae(a)
         | Instruction::Setb(a)
-        | Instruction::Idiv(a) => {
-            f(a);
+        | Instruction::Idiv(a)
+        | Instruction::Div(a) => {
+            visit(a);
         }
-        _ => {}
+        Instruction::Call(..)
+        | Instruction::Comment(..)
+        | Instruction::DefineLabel(..)
+        | Instruction::Jmp(..)
+        | Instruction::Jnz(..)
+        | Instruction::Jz(..)
+        | Instruction::Ret
+        | Instruction::Cqo
+        | Instruction::Syscall
+        | Instruction::Cdq => {}
     }
 }
 
@@ -131,7 +172,7 @@ fn map_locations(
         Instruction::Cmp(a, b) => Instruction::Cmp(rw(a), rw(b)),
         Instruction::Lea(a, b) => Instruction::Lea(rw(a), rw(b)),
         Instruction::Mov(a, b) => Instruction::Mov(rw(a), rw(b)),
-        Instruction::Movezx(a, b) => Instruction::Movezx(rw(a), rw(b)),
+        Instruction::Movzx(a, b) => Instruction::Movzx(rw(a), rw(b)),
         Instruction::Sub(a, b) => Instruction::Sub(rw(a), rw(b)),
         Instruction::Test(a, b) => Instruction::Test(rw(a), rw(b)),
         Instruction::Imul(a, b) => Instruction::Imul(rw(a), rw(b)),
@@ -141,6 +182,7 @@ fn map_locations(
         Instruction::Setg(a) => Instruction::Setg(rw(a)),
         Instruction::Setge(a) => Instruction::Setge(rw(a)),
         Instruction::Setl(a) => Instruction::Setl(rw(a)),
+        Instruction::Setle(a) => Instruction::Setle(rw(a)),
         Instruction::Seta(a) => Instruction::Seta(rw(a)),
         Instruction::Setae(a) => Instruction::Setae(rw(a)),
         Instruction::Setb(a) => Instruction::Setb(rw(a)),
@@ -165,7 +207,20 @@ fn map_locations(
         Instruction::Cvttsd2si(a, b) => Instruction::Cvttsd2si(rw(a), rw(b)),
         Instruction::Movsx(a, b) => Instruction::Movsx(rw(a), rw(b)),
         Instruction::Idiv(a) => Instruction::Idiv(rw(a)),
-        other => other,
+        Instruction::Div(a) => Instruction::Div(rw(a)),
+        Instruction::Sar(a, b) => Instruction::Sar(rw(a), rw(b)),
+        Instruction::Shr(a, b) => Instruction::Shr(rw(a), rw(b)),
+        Instruction::Xor(a, b) => Instruction::Xor(rw(a), rw(b)),
+        Instruction::Call(..)
+        | Instruction::Comment(..)
+        | Instruction::DefineLabel(..)
+        | Instruction::Jmp(..)
+        | Instruction::Jnz(..)
+        | Instruction::Jz(..)
+        | Instruction::Ret
+        | Instruction::Cqo
+        | Instruction::Syscall
+        | Instruction::Cdq => instr,
     }
 }
 
@@ -220,16 +275,30 @@ fn rewrite_function(f: &mut Function) {
     // separated into GP and XMM pools.
     let mut gp_intervals: HashMap<usize, (usize, usize)> = HashMap::new();
     let mut xmm_intervals: HashMap<usize, (usize, usize)> = HashMap::new();
+    let mut constraints: HashMap<usize, PhysReg> = HashMap::new();
+
+    // Instruction indices (in the flattened prolog+instructions+epilog space)
+    // that clobber caller-saved registers: `call` and `syscall`. A vreg whose
+    // live interval spans one of these must be given a callee-saved register.
+    let mut clobber_indices: Vec<usize> = Vec::new();
+
     let mut idx = 0usize;
     for section in [&f.prolog, &f.instructions, &f.epilog] {
         for instr in section {
+            if matches!(instr, Instruction::Call(..) | Instruction::Syscall) {
+                clobber_indices.push(idx);
+            }
             for_each_location(instr, |loc| {
                 if let Location::Reg(Reg::VReg(v)) = loc {
+                    if let RegConstraint::Fixed(phys) = v.constraint {
+                        constraints.insert(v.id, phys);
+                    }
                     let intervals = if v.kind == RegKind::Xmm {
                         &mut xmm_intervals
                     } else {
                         &mut gp_intervals
                     };
+
                     let e = intervals.entry(v.id).or_insert((idx, idx));
                     e.1 = idx;
                 }
@@ -243,9 +312,40 @@ fn rewrite_function(f: &mut Function) {
     }
 
     // Step 2a: Linear-scan for GP vregs.
-    let gp_assignment = linear_scan_gp(gp_intervals);
+    let gp_assignment = linear_scan_gp(gp_intervals, constraints, &clobber_indices);
     // Step 2b: Linear-scan for XMM vregs.
     let xmm_assignment = linear_scan_xmm(xmm_intervals);
+
+    // Determine which callee-saved regs were actually allocated
+    let used_callee_saved: Vec<PhysReg> = CALLEE_SAVED
+        .iter()
+        .filter(|&&r| gp_assignment.values().any(|&a| a == r))
+        .copied()
+        .collect();
+
+    // Insert pushes just after the function's entry label (so they land inside
+    // the function, not before its label) and pops before the final Ret. Push
+    // in forward order and pop in reverse so the stack stays balanced.
+    let insert_pos = f
+        .prolog
+        .iter()
+        .position(|i| matches!(i, Instruction::DefineLabel(..)))
+        .map(|p| p + 1)
+        .unwrap_or(0);
+    for (i, &reg) in used_callee_saved.iter().enumerate() {
+        f.prolog
+            .insert(insert_pos + i, Instruction::Push(Location::Reg(reg.into())));
+    }
+    for &reg in used_callee_saved.iter().rev() {
+        // Insert before the final Ret
+        let ret_pos = f
+            .epilog
+            .iter()
+            .rposition(|i| matches!(i, Instruction::Ret))
+            .unwrap_or(f.epilog.len());
+        f.epilog
+            .insert(ret_pos, Instruction::Pop(Location::Reg(reg.into())));
+    }
 
     // Step 3: Rewrite every instruction in-place.
     for section in [&mut f.prolog, &mut f.instructions, &mut f.epilog] {
@@ -257,22 +357,38 @@ fn rewrite_function(f: &mut Function) {
     }
 }
 
-fn linear_scan_gp(intervals: HashMap<usize, (usize, usize)>) -> HashMap<usize, PhysReg> {
+fn linear_scan_gp(
+    intervals: HashMap<usize, (usize, usize)>,
+    constraints: HashMap<usize, PhysReg>,
+    clobber_indices: &[usize],
+) -> HashMap<usize, PhysReg> {
     if intervals.is_empty() {
         return HashMap::new();
     }
 
-    let mut sorted: Vec<(usize, usize, usize)> = intervals
-        .into_iter()
-        .map(|(id, (start, end))| (start, end, id))
-        .collect();
-    sorted.sort_unstable();
-
     let mut assignment: HashMap<usize, PhysReg> = HashMap::new();
+
+    let mut fixed_intervals: Vec<(usize, usize, usize, PhysReg)> = Vec::new();
+    let mut free_intervals: Vec<(usize, usize, usize)> = Vec::new();
+
+    for (id, (start, end)) in &intervals {
+        if let Some(&phys) = constraints.get(id) {
+            assignment.insert(*id, phys);
+            fixed_intervals.push((*start, *end, *id, phys));
+        } else {
+            free_intervals.push((*start, *end, *id));
+        }
+    }
+
+    free_intervals.sort_unstable();
+
     let mut active: Vec<(usize, usize, usize)> = Vec::new();
     let mut free: Vec<usize> = (0..SCRATCH_POOL.len()).rev().collect();
 
-    for (start, end, id) in &sorted {
+    let mut next_slot: usize = 0; // bump allocator for stack slots
+    let mut spills: HashMap<usize, usize> = HashMap::new(); // vreg → stack slot index
+
+    for (start, end, id) in &free_intervals {
         let mut reclaimed = Vec::new();
         active.retain(|&(ae, _, ai)| {
             if ae < *start {
@@ -284,9 +400,59 @@ fn linear_scan_gp(intervals: HashMap<usize, (usize, usize)>) -> HashMap<usize, P
         });
         free.extend(reclaimed);
 
-        let pool_idx = free.pop().unwrap_or_else(|| {
-            panic!("GP register spill required — not implemented (too many live vregs)")
-        });
+        let mut blocked: HashSet<usize> = fixed_intervals
+            .iter()
+            .filter(|(fs, fe, _, _)| fs <= start && start <= fe)
+            .filter_map(|(_, _, _, phys)| SCRATCH_POOL.iter().position(|p| p == phys))
+            .collect();
+
+        // If this value is live across a `call`/`syscall`, a caller-saved
+        // register would be clobbered by the callee. Restrict it to the
+        // callee-saved slots, which the prolog/epilog preserve.
+        let crosses_call = clobber_indices.iter().any(|&c| *start < c && c < *end);
+        if crosses_call {
+            for i in 0..CALLEE_SAVED_START {
+                blocked.insert(i);
+            }
+        }
+
+        let pool_idx = free
+            .iter()
+            .rposition(|idx| !blocked.contains(idx))
+            .map(|pos| free.remove(pos));
+
+        let pool_idx = match pool_idx {
+            Some(idx) => idx,
+            None => {
+                // Find the active interval with the furthest end point
+                // that isn't blocked by a fixed constraint at this position
+                let victim_pos = active
+                    .iter()
+                    .enumerate()
+                    .filter(|&(_, &(_, _, pidx))| !blocked.contains(&pidx))
+                    .max_by_key(|&(_, &(ae, _, _))| ae);
+
+                match victim_pos {
+                    Some((pos, &(victim_end, victim_id, victim_pidx))) if victim_end > *end => {
+                        // Spill the victim — it lives longer, so evicting it
+                        // frees the register for more intervals overall
+                        active.remove(pos);
+                        let slot = next_slot;
+                        next_slot += 1;
+                        spills.insert(victim_id, slot);
+                        victim_pidx // steal its register index
+                    }
+                    _ => {
+                        // Spill current interval instead — it ends last
+                        let slot = next_slot;
+                        next_slot += 1;
+                        spills.insert(*id, slot);
+                        continue; // skip assigning a register, move to next interval
+                    }
+                }
+            }
+        };
+
         assignment.insert(*id, SCRATCH_POOL[pool_idx]);
         active.push((*end, *id, pool_idx));
     }

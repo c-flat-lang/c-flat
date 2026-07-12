@@ -1,5 +1,6 @@
-                     Tokenizer
+                    Tokenizing testing/test/casting.cb
                         Parser
+=== testing/test/casting.cb ===
 [
     ExternFunction(
         ExternFunction {
@@ -9,24 +10,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 0..6,
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/casting.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 9..11,
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/casting.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 7..8,
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/casting.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
-                span: 12..21,
+                lexeme: "write_s32",
+                span: Span {
+                    start: 12,
+                    end: 21,
+                    filename: "testing/test/casting.cb",
+                },
             },
             local_name: None,
             params: [
@@ -35,13 +52,21 @@
                     kind: SignedNumber(
                         32,
                     ),
-                    span: 22..25,
+                    span: Span {
+                        start: 22,
+                        end: 25,
+                        filename: "testing/test/casting.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 27..31,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/casting.cb",
+                },
             },
         },
     ),
@@ -53,24 +78,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 33..39,
+                span: Span {
+                    start: 33,
+                    end: 39,
+                    filename: "testing/test/casting.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 42..44,
+                span: Span {
+                    start: 42,
+                    end: 44,
+                    filename: "testing/test/casting.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 40..41,
+                span: Span {
+                    start: 40,
+                    end: 41,
+                    filename: "testing/test/casting.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_char",
-                span: 45..55,
+                span: Span {
+                    start: 45,
+                    end: 55,
+                    filename: "testing/test/casting.cb",
+                },
             },
             local_name: None,
             params: [
@@ -79,13 +120,21 @@
                     kind: UnsignedNumber(
                         8,
                     ),
-                    span: 56..58,
+                    span: Span {
+                        start: 56,
+                        end: 58,
+                        filename: "testing/test/casting.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 60..64,
+                span: Span {
+                    start: 60,
+                    end: 64,
+                    filename: "testing/test/casting.cb",
+                },
             },
         },
     ),
@@ -97,25 +146,41 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 71..73,
+                span: Span {
+                    start: 71,
+                    end: 73,
+                    filename: "testing/test/casting.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 74..78,
+                span: Span {
+                    start: 74,
+                    end: 78,
+                    filename: "testing/test/casting.cb",
+                },
             },
             type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 81..85,
+                span: Span {
+                    start: 81,
+                    end: 85,
+                    filename: "testing/test/casting.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 86..87,
+                    span: Span {
+                        start: 86,
+                        end: 87,
+                        filename: "testing/test/casting.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -126,7 +191,11 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 92..95,
+                                    span: Span {
+                                        start: 92,
+                                        end: 95,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: Some(
@@ -135,20 +204,45 @@
                                         kind: SignedNumber(
                                             32,
                                         ),
-                                        span: 99..102,
+                                        span: Span {
+                                            start: 99,
+                                            end: 102,
+                                            filename: "testing/test/casting.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "n",
-                                    span: 96..97,
+                                    span: Span {
+                                        start: 96,
+                                        end: 97,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 expr: Litral(
                                     Integer(
-                                        Token {
-                                            kind: Number,
-                                            lexeme: "97",
-                                            span: 105..107,
+                                        IntegerLitral {
+                                            token: Token {
+                                                kind: Number,
+                                                lexeme: "97",
+                                                span: Span {
+                                                    start: 105,
+                                                    end: 107,
+                                                    filename: "testing/test/casting.cb",
+                                                },
+                                            },
+                                            ty: Type {
+                                                mut_token: None,
+                                                kind: SignedNumber(
+                                                    32,
+                                                ),
+                                                span: Span {
+                                                    start: 105,
+                                                    end: 107,
+                                                    filename: "testing/test/casting.cb",
+                                                },
+                                            },
                                         },
                                     ),
                                 ),
@@ -158,7 +252,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 107..108,
+                                span: Span {
+                                    start: 107,
+                                    end: 108,
+                                    filename: "testing/test/casting.cb",
+                                },
                             },
                         ),
                     },
@@ -169,22 +267,47 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 113..123,
+                                        span: Span {
+                                            start: 113,
+                                            end: 123,
+                                            filename: "testing/test/casting.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 123..124,
+                                    span: Span {
+                                        start: 123,
+                                        end: 124,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: 124..126,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 124,
+                                                        end: 126,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 124,
+                                                        end: 126,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -192,7 +315,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 126..127,
+                                    span: Span {
+                                        start: 126,
+                                        end: 127,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                             },
                         ),
@@ -200,7 +327,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 127..128,
+                                span: Span {
+                                    start: 127,
+                                    end: 128,
+                                    filename: "testing/test/casting.cb",
+                                },
                             },
                         ),
                     },
@@ -210,29 +341,45 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
-                                        span: 133..142,
+                                        lexeme: "write_s32",
+                                        span: Span {
+                                            start: 133,
+                                            end: 142,
+                                            filename: "testing/test/casting.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 142..143,
+                                    span: Span {
+                                        start: 142,
+                                        end: 143,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 args: [
                                     Identifier(
                                         Token {
                                             kind: Identifier,
                                             lexeme: "n",
-                                            span: 143..144,
+                                            span: Span {
+                                                start: 143,
+                                                end: 144,
+                                                filename: "testing/test/casting.cb",
+                                            },
                                         },
                                     ),
                                 ],
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 144..145,
+                                    span: Span {
+                                        start: 144,
+                                        end: 145,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                             },
                         ),
@@ -240,7 +387,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 145..146,
+                                span: Span {
+                                    start: 145,
+                                    end: 146,
+                                    filename: "testing/test/casting.cb",
+                                },
                             },
                         ),
                     },
@@ -251,22 +402,47 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 151..161,
+                                        span: Span {
+                                            start: 151,
+                                            end: 161,
+                                            filename: "testing/test/casting.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 161..162,
+                                    span: Span {
+                                        start: 161,
+                                        end: 162,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: 162..164,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 162,
+                                                        end: 164,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 162,
+                                                        end: 164,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -274,7 +450,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 164..165,
+                                    span: Span {
+                                        start: 164,
+                                        end: 165,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                             },
                         ),
@@ -282,7 +462,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 165..166,
+                                span: Span {
+                                    start: 165,
+                                    end: 166,
+                                    filename: "testing/test/casting.cb",
+                                },
                             },
                         ),
                     },
@@ -293,14 +477,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 171..181,
+                                        span: Span {
+                                            start: 171,
+                                            end: 181,
+                                            filename: "testing/test/casting.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 181..182,
+                                    span: Span {
+                                        start: 181,
+                                        end: 182,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 args: [
                                     TypeCast(
@@ -310,13 +502,21 @@
                                                     As,
                                                 ),
                                                 lexeme: "as",
-                                                span: 184..186,
+                                                span: Span {
+                                                    start: 184,
+                                                    end: 186,
+                                                    filename: "testing/test/casting.cb",
+                                                },
                                             },
                                             expr: Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "n",
-                                                    span: 182..183,
+                                                    span: Span {
+                                                        start: 182,
+                                                        end: 183,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
                                                 },
                                             ),
                                             target_type: Type {
@@ -324,7 +524,11 @@
                                                 kind: UnsignedNumber(
                                                     8,
                                                 ),
-                                                span: 187..189,
+                                                span: Span {
+                                                    start: 187,
+                                                    end: 189,
+                                                    filename: "testing/test/casting.cb",
+                                                },
                                             },
                                         },
                                     ),
@@ -332,7 +536,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 189..190,
+                                    span: Span {
+                                        start: 189,
+                                        end: 190,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                             },
                         ),
@@ -340,7 +548,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 190..191,
+                                span: Span {
+                                    start: 190,
+                                    end: 191,
+                                    filename: "testing/test/casting.cb",
+                                },
                             },
                         ),
                     },
@@ -351,22 +563,47 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 196..206,
+                                        span: Span {
+                                            start: 196,
+                                            end: 206,
+                                            filename: "testing/test/casting.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 206..207,
+                                    span: Span {
+                                        start: 206,
+                                        end: 207,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: 207..209,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 207,
+                                                        end: 209,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 207,
+                                                        end: 209,
+                                                        filename: "testing/test/casting.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -374,7 +611,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 209..210,
+                                    span: Span {
+                                        start: 209,
+                                        end: 210,
+                                        filename: "testing/test/casting.cb",
+                                    },
                                 },
                             },
                         ),
@@ -382,7 +623,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 210..211,
+                                span: Span {
+                                    start: 210,
+                                    end: 211,
+                                    filename: "testing/test/casting.cb",
+                                },
                             },
                         ),
                     },
@@ -390,7 +635,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 212..213,
+                    span: Span {
+                        start: 212,
+                        end: 213,
+                        filename: "testing/test/casting.cb",
+                    },
                 },
             },
         },

@@ -1,0 +1,13 @@
+use std::linux::io;
+
+type Color struct {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+}
+
+pub fn main() void {
+    let i: usize = @size_of<([4; u16])>();
+    io::io_write_s32(i as s32);
+}

@@ -113,23 +113,51 @@ impl CompilerResult {
             Self::X86_64(asm) => {
                 let asm_path = path.with_extension("s");
                 std::fs::write(&asm_path, asm.as_bytes()).expect("Failed to write assembly file");
+
                 let runtime_src = include_str!("../../../runtime.c");
                 if !std::path::Path::new("bin/runtime.c").exists() {
                     std::fs::write("bin/runtime.c", runtime_src)
                         .expect("Failed to write runtime C file");
                 }
 
-                let cmd_result = Command::new("gcc")
-                    .arg("-Wall")
-                    .arg("-Wextra")
-                    .arg("-g")
-                    .arg("-no-pie")
-                    .arg(&asm_path)
-                    .arg("bin/runtime.c")
-                    .arg("-o")
-                    .arg(path)
-                    .args(link)
-                    .output();
+                let cmd_result = if cfg!(target_os = "macos") {
+                    let cwd = std::env::current_dir().expect("Failed to get current directory");
+
+                    Command::new("docker")
+                        .arg("run")
+                        .arg("--rm")
+                        .arg("--platform")
+                        .arg("linux/amd64")
+                        .arg("-v")
+                        .arg(format!("{}:/work", cwd.display()))
+                        .arg("-w")
+                        .arg("/work")
+                        .arg("gcc:latest")
+                        .arg("gcc")
+                        .arg("-Wall")
+                        .arg("-Wextra")
+                        .arg("-g")
+                        .arg("-no-pie")
+                        .arg(&asm_path)
+                        .arg("bin/runtime.c")
+                        .arg("-o")
+                        .arg(path)
+                        .args(link)
+                        .output()
+                } else {
+                    Command::new("gcc")
+                        .arg("-Wall")
+                        .arg("-Wextra")
+                        .arg("-g")
+                        .arg("-no-pie")
+                        .arg(&asm_path)
+                        .arg("bin/runtime.c")
+                        .arg("-o")
+                        .arg(path)
+                        .args(link)
+                        .output()
+                };
+
                 match cmd_result {
                     Ok(output) => {
                         if !output.status.success() {

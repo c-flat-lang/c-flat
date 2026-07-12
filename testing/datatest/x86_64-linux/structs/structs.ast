@@ -1,5 +1,6 @@
-                     Tokenizer
+                    Tokenizing testing/test/structs.cb
                         Parser
+=== testing/test/structs.cb ===
 [
     ExternFunction(
         ExternFunction {
@@ -9,24 +10,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 0..6,
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/structs.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 9..11,
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/structs.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 7..8,
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/structs.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
-                lexeme: "write_int",
-                span: 12..21,
+                lexeme: "write_s32",
+                span: Span {
+                    start: 12,
+                    end: 21,
+                    filename: "testing/test/structs.cb",
+                },
             },
             local_name: None,
             params: [
@@ -35,13 +52,21 @@
                     kind: SignedNumber(
                         32,
                     ),
-                    span: 22..25,
+                    span: Span {
+                        start: 22,
+                        end: 25,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 27..31,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/structs.cb",
+                },
             },
         },
     ),
@@ -53,24 +78,40 @@
                     Extern,
                 ),
                 lexeme: "extern",
-                span: 33..39,
+                span: Span {
+                    start: 33,
+                    end: 39,
+                    filename: "testing/test/structs.cb",
+                },
             },
             fn_token: Token {
                 kind: Keyword(
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 42..44,
+                span: Span {
+                    start: 42,
+                    end: 44,
+                    filename: "testing/test/structs.cb",
+                },
             },
             calling_convention: Token {
                 kind: Identifier,
                 lexeme: "C",
-                span: 40..41,
+                span: Span {
+                    start: 40,
+                    end: 41,
+                    filename: "testing/test/structs.cb",
+                },
             },
             binding_name: Token {
                 kind: Identifier,
                 lexeme: "write_char",
-                span: 45..55,
+                span: Span {
+                    start: 45,
+                    end: 55,
+                    filename: "testing/test/structs.cb",
+                },
             },
             local_name: None,
             params: [
@@ -79,13 +120,21 @@
                     kind: UnsignedNumber(
                         8,
                     ),
-                    span: 56..58,
+                    span: Span {
+                        start: 56,
+                        end: 58,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 60..64,
+                span: Span {
+                    start: 60,
+                    end: 64,
+                    filename: "testing/test/structs.cb",
+                },
             },
         },
     ),
@@ -98,12 +147,20 @@
                         Type,
                     ),
                     lexeme: "type",
-                    span: 67..71,
+                    span: Span {
+                        start: 67,
+                        end: 71,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 name: Token {
                     kind: Identifier,
                     lexeme: "List",
-                    span: 72..76,
+                    span: Span {
+                        start: 72,
+                        end: 76,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 type_params: None,
                 struct_token: Token {
@@ -111,7 +168,11 @@
                         Struct,
                     ),
                     lexeme: "struct",
-                    span: 77..83,
+                    span: Span {
+                        start: 77,
+                        end: 83,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 fields: [
                     Field {
@@ -119,12 +180,20 @@
                         name: Token {
                             kind: Identifier,
                             lexeme: "data",
-                            span: 88..92,
+                            span: Span {
+                                start: 88,
+                                end: 92,
+                                filename: "testing/test/structs.cb",
+                            },
                         },
                         colon: Token {
                             kind: Colon,
                             lexeme: ":",
-                            span: 92..93,
+                            span: Span {
+                                start: 92,
+                                end: 93,
+                                filename: "testing/test/structs.cb",
+                            },
                         },
                         ty: Type {
                             mut_token: None,
@@ -135,10 +204,18 @@
                                     kind: SignedNumber(
                                         32,
                                     ),
-                                    span: 98..101,
+                                    span: Span {
+                                        start: 98,
+                                        end: 101,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                             ),
-                            span: 94..102,
+                            span: Span {
+                                start: 94,
+                                end: 102,
+                                filename: "testing/test/structs.cb",
+                            },
                         },
                         default_expr: None,
                     },
@@ -146,12 +223,20 @@
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 84..85,
+                    span: Span {
+                        start: 84,
+                        end: 85,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 104..105,
+                    span: Span {
+                        start: 104,
+                        end: 105,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
             },
         ),
@@ -164,27 +249,51 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 107..109,
+                span: Span {
+                    start: 107,
+                    end: 109,
+                    filename: "testing/test/structs.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "init_list",
-                span: 110..119,
+                span: Span {
+                    start: 110,
+                    end: 119,
+                    filename: "testing/test/structs.cb",
+                },
             },
             type_args: None,
             params: [],
             return_type: Type {
                 mut_token: None,
                 kind: Name(
-                    "List",
+                    Token {
+                        kind: Identifier,
+                        lexeme: "List",
+                        span: Span {
+                            start: 122,
+                            end: 126,
+                            filename: "testing/test/structs.cb",
+                        },
+                    },
                 ),
-                span: 122..126,
+                span: Span {
+                    start: 122,
+                    end: 126,
+                    filename: "testing/test/structs.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 127..128,
+                    span: Span {
+                        start: 127,
+                        end: 128,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -195,92 +304,182 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 131..134,
+                                    span: Span {
+                                        start: 131,
+                                        end: 134,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: Some(
                                     Type {
                                         mut_token: None,
                                         kind: Name(
-                                            "List",
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "List",
+                                                span: Span {
+                                                    start: 141,
+                                                    end: 145,
+                                                    filename: "testing/test/structs.cb",
+                                                },
+                                            },
                                         ),
-                                        span: 141..145,
+                                        span: Span {
+                                            start: 141,
+                                            end: 145,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "list",
-                                    span: 135..139,
+                                    span: Span {
+                                        start: 135,
+                                        end: 139,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 expr: Struct(
                                     ExprStruct {
                                         name: Token {
                                             kind: Identifier,
                                             lexeme: "List",
-                                            span: 148..152,
+                                            span: Span {
+                                                start: 148,
+                                                end: 152,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                         type_args: None,
                                         open_brace: Token {
                                             kind: LeftBrace,
                                             lexeme: "{",
-                                            span: 153..154,
+                                            span: Span {
+                                                start: 153,
+                                                end: 154,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                         init_fields: [
                                             InitField {
                                                 dot: Token {
                                                     kind: Dot,
                                                     lexeme: ".",
-                                                    span: 155..156,
+                                                    span: Span {
+                                                        start: 155,
+                                                        end: 156,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                                 name: Token {
                                                     kind: Identifier,
                                                     lexeme: "data",
-                                                    span: 156..160,
+                                                    span: Span {
+                                                        start: 156,
+                                                        end: 160,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                                 equal: Token {
                                                     kind: Equal,
                                                     lexeme: "=",
-                                                    span: 161..162,
+                                                    span: Span {
+                                                        start: 161,
+                                                        end: 162,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                                 expr: ArrayRepeat(
                                                     ExprArrayRepeat {
                                                         open_bracket: Token {
                                                             kind: LeftBracket,
                                                             lexeme: "[",
-                                                            span: 163..164,
+                                                            span: Span {
+                                                                start: 163,
+                                                                end: 164,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                         count: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "2",
-                                                                    span: 167..168,
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "2",
+                                                                        span: Span {
+                                                                            start: 167,
+                                                                            end: 168,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 167,
+                                                                            end: 168,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
+                                                                    },
                                                                 },
                                                             ),
                                                         ),
                                                         semicolon: Token {
                                                             kind: Semicolon,
                                                             lexeme: ";",
-                                                            span: 165..166,
+                                                            span: Span {
+                                                                start: 165,
+                                                                end: 166,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                         value: Litral(
                                                             Integer(
-                                                                Token {
-                                                                    kind: Number,
-                                                                    lexeme: "0",
-                                                                    span: 164..165,
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 164,
+                                                                            end: 165,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        span: Span {
+                                                                            start: 164,
+                                                                            end: 165,
+                                                                            filename: "testing/test/structs.cb",
+                                                                        },
+                                                                    },
                                                                 },
                                                             ),
                                                         ),
                                                         close_bracket: Token {
                                                             kind: RightBracket,
                                                             lexeme: "]",
-                                                            span: 168..169,
+                                                            span: Span {
+                                                                start: 168,
+                                                                end: 169,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                         ty: Type {
                                                             mut_token: None,
                                                             kind: Void,
-                                                            span: 0..1,
+                                                            span: Span {
+                                                                start: 0,
+                                                                end: 0,
+                                                                filename: "",
+                                                            },
                                                         },
                                                     },
                                                 ),
@@ -289,7 +488,11 @@
                                         close_brace: Token {
                                             kind: RightBrace,
                                             lexeme: "}",
-                                            span: 170..171,
+                                            span: Span {
+                                                start: 170,
+                                                end: 171,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                     },
                                 ),
@@ -299,7 +502,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 171..172,
+                                span: Span {
+                                    start: 171,
+                                    end: 172,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -311,14 +518,22 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 175..181,
+                                    span: Span {
+                                        start: 175,
+                                        end: 181,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Identifier(
                                         Token {
                                             kind: Identifier,
                                             lexeme: "list",
-                                            span: 182..186,
+                                            span: Span {
+                                                start: 182,
+                                                end: 186,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                     ),
                                 ),
@@ -328,7 +543,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 186..187,
+                                span: Span {
+                                    start: 186,
+                                    end: 187,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -336,7 +555,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 188..189,
+                    span: Span {
+                        start: 188,
+                        end: 189,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
             },
         },
@@ -349,12 +572,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 191..193,
+                span: Span {
+                    start: 191,
+                    end: 193,
+                    filename: "testing/test/structs.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "set_list",
-                span: 194..202,
+                span: Span {
+                    start: 194,
+                    end: 202,
+                    filename: "testing/test/structs.cb",
+                },
             },
             type_args: None,
             params: [
@@ -362,59 +593,103 @@
                     name: Token {
                         kind: Identifier,
                         lexeme: "list",
-                        span: 203..207,
+                        span: Span {
+                            start: 203,
+                            end: 207,
+                            filename: "testing/test/structs.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
-                        kind: Ref(
+                        kind: Pointer(
                             Type {
                                 mut_token: None,
                                 kind: Name(
-                                    "List",
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "List",
+                                        span: Span {
+                                            start: 210,
+                                            end: 214,
+                                            filename: "testing/test/structs.cb",
+                                        },
+                                    },
                                 ),
-                                span: 213..217,
+                                span: Span {
+                                    start: 210,
+                                    end: 214,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
-                        span: 209..217,
+                        span: Span {
+                            start: 209,
+                            end: 214,
+                            filename: "testing/test/structs.cb",
+                        },
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "index",
-                        span: 219..224,
+                        span: Span {
+                            start: 216,
+                            end: 221,
+                            filename: "testing/test/structs.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
                         kind: UnsignedTargetPointerNumber,
-                        span: 226..231,
+                        span: Span {
+                            start: 223,
+                            end: 228,
+                            filename: "testing/test/structs.cb",
+                        },
                     },
                 },
                 Param {
                     name: Token {
                         kind: Identifier,
                         lexeme: "value",
-                        span: 233..238,
+                        span: Span {
+                            start: 230,
+                            end: 235,
+                            filename: "testing/test/structs.cb",
+                        },
                     },
                     ty: Type {
                         mut_token: None,
                         kind: SignedNumber(
                             32,
                         ),
-                        span: 240..243,
+                        span: Span {
+                            start: 237,
+                            end: 240,
+                            filename: "testing/test/structs.cb",
+                        },
                     },
                 },
             ],
             return_type: Type {
                 mut_token: None,
                 kind: Void,
-                span: 245..249,
+                span: Span {
+                    start: 242,
+                    end: 246,
+                    filename: "testing/test/structs.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 250..251,
+                    span: Span {
+                        start: 247,
+                        end: 248,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -428,55 +703,91 @@
                                                     Token {
                                                         kind: Identifier,
                                                         lexeme: "list",
-                                                        span: 254..258,
+                                                        span: Span {
+                                                            start: 251,
+                                                            end: 255,
+                                                            filename: "testing/test/structs.cb",
+                                                        },
                                                     },
                                                 ),
                                                 dot: Token {
                                                     kind: Dot,
                                                     lexeme: ".",
-                                                    span: 258..259,
+                                                    span: Span {
+                                                        start: 255,
+                                                        end: 256,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                                 member: Token {
                                                     kind: Identifier,
                                                     lexeme: "data",
-                                                    span: 259..263,
+                                                    span: Span {
+                                                        start: 256,
+                                                        end: 260,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             },
                                         ),
                                         open_bracket: Token {
                                             kind: LeftBracket,
                                             lexeme: "[",
-                                            span: 263..264,
+                                            span: Span {
+                                                start: 260,
+                                                end: 261,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                         index: Identifier(
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "index",
-                                                span: 264..269,
+                                                span: Span {
+                                                    start: 261,
+                                                    end: 266,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                         ),
                                         close_bracket: Token {
                                             kind: RightBracket,
                                             lexeme: "]",
-                                            span: 269..270,
+                                            span: Span {
+                                                start: 266,
+                                                end: 267,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                         ty: Type {
                                             mut_token: None,
                                             kind: Void,
-                                            span: 0..1,
+                                            span: Span {
+                                                start: 0,
+                                                end: 0,
+                                                filename: "",
+                                            },
                                         },
                                     },
                                 ),
                                 equal: Token {
                                     kind: Equal,
                                     lexeme: "=",
-                                    span: 271..272,
+                                    span: Span {
+                                        start: 268,
+                                        end: 269,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 right: Identifier(
                                     Token {
                                         kind: Identifier,
                                         lexeme: "value",
-                                        span: 273..278,
+                                        span: Span {
+                                            start: 270,
+                                            end: 275,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                             },
@@ -485,7 +796,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 278..279,
+                                span: Span {
+                                    start: 275,
+                                    end: 276,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -493,7 +808,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 280..281,
+                    span: Span {
+                        start: 277,
+                        end: 278,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
             },
         },
@@ -506,12 +825,20 @@
                     Fn,
                 ),
                 lexeme: "fn",
-                span: 287..289,
+                span: Span {
+                    start: 284,
+                    end: 286,
+                    filename: "testing/test/structs.cb",
+                },
             },
             name: Token {
                 kind: Identifier,
                 lexeme: "main",
-                span: 290..294,
+                span: Span {
+                    start: 287,
+                    end: 291,
+                    filename: "testing/test/structs.cb",
+                },
             },
             type_args: None,
             params: [],
@@ -520,13 +847,21 @@
                 kind: SignedNumber(
                     32,
                 ),
-                span: 297..300,
+                span: Span {
+                    start: 294,
+                    end: 297,
+                    filename: "testing/test/structs.cb",
+                },
             },
             body: ExprBlock {
                 open_brace: Token {
                     kind: LeftBrace,
                     lexeme: "{",
-                    span: 301..302,
+                    span: Span {
+                        start: 298,
+                        end: 299,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
                 statements: [
                     Statement {
@@ -537,22 +872,42 @@
                                         Let,
                                     ),
                                     lexeme: "let",
-                                    span: 305..308,
+                                    span: Span {
+                                        start: 302,
+                                        end: 305,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 mutable: false,
                                 ty: Some(
                                     Type {
                                         mut_token: None,
                                         kind: Name(
-                                            "List",
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "List",
+                                                span: Span {
+                                                    start: 312,
+                                                    end: 316,
+                                                    filename: "testing/test/structs.cb",
+                                                },
+                                            },
                                         ),
-                                        span: 315..319,
+                                        span: Span {
+                                            start: 312,
+                                            end: 316,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 ident: Token {
                                     kind: Identifier,
                                     lexeme: "list",
-                                    span: 309..313,
+                                    span: Span {
+                                        start: 306,
+                                        end: 310,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 expr: Call(
                                     ExprCall {
@@ -560,20 +915,32 @@
                                             Token {
                                                 kind: Identifier,
                                                 lexeme: "init_list",
-                                                span: 322..331,
+                                                span: Span {
+                                                    start: 319,
+                                                    end: 328,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                         ),
                                         type_args: None,
                                         left_paren: Token {
                                             kind: LeftParen,
                                             lexeme: "(",
-                                            span: 331..332,
+                                            span: Span {
+                                                start: 328,
+                                                end: 329,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                         args: [],
                                         right_paren: Token {
                                             kind: RightParen,
                                             lexeme: ")",
-                                            span: 332..333,
+                                            span: Span {
+                                                start: 329,
+                                                end: 330,
+                                                filename: "testing/test/structs.cb",
+                                            },
                                         },
                                     },
                                 ),
@@ -583,7 +950,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 333..334,
+                                span: Span {
+                                    start: 330,
+                                    end: 331,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -593,15 +964,23 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
-                                        span: 337..346,
+                                        lexeme: "write_s32",
+                                        span: Span {
+                                            start: 334,
+                                            end: 343,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 346..347,
+                                    span: Span {
+                                        start: 343,
+                                        end: 344,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 args: [
                                     ArrayIndex(
@@ -612,44 +991,85 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "list",
-                                                            span: 347..351,
+                                                            span: Span {
+                                                                start: 344,
+                                                                end: 348,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                     ),
                                                     dot: Token {
                                                         kind: Dot,
                                                         lexeme: ".",
-                                                        span: 351..352,
+                                                        span: Span {
+                                                            start: 348,
+                                                            end: 349,
+                                                            filename: "testing/test/structs.cb",
+                                                        },
                                                     },
                                                     member: Token {
                                                         kind: Identifier,
                                                         lexeme: "data",
-                                                        span: 352..356,
+                                                        span: Span {
+                                                            start: 349,
+                                                            end: 353,
+                                                            filename: "testing/test/structs.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
                                             open_bracket: Token {
                                                 kind: LeftBracket,
                                                 lexeme: "[",
-                                                span: 356..357,
+                                                span: Span {
+                                                    start: 353,
+                                                    end: 354,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                             index: Litral(
                                                 Integer(
-                                                    Token {
-                                                        kind: Number,
-                                                        lexeme: "0",
-                                                        span: 357..358,
+                                                    IntegerLitral {
+                                                        token: Token {
+                                                            kind: Number,
+                                                            lexeme: "0",
+                                                            span: Span {
+                                                                start: 354,
+                                                                end: 355,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
+                                                        },
+                                                        ty: Type {
+                                                            mut_token: None,
+                                                            kind: SignedNumber(
+                                                                32,
+                                                            ),
+                                                            span: Span {
+                                                                start: 354,
+                                                                end: 355,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
+                                                        },
                                                     },
                                                 ),
                                             ),
                                             close_bracket: Token {
                                                 kind: RightBracket,
                                                 lexeme: "]",
-                                                span: 358..359,
+                                                span: Span {
+                                                    start: 355,
+                                                    end: 356,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                             ty: Type {
                                                 mut_token: None,
                                                 kind: Void,
-                                                span: 0..1,
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                    filename: "",
+                                                },
                                             },
                                         },
                                     ),
@@ -657,7 +1077,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 359..360,
+                                    span: Span {
+                                        start: 356,
+                                        end: 357,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                             },
                         ),
@@ -665,7 +1089,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 360..361,
+                                span: Span {
+                                    start: 357,
+                                    end: 358,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -676,22 +1104,47 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 364..374,
+                                        span: Span {
+                                            start: 361,
+                                            end: 371,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 374..375,
+                                    span: Span {
+                                        start: 371,
+                                        end: 372,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: 375..377,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 372,
+                                                        end: 374,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 372,
+                                                        end: 374,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -699,7 +1152,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 377..378,
+                                    span: Span {
+                                        start: 374,
+                                        end: 375,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                             },
                         ),
@@ -707,7 +1164,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 378..379,
+                                span: Span {
+                                    start: 375,
+                                    end: 376,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -718,14 +1179,22 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "set_list",
-                                        span: 382..390,
+                                        span: Span {
+                                            start: 379,
+                                            end: 387,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 390..391,
+                                    span: Span {
+                                        start: 387,
+                                        end: 388,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 args: [
                                     AddressOf(
@@ -733,32 +1202,74 @@
                                             ampersand: Token {
                                                 kind: Ampersand,
                                                 lexeme: "&",
-                                                span: 391..392,
+                                                span: Span {
+                                                    start: 388,
+                                                    end: 389,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                             expr: Identifier(
                                                 Token {
                                                     kind: Identifier,
                                                     lexeme: "list",
-                                                    span: 392..396,
+                                                    span: Span {
+                                                        start: 389,
+                                                        end: 393,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
                                                 },
                                             ),
                                         },
                                     ),
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: 398..399,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 395,
+                                                        end: 396,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 395,
+                                                        end: 396,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "1",
-                                                span: 401..402,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "1",
+                                                    span: Span {
+                                                        start: 398,
+                                                        end: 399,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 398,
+                                                        end: 399,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -766,7 +1277,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 402..403,
+                                    span: Span {
+                                        start: 399,
+                                        end: 400,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                             },
                         ),
@@ -774,7 +1289,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 403..404,
+                                span: Span {
+                                    start: 400,
+                                    end: 401,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -784,15 +1303,23 @@
                                 caller: Identifier(
                                     Token {
                                         kind: Identifier,
-                                        lexeme: "write_int",
-                                        span: 407..416,
+                                        lexeme: "write_s32",
+                                        span: Span {
+                                            start: 404,
+                                            end: 413,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 416..417,
+                                    span: Span {
+                                        start: 413,
+                                        end: 414,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 args: [
                                     ArrayIndex(
@@ -803,44 +1330,85 @@
                                                         Token {
                                                             kind: Identifier,
                                                             lexeme: "list",
-                                                            span: 417..421,
+                                                            span: Span {
+                                                                start: 414,
+                                                                end: 418,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
                                                         },
                                                     ),
                                                     dot: Token {
                                                         kind: Dot,
                                                         lexeme: ".",
-                                                        span: 421..422,
+                                                        span: Span {
+                                                            start: 418,
+                                                            end: 419,
+                                                            filename: "testing/test/structs.cb",
+                                                        },
                                                     },
                                                     member: Token {
                                                         kind: Identifier,
                                                         lexeme: "data",
-                                                        span: 422..426,
+                                                        span: Span {
+                                                            start: 419,
+                                                            end: 423,
+                                                            filename: "testing/test/structs.cb",
+                                                        },
                                                     },
                                                 },
                                             ),
                                             open_bracket: Token {
                                                 kind: LeftBracket,
                                                 lexeme: "[",
-                                                span: 426..427,
+                                                span: Span {
+                                                    start: 423,
+                                                    end: 424,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                             index: Litral(
                                                 Integer(
-                                                    Token {
-                                                        kind: Number,
-                                                        lexeme: "0",
-                                                        span: 427..428,
+                                                    IntegerLitral {
+                                                        token: Token {
+                                                            kind: Number,
+                                                            lexeme: "0",
+                                                            span: Span {
+                                                                start: 424,
+                                                                end: 425,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
+                                                        },
+                                                        ty: Type {
+                                                            mut_token: None,
+                                                            kind: SignedNumber(
+                                                                32,
+                                                            ),
+                                                            span: Span {
+                                                                start: 424,
+                                                                end: 425,
+                                                                filename: "testing/test/structs.cb",
+                                                            },
+                                                        },
                                                     },
                                                 ),
                                             ),
                                             close_bracket: Token {
                                                 kind: RightBracket,
                                                 lexeme: "]",
-                                                span: 428..429,
+                                                span: Span {
+                                                    start: 425,
+                                                    end: 426,
+                                                    filename: "testing/test/structs.cb",
+                                                },
                                             },
                                             ty: Type {
                                                 mut_token: None,
                                                 kind: Void,
-                                                span: 0..1,
+                                                span: Span {
+                                                    start: 0,
+                                                    end: 0,
+                                                    filename: "",
+                                                },
                                             },
                                         },
                                     ),
@@ -848,7 +1416,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 429..430,
+                                    span: Span {
+                                        start: 426,
+                                        end: 427,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                             },
                         ),
@@ -856,7 +1428,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 430..431,
+                                span: Span {
+                                    start: 427,
+                                    end: 428,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -867,22 +1443,47 @@
                                     Token {
                                         kind: Identifier,
                                         lexeme: "write_char",
-                                        span: 434..444,
+                                        span: Span {
+                                            start: 431,
+                                            end: 441,
+                                            filename: "testing/test/structs.cb",
+                                        },
                                     },
                                 ),
                                 type_args: None,
                                 left_paren: Token {
                                     kind: LeftParen,
                                     lexeme: "(",
-                                    span: 444..445,
+                                    span: Span {
+                                        start: 441,
+                                        end: 442,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 args: [
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "10",
-                                                span: 445..447,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 442,
+                                                        end: 444,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 442,
+                                                        end: 444,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -890,7 +1491,11 @@
                                 right_paren: Token {
                                     kind: RightParen,
                                     lexeme: ")",
-                                    span: 447..448,
+                                    span: Span {
+                                        start: 444,
+                                        end: 445,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                             },
                         ),
@@ -898,7 +1503,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 448..449,
+                                span: Span {
+                                    start: 445,
+                                    end: 446,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -910,15 +1519,36 @@
                                         Return,
                                     ),
                                     lexeme: "return",
-                                    span: 452..458,
+                                    span: Span {
+                                        start: 449,
+                                        end: 455,
+                                        filename: "testing/test/structs.cb",
+                                    },
                                 },
                                 expr: Some(
                                     Litral(
                                         Integer(
-                                            Token {
-                                                kind: Number,
-                                                lexeme: "0",
-                                                span: 459..460,
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 456,
+                                                        end: 457,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    span: Span {
+                                                        start: 456,
+                                                        end: 457,
+                                                        filename: "testing/test/structs.cb",
+                                                    },
+                                                },
                                             },
                                         ),
                                     ),
@@ -929,7 +1559,11 @@
                             Token {
                                 kind: Semicolon,
                                 lexeme: ";",
-                                span: 460..461,
+                                span: Span {
+                                    start: 457,
+                                    end: 458,
+                                    filename: "testing/test/structs.cb",
+                                },
                             },
                         ),
                     },
@@ -937,7 +1571,11 @@
                 close_brace: Token {
                     kind: RightBrace,
                     lexeme: "}",
-                    span: 462..463,
+                    span: Span {
+                        start: 459,
+                        end: 460,
+                        filename: "testing/test/structs.cb",
+                    },
                 },
             },
         },

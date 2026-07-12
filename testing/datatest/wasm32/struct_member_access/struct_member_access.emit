@@ -1,0 +1,77 @@
+                    Tokenizing testing/test/struct_member_access.cb
+                        Parser
+              SemanticAnalyzer
+                   TypeChecker
+            IR Code Generation
+        LocalFunctionVariables
+              ControlFlowGraph
+                 StructuringIr
+              LivenessAnalysis
+                          Emit
+(module
+  (type (;0;) (func (result i32)))
+  (memory (;0;) 4)
+  (global (;0;) (mut i32) i32.const 0)
+  (global (;1;) (mut i32) i32.const 0)
+  (export "memory" (memory 0))
+  (export "__stack_pointer" (global 0))
+  (export "main" (func 0))
+  (func (;0;) (type 0) (result i32)
+    (local i32 i32 i32 i32 i32 i32 i32 i32 i32)
+    global.get 0
+    local.set 8
+    global.get 0
+    local.tee 0
+    i32.const 4
+    i32.add
+    global.set 0
+    global.get 0
+    local.tee 1
+    i32.const 4
+    i32.add
+    global.set 0
+    global.get 0
+    local.tee 2
+    i32.const 4
+    i32.add
+    global.set 0
+    i32.const 100
+    local.set 3
+    local.get 2
+    i32.const 0
+    i32.add
+    local.get 3
+    i32.store
+    local.get 1
+    i32.const 0
+    i32.add
+    local.get 2
+    i32.const 4
+    memory.copy
+    local.get 0
+    i32.const 0
+    i32.add
+    local.get 1
+    i32.const 4
+    memory.copy
+    local.get 0
+    local.set 4
+    i32.const 0
+    local.get 4
+    i32.add
+    local.set 5
+    i32.const 0
+    local.get 5
+    i32.add
+    local.set 6
+    i32.const 0
+    local.get 6
+    i32.add
+    i32.load
+    local.set 7
+    local.get 7
+    local.get 8
+    global.set 0
+    return
+  )
+)

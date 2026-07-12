@@ -1,6 +1,6 @@
 ---
 source: bitbox/src/test.rs
-expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fib.bitbox\",\ncontents)"
+expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fib.bitbox\", &\ncontents)"
 ---
 (module
   (type (;0;) (func (param i32)))
@@ -9,13 +9,16 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
   (type (;3;) (func (result i32)))
   (import "core" "write_int" (func (;0;) (type 0)))
   (import "core" "write_char" (func (;1;) (type 1)))
-  (memory (;0;) 1)
+  (memory (;0;) 4)
   (global (;0;) (mut i32) i32.const 0)
+  (global (;1;) (mut i32) i32.const 0)
   (export "memory" (memory 0))
   (export "__stack_pointer" (global 0))
   (export "main" (func 3))
   (func (;2;) (type 2) (param i32 i32 i32) (result i32)
-    (local i32 i32 i32 i32 i32 i32)
+    (local i32 i32 i32 i32 i32 i32 i32)
+    global.get 0
+    local.set 9
     i32.const 0
     local.set 3
     local.get 0
@@ -25,6 +28,8 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
     local.get 4
     if ;; label = @1
       local.get 1
+      local.get 9
+      global.set 0
       return
     end
     i32.const 1
@@ -43,10 +48,14 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
     call 2
     local.set 8
     local.get 8
+    local.get 9
+    global.set 0
     return
   )
   (func (;3;) (type 3) (result i32)
-    (local i32 i32 i32 i32 i32 i32 i32)
+    (local i32 i32 i32 i32 i32 i32 i32 i32)
+    global.get 0
+    local.set 7
     i32.const 55
     local.set 0
     i32.const 0
@@ -69,6 +78,8 @@ expression: "snapshot_compiler(Target::Wasm32, DebugPass::Emit, \"../examples/fi
     i32.const 0
     local.set 6
     local.get 6
+    local.get 7
+    global.set 0
     return
   )
 )

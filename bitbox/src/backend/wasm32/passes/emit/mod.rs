@@ -6,12 +6,27 @@ use crate::ir::{self, Module, Type, Visibility};
 use crate::passes::{DebugPass, Pass, PassOutput};
 use wasm_encoder::{
     BlockType, CodeSection, ConstExpr, EntityType, ExportKind, ExportSection,
-    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, Ieee32, ImportSection,
-    InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection, ValType,
+    Function as WasmFunction, FunctionSection, GlobalSection, GlobalType, Ieee32, Ieee64,
+    ImportSection, InstructionSink, MemorySection, MemoryType, Module as WasmModule, TypeSection,
+    ValType,
 };
 
-#[derive(Debug)]
-pub struct EmitWasm32Pass;
+/// A by-value aggregate (struct/array) is represented as an `i32` address into
+/// linear memory, so returning one "by value" really means returning a pointer.
+/// Those get the sret treatment (see `IReturn`/`ICall` lowering) instead of a
+/// wasm result value; every other type is a plain scalar result.
+pub(crate) fn is_aggregate(ty: &Type) -> bool {
+    matches!(ty, Type::Struct(..) | Type::Array(..))
+}
+
+#[derive(Debug, Default)]
+pub struct EmitWasm32Pass {
+    /// Names of *defined* c-flat functions that return an aggregate by value,
+    /// mapped to their return type. Used to give calls to them the sret
+    /// calling convention. Externs are excluded — the JS bridge implements the
+    /// old "return an i32 pointer" convention for those.
+    agg_return_fns: HashMap<String, Type>,
+}
 
 impl Pass for EmitWasm32Pass {
     fn debug_pass(&self) -> DebugPass {
@@ -33,10 +48,20 @@ impl Pass for EmitWasm32Pass {
         module: &mut Module,
         ctx: &mut crate::backend::Context,
     ) -> Result<(), crate::error::Error> {
+        self.agg_return_fns = module
+            .functions
+            .iter()
+            .filter(|f| is_aggregate(&f.return_type))
+            .map(|f| (f.name.to_string(), f.return_type.clone()))
+            .collect();
+
         {
             let module = ctx.output.get_mut_wasm32();
             module.memory_section.memory(MemoryType {
-                minimum: 1,
+                // 4 pages (256 KB): leaves headroom above the program's data for
+                // an Asyncify unwind stack when the output is post-processed with
+                // `wasm-opt --asyncify` (the bump allocator grows up from 0).
+                minimum: 4,
                 maximum: None,
                 memory64: false,
                 shared: false,
@@ -56,6 +81,19 @@ impl Pass for EmitWasm32Pass {
             module
                 .export_section
                 .export("__stack_pointer", ExportKind::Global, 0);
+
+            // Global 1: the sret-pointer register. An aggregate-returning function
+            // reads it at entry into a local; a caller sets it to the address of a
+            // caller-owned result buffer before the call. Not exported — internal
+            // calling-convention detail.
+            module.global_section.global(
+                GlobalType {
+                    val_type: ValType::I32,
+                    mutable: true,
+                    shared: false,
+                },
+                &ConstExpr::i32_const(0),
+            );
         }
 
         // Emit all extern function declarations as wasm imports.
@@ -103,6 +141,17 @@ pub(crate) struct Wasm32LowerContext<'ctx> {
     pub function_name: String,
     pub assembler: &'ctx mut InstructionSink<'ctx>,
     pub blocks: HashMap<String, u32>,
+    /// Local holding this function's saved `__stack_pointer` (global 0) at entry,
+    /// restored at every return so per-call allocations are reclaimed.
+    pub frame_local: u32,
+    /// Local holding the sret pointer (global 1) read at entry — only meaningful
+    /// when this function returns an aggregate.
+    pub sret_local: u32,
+    /// Whether this function returns an aggregate by value (uses sret).
+    pub returns_aggregate: bool,
+    /// Defined functions that return an aggregate by value (name -> return type),
+    /// so calls to them can be lowered with the sret convention.
+    pub agg_return_fns: HashMap<String, Type>,
 }
 
 impl<'ctx> Wasm32LowerContext<'ctx> {
@@ -111,6 +160,10 @@ impl<'ctx> Wasm32LowerContext<'ctx> {
             function_name,
             assembler,
             blocks: HashMap::new(),
+            frame_local: 0,
+            sret_local: 0,
+            returns_aggregate: false,
+            agg_return_fns: HashMap::new(),
         }
     }
 }
@@ -162,6 +215,7 @@ impl From<ir::Type> for ValType {
         match value {
             ir::Type::Unsigned(1..=32) => ValType::I32,
             ir::Type::Signed(1..=32) => ValType::I32,
+            ir::Type::Unsigned(33..=64) => ValType::I64,
             ir::Type::Signed(33..=64) => ValType::I64,
             ir::Type::Float(1..=32) => ValType::F32,
             ir::Type::Float(33..=64) => ValType::F64,
@@ -237,14 +291,17 @@ impl Lower<EmitWasm32Pass> for ir::Function {
     fn lower(
         &self,
         ctx: &mut crate::backend::Context,
-        _: &mut EmitWasm32Pass,
+        pass: &mut EmitWasm32Pass,
     ) -> Result<Self::Output, crate::error::Error> {
+        let returns_aggregate = is_aggregate(&self.return_type);
         let f = {
             // Type Section
             let param_types: Vec<ValType> =
                 self.params.iter().map(|p| p.ty.clone().into()).collect();
 
-            let result_type: Vec<ValType> = if self.return_type == Type::Void {
+            // Aggregate-returning functions have no wasm result value; they write
+            // the result through the sret pointer (global 1) instead.
+            let result_type: Vec<ValType> = if self.return_type == Type::Void || returns_aggregate {
                 vec![]
             } else {
                 vec![self.return_type.clone().into()]
@@ -279,7 +336,7 @@ impl Lower<EmitWasm32Pass> for ir::Function {
             // Comparison instructions (gt/gte/lt/cmp) always produce i32 in WASM
             // regardless of operand type, so override those locals to i32.
             let cmp_vars = collect_cmp_result_vars(&self.blocks);
-            let locals: Vec<(u32, ValType)> = local_variables
+            let mut locals: Vec<(u32, ValType)> = local_variables
                 .iter()
                 .filter(|var| var.ty != Type::Void)
                 .map(|var| {
@@ -291,15 +348,50 @@ impl Lower<EmitWasm32Pass> for ir::Function {
                     (1u32, ty)
                 })
                 .collect();
+
+            // Two synthetic locals appended past every variable's index so they
+            // never collide with position-based `local.get/set` indices:
+            //   frame_local — saved `__stack_pointer` (global 0) for the epilogue.
+            //   sret_local  — the sret pointer (global 1), aggregate returns only.
+            let frame_local = (params_length + locals.len()) as u32;
+            locals.push((1u32, ValType::I32));
+            let sret_local = frame_local + 1;
+            if returns_aggregate {
+                locals.push((1u32, ValType::I32));
+            }
+
             let mut f = WasmFunction::new(locals);
             let mut instructions = f.instructions();
 
             let mut target = Wasm32LowerContext::new(self.name.to_string(), &mut instructions);
+            target.frame_local = frame_local;
+            target.sret_local = sret_local;
+            target.returns_aggregate = returns_aggregate;
+            target.agg_return_fns = pass.agg_return_fns.clone();
             for (index, block) in self.blocks.iter().enumerate() {
                 target.blocks.insert(block.label.clone(), index as u32);
             }
+
+            // Prologue: save the current stack pointer so every return can restore
+            // it (reclaiming this call's allocations), and latch the sret pointer.
+            target.assembler.global_get(0);
+            target.assembler.local_set(frame_local);
+            if returns_aggregate {
+                target.assembler.global_get(1);
+                target.assembler.local_set(sret_local);
+            }
+
             for block in self.blocks.iter() {
                 block.lower(ctx, &mut target)?;
+            }
+
+            // Void functions can fall through to the implicit end without an
+            // explicit `@ret`; restore the frame here so their allocations are
+            // reclaimed too. (Non-void functions always terminate in a return,
+            // which handles the restore, so the code here would be unreachable.)
+            if self.return_type == Type::Void {
+                target.assembler.local_get(frame_local);
+                target.assembler.global_set(0);
             }
 
             target.assembler.end();
@@ -334,7 +426,7 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
         target: &mut Wasm32LowerContext<'_>,
     ) -> Result<Self::Output, crate::error::Error> {
         match self {
-            ir::Instruction::NoOp(..) => todo!("@noop"),
+            ir::Instruction::NoOp(..) => {}
             ir::Instruction::Add(iadd) => iadd.lower(ctx, target)?,
             ir::Instruction::Assign(iassign) => iassign.lower(ctx, target)?,
             ir::Instruction::Alloc(ialloc) => ialloc.lower(ctx, target)?,
@@ -366,6 +458,16 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Instruction {
             ir::Instruction::Ref(iref) => iref.lower(ctx, target)?,
             ir::Instruction::Not(inot) => inot.lower(ctx, target)?,
             ir::Instruction::Cast(icast) => icast.lower(ctx, target)?,
+            ir::Instruction::BitShiftRight(ibsr) => ibsr.lower(ctx, target)?,
+            ir::Instruction::BitWiseAnd(ibwand) => ibwand.lower(ctx, target)?,
+            ir::Instruction::Syscall(..) => {
+                return Err(crate::error::Error::InvalidInstruction {
+                    index: 0,
+                    message: "`syscall` is unavailable on the wasm32 target \
+                              (there are no host syscalls in a wasm/browser environment)"
+                        .to_string(),
+                });
+            }
         }
         Ok(())
     }
@@ -403,9 +505,15 @@ impl Lower<Wasm32LowerContext<'_>> for ir::Operand {
                     let ieee = Ieee32::new(value.to_bits());
                     target.assembler.f32_const(ieee);
                 }
-                ValType::F64 => todo!("@const_f64"),
-                ValType::V128 => todo!("@const_v128"),
-                ValType::Ref(_) => todo!("@const_ref"),
+                ValType::F64 => {
+                    let value = constant.parse::<f64>()?;
+                    let ieee = Ieee64::new(value.to_bits());
+                    target.assembler.f64_const(ieee);
+                }
+                ValType::V128 => unreachable!("@const v128: SIMD is not produced by c-flat"),
+                ValType::Ref(_) => {
+                    unreachable!("@const ref: reference types are not produced by c-flat")
+                }
             },
             ir::Operand::Variable(variable) => {
                 let variables = ctx.local_function_variables.get(&target.function_name);

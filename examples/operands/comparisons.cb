@@ -1,0 +1,23 @@
+// wasm example
+extern C fn write(*[u8], usize) void;
+
+// x86_64 example use io_write_str
+// use std::linux::io;
+
+pub fn main() void {
+    let n: s32 = 0 - 3; // -3
+
+    write(&"n = -3\n", 7);
+
+    write(&"n >= 0 : ", 9);
+    if n >= 0 { write(&"true\n", 5); } else { write(&"false\n", 6); }
+
+    write(&"n > 0  : ", 9);
+    if n > 0 { write(&"true\n", 5); } else { write(&"false\n", 6); }
+
+    write(&"n <= 0 : ", 9);
+    if n <= 0 { write(&"true\n", 5); } else { write(&"false\n", 6); }
+
+    write(&"n < 0  : ", 9);
+    if n < 0 { write(&"true\n", 5); } else { write(&"false\n", 6); }
+}

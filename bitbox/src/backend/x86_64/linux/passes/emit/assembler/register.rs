@@ -3,16 +3,31 @@ pub trait CastableReg {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum RegConstraint {
+    None,
+    Fixed(PhysReg),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VReg {
     pub id: usize,
     pub kind: RegKind,
+    pub constraint: RegConstraint,
 }
 
+// FIXME: when casting to a reg typically you would want the same reg like Reg64::Rax → Reg8::Al and
+// not some random register.
 impl VReg {
+    pub fn with_constraint(mut self, constraint: RegConstraint) -> Self {
+        self.constraint = constraint;
+        self
+    }
+
     pub fn as_reg64(self) -> Self {
         Self {
             id: self.id,
             kind: RegKind::Reg64,
+            constraint: self.constraint,
         }
     }
 
@@ -20,6 +35,7 @@ impl VReg {
         Self {
             id: self.id,
             kind: RegKind::Reg32,
+            constraint: self.constraint,
         }
     }
 
@@ -27,6 +43,7 @@ impl VReg {
         Self {
             id: self.id,
             kind: RegKind::Reg16,
+            constraint: self.constraint,
         }
     }
 
@@ -34,6 +51,7 @@ impl VReg {
         Self {
             id: self.id,
             kind: RegKind::Reg8,
+            constraint: self.constraint,
         }
     }
 
@@ -41,12 +59,16 @@ impl VReg {
         Self {
             id: self.id,
             kind: RegKind::Xmm,
+            constraint: self.constraint,
         }
     }
 }
 
 impl std::fmt::Display for VReg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let RegConstraint::Fixed(reg) = self.constraint {
+            return write!(f, "vreg({} : {:?}::{:?})", self.id, self.kind, reg);
+        }
         write!(f, "vreg({} : {:?})", self.id, self.kind)
     }
 }
@@ -745,6 +767,13 @@ impl From<PhysReg> for Reg {
 }
 
 impl Reg {
+    pub fn with_constraint(self, constraint: RegConstraint) -> Self {
+        match self {
+            Self::VReg(vreg) => Self::VReg(vreg.with_constraint(constraint)),
+            _ => panic!("no constraint on physical register {:?}", self),
+        }
+    }
+
     pub fn cast_to<T>(self) -> Self
     where
         T: CastableReg,

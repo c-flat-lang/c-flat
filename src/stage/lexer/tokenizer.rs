@@ -1,3 +1,5 @@
+use crate::stage::lexer::token::Builtin;
+
 use super::token::{Keyword, Span, Token, TokenKind};
 pub struct Tokenizer<'a> {
     chars: std::iter::Peekable<std::str::Chars<'a>>,
@@ -5,10 +7,10 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(src: &'a str) -> Self {
+    pub fn new(filename: &str, src: &'a str) -> Self {
         Self {
             chars: src.chars().peekable(),
-            span: 0..0,
+            span: Span::new(filename),
         }
     }
 
@@ -27,13 +29,20 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
+    fn next_char_is_ascii_alphanumeric(&mut self) -> bool {
+        self.chars
+            .peek()
+            .map(|c| c.is_ascii_alphanumeric())
+            .unwrap_or(false)
+    }
+
     fn peek_char(&mut self, expected: char) -> bool {
         matches!(self.chars.peek(), Some(actual) if actual == &expected)
     }
 
     fn spanned(&mut self, kind: TokenKind, lexeme: impl Into<String>) -> Token {
         let span = self.span.clone();
-        self.span = self.span.end..self.span.end;
+        self.span.start = self.span.end;
         Token::new(kind, lexeme, span)
     }
 
@@ -65,7 +74,6 @@ impl<'a> Tokenizer<'a> {
             "and" => TokenKind::Keyword(Keyword::And),
             "as" => TokenKind::Keyword(Keyword::As),
             "const" => TokenKind::Keyword(Keyword::Const),
-            "deref" => TokenKind::Keyword(Keyword::DeRef),
             "else" => TokenKind::Keyword(Keyword::Else),
             "enum" => TokenKind::Keyword(Keyword::Enum),
             "extern" => TokenKind::Keyword(Keyword::Extern),
@@ -77,7 +85,6 @@ impl<'a> Tokenizer<'a> {
             "mut" => TokenKind::Keyword(Keyword::Mut),
             "or" => TokenKind::Keyword(Keyword::Or),
             "pub" => TokenKind::Keyword(Keyword::Pub),
-            "ref" => TokenKind::Keyword(Keyword::Ref),
             "return" => TokenKind::Keyword(Keyword::Return),
             "struct" => TokenKind::Keyword(Keyword::Struct),
             "true" => TokenKind::Keyword(Keyword::True),
@@ -90,28 +97,52 @@ impl<'a> Tokenizer<'a> {
     }
 
     fn parse_raw_string(&mut self) -> Token {
-        let mut lexeme = String::from('#');
+        self.next_char();
+        let mut lexeme = String::new();
+
+        loop {
+            while let Some(value) = self.next_char_if(|value| value != '\n') {
+                lexeme.push(value);
+            }
+            lexeme.push(self.next_char().expect("should just be a new line"));
+            while self
+                .next_char_if(|value| matches!(value, ' ' | '\t'))
+                .is_some()
+            {}
+            if self.peek_char('\\') {
+                self.next_char();
+                if self.peek_char('\\') {
+                    self.next_char();
+                    continue;
+                }
+                panic!("Expected another \\");
+            }
+            break;
+        }
+
+        self.spanned(TokenKind::String, lexeme)
+    }
+
+    fn parse_string(&mut self) -> Token {
+        let mut lexeme = String::new();
         while let Some(value) = self.next_char() {
-            lexeme.push(value);
-            if lexeme.ends_with("\"#") {
+            if value == '"' {
                 break;
             }
+            lexeme.push(value);
         }
-        let lexeme = lexeme[2..lexeme.len() - 2]
-            .replace("\\n", "\n")
-            .replace("\\0", "\0");
+        let lexeme = lexeme.replace("\\n", "\n").replace("\\0", "\0");
         self.spanned(TokenKind::String, lexeme)
     }
 
     fn parse_char(&mut self) -> Token {
-        let mut lexeme = String::from('#');
+        let mut lexeme = String::new();
         while let Some(value) = self.next_char() {
-            lexeme.push(value);
-            if lexeme.ends_with("\'#") {
+            if value == '\'' {
                 break;
             }
+            lexeme.push(value);
         }
-        let lexeme = lexeme[2..lexeme.len() - 2].replace("\\n", "\n");
         self.spanned(TokenKind::Char, lexeme)
     }
 
@@ -139,7 +170,7 @@ impl<'a> Tokenizer<'a> {
             }
             value.push(c);
         }
-        let number = i64::from_str_radix(&value[2..], 16).unwrap();
+        let number = u64::from_str_radix(&value[2..], 16).unwrap();
         value = number.to_string();
         Some(self.spanned(TokenKind::Number, value))
     }
@@ -154,9 +185,24 @@ impl<'a> Tokenizer<'a> {
             }
             value.push(c);
         }
-        let number = i64::from_str_radix(&value[2..], 2).unwrap();
+        let number = u64::from_str_radix(&value[2..], 2).unwrap();
         value = number.to_string();
         Some(self.spanned(TokenKind::Number, value))
+    }
+
+    fn parse_builtin(&mut self) -> Option<Token> {
+        let mut lexeme = String::from("@");
+        while let Some(value) =
+            self.next_char_if(|value| value.is_ascii_alphanumeric() || value == '_')
+        {
+            lexeme.push(value);
+        }
+        let kind = match lexeme.as_str() {
+            "@size_of" => TokenKind::Builtin(Builtin::SizeOf),
+            // May need to add token level errors
+            _ => panic!("Unknown builtin"),
+        };
+        Some(self.spanned(kind, lexeme))
     }
 }
 
@@ -169,17 +215,27 @@ impl<'a> Iterator for Tokenizer<'a> {
             '0' if self.peek_char('x') || self.peek_char('X') => self.parse_hex_number(c),
             '0' if self.peek_char('b') || self.peek_char('B') => self.parse_bin_number(c),
             '0'..='9' => Some(self.parse_number(c)),
-            value if value.is_ascii_alphabetic() => Some(self.parse_identifier(value)),
+            value
+                if value.is_ascii_alphabetic()
+                    || (value == '_' && self.next_char_is_ascii_alphanumeric()) =>
+            {
+                Some(self.parse_identifier(value))
+            }
             value if value.is_ascii_whitespace() => self.skip_char(),
+            '@' if self.peek_char('_') || self.next_char_is_ascii_alphanumeric() => {
+                self.parse_builtin()
+            }
             '/' if self.peek_char('/') => self.skip_line(),
-            '#' if self.peek_char('\'') => Some(self.parse_char()),
-            '#' if self.peek_char('"') => Some(self.parse_raw_string()),
             '=' if self.peek_char('=') => self.double_char(TokenKind::EqualEqual, "=="),
+            '>' if self.peek_char('>') => self.double_char(TokenKind::BitShiftRight, ">>"),
             '>' if self.peek_char('=') => self.double_char(TokenKind::GreaterEqual, ">="),
             '<' if self.peek_char('=') => self.double_char(TokenKind::LessEqual, "<="),
             '!' if self.peek_char('=') => self.double_char(TokenKind::BangEqual, "!="),
             '<' if self.peek_char('(') => self.double_char(TokenKind::LeftTypeCradle, "<("),
             ')' if self.peek_char('>') => self.double_char(TokenKind::RightTypeCradle, ")>"),
+            '\\' if self.peek_char('\\') => Some(self.parse_raw_string()),
+            '"' => Some(self.parse_string()),
+            '\'' => Some(self.parse_char()),
             '(' => Some(self.spanned(TokenKind::LeftParen, c)),
             ')' => Some(self.spanned(TokenKind::RightParen, c)),
             '[' => Some(self.spanned(TokenKind::LeftBracket, c)),

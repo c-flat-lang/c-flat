@@ -410,7 +410,7 @@ impl std::fmt::Display for BasicBlock {
             f,
             "%{}: {}",
             Paint::yellow(&self.label),
-            Paint::dim(&format!("// {}", &self.id.0)).rgb(128, 128, 128)
+            Paint::dim(&format!("// {}", self.id.0)).rgb(128, 128, 128)
         )?;
 
         for instruction in &self.instructions {

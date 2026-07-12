@@ -16,7 +16,7 @@ impl Backend for Wasm32Backend {
             Box::new(ControlFlowGraphPass),
             Box::new(StructuringPass),
             Box::new(LivenessAnalysisPass),
-            Box::new(EmitWasm32Pass),
+            Box::new(EmitWasm32Pass::default()),
         ]
     }
 }
