@@ -1,70 +1,80 @@
 " Vim syntax file
-" Language:	c flat
-" Maintainer:	cowboy8625
-" Last Change:	2022 Dec 12
+" Language:     c-flat
+" Maintainer:   cowboy8625
+" Last Change:  2026 Jul 12
 if exists("b:current_syntax")
   finish
 endif
 
-syn keyword aKeyword if else
-syn keyword aKeyword true false
-syn keyword aKeyword or and let in const
+" Keywords
+syn keyword aKeyword if else defmacro
+syn keyword aKeyword true false use
+syn keyword aKeyword or and let in const pub
 syn keyword aKeyword fn struct enum union type
-syn keyword aKeyword return extern
-
-" syn keyword aFunction println print
+syn keyword aKeyword return extern for
 
 hi link aKeyword Keyword
 
-syn match aFn "\(fn\_s\+\)\@<=\<[A-z0-9]\+\>"
+" Types: identifiers following 'type' keyword
+syn match aType "\(type\_s\+\)\@<=\<[A-Za-z0-9_]\+\>"
 
+" Functions: identifiers following 'fn' keyword
+syn match aFn "\(fn\_s\+\)\@<=\<[A-Za-z0-9_]\+\>"
+
+" Generics cradle: <( ... )>
+syn region aCradle start="<(" end=")>" contains=aType,aNumber,aIdentifier
+
+" Module path separator (::) used in use statements
+syn match aPathSep "::"
+
+" Method/field access dot
+syn match aMethodCall "\.\<[A-Za-z_][A-Za-z0-9_]*\>\ze\s*("
+
+" Struct field initializer (.field = expr)
+syn match aStructField "\.\<[A-Za-z_][A-Za-z0-9_]*\>\ze\s*="
+
+" Comments
 syn keyword aTodo contained TODO FIXME XXX NOTE
-syn match aComment "--.*$" contains=aTodo
-syn region aCommentBlock start="{-\%(!\|\*[*/]\@!\)\@!" end="-}" contains=aTODO
+syn match aComment "//.*$" contains=aTodo
+syn region aCommentBlock start="{-\%(!\|\*[*/]\@!\)\@!" end="-}" contains=aTodo
 
+" Numbers
+" Regular int
+syn match aNumber '\d\+' display
+syn match aNumber '[-+]\d\+' display
+" Float without exponent
+syn match aNumber '\d\+\.\d*' display
+syn match aNumber '[-+]\d\+\.\d*' display
+" Float with exponent, no decimal
+syn match aNumber '[-+]\=\d[[:digit:]]*[eE][\-+]\=\d\+' display
+syn match aNumber '\d[[:digit:]]*[eE][\-+]\=\d\+' display
+" Float with exponent and decimal
+syn match aNumber '[-+]\=\d[[:digit:]]*\.\d*[eE][\-+]\=\d\+' display
+syn match aNumber '\d[[:digit:]]*\.\d*[eE][\-+]\=\d\+' display
 
-" Regular int like number with - + or nothing in front
-syn match aNumber '\d\+' contained display
-syn match aNumber '[-+]\d\+' contained display
+" Strings
+syn region aString start='"' end='"'
 
-" Floating point number with decimal no E or e (+,-)
-syn match aNumber '\d\+\.\d*' contained display
-syn match aNumber '[-+]\d\+\.\d*' contained display
-
-" Floating point like number with E and no decimal point (+,-)
-syn match aNumber '[-+]\=\d[[:digit:]]*[eE][\-+]\=\d\+' contained display
-syn match aNumber '\d[[:digit:]]*[eE][\-+]\=\d\+' contained display
-
-" Floating point like number with E and decimal point (+,-)
-syn match aNumber '[-+]\=\d[[:digit:]]*\.\d*[eE][\-+]\=\d\+' contained display
-syn match aNumber '\d[[:digit:]]*\.\d*[eE][\-+]\=\d\+' contained display
-
-syn region aString start='"' end='"' contained
-syn region aDesc start='"' end='"'
-
-syn match aHip '\d\{1,6}' nextgroup=aString
-syn region aDescBlock start="{" end="}" fold transparent contains=ALLBUT,aHip,crashString
-
-syn keyword aBlockCmd RA Dec Distance AbsMag nextgroup=aNumber
-syn keyword aBlockCmd SpectralType nextgroup=aDesc
-
+" Characters
 syn match aCharacter /b'\([^\\]\|\\\(.\|x\x\{2}\)\)'/
 syn match aCharacter /'\([^\\]\|\\\(.\|x\x\{2}\|u{\%(\x_*\)\{1,6}}\)\)'/
 
-syn match aIdentifier contains=aIdentifierPrime "\%([^[:cntrl:][:space:][:punct:][:digit:]]\|_\)\%([^[:cntrl:][:punct:][:space:]]\|_\)*" display contained
+" Identifiers
+syn match aIdentifier "\%([^[:cntrl:][:space:][:punct:][:digit:]]\|_\)\%([^[:cntrl:][:punct:][:space:]]\|_\)*" display
 
-
-hi def link aIdentifierPrime   aIdentifier
+" Highlight links
 hi def link aIdentifier        Identifier
 hi def link aFn                Function
 hi def link aTodo              Todo
 hi def link aComment           Comment
 hi def link aCommentBlock      Comment
-hi def link aBlockCmd          Statement
-hi def link aHip               Type
-hi def link aString            Constant
-hi def link aDesc              PreProc
-hi def link aNumber            Constant
+hi def link aType              Type
+hi def link aCradle            Special
+hi def link aPathSep           Operator
+hi def link aMethodCall        Function
+hi def link aStructField       Identifier
+hi def link aString            String
+hi def link aNumber            Number
 hi def link aCharacter         Character
 
 let b:current_syntax = "cb"
