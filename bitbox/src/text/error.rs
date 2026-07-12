@@ -208,10 +208,7 @@ impl Report for ErrorUnexpectedTopLevelItem {
 
     fn report(&self, src: &str) -> String {
         ReportBuilder::new(&self.found.span, src)
-            .message(format!(
-                "unexpected top level item `{}`",
-                &self.found.lexeme
-            ))
+            .message(format!("unexpected top level item `{}`", self.found.lexeme))
             .note(format!(
                 "expected one of `{}`",
                 self.expected
@@ -274,7 +271,7 @@ impl Report for ErrorMissingSymbol {
 
     fn report(&self, src: &str) -> String {
         ReportBuilder::new(&self.symbol.span, src)
-            .message(format!("symbol `{}` not found", &self.symbol.lexeme))
+            .message(format!("symbol `{}` not found", self.symbol.lexeme))
             .build()
     }
 }

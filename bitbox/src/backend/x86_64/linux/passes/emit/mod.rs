@@ -267,7 +267,7 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ir::BasicBlock {
     ) -> Result<Self::Output, crate::error::Error> {
         target
             .assembler
-            .define_label(format!("{}_{}", target.function_name, &self.label));
+            .define_label(format!("{}_{}", target.function_name, self.label));
 
         for (instr_index, instruction) in self.instructions.iter().enumerate() {
             target
