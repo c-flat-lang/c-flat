@@ -11,7 +11,7 @@ pub fn run(file_path: &str) -> Result<()> {
         run_wasm(&data)?;
     } else if file_path.ends_with(".bb") {
         let Ok(data) = std::fs::read_to_string(file_path) else {
-            return Err(anyhow!("Failed to read file {}", &file_path));
+            return Err(anyhow!("Failed to read file {}", file_path));
         };
         run_bitbeat(data)?;
     } else {
