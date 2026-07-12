@@ -44,7 +44,7 @@ pub fn run_wasm(wasm_bytes: &[u8]) -> Result<()> {
         print!("{}", a);
     })?;
     linker.func_wrap("core", "write_char", |a: u32| {
-        if let Some(c) = char::from_u32(a as u32) {
+        if let Some(c) = char::from_u32(a) {
             print!("{}", c);
         }
     })?;

@@ -531,10 +531,7 @@ impl Report for ErrorUnexpectedTopLevelItem {
 
     fn report(&self, src: &str) -> String {
         let mut report = ReportBuilder::new(&self.found.span, src);
-        report.message(format!(
-            "unexpected top level item `{}`",
-            &self.found.lexeme
-        ));
+        report.message(format!("unexpected top level item `{}`", self.found.lexeme));
 
         let mut note = String::new();
         write!(
