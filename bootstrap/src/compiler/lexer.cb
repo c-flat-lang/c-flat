@@ -1,0 +1,80 @@
+use std::ascii;
+use std::array_list;
+use std::linux::memory;
+
+pub type TokenKind enum {
+    keyword_pub,
+    keyword_fn,
+    keyword_return,
+    integer
+    float,
+    /// ;
+    simicolon
+    /// [a..z,A..Z]+ (_, 1..9, [a..z,A..Z]+)+
+    ident,
+    /// '('
+    left_paran,
+    /// ')'
+    right_paran,
+    /// '{'
+    left_brace,
+    /// '}'
+    right_brace,
+    /// '['
+    left_bracket,
+    /// ']'
+    right_bracket,
+}
+
+pub type Token struct {
+    pub kind: TokenKind,
+    pub start: usize,
+    pub end: usize,
+}
+
+pub type CharStream struct {
+    pub chars: *ArrayList<(u8)>,
+    pub index: usize = 0,
+}
+
+pub fn CharStream_new(bytes: *[u8]) CharStream {
+    let ptr = alloc<(ArrayList<(u8)>)>();
+    ptr.* = ArrayList_new<(u8)>();
+
+    let mut i: usize = 0;
+    while i < bytes.len {
+        ArrayList_push<(u8)>(&ptr.*, bytes[i]);
+        i = i + 1;
+    }
+
+    let char_stream = CharStream {
+        .chars = ptr,
+    };
+
+    return char_stream;
+}
+
+pub fn CharStream_free(self: *CharStream) void {
+    ArrayList_free<(u8)>(self.chars);
+}
+
+pub fn CharStream_peek(self: *CharStream) u8 {
+    if self.index >= self.chars.length {
+        let zero: u8 = 0;
+        return zero;
+    }
+    return ArrayList_get<(u8)>(&self.chars, self.index);
+}
+
+/// Returns 0 when end is reached
+/// Replace with null or None or what ever we add later
+pub fn CharStream_next(self: *CharStream) u8 {
+    if self.index + 1 >= self.chars.length {
+        let zero: u8 = 0;
+        return zero;
+    }
+    let i: usize = self.index;
+    self.index = self.index + 1;
+    return ArrayList_get<(u8)>(&self.chars, i);
+}
+

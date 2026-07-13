@@ -1,0 +1,77 @@
+extern C fn write_u8(u8) void;
+extern C fn write_char(u8) void;
+
+use std::linux::io;
+use std::linux::memory;
+use std::array_list;
+
+use compiler::lexer;
+
+
+pub fn main() s32 {
+    let src = 
+        \\pub fn main() void {
+        \\    return 0;
+        \\}
+        ;
+
+    let stream: CharStream =  CharStream_new(&src);
+    // let tokens: ArrayList<(Token)> = ArrayList_new<(Token)>();
+    write_char(CharStream_next(&stream));
+    write_char('\n');
+    write_char(CharStream_next(&stream));
+    write_char('\n');
+    // write_u8(CharStream_next(&stream));
+    // write_char('\n');
+    // write_u8(CharStream_peek(&stream));
+    // write_char('\n');
+    // write_u8(CharStream_next(&stream));
+    // write_char('\n');
+    // while stream.i < steam.src.len {
+    //     let char = CharStream_next();
+    // }
+    // ArrayList_free<(Token)>(&tokens);
+    CharStream_free(&stream);
+    return 0;
+
+    // let mut i: usize = 0;
+    // while i < src.len {
+    //     let c = src[i];
+    //     if ascii::isAlpha(c) {
+    //         let ident: [10; u8] = [0;10];
+    //         ident[0] = c;
+    //         let mut ident_idx: usize = 1;
+    //         while i < src.len and ascii::isAlphaNumeric(src[i+1]) {
+    //             i = i + 1;
+    //             ident[ident_idx] = src[i];
+    //             ident_idx = ident_idx + 1;
+    //         }
+    //         io::io_write_str(&"Ident "); io::io_write_str(&ident);
+    //         io::io_write_str(&"\n");
+    //     } else if ascii::isNumber(c) {
+    //         let number: [10; u8] = [0;10];
+    //         number[0] = c;
+    //         let mut number_idx: usize = 1;
+    //         while i < src.len and ascii::isNumber(src[i+1]) {
+    //             i = i + 1;
+    //             number[number_idx] = src[i];
+    //             number_idx = number_idx + 1;
+    //         }
+    //         io::io_write_str(&"Number ");
+    //         io::io_write_str(&number);
+    //         io::io_write_str(&"\n");
+    //     } else if c == '{' {
+    //         io::io_write_str(&"Right Brace");
+    //     } else if c == '}' {
+    //         io::io_write_str(&"Left Brace");
+    //     } else if c == '(' {
+    //         io::io_write_str(&"Right Paran");
+    //     } else if c == ')' {
+    //         io::io_write_str(&"Left Paran");
+    //     } else if c == ';' {
+    //         io::io_write_str(&"Simicolon");
+    //     }
+    //
+    //     i = i + 1;
+    // }
+}
