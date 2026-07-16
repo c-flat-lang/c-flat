@@ -74,21 +74,22 @@ impl Stage for LoadedModuleStage {
 
         if let (Some(DebugMode::Lexer), program) = (&ctx.debug_mode, &ctx.program) {
             for module in program.modules.iter() {
-                eprintln!("=== {} ===", module.path.display());
+                writeln!(&mut output, "=== {} ===", module.path.display())
+                    .expect("Failed to Write to debug output");
                 for token in crate::stage::lexer::lex(
                     module.path.to_str().unwrap_or_default(),
                     &module.source,
                 ) {
-                    write!(&mut output, "{:?}\n", token).expect("Failed to Write to debug output");
+                    writeln!(&mut output, "{:?}", token).expect("Failed to Write to debug output");
                 }
             }
         }
 
         if let (Some(DebugMode::Parser), program) = (&ctx.debug_mode, &ctx.program) {
             for module in program.modules.iter() {
-                write!(&mut output, "=== {} ===", module.path.display())
+                writeln!(&mut output, "=== {} ===", module.path.display())
                     .expect("Failed to Write to debug output");
-                write!(&mut output, "{:#?}\n", module.items)
+                writeln!(&mut output, "{:#?}", module.items)
                     .expect("Failed to Write to debug output");
             }
         }
