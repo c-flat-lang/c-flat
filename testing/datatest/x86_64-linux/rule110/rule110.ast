@@ -1,5 +1,6 @@
                      Compiling testing/test/rule110.cb
-=== testing/test/rule110.cb ===[
+=== testing/test/rule110.cb ===
+[
     ExternFunction(
         ExternFunction {
             visibility: Private,

@@ -1,5 +1,6 @@
                      Compiling testing/test/structs.cb
-=== testing/test/structs.cb ===[
+=== testing/test/structs.cb ===
+[
     ExternFunction(
         ExternFunction {
             visibility: Private,

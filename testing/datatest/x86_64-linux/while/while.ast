@@ -1,5 +1,6 @@
                      Compiling testing/test/while.cb
-=== testing/test/while.cb ===[
+=== testing/test/while.cb ===
+[
     ExternFunction(
         ExternFunction {
             visibility: Private,

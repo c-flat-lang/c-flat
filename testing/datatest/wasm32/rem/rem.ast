@@ -1,5 +1,6 @@
                      Compiling testing/test/rem.cb
-=== testing/test/rem.cb ===[
+=== testing/test/rem.cb ===
+[
     ExternFunction(
         ExternFunction {
             visibility: Private,

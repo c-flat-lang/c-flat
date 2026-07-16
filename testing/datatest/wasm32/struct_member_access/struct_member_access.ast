@@ -1,5 +1,6 @@
                      Compiling testing/test/struct_member_access.cb
-=== testing/test/struct_member_access.cb ===[
+=== testing/test/struct_member_access.cb ===
+[
     Type(
         Struct(
             Struct {

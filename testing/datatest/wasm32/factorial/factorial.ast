@@ -1,5 +1,6 @@
                      Compiling testing/test/factorial.cb
-=== testing/test/factorial.cb ===[
+=== testing/test/factorial.cb ===
+[
     ExternFunction(
         ExternFunction {
             visibility: Private,

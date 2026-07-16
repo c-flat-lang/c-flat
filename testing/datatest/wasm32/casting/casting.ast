@@ -1,5 +1,6 @@
                      Compiling testing/test/casting.cb
-=== testing/test/casting.cb ===[
+=== testing/test/casting.cb ===
+[
     ExternFunction(
         ExternFunction {
             visibility: Private,
