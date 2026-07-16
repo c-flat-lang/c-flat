@@ -8,6 +8,9 @@ use super::Pass;
 pub struct PhiNodeEliminationPass;
 
 impl Pass for PhiNodeEliminationPass {
+    fn name(&self) -> &'static str {
+        "Eliminating @phi instructions"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::PhiNodeElimination
     }

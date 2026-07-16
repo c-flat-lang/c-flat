@@ -22,17 +22,95 @@
 
 use std::collections::{HashMap, VecDeque};
 use std::env;
+use std::fmt::Write;
 use std::path::{Path, PathBuf};
 
+use crate::DebugMode;
 use crate::error::{
     ErrorImportCycle, ErrorMessage, ErrorPrivateImport, ErrorUnresolvedImport, Errors, Report,
     Result, ScopedReport,
 };
-use crate::stage::Stage;
 use crate::stage::lexer::token::Span;
 use crate::stage::parser::ast::{self, Item, Visibility};
+use crate::stage::{Stage, StageContext, StageOutput};
+
+pub struct FlattenModulesStage;
+
+impl Stage for FlattenModulesStage {
+    fn name(&self) -> &'static str {
+        "Flatting Modules"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        &[DebugMode::FlattenModules]
+    }
+
+    fn debug(&self, ctx: &mut StageContext) -> StageOutput {
+        StageOutput::Output(format!("{:#?}", ctx.items))
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let items: Vec<Item> = ctx
+            .take_loaded_program_modules()
+            .into_iter()
+            .flat_map(|module| module.items)
+            .collect();
+        ctx.items = items;
+        Ok(())
+    }
+}
+
+pub struct LoadedModuleStage;
+
+impl Stage for LoadedModuleStage {
+    fn name(&self) -> &'static str {
+        "Lexing & Parsing"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        &[DebugMode::Lexer, DebugMode::Parser]
+    }
+
+    fn debug(&self, ctx: &mut StageContext) -> StageOutput {
+        let mut output = String::new();
+
+        if let (Some(DebugMode::Lexer), program) = (&ctx.debug_mode, &ctx.program) {
+            for module in program.modules.iter() {
+                eprintln!("=== {} ===", module.path.display());
+                for token in crate::stage::lexer::lex(
+                    module.path.to_str().unwrap_or_default(),
+                    &module.source,
+                ) {
+                    write!(&mut output, "{:?}\n", token).expect("Failed to Write to debug output");
+                }
+            }
+        }
+
+        if let (Some(DebugMode::Parser), program) = (&ctx.debug_mode, &ctx.program) {
+            for module in program.modules.iter() {
+                write!(&mut output, "=== {} ===", module.path.display())
+                    .expect("Failed to Write to debug output");
+                write!(&mut output, "{:#?}\n", module.items)
+                    .expect("Failed to Write to debug output");
+            }
+        }
+
+        StageOutput::Output(output)
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let entry = Path::new(&ctx.entry);
+        let loader = crate::stage::module_loader::ModuleLoader::new(ctx.unix_newlines);
+        ctx.program = loader.load(entry, |path| {
+            if !ctx.verbose {
+                return;
+            }
+            self.eprintln(path);
+        })?;
+        Ok(())
+    }
+}
 
 /// One parsed source file.
+#[derive(Debug)]
 pub struct LoadedModule {
     /// Path as discovered, used for error reporting.
     pub path: PathBuf,
@@ -50,6 +128,7 @@ impl LoadedModule {
 }
 
 /// All modules reachable from the entry file. `modules[0]` is the entry module.
+#[derive(Debug, Default)]
 pub struct LoadedProgram {
     pub modules: Vec<LoadedModule>,
 }
@@ -63,7 +142,10 @@ impl ModuleLoader {
         Self { unix_newlines }
     }
 
-    pub fn load(&self, entry: &Path) -> Result<LoadedProgram> {
+    pub fn load<F>(&self, entry: &Path, debug_output: F) -> Result<LoadedProgram>
+    where
+        F: Fn(&str),
+    {
         let mut errors: Vec<Box<dyn Report>> = Vec::new();
         let mut modules: Vec<LoadedModule> = Vec::new();
         // usize::MAX if it failed to parse
@@ -80,6 +162,7 @@ impl ModuleLoader {
                 continue;
             }
 
+            debug_output(path.to_str().unwrap_or_default());
             let module = match self.parse_module(&path) {
                 Ok(module) => module,
                 Err(err) => {
@@ -257,9 +340,8 @@ impl ModuleLoader {
             raw
         };
 
-        let tokens = crate::stage::lexer::Lexer.run((path.to_str().unwrap_or_default(), &source));
-        let items = crate::stage::parser::Parser::default()
-            .run((path.to_str().unwrap_or_default(), tokens))
+        let tokens = crate::stage::lexer::lex(path.to_str().unwrap_or_default(), &source);
+        let items = crate::stage::parser::parse(path.to_str().unwrap_or_default(), tokens)
             .map_err(|err| -> Box<dyn Report> {
                 Box::new(ScopedReport::new(
                     path.display().to_string(),
@@ -416,7 +498,9 @@ mod tests {
             "main.cb",
             "use math::add;\npub fn main() s32 { return add(1, 2); }\n",
         );
-        let program = ModuleLoader::new(false).load(&entry).expect("should load");
+        let program = ModuleLoader::new(false)
+            .load(&entry, |_| {})
+            .expect("should load");
         assert_eq!(program.modules.len(), 2);
         assert_eq!(program.modules[0].name, "main");
     }
@@ -429,7 +513,7 @@ mod tests {
             "main.cb",
             "use math;\npub fn main() s32 { return math::add(1, 2); }\n",
         );
-        assert!(ModuleLoader::new(false).load(&entry).is_ok());
+        assert!(ModuleLoader::new(false).load(&entry, |_| {}).is_ok());
     }
 
     #[test]
@@ -443,7 +527,9 @@ mod tests {
             "main.cb",
             "use a::b::right;\npub fn main() s32 { return right(); }\n",
         );
-        let program = ModuleLoader::new(false).load(&entry).expect("should load");
+        let program = ModuleLoader::new(false)
+            .load(&entry, |_| {})
+            .expect("should load");
         // main + a/b.cb (a.cb is never imported)
         assert_eq!(program.modules.len(), 2);
         assert!(program.modules.iter().any(|m| m.name == "b"));
@@ -453,7 +539,7 @@ mod tests {
     fn unresolved_import_errors() {
         let dir = TmpDir::new("missing");
         let entry = dir.write("main.cb", "use nope::x;\npub fn main() s32 { return 0; }\n");
-        assert!(ModuleLoader::new(false).load(&entry).is_err());
+        assert!(ModuleLoader::new(false).load(&entry, |_| {}).is_err());
     }
 
     #[test]
@@ -464,7 +550,7 @@ mod tests {
             "main.cb",
             "use math::secret;\npub fn main() s32 { return secret(1); }\n",
         );
-        assert!(ModuleLoader::new(false).load(&entry).is_err());
+        assert!(ModuleLoader::new(false).load(&entry, |_| {}).is_err());
     }
 
     #[test]
@@ -475,7 +561,7 @@ mod tests {
             "use b;\npub fn fa() s32 { return 1; }\npub fn main() s32 { return fb(); }\n",
         );
         dir.write("b.cb", "use a;\npub fn fb() s32 { return fa(); }\n");
-        assert!(ModuleLoader::new(false).load(&entry).is_err());
+        assert!(ModuleLoader::new(false).load(&entry, |_| {}).is_err());
     }
 
     #[test]
@@ -488,7 +574,9 @@ mod tests {
             "main.cb",
             "use a;\nuse b;\npub fn main() s32 { return a::aa() + b::bb(); }\n",
         );
-        let program = ModuleLoader::new(false).load(&entry).expect("should load");
+        let program = ModuleLoader::new(false)
+            .load(&entry, |_| {})
+            .expect("should load");
         // main, a, b, c — c imported by both a and b but parsed once.
         assert_eq!(program.modules.len(), 4);
     }

@@ -619,7 +619,6 @@ impl SymbolTable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stage::Stage;
     use crate::stage::lexer::token::{Keyword, TokenKind};
     use pretty_assertions::assert_eq;
 
@@ -757,10 +756,8 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer.run(("test_build_symbol_table", src));
-        let ast = crate::stage::parser::Parser::default()
-            .run(("test_build_symbol_table", tokens))
-            .unwrap();
+        let tokens = crate::stage::lexer::lex("test_build_symbol_table", src);
+        let ast = crate::stage::parser::parse("test_build_symbol_table", tokens).unwrap();
         let symbol_table = match SymbolTableBuilder::default().build(&ast) {
             Ok(table) => table,
             Err(errors) => {

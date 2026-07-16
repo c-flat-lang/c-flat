@@ -64,6 +64,9 @@ const XMM_SCRATCH_POOL: [XmmReg; 16] = [
 ];
 
 impl crate::passes::Pass for VirtRegRewritePass {
+    fn name(&self) -> &'static str {
+        "Replacing virtual register"
+    }
     fn debug_pass(&self) -> crate::passes::DebugPass {
         crate::passes::DebugPass::VirtRegRewrite
     }

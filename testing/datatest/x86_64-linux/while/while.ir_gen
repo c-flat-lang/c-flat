@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/while.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/while.cb
 extern write_s32 (s32) -> void
 extern write_char (u8) -> void
 [31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
@@ -36,3 +32,5 @@ extern write_char (u8) -> void
     [34m@cast[0m [33ms32[0m : [1;36mtmp.11_v0[0m, [1;36mtmp.12_v0[0m, [33munsigned-to-signed[0m
     [34m@ret[0m [33ms32[0m : [1;36mtmp.11_v0[0m
 }
+
+                      Finished

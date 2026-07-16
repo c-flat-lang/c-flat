@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/casting.cb
-                        Parser
-=== testing/test/casting.cb ===
-[
+                     Compiling testing/test/casting.cb
+=== testing/test/casting.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -645,3 +643,5 @@
         },
     ),
 ]
+
+                      Finished

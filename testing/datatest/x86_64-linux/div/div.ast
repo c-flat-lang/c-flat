@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/div.cb
-                        Parser
-=== testing/test/div.cb ===
-[
+                     Compiling testing/test/div.cb
+=== testing/test/div.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -511,3 +509,5 @@
         },
     ),
 ]
+
+                      Finished

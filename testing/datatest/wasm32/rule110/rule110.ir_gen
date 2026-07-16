@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/rule110.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/rule110.cb
 extern write_char (u8) -> void
 [31mfunction[0m [35mrule110[0m([1;36ml_v0[0m: [33ms32[0m, [1;36mc_v0[0m: [33ms32[0m, [1;36mr_v0[0m: [33ms32[0m, ) s32{
   %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
@@ -836,3 +832,5 @@ extern write_char (u8) -> void
     [34m@elemget[0m [33ms32[0m : [1;36mtmp.368_v0[0m, [1;36mcurrent_v0[0m, [1;36mtmp.367_v0[0m
     [34m@ret[0m [33ms32[0m : [1;36mtmp.368_v0[0m
 }
+
+                      Finished

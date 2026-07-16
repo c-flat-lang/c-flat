@@ -1,14 +1,23 @@
 use bitbox::passes::DebugPass;
-use cflat::Cli;
-
-use cflat::front_end_compiler;
+use bitbox::passes::PassOutput;
+use cflat::{Cli, StageContext, Target, drive};
+use std::path::PathBuf;
 
 fn main() {
-    use bitbox::passes::PassOutput;
-
     let cli_options = Cli::parse();
 
-    let mut module = match front_end_compiler(&cli_options) {
+    eprintln!("{: >30} {}", "Compiling", cli_options.file_path);
+
+    let ctx = StageContext {
+        target: cli_options.target,
+        debug_mode: cli_options.debug_mode,
+        unix_newlines: cli_options.unix_newlines,
+        entry: PathBuf::from(cli_options.file_path.as_str()),
+        verbose: cli_options.verbose,
+        ..Default::default()
+    };
+
+    let mut module = match drive(ctx) {
         Ok(module) => module,
         Err(err) => {
             let errors = err.report("");
@@ -16,12 +25,17 @@ fn main() {
             std::process::exit(1);
         }
     };
+
     let compiler_debug_mode: Option<DebugPass> = cli_options.debug_mode.and_then(Into::into);
     let mut compiler = bitbox::Compiler::new(
         &cli_options.file_path,
         cli_options.target,
         compiler_debug_mode,
     );
+
+    if cli_options.verbose {
+        compiler.verbose();
+    }
 
     if let Some(linking_options) = cli_options.link {
         let options = linking_options
@@ -33,6 +47,8 @@ fn main() {
 
     let compiler_output = compiler.run(&mut module);
 
+    eprintln!("{: >30}", "Finished");
+
     match compiler_output {
         Ok(PassOutput::Nothing) if cli_options.run => {
             let path = compiler.file_output_path();
@@ -42,7 +58,7 @@ fn main() {
             eprintln!("{: >30} {}", "Running", path);
             match cli_options.target {
                 #[cfg(feature = "wasm-runtime")]
-                cflat::Target::Wasm32 | cflat::Target::Bitbeat => match runtime::run(path) {
+                Target::Wasm32 | Target::Bitbeat => match runtime::run(path) {
                     Ok(()) => {}
                     Err(err) => {
                         eprintln!("{}", err);
@@ -50,14 +66,14 @@ fn main() {
                     }
                 },
                 #[cfg(not(feature = "wasm-runtime"))]
-                cflat::Target::Wasm32 | cflat::Target::Bitbeat => {
+                Target::Wasm32 | Target::Bitbeat => {
                     eprintln!(
                         "Error: Running Wasm and Bitbeat targets is not supported without the 'wasm-runtime' feature."
                     );
                     std::process::exit(1);
                 }
 
-                cflat::Target::X86_64Linux => {
+                Target::X86_64Linux => {
                     let cmd_result = std::process::Command::new(format!("./{}", path)).spawn();
                     match cmd_result {
                         Ok(_) => {}

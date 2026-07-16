@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/while.cb
-                        Parser
-=== testing/test/while.cb ===
-[
+                     Compiling testing/test/while.cb
+=== testing/test/while.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -1041,3 +1039,5 @@
         },
     ),
 ]
+
+                      Finished

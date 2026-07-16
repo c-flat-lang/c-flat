@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/ifelse.cb
-                        Parser
-=== testing/test/ifelse.cb ===
-[
+                     Compiling testing/test/ifelse.cb
+=== testing/test/ifelse.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -1377,3 +1375,5 @@
         },
     ),
 ]
+
+                      Finished

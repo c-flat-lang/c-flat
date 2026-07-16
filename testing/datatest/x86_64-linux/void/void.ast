@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/void.cb
-                        Parser
-=== testing/test/void.cb ===
-[
+                     Compiling testing/test/void.cb
+=== testing/test/void.cb ===[
     Function(
         Function {
             visibility: Public,
@@ -60,3 +58,5 @@
         },
     ),
 ]
+
+                      Finished

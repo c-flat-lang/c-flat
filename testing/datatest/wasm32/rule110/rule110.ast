@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/rule110.cb
-                        Parser
-=== testing/test/rule110.cb ===
-[
+                     Compiling testing/test/rule110.cb
+=== testing/test/rule110.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -5168,3 +5166,5 @@
         },
     ),
 ]
+
+                      Finished

@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/not.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/not.cb
 extern write_s32 (s32) -> void
 extern write_char (u8) -> void
 [31mpublic[0m [31mfunction[0m [35mmain[0m() void{
@@ -26,3 +22,5 @@ extern write_char (u8) -> void
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.7_v0[0m)
 
 }
+
+                      Finished

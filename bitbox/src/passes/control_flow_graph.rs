@@ -47,6 +47,9 @@ impl ControlFlowGraph {
 pub struct ControlFlowGraphPass;
 
 impl Pass for ControlFlowGraphPass {
+    fn name(&self) -> &'static str {
+        "Generating Control Flow Graph"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::ControlFlowGraph
     }

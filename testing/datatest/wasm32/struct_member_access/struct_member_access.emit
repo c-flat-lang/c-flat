@@ -1,13 +1,5 @@
-                    Tokenizing testing/test/struct_member_access.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-        LocalFunctionVariables
-              ControlFlowGraph
-                 StructuringIr
-              LivenessAnalysis
-                          Emit
+                     Compiling testing/test/struct_member_access.cb
+                      Finished
 (module
   (type (;0;) (func (result i32)))
   (memory (;0;) 4)

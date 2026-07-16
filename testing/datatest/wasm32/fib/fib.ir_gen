@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/fib.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/fib.cb
 extern write_s32 (s32) -> void
 extern write_char (u8) -> void
 [31mfunction[0m [35mfib[0m([1;36mn_v0[0m: [33ms32[0m, [1;36ma_v0[0m: [33ms32[0m, [1;36mb_v0[0m: [33ms32[0m, ) s32{
@@ -32,3 +28,5 @@ extern write_char (u8) -> void
     [34m@assign[0m [33ms32[0m : [1;36mtmp.5_v0[0m, [33m0[0m
     [34m@ret[0m [33ms32[0m : [1;36mtmp.5_v0[0m
 }
+
+                      Finished

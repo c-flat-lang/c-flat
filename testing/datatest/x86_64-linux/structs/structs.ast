@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/structs.cb
-                        Parser
-=== testing/test/structs.cb ===
-[
+                     Compiling testing/test/structs.cb
+=== testing/test/structs.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -1581,3 +1579,5 @@
         },
     ),
 ]
+
+                      Finished

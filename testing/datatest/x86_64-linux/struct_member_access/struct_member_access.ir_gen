@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/struct_member_access.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/struct_member_access.cb
 [31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
   %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
     [34m@alloc[0m [33mFooBar[0m : [1;36mtmp.0_v0[0m, [33m1[0m
@@ -18,3 +14,5 @@
     [34m@elemget[0m [33ms32[0m : [1;36mtmp.6_v0[0m, [1;36mtmp.5_v0[0m, [33m0[0m
     [34m@ret[0m [33ms32[0m : [1;36mtmp.6_v0[0m
 }
+
+                      Finished

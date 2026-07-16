@@ -1,7 +1,5 @@
-                    Tokenizing testing/test/rem.cb
-                        Parser
-=== testing/test/rem.cb ===
-[
+                     Compiling testing/test/rem.cb
+=== testing/test/rem.cb ===[
     ExternFunction(
         ExternFunction {
             visibility: Private,
@@ -511,3 +509,5 @@
         },
     ),
 ]
+
+                      Finished
