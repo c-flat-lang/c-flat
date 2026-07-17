@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install musl target + toolchain
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Build
+        env:
+          CC_x86_64_unknown_linux_musl: musl-gcc
+        run: cargo build --release --target=x86_64-unknown-linux-musl --features wasm-runtime
+
+      - name: Strip binary
+        run: strip target/x86_64-unknown-linux-musl/release/cflat
+
+      - name: Package
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          ASSET="cflat-${VERSION}-x86_64-unknown-linux-musl.tar.gz"
+          tar -czvf "$ASSET" -C target/x86_64-unknown-linux-musl/release cflat
+          echo "ASSET=$ASSET" >> $GITHUB_ENV
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET }}
