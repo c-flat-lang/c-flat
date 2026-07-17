@@ -35,6 +35,11 @@ int cf_check_collision_recs(float ax, float ay, float aw, float ah, float bx,
                             (Rectangle){bx, by, bw, bh});
 }
 
+int cf_check_collision_point_rec(float px, float py, float rx, float ry, float rw, float rh) {
+    return CheckCollisionPointRec((Vector2){px, py},
+                                  (Rectangle){rx, ry, rw, rh});
+}
+
 // Textures. LoadTexture returns a Texture2D by value; write its 5 ints to an
 // out buffer the bridge reads back. Draw/Unload reconstruct the struct from
 // scalars the bridge unpacked out of c-flat memory.
