@@ -66,7 +66,7 @@ impl Stage for ParserStage {
     }
 
     #[cfg(feature = "wasm")]
-    fn run(&mut self, ctx: &mut super::stage::StageContext) -> report::Result<()> {
+    fn run(&mut self, ctx: &mut StageContext) -> report::Result<()> {
         let tokenizer =
             crate::stage::lexer::tokenizer::Tokenizer::new(ctx.entry.as_str(), &ctx.source);
         let tokens: Vec<Token> = tokenizer.collect();
