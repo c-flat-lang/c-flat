@@ -13,5 +13,3 @@ extern write_char (u8) -> void
     [34m@assign[0m [33mu8[0m : [1;36mtmp.4_v0[0m, [33m10[0m
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.4_v0[0m)
 }
-
-                      Finished

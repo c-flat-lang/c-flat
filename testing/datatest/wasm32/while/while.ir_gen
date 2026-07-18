@@ -31,5 +31,3 @@ extern write_char (u8) -> void
     [34m@cast[0m [33ms32[0m : [1;36mtmp.11_v0[0m, [1;36mi_v0[0m, [33munsigned-to-signed[0m
     [34m@ret[0m [33ms32[0m : [1;36mtmp.11_v0[0m
 }
-
-                      Finished

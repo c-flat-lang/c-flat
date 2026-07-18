@@ -22,5 +22,3 @@ extern write_char (u8) -> void
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.7_v0[0m)
 
 }
-
-                      Finished

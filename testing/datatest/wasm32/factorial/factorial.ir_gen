@@ -33,5 +33,3 @@ extern write_char (u8) -> void
     [34m@call[0m [35mwrite_char[0m([1;36mtmp.2_v0[0m)
     [34m@ret[0m [33ms32[0m : [1;36mfact_result_v0[0m
 }
-
-                      Finished

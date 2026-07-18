@@ -43,6 +43,8 @@ fn emit_dump_and_exit(msg: impl Into<String>) {
     use wasm_bindgen::prelude::*;
     #[cfg(feature = "wasm")]
     web_sys::console::log_1(&JsValue::from_str(&msg.into()));
+
+    std::process::exit(0);
 }
 
 pub fn drive(mut ctx: StageContext) -> Result<Module> {

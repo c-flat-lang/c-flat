@@ -26,5 +26,3 @@ extern write_f32 (f32) -> void
     [34m@elemget[0m [33mf32[0m : [1;36mtmp.6_v0[0m, [1;36mfoo_v0[0m, [33m2[0m
     [34m@call[0m [35mwrite_f32[0m([1;36mtmp.6_v0[0m)
 }
-
-                      Finished
