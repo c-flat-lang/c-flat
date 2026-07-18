@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/while.cb
-                        Parser
+                     Compiling testing/test/while.cb
 === testing/test/while.cb ===
 [
     ExternFunction(

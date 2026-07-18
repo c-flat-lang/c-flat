@@ -1,14 +1,5 @@
-                    Tokenizing testing/test/struct_member_access.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-                     LoweredIr
-        LocalFunctionVariables
-              ControlFlowGraph
-              LivenessAnalysis
-            PhiNodeElimination
-                          Emit
+                     Compiling testing/test/struct_member_access.cb
+                      Finished
 .intel_syntax noprefix
 .globl main
   # Defining Function main

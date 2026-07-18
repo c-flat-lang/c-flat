@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/casting.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/casting.cb
 extern write_s32 (s32) -> void
 extern write_char (u8) -> void
 [31mpublic[0m [31mfunction[0m [35mmain[0m() void{

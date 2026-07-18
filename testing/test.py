@@ -118,6 +118,7 @@ def run_snapshot_tests(
     target: Target,
     debug: DebugInfoAtStage,
     quiet: bool,
+    auto_except: bool,
 ) -> TestResult:
     passed = []
     failed = []
@@ -196,7 +197,11 @@ def run_snapshot_tests(
         if not quiet:
             print("\n".join(diff))
 
-        if quiet:
+        if auto_except:
+            snapshot.write_text(program_output)
+            updated.append(test)
+            print("Snapshot updated.")
+        elif quiet:
             failed.append(test)
         elif ask_yes_no(f"\nUpdate snapshot {snapshot.name}?"):
             snapshot.write_text(program_output)
@@ -236,7 +241,7 @@ def compile():
     return result.returncode == 0
 
 
-def run_test_on_target(target: Target, quiet: bool) -> TestResult:
+def run_test_on_target(target: Target, quiet: bool, auto_except: bool) -> TestResult:
     results = [
         run_snapshot_tests(
             "./testing/test",
@@ -244,6 +249,7 @@ def run_test_on_target(target: Target, quiet: bool) -> TestResult:
             target,
             DebugInfoAtStage.Token,
             quiet,
+            auto_except,
         ),
         run_snapshot_tests(
             "./testing/test",
@@ -251,6 +257,7 @@ def run_test_on_target(target: Target, quiet: bool) -> TestResult:
             target,
             DebugInfoAtStage.Ast,
             quiet,
+            auto_except,
         ),
         run_snapshot_tests(
             "./testing/test",
@@ -258,6 +265,7 @@ def run_test_on_target(target: Target, quiet: bool) -> TestResult:
             target,
             DebugInfoAtStage.IrGenerator,
             quiet,
+            auto_except,
         ),
         run_snapshot_tests(
             "./testing/test",
@@ -265,6 +273,7 @@ def run_test_on_target(target: Target, quiet: bool) -> TestResult:
             target,
             DebugInfoAtStage.Emit,
             quiet,
+            auto_except,
         ),
         run_snapshot_tests(
             "./testing/test",
@@ -272,6 +281,7 @@ def run_test_on_target(target: Target, quiet: bool) -> TestResult:
             target,
             DebugInfoAtStage.Nothing,
             quiet,
+            auto_except,
         ),
     ]
 
@@ -287,6 +297,13 @@ def flatten_test_resuts(acc: TestResult, r: TestResult):
 
 def main():
     parser = argparse.ArgumentParser(description="Run snapshot tests")
+
+    parser.add_argument(
+        "-y",
+        "--yes",
+        action="store_true",
+        help="Auto except all changes",
+    )
 
     parser.add_argument(
         "-q",
@@ -305,8 +322,8 @@ def main():
             print("Build failed")
         exit(1)
     results = [
-        run_test_on_target(Target.wasm32, args.quiet),
-        run_test_on_target(Target.x86_64_linux, args.quiet),
+        run_test_on_target(Target.wasm32, args.quiet, args.yes),
+        run_test_on_target(Target.x86_64_linux, args.quiet, args.yes),
     ]
 
     result = functools.reduce(flatten_test_resuts, results, TestResult([], [], []))

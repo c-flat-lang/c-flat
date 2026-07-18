@@ -1,13 +1,5 @@
-                    Tokenizing testing/test/fib.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-        LocalFunctionVariables
-              ControlFlowGraph
-                 StructuringIr
-              LivenessAnalysis
-                          Emit
+                     Compiling testing/test/fib.cb
+                      Finished
 (module
   (type (;0;) (func (param i32)))
   (type (;1;) (func (param i32)))

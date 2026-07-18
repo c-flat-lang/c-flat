@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/div.cb
-                        Parser
+                     Compiling testing/test/div.cb
 === testing/test/div.cb ===
 [
     ExternFunction(

@@ -18,6 +18,8 @@
 //!      rewrite its body (which may queue further instantiations), and emit it.
 //!      A fixpoint over the queue handles generics that use other generics.
 
+use crate::DebugMode;
+use crate::stage::{Stage, StageContext, StageOutput};
 use std::collections::{HashMap, HashSet};
 
 use crate::error::{ErrorMessage, Errors, Report, Result};
@@ -27,6 +29,29 @@ use crate::stage::parser::ast::{
 };
 
 const GENERIC_SEPARATOR: &str = "__";
+
+pub struct MonomorphizerStage;
+
+impl Stage for MonomorphizerStage {
+    fn name(&self) -> &'static str {
+        "Monomorphizing"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        // TODO: MonomorphizerStage does not have a debug_mode
+        &[DebugMode::Monomorphizer]
+    }
+
+    fn debug(&self, _ctx: &mut StageContext) -> StageOutput {
+        todo!("MonomorphizerStage does not have a debug output")
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let monomorphize = crate::stage::monomorphize::Monomorphizer::default();
+        let items = ctx.take_items();
+        ctx.items = monomorphize.run(items)?;
+        Ok(())
+    }
+}
 
 /// Example:
 /// `Pair` with args `[s32]` -> `Pair__s32`.

@@ -12,6 +12,9 @@ use uuid::Uuid;
 pub struct StructuringPass;
 
 impl Pass for StructuringPass {
+    fn name(&self) -> &'static str {
+        "Structuring IR"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::StructuringIr
     }

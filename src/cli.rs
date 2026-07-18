@@ -1,64 +1,18 @@
 use bitbox::Target;
-
-#[cfg(not(feature = "wasm"))]
 use std::str::FromStr;
 
-#[cfg(feature = "wasm")]
-use wasm_bindgen::prelude::*;
-
-#[cfg(feature = "wasm")]
-#[wasm_bindgen]
-#[derive(Debug, Clone)]
-pub struct Cli {
-    debug_mode: Option<DebugMode>,
-    target: Target,
-    file_path: String,
-    run: bool,
-}
-
-#[cfg(not(feature = "wasm"))]
 #[derive(Debug, Clone)]
 pub struct Cli {
     pub debug_mode: Option<DebugMode>,
     pub target: Target,
     pub file_path: String,
     pub run: bool,
+    pub verbose: bool,
     pub link: Option<String>,
     pub unix_newlines: bool,
 }
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
 impl Cli {
-    #[cfg_attr(feature = "wasm", wasm_bindgen(constructor))]
-    pub fn new(target: Target, file_path: String, debug_mode: Option<DebugMode>) -> Self {
-        Self {
-            target,
-            file_path,
-            debug_mode,
-            run: false,
-            #[cfg(not(feature = "wasm"))]
-            link: None,
-            #[cfg(not(feature = "wasm"))]
-            unix_newlines: false,
-        }
-    }
-
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
-    pub fn target(&self) -> Target {
-        self.target
-    }
-
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
-    pub fn file_path(&self) -> String {
-        self.file_path.clone()
-    }
-
-    #[cfg_attr(feature = "wasm", wasm_bindgen(getter))]
-    pub fn debug_mode(&self) -> Option<DebugMode> {
-        self.debug_mode
-    }
-
-    #[cfg(not(feature = "wasm"))]
     pub fn parse() -> Self {
         let mut args: Vec<String> = std::env::args().skip(1).collect();
 
@@ -72,6 +26,7 @@ impl Cli {
             std::process::exit(1);
         });
 
+        let mut verbose = false;
         let mut run = false;
         let mut debug_mode = None;
         let mut target = Target::default();
@@ -84,6 +39,12 @@ impl Cli {
 
             if arg == "run" {
                 run = true;
+                args.remove(i);
+                continue;
+            }
+
+            if arg == "-v" || arg == "--verbose" {
+                verbose = true;
                 args.remove(i);
                 continue;
             }
@@ -140,6 +101,7 @@ impl Cli {
             debug_mode,
             target,
             file_path,
+            verbose,
             run,
             link,
             unix_newlines,
@@ -154,9 +116,11 @@ fn print_help() {
     eprintln!("  run                Compile and run the program");
     eprintln!("  -t                 Print tokens");
     eprintln!("  -a                 Print AST");
+    eprintln!("  -m                 Print After Monomorphizer");
     eprintln!("  --check            Type check code");
     eprintln!("  -s                 Print symbol table");
     eprintln!("  -ir                Print IR");
+    eprintln!("  -v --verbose       Print all the compiler stages");
     eprintln!("  --link [options]   Link with additional libraries (e.g. --link=\"-lm\")");
     eprintln!("  --target=TRIPLE    Set compilation target. Valid options:");
     eprintln!("    wasm32");
@@ -175,21 +139,22 @@ fn unknown_arg(arg: &str) -> ! {
     std::process::exit(1);
 }
 
-#[cfg_attr(feature = "wasm", wasm_bindgen)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DebugMode {
-    Ast,
     ControlFlowGraph,
     DetectLoops,
     Emit,
+    FlattenModules,
     Ir,
+    Lexer,
     LivenessAnalysis,
     LocalFunctionVariables,
     LoweredIr,
+    Monomorphizer,
+    Parser,
     PhiNodeElimination,
     StructuringIr,
     SymbolTable,
-    Token,
     TypeChecker,
     VirtRegRewrite,
 }
@@ -209,8 +174,9 @@ impl DebugMode {
 
     fn from_flag(flag: &str) -> Option<Self> {
         Some(match flag {
-            "-t" => Self::Token,
-            "-a" => Self::Ast,
+            "-t" => Self::Lexer,
+            "-a" => Self::Parser,
+            "-m" => Self::Monomorphizer,
             "-s" => Self::SymbolTable,
             "--check" => Self::TypeChecker,
             "-ir" => Self::Ir,

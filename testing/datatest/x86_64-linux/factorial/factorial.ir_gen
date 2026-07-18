@@ -1,8 +1,4 @@
-                    Tokenizing testing/test/factorial.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
+                     Compiling testing/test/factorial.cb
 extern write_s32 (s32) -> void
 extern write_char (u8) -> void
 [31mfunction[0m [35mfactorial[0m([1;36mn_v0[0m: [33ms32[0m, ) s32{

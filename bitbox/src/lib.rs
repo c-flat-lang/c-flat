@@ -85,6 +85,7 @@ pub struct Compiler {
     pub(crate) save_to_file: bool,
     pub results: Option<backend::CompilerResult>,
     pub(crate) link: Vec<String>,
+    pub(crate) verbose: bool,
 }
 
 impl Compiler {
@@ -98,7 +99,12 @@ impl Compiler {
             save_to_file: true,
             results: None,
             link: Vec::new(),
+            verbose: false,
         }
+    }
+
+    pub fn verbose(&mut self) {
+        self.verbose = true;
     }
 
     pub fn set_linking_options(&mut self, link_args: Vec<String>) -> &mut Self {
@@ -126,7 +132,7 @@ impl Compiler {
     }
 
     pub fn run(&mut self, module: &mut ir::Module) -> Result<PassOutput, error::Error> {
-        let mut ctx = backend::Context::new(&self.target);
+        let mut ctx = backend::Context::new(&self.target, self.verbose);
 
         for mut pass in self.backend.passes() {
             let passoutput = pass.execute(module, &mut ctx, self.debug_mode)?;
