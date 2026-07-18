@@ -211,6 +211,18 @@ export function makeRaylibHost(getCflatExports, canvas) {
         b[3],
       );
     },
+    CheckCollisionPointRec: (vector2Ptr, rectPtr) => {
+      const r = readRect(rectPtr);
+      const v = readVector2(vector2Ptr);
+      return module._cf_check_collision_point_rec(
+        v[0],
+        v[1],
+        r[0],
+        r[1],
+        r[2],
+        r[3],
+      );
+    },
 
     LoadTexture: (pathPtr) => {
       const path = readCStr(pathPtr);

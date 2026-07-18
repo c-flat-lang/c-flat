@@ -211,6 +211,7 @@ pub extern C fn GetFrameTime as get_frame_time() f32;
 
 // Collision
 pub extern C fn CheckCollisionRecs as check_collision_recs(Rectangle, Rectangle) bool;
+pub extern C fn CheckCollisionPointRec as check_collision_point_rec(Vector2, Rectangle) bool; 
 
 // Drawing Shapes
 pub extern C fn DrawRectangle as draw_rectangle(s32, s32, s32, s32, Color) void;
