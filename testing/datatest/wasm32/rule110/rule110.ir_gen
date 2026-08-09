@@ -759,11 +759,11 @@ extern write_char (u8) -> void
         [34m@loop[0m  cond:
     block [1;36mcond[0m:
         [34m@assign[0m [33mu32[0m : [1;36mtmp.328_v0[0m, [33m159[0m
-        [34m@lt[0m [33mu32[0m : [1;36mtmp.329_v0[0m, [1;36mi_v0[0m, [1;36mtmp.328_v0[0m
+        [34m@lt[0m [33ms32[0m : [1;36mtmp.329_v0[0m, [1;36mi_v0[0m, [1;36mtmp.328_v0[0m
   body:    block [1;36mloop_bod[0m:
         [34m@if[0m [1;36mtmp.332_v0[0m -> [1;36mtmp.330_v0[0m:
     [34m@assign[0m [33mu32[0m : [1;36mtmp.331_v0[0m, [33m0[0m
-    [34m@cmp[0m [33mu32[0m : [1;36mtmp.332_v0[0m, [1;36mi_v0[0m, [1;36mtmp.331_v0[0m
+    [34m@cmp[0m [33ms32[0m : [1;36mtmp.332_v0[0m, [1;36mi_v0[0m, [1;36mtmp.331_v0[0m
   then:
     [34m@assign[0m [33ms32[0m : [1;36mtmp.333_v0[0m, [33m0[0m
     [34m@assign[0m [33ms32[0m : [1;36mtmp.330_v0[0m, [1;36mtmp.333_v0[0m
@@ -780,7 +780,7 @@ extern write_char (u8) -> void
     [34m@assign[0m [33mu32[0m : [1;36mtmp.339_v0[0m, [33m1[0m
     [34m@add[0m [33mu32[0m : [1;36mtmp.340_v0[0m, [1;36mi_v0[0m, [1;36mtmp.339_v0[0m
     [34m@assign[0m [33mu32[0m : [1;36mtmp.341_v0[0m, [33m159[0m
-    [34m@gte[0m [33mu32[0m : [1;36mtmp.342_v0[0m, [1;36mtmp.340_v0[0m, [1;36mtmp.341_v0[0m
+    [34m@gte[0m [33ms32[0m : [1;36mtmp.342_v0[0m, [1;36mtmp.340_v0[0m, [1;36mtmp.341_v0[0m
   then:
     [34m@assign[0m [33ms32[0m : [1;36mtmp.343_v0[0m, [33m0[0m
     [34m@assign[0m [33ms32[0m : [1;36mtmp.338_v0[0m, [1;36mtmp.343_v0[0m
@@ -802,7 +802,7 @@ extern write_char (u8) -> void
         [34m@loop[0m  cond:
     block [1;36mcond[0m:
         [34m@assign[0m [33mu32[0m : [1;36mtmp.351_v0[0m, [33m159[0m
-        [34m@lt[0m [33mu32[0m : [1;36mtmp.352_v0[0m, [1;36mi_v0[0m, [1;36mtmp.351_v0[0m
+        [34m@lt[0m [33ms32[0m : [1;36mtmp.352_v0[0m, [1;36mi_v0[0m, [1;36mtmp.351_v0[0m
   body:    block [1;36mloop_bod[0m:
         [34m@if[0m [1;36mtmp.355_v0[0m:
     [34m@elemget[0m [33ms32[0m : [1;36mtmp.353_v0[0m, [1;36mcurrent_v0[0m, [1;36mi_v0[0m

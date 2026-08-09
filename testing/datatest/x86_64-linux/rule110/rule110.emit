@@ -4515,7 +4515,7 @@ main_start_loop_31:
   # lowering operand
   mov vreg(1618 : Reg64), 159
   mov vreg(1617 : Reg64), vreg(1618 : Reg64)
-  # @lt u64 : tmp.329_v0, i_v0, tmp.328_v0
+  # @lt s32 : tmp.329_v0, i_v0, tmp.328_v0
   # lowering lt
   # lowering operand
   # lowering operand
@@ -4536,7 +4536,7 @@ main_body_loop_32:
   # lowering operand
   mov vreg(1624 : Reg64), 0
   mov vreg(1623 : Reg64), vreg(1624 : Reg64)
-  # @cmp u64 : tmp.332_v0, i_v0, tmp.331_v0
+  # @cmp s32 : tmp.332_v0, i_v0, tmp.331_v0
   # lowering cmp
   # lowering operand
   # lowering operand
@@ -4621,7 +4621,7 @@ main_merge_37:
   # lowering operand
   mov vreg(1655 : Reg64), 159
   mov vreg(1654 : Reg64), vreg(1655 : Reg64)
-  # @gte u64 : tmp.342_v0, tmp.340_v0, tmp.341_v0
+  # @gte s32 : tmp.342_v0, tmp.340_v0, tmp.341_v0
   # lowering gte
   # lowering operand
   # lowering operand
@@ -4733,7 +4733,7 @@ main_start_loop_42:
   # lowering operand
   mov vreg(1690 : Reg64), 159
   mov vreg(1689 : Reg64), vreg(1690 : Reg64)
-  # @lt u64 : tmp.352_v0, i_v0, tmp.351_v0
+  # @lt s32 : tmp.352_v0, i_v0, tmp.351_v0
   # lowering lt
   # lowering operand
   # lowering operand

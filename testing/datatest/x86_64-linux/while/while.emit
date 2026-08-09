@@ -64,7 +64,7 @@ main_start_loop_0:
   # lowering operand
   mov vreg(16 : Reg64), 2
   mov vreg(15 : Reg64), vreg(16 : Reg64)
-  # @lt u64 : tmp.5_v0, i_v0, tmp.4_v0
+  # @lt s32 : tmp.5_v0, i_v0, tmp.4_v0
   # lowering lt
   # lowering operand
   # lowering operand
