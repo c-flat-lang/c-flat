@@ -453,7 +453,27 @@ impl Lowerable for ExprBinary {
             .lower(assembler, ctx)
             .unwrap_or_else(|| panic!("rhs {:?} should produce a variable", self.right));
 
-        let des = assembler.var(lhs.ty.clone()); // Or infer type
+        let return_type = match self.op.kind {
+            TokenKind::Ampersand
+            | TokenKind::BitShiftRight
+            | TokenKind::Minus
+            | TokenKind::Percent
+            | TokenKind::Plus
+            | TokenKind::Slash
+            | TokenKind::Star => lhs.ty.clone(),
+
+            TokenKind::EqualEqual
+            | TokenKind::Greater
+            | TokenKind::GreaterEqual
+            | TokenKind::Keyword(Keyword::And)
+            | TokenKind::Keyword(Keyword::Or)
+            | TokenKind::Less
+            | TokenKind::LessEqual => Type::Signed(32),
+            op => unimplemented!("Operator not implemented {op:?}"),
+        };
+
+        let des = assembler.var(return_type);
+
         match self.op.kind {
             TokenKind::Ampersand => assembler.bwand(des.clone(), lhs, rhs),
             TokenKind::BitShiftRight => assembler.bsr(des.clone(), lhs, rhs),

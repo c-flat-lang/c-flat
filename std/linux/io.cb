@@ -20,7 +20,7 @@ pub fn io_write_s32(n: s32) void {
     let pos: usize = 11;
     let is_neg: bool = n < 0;
 
-    if n == 2147483648 * (0 - 1) {
+    if n == 0 - 2147483648 {
         syscall3(1, 1, "-2147483648", 11);
         return;
     }

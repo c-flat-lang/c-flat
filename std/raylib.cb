@@ -172,6 +172,20 @@ pub type GamepadButton enum {
     dpad_left,
 }
 
+type Gesture enum {
+    none        = 0,
+    tap         = 1,
+    doubletap   = 2,
+    hold        = 4,
+    drag        = 8,
+    swipe_right = 16,
+    swipe_left  = 32,
+    swipe_up    = 64,
+    swipe_down  = 128,
+    pinch_in    = 256,
+    pinch_out   = 512
+}
+
 pub type GamepadAxis enum {
     left_x,
     left_y,
@@ -232,6 +246,24 @@ pub extern C fn IsKeyUp as is_key_up(s32) bool;
 // Gamepad
 pub extern C fn IsGamepadButtonPressed as is_gamepad_button_pressed(s32, s32) bool;
 
+// Input-related functions: touch
+pub extern C fn GetTouchX as get_touch_x() s32;
+pub extern C fn GetTouchY as get_touch_y() s32;
+pub extern C fn GetTouchPosition as get_touch_position(s32) Vector2;
+pub extern C fn GetTouchPointId as get_touch_point_id(s32) s32;
+pub extern C fn GetTouchPointCount as get_touch_point_count() s32;
+
+// Gesture's
+pub extern C fn SetGesturesEnabled as set_gestures_enabled(u32) void;
+pub extern C fn IsGestureDetected as is_gesture_detected(u32) bool;
+pub extern C fn GetGestureDetected as get_gesture_detected() s32;
+pub extern C fn GetGestureHoldDuration as get_gesture_hold_duration() f32;
+pub extern C fn GetGestureDragVector as get_gesture_drag_vector() Vector2;
+pub extern C fn GetGestureDragAngle as get_gesture_drag_angle() f32;
+pub extern C fn GetGesturePinchVector as get_gesture_pinch_vector() Vector2;
+pub extern C fn GetGesturePinchAngle as get_gesture_pinch_angle() f32;
+
+
 // Mouse
 pub extern C fn IsMouseButtonPressed as is_mouse_button_pressed(s32) bool;
 pub extern C fn IsMouseButtonDown as is_mouse_button_down(s32) bool;
@@ -249,6 +281,8 @@ type Wave struct {
     data: *[u8],
 }
 
+// HACK: this is just till we can better describe the type in c flat.
+// This will not work on native linux right now.
 type Sound struct {
     handle: s32,
 }
@@ -271,6 +305,32 @@ pub extern C fn UnloadSoundAlias as unload_sound_alias(Sound) void;
 pub extern C fn ExportWave as export_wave(Wave, *[u8]) bool;
 pub extern C fn ExportWaveAsCode as export_wave_as_code(Wave, *[u8]) bool;
 
+// Music
+
+// HACK: this is just till we can better describe the type in c flat.
+// This will not work on native linux right now.
+type Music struct {
+    handle: s32,
+}
+
+pub extern C fn LoadMusicStream as load_music_stream(*[u8]) Music ;
+pub extern C fn LoadMusicStreamFromMemory as load_music_stream_from_memory(*[u8], *[u8], s32) Music;
+pub extern C fn IsMusicValid as is_music_valid(Music) bool;
+pub extern C fn UnloadMusicStream as unload_music_stream(Music) void;
+pub extern C fn PlayMusicStream as play_music_stream(Music) void;
+pub extern C fn IsMusicStreamPlaying as is_music_stream_playing(Music) bool;
+pub extern C fn UpdateMusicStream as update_music_stream(Music) void;
+pub extern C fn StopMusicStream as stop_music_stream(Music) void;
+pub extern C fn PauseMusicStream as pause_music_stream(Music) void;
+pub extern C fn ResumeMusicStream as resume_music_stream(Music) void;
+pub extern C fn SeekMusicStream as seek_music_stream(Music, f32) void;
+pub extern C fn SetMusicVolume as set_music_volume(Music, f32) void;
+pub extern C fn SetMusicPitch as set_music_pitch(Music, f32) void;
+pub extern C fn SetMusicPan as set_music_pan(Music, f32) void;
+pub extern C fn GetMusicTimeLength as get_music_time_length(Music) f32;
+pub extern C fn GetMusicTimePlayed as get_music_time_played(Music) f32;
+
+
 // Wave/Sound management functions
 pub extern C fn PlaySound as play_sound(Sound) void;
 pub extern C fn StopSound as stop_sound(Sound) void;
@@ -285,6 +345,9 @@ pub extern C fn WaveCrop as wave_crop(*Wave, s32, s32) void;
 pub extern C fn WaveFormat as wave_format(*Wave, s32, s32, s32) void;
 pub extern C fn LoadWaveSamples as load_wave_samples(Wave) *f32;
 pub extern C fn UnloadWaveSamples as unload_wave_samples(*f32) void;
+
+// Audio Streaming
+pub extern C fn SetAudioStreamBufferSizeDefault as set_audio_stream_buffer_size_default(s32) void;
 
 // Random number
 

@@ -1,3 +1,7 @@
+extern C fn write(*[u8], usize) void;
+extern C fn write_bool(bool) void;
+extern C fn write_char(u8) void;
+
 use std::raylib;
 
 pub fn main() s32 {
@@ -14,13 +18,27 @@ pub fn main() s32 {
 
     let sound_path = "/assets/sound.wav\0";
     let sound = load_sound(&sound_path);
+    let music_path = "/assets/music.mp3\0";
+    let music = load_music_stream(&music_path);
 
     let hint = "Press SPACE to play the sound\0";
 
+
     set_target_fps(60);
     while !window_should_close() {
+        update_music_stream(music);
         if is_key_pressed(KeyboardKey::space) {
             play_sound(sound);
+        }
+        if is_key_pressed(KeyboardKey::p) {
+            let string = "pressed k\n\0";
+            write(&string, string.len);
+            play_music_stream(music);
+        }
+
+        if is_key_pressed(KeyboardKey::c) {
+            write_bool(is_music_stream_playing(music));
+            write_char('\n');
         }
 
         begin_drawing();
@@ -30,6 +48,7 @@ pub fn main() s32 {
     }
 
     unload_sound(sound);
+    unload_music_stream(music);
     close_audio_device();
     close_window();
     return 0;
