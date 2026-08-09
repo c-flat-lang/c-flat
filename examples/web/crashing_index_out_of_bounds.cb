@@ -43,7 +43,7 @@ fn Board_new(screen_width: s32, screen_height: s32) Board {
         while col < 5 {
             let q = (col as s32) - radius;
             let r = (row as s32) - radius;
-            let s = (q * (0 - 1)) - r;
+            let s = (0 - q) - r;
             let dist = max<(s32)>(max<(s32)>(abs<(s32)>(q), abs<(s32)>(r)), abs<(s32)>(s));
             b.tiles[row][col].exists = dist <= radius;
             col = col + 1;

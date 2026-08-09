@@ -7,7 +7,7 @@ pub fn min<(T: type)>(x: T, y: T) T {
 }
 
 pub fn abs<(T: type)>(x: T) T {
-    return if x < 0 { x * (0 - 1) } else { x };
+    return if x < 0 { 0 - x } else { x };
 }
 
 // TODO: Make a const once implemented
@@ -18,6 +18,11 @@ pub fn PI() f32 {
 // TODO: Make a const once implemented
 pub fn TAU() f32 {
     return PI() * 2.0;
+}
+
+// TODO: Make a const once implemented
+pub fn RAD2DEG() f32 {
+    return 180.0 / PI();
 }
 
 fn normalize_angle(x: f32) f32 {

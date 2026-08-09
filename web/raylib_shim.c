@@ -35,9 +35,9 @@ int cf_check_collision_recs(float ax, float ay, float aw, float ah, float bx,
                             (Rectangle){bx, by, bw, bh});
 }
 
-int cf_check_collision_point_rec(float px, float py, float rx, float ry, float rw, float rh) {
-    return CheckCollisionPointRec((Vector2){px, py},
-                                  (Rectangle){rx, ry, rw, rh});
+int cf_check_collision_point_rec(float px, float py, float rx, float ry,
+                                 float rw, float rh) {
+  return CheckCollisionPointRec((Vector2){px, py}, (Rectangle){rx, ry, rw, rh});
 }
 
 // Textures. LoadTexture returns a Texture2D by value; write its 5 ints to an
@@ -162,4 +162,100 @@ void cf_unload_sound(int h) {
 
 int cf_is_sound_valid(int h) {
   return cf_sound_valid_handle(h) ? IsSoundValid(cf_sounds[h]) : 0;
+}
+
+#define CF_MAX_MUSICS 256
+static Music cf_musics[CF_MAX_MUSICS];
+static int cf_musics_count = 0;
+
+static int cf_music_valid_handle(int h) {
+  return h >= 0 && h < cf_musics_count;
+}
+
+int cf_load_music_stream(const char *path) {
+  if (cf_musics_count >= CF_MAX_MUSICS)
+    return -1;
+  Music m = LoadMusicStream(path);
+  int h = cf_musics_count++;
+  cf_musics[h] = m;
+  return h;
+}
+
+int cf_load_music_stream_from_memory(const char *fileType, const unsigned char *data, int dataSize) {
+  if (cf_musics_count >= CF_MAX_MUSICS)
+    return -1;
+  Music m = LoadMusicStreamFromMemory(fileType, data, dataSize);
+  int h = cf_musics_count++;
+  cf_musics[h] = m;
+  return h;
+}
+
+bool cf_is_music_valid(int h) {
+  if (cf_music_valid_handle(h))
+    return IsMusicValid(cf_musics[h]);
+  return 0;
+}
+
+void cf_unload_music_stream(int h) {
+  if (cf_music_valid_handle(h))
+    UnloadMusicStream(cf_musics[h]);
+}
+
+void cf_play_music_stream(int h) {
+  if (cf_music_valid_handle(h))
+    PlayMusicStream(cf_musics[h]);
+}
+
+int cf_is_music_playing(int h) {
+  return cf_music_valid_handle(h) ? IsMusicStreamPlaying(cf_musics[h]) : 0;
+}
+
+void cf_update_music_stream(int h) {
+  if (cf_music_valid_handle(h))
+    UpdateMusicStream(cf_musics[h]);
+}
+
+void cf_stop_music_stream(int h) {
+  if (cf_music_valid_handle(h))
+    StopMusicStream(cf_musics[h]);
+}
+
+void cf_pause_music_stream(int h) {
+  if (cf_music_valid_handle(h))
+    PauseMusicStream(cf_musics[h]);
+}
+
+void cf_resume_music_stream(int h) {
+  if (cf_music_valid_handle(h))
+    ResumeMusicStream(cf_musics[h]);
+}
+
+void cf_seek_music_stream(int h, float position) {
+  if (cf_music_valid_handle(h))
+    SeekMusicStream(cf_musics[h], position);
+}
+
+void cf_set_music_volume(int h, float volumn) {
+  if (cf_music_valid_handle(h))
+    SetMusicVolume(cf_musics[h], volumn);
+}
+
+void cf_set_music_pitch(int h, float pitch) {
+  if (cf_music_valid_handle(h))
+    SetMusicPitch(cf_musics[h], pitch);
+}
+
+void cf_set_music_pan(int h, float pan) {
+  if (cf_music_valid_handle(h))
+    SetMusicPan(cf_musics[h], pan);
+}
+
+void cf_get_music_time_length(int h) {
+  if (cf_music_valid_handle(h))
+    GetMusicTimeLength(cf_musics[h]);
+}
+
+void cf_get_music_time_played(int h) {
+  if (cf_music_valid_handle(h))
+    GetMusicTimePlayed(cf_musics[h]); 
 }

@@ -11,11 +11,26 @@ use crate::ir::instruction::{
 use crate::ir::{BasicBlock, Instruction, Type};
 
 fn branch_terminates(blocks: &[BasicBlock]) -> bool {
-    blocks.iter().any(|b| {
-        b.instructions
-            .iter()
-            .any(|i| matches!(i, Instruction::Return(_)))
-    })
+    blocks
+        .iter()
+        .any(|b| b.instructions.iter().any(instruction_terminates))
+}
+
+fn instruction_terminates(i: &Instruction) -> bool {
+    match i {
+        Instruction::Return(_) => true,
+        // TODO: Add an unreachable instruction
+        // Instruction::Unreachable => true,
+
+        // Recurse: a nested if/else only counts as a terminator if it
+        // has an else branch and both sides terminate.
+        Instruction::IfElse(nested) => {
+            !nested.else_branch.is_empty()
+                && branch_terminates(&nested.then_branch)
+                && branch_terminates(&nested.else_branch)
+        }
+        _ => false,
+    }
 }
 
 /// Emit the store instruction matching a field/element `ty` (the value is
@@ -327,13 +342,16 @@ impl Lower<Wasm32LowerContext<'_>> for ICmp {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_eq(),
-            ValType::I64 => target.assembler.i64_eq(),
-            ValType::F32 => target.assembler.f32_eq(),
-            ValType::F64 => target.assembler.f64_eq(),
-            ValType::V128 => unreachable!("@cmp v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@cmp ref: reference types are not produced by c-flat"),
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_eq(),
+            Some(ValType::I64) => target.assembler.i64_eq(),
+            Some(ValType::F32) => target.assembler.f32_eq(),
+            Some(ValType::F64) => target.assembler.f64_eq(),
+            Some(ValType::V128) => unreachable!("@cmp v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("@cmp ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -688,17 +706,20 @@ impl Lower<Wasm32LowerContext<'_>> for IAnd {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_and(),
-            ValType::I64 => target.assembler.i64_and(),
-            ValType::F32 => {
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_and(),
+            Some(ValType::I64) => target.assembler.i64_and(),
+            Some(ValType::F32) => {
                 unreachable!("@and f32: bitwise-and on floats is rejected by the type checker")
             }
-            ValType::F64 => {
+            Some(ValType::F64) => {
                 unreachable!("@and f64: bitwise-and on floats is rejected by the type checker")
             }
-            ValType::V128 => unreachable!("@and v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@and ref: reference types are not produced by c-flat"),
+            Some(ValType::V128) => unreachable!("@and v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("@and ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -722,13 +743,14 @@ impl Lower<Wasm32LowerContext<'_>> for IOr {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_or(),
-            ValType::I64 => target.assembler.i64_or(),
-            ValType::F32 => unreachable!("@or f32"),
-            ValType::F64 => unreachable!("@or f64"),
-            ValType::V128 => unreachable!("@or v128"),
-            ValType::Ref(_) => unimplemented!("@or ref"),
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_or(),
+            Some(ValType::I64) => target.assembler.i64_or(),
+            Some(ValType::F32) => unreachable!("@or f32"),
+            Some(ValType::F64) => unreachable!("@or f64"),
+            Some(ValType::V128) => unreachable!("@or v128"),
+            Some(ValType::Ref(_)) => unimplemented!("@or ref"),
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -752,17 +774,20 @@ impl Lower<Wasm32LowerContext<'_>> for IXOr {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_xor(),
-            ValType::I64 => target.assembler.i64_xor(),
-            ValType::F32 => {
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_xor(),
+            Some(ValType::I64) => target.assembler.i64_xor(),
+            Some(ValType::F32) => {
                 unreachable!("@xor f32: bitwise-xor on floats is rejected by the type checker")
             }
-            ValType::F64 => {
+            Some(ValType::F64) => {
                 unreachable!("@xor f64: bitwise-xor on floats is rejected by the type checker")
             }
-            ValType::V128 => unreachable!("@xor v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@xor ref: reference types are not produced by c-flat"),
+            Some(ValType::V128) => unreachable!("@xor v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("@xor ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -786,19 +811,20 @@ impl Lower<Wasm32LowerContext<'_>> for IBitWiseAnd {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_and(),
-            ValType::I64 => target.assembler.i64_and(),
-            ValType::F32 => {
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_and(),
+            Some(ValType::I64) => target.assembler.i64_and(),
+            Some(ValType::F32) => {
                 unreachable!("@bwand f32: bitwise-and on floats is rejected by the type checker")
             }
-            ValType::F64 => {
+            Some(ValType::F64) => {
                 unreachable!("@bwand f64: bitwise-and on floats is rejected by the type checker")
             }
-            ValType::V128 => unreachable!("@bwand v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => {
+            Some(ValType::V128) => unreachable!("@bwand v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
                 unreachable!("@bwand ref: reference types are not produced by c-flat")
             }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -824,11 +850,11 @@ impl Lower<Wasm32LowerContext<'_>> for IBitShiftRight {
         self.rhs.lower(ctx, target)?;
         // Dispatch on ir::Type so the shift's signedness (arithmetic vs logical)
         // is correct, unlike the ValType-based binary ops.
-        match &self.des.ty {
-            Type::Unsigned(1..=32) => target.assembler.i32_shr_u(),
-            Type::Signed(1..=32) => target.assembler.i32_shr_s(),
-            Type::Unsigned(33..=64) => target.assembler.i64_shr_u(),
-            Type::Signed(33..=64) => target.assembler.i64_shr_s(),
+        match &self.lhs.ty() {
+            Some(Type::Unsigned(1..=32)) => target.assembler.i32_shr_u(),
+            Some(Type::Signed(1..=32)) => target.assembler.i32_shr_s(),
+            Some(Type::Unsigned(33..=64)) => target.assembler.i64_shr_u(),
+            Some(Type::Signed(33..=64)) => target.assembler.i64_shr_s(),
             ty => unreachable!("@bsr: unsupported operand type {ty:?}"),
         };
         let Some(idx) = ctx
@@ -853,13 +879,16 @@ impl Lower<Wasm32LowerContext<'_>> for IGt {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_gt_s(),
-            ValType::I64 => target.assembler.i64_gt_s(),
-            ValType::F32 => target.assembler.f32_gt(),
-            ValType::F64 => target.assembler.f64_gt(),
-            ValType::V128 => unreachable!("v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("ref: reference types are not produced by c-flat"),
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_gt_s(),
+            Some(ValType::I64) => target.assembler.i64_gt_s(),
+            Some(ValType::F32) => target.assembler.f32_gt(),
+            Some(ValType::F64) => target.assembler.f64_gt(),
+            Some(ValType::V128) => unreachable!("v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -886,8 +915,8 @@ impl Lower<Wasm32LowerContext<'_>> for IGte {
 
         let is_signed = matches!(self.lhs.ty(), Some(Type::Signed(_)));
 
-        match self.des.ty.clone().into() {
-            ValType::I32 => {
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => {
                 if is_signed {
                     // however signedness is tracked in your AST/type info
                     target.assembler.i32_ge_s()
@@ -895,17 +924,20 @@ impl Lower<Wasm32LowerContext<'_>> for IGte {
                     target.assembler.i32_ge_u()
                 }
             }
-            ValType::I64 => {
+            Some(ValType::I64) => {
                 if is_signed {
                     target.assembler.i64_ge_s()
                 } else {
                     target.assembler.i64_ge_u()
                 }
             }
-            ValType::F32 => target.assembler.f32_ge(),
-            ValType::F64 => target.assembler.f64_ge(),
-            ValType::V128 => unreachable!("@gte v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@gte ref: reference types are not produced by c-flat"),
+            Some(ValType::F32) => target.assembler.f32_ge(),
+            Some(ValType::F64) => target.assembler.f64_ge(),
+            Some(ValType::V128) => unreachable!("@gte v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("@gte ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -984,13 +1016,16 @@ impl Lower<Wasm32LowerContext<'_>> for ILt {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_lt_s(),
-            ValType::I64 => target.assembler.i64_lt_s(),
-            ValType::F32 => target.assembler.f32_lt(),
-            ValType::F64 => target.assembler.f64_lt(),
-            ValType::V128 => unreachable!("@lt v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@lt ref: reference types are not produced by c-flat"),
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_lt_s(),
+            Some(ValType::I64) => target.assembler.i64_lt_s(),
+            Some(ValType::F32) => target.assembler.f32_lt(),
+            Some(ValType::F64) => target.assembler.f64_lt(),
+            Some(ValType::V128) => unreachable!("@lt v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("@lt ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -1014,13 +1049,16 @@ impl Lower<Wasm32LowerContext<'_>> for ILte {
     ) -> Result<Self::Output, crate::error::Error> {
         self.lhs.lower(ctx, target)?;
         self.rhs.lower(ctx, target)?;
-        match self.des.ty.clone().into() {
-            ValType::I32 => target.assembler.i32_le_s(),
-            ValType::I64 => target.assembler.i64_le_s(),
-            ValType::F32 => target.assembler.f32_le(),
-            ValType::F64 => target.assembler.f64_le(),
-            ValType::V128 => unreachable!("@lte v128: SIMD is not produced by c-flat"),
-            ValType::Ref(_) => unreachable!("@lte ref: reference types are not produced by c-flat"),
+        match self.lhs.ty().cloned().map(Into::into) {
+            Some(ValType::I32) => target.assembler.i32_le_s(),
+            Some(ValType::I64) => target.assembler.i64_le_s(),
+            Some(ValType::F32) => target.assembler.f32_le(),
+            Some(ValType::F64) => target.assembler.f64_le(),
+            Some(ValType::V128) => unreachable!("@lte v128: SIMD is not produced by c-flat"),
+            Some(ValType::Ref(_)) => {
+                unreachable!("@lte ref: reference types are not produced by c-flat")
+            }
+            None => unreachable!(),
         };
         let Some(idx) = ctx
             .local_function_variables
@@ -1171,12 +1209,6 @@ impl Lower<Wasm32LowerContext<'_>> for IIfElse {
         for block in self.cond.iter() {
             block.lower(ctx, target)?;
         }
-
-        // let ty: BlockType = self
-        //     .result
-        //     .as_ref()
-        //     .map(|r| r.ty.clone().into())
-        //     .unwrap_or(BlockType::Empty);
 
         let Some(idx) = ctx
             .local_function_variables
