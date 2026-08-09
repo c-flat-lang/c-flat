@@ -4,7 +4,7 @@ pub fn convert_s32_to_array(n: s32, buf: *[11; u8]) void {
     let mut pos: usize = ARRAY_LEN;
     let is_neg: bool = n < 0;
 
-    let s32MAX: s32 = 2147483648 * (0 - 1);
+    let s32MAX: s32 = 0 - 2147483648;
     if n == s32MAX {
         let lit: [11; u8] = ['-', '2', '1', '4', '7', '4', '8', '3', '6', '4', '8'];
         let mut i: usize = 0;
