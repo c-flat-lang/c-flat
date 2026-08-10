@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/ifelse.cb
-                        Parser
+                     Compiling testing/test/ifelse.cb
 === testing/test/ifelse.cb ===
 [
     ExternFunction(

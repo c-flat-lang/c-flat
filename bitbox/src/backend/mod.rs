@@ -178,6 +178,7 @@ impl CompilerResult {
 
 #[derive(Debug, Default)]
 pub struct Context {
+    pub verbose: bool,
     pub cfg: crate::passes::control_flow_graph::ControlFlowGraph,
     pub liveness: crate::passes::liveness::LivenessAnalysisInfo,
     pub local_function_variables: crate::passes::local_function_variables::LocalFunctionVariables,
@@ -186,9 +187,10 @@ pub struct Context {
 }
 
 impl Context {
-    pub(crate) fn new(target: &Target) -> Self {
+    pub(crate) fn new(target: &Target, verbose: bool) -> Self {
         Self {
             output: Output::new(target),
+            verbose,
             target: *target,
             ..Default::default()
         }

@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/structs.cb
-                        Parser
+                     Compiling testing/test/structs.cb
 === testing/test/structs.cb ===
 [
     ExternFunction(

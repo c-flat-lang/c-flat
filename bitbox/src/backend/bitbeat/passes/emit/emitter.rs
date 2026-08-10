@@ -6,6 +6,9 @@ use crate::passes::{DebugPass, Pass, PassOutput};
 pub struct EmitBitbeatPass;
 
 impl Pass for EmitBitbeatPass {
+    fn name(&self) -> &'static str {
+        "Emitting bitbeat"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::Emit
     }

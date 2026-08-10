@@ -35,6 +35,9 @@ impl LabelCreator {
 pub struct LoweringPass;
 
 impl Pass for LoweringPass {
+    fn name(&self) -> &'static str {
+        "Lowering IR"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::LoweredIr
     }

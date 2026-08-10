@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/mul.cb
-                        Parser
+                     Compiling testing/test/mul.cb
 === testing/test/mul.cb ===
 [
     ExternFunction(

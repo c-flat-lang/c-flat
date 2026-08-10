@@ -44,6 +44,9 @@ impl<'ctx> X86_64LinuxLowerContext<'ctx> {
 pub struct EmitX86_64LinuxPass;
 
 impl crate::passes::Pass for EmitX86_64LinuxPass {
+    fn name(&self) -> &'static str {
+        "Emitting x86_64-linux assembly"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::Emit
     }

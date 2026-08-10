@@ -1,9 +1,8 @@
-use super::Lexer;
-use crate::stage::Stage;
+use super::lex;
 use std::fmt::Write;
 
 pub fn snapshot_lexing(path: &str, input: &str) -> String {
-    let tokens = Lexer.run((path, input));
+    let tokens = lex(path, input);
     let mut tokens = std::collections::VecDeque::from(tokens);
     let mut output = String::new();
     let mut total = 0;

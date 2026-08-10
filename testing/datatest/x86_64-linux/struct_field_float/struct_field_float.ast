@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/struct_field_float.cb
-                        Parser
+                     Compiling testing/test/struct_field_float.cb
 === testing/test/struct_field_float.cb ===
 [
     ExternFunction(

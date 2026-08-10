@@ -1,11 +1,3 @@
-                    Tokenizing testing/test/fix_arrays.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-        LocalFunctionVariables
-              ControlFlowGraph
-                 StructuringIr
-              LivenessAnalysis
-                          Emit
+                     Compiling testing/test/fix_arrays.cb
+                      Finished
                        Running bin/fix_arrays.wasm
