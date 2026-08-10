@@ -1005,7 +1005,10 @@ impl Lower<X86_64LinuxLowerContext<'_>> for ICall {
                             }
                         }
                     }
-                    None => panic!("passing struct > 16 bytes not supported"),
+                    None => panic!(
+                        "passing struct > 16 bytes not supported {}",
+                        s.size(&ctx.target)
+                    ),
                 },
                 Some(Type::Float(32)) => {
                     let xmm = target

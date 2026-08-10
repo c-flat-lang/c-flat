@@ -162,12 +162,15 @@ impl<'st> TypeChecker<'st> {
             .kind
             .compair(&function.return_type.kind)
         {
-            self.errors.push(Box::new(ErrorMissMatchedType::new(
-                calulated_return_type,
-                function.return_type.kind.clone(),
-                #[cfg(feature = "debug")]
-                format!("{} {}:{}", file!(), line!(), column!()),
-            )));
+            self.errors.push(Box::new(
+                ErrorMissMatchedType::new(
+                    calulated_return_type,
+                    function.return_type.kind.clone(),
+                    #[cfg(feature = "debug")]
+                    format!("{} {}:{}", file!(), line!(), column!()),
+                )
+                .alt_span(function.return_type.span.clone()),
+            ));
         }
         function.return_type.clone()
     }
@@ -601,10 +604,7 @@ impl<'st> TypeChecker<'st> {
             TypeKind::Pointer(inner) => match &inner.kind {
                 TypeKind::Slice(elem_ty) => *elem_ty.clone(),
                 TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
-                _ => {
-                    eprintln!("walk_expr_array_index {:#?}", inner);
-                    (**inner).clone()
-                }
+                _ => (**inner).clone(),
             },
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(

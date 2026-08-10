@@ -151,7 +151,7 @@ This means we may need to generate more then one X Type depending on how many Ge
         match self {
             Self::Array(count, ty) => count * ty.kind.size(target_pointer_size),
             Self::Bool => 1,
-            Self::Enum(..) => 4, // TODO: This will change once we can set the enum number type
+            Self::Enum(enum_def) => enum_def.number_kind.size(target_pointer_size),
             Self::Name(name) => {
                 unreachable!(
                     "Type::Name({}).size() should be handled in type_resolver",
@@ -164,10 +164,9 @@ This means we may need to generate more then one X Type depending on how many Ge
                     name.lexeme
                 )
             }
+            // TODO: shouldnt this be bytes not bits?
             Self::Pointer(_) => 64,
-            Self::SignedTargetPointerNumber => unreachable!(
-                "ssize or SignedTargetPointerNumber should be handled in type_resolver"
-            ),
+            Self::SignedTargetPointerNumber => target_pointer_size as usize,
             Self::Slice(_) => {
                 let ptr = target_pointer_size as usize / 8;
                 ptr + ptr // data ptr + len
@@ -190,9 +189,7 @@ This means we may need to generate more then one X Type depending on how many Ge
             Self::UnsignedNumber(bytes) | Self::SignedNumber(bytes) | Self::Float(bytes) => {
                 (*bytes as usize) / 8
             }
-            Self::UnsignedTargetPointerNumber => unreachable!(
-                "usize or UnsignedTargetPointerNumber should be handled in type_resolver"
-            ),
+            Self::UnsignedTargetPointerNumber => target_pointer_size as usize,
             Self::Void => 0,
         }
     }
