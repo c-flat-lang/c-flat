@@ -5,6 +5,7 @@ pub mod monomorphize;
 pub mod parser;
 pub mod pipelines;
 pub mod semantic_analyzer;
+pub mod type_interner;
 
 use std::path::PathBuf;
 
