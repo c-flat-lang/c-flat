@@ -6,7 +6,7 @@ type Enum enum {
 }
 
 pub fn main() void {
-    let value: u32 = Enum::value;
+    let value: Enum = Enum::value;
     let v: s32 = value as s32;
     io::io_write_s32(v);
     io::io_write_str(&"\n");
