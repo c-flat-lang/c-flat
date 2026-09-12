@@ -1,6 +1,5 @@
 #![allow(unused)]
 
-use crate::DebugMode;
 use crate::stage::lexer::token::Span;
 use crate::stage::parser::ast;
 use crate::stage::{Stage, StageContext, StageOutput};
@@ -66,14 +65,14 @@ pub struct FunctionDef {
     return_type_id: TypeId,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructField<Type> {
     pub name: String,
     pub ty: Type,
     pub default: Option<Box<ast::Expr>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructDef {
     name: String,
     type_param: Option<Vec<(String, TypeId)>>,
@@ -81,7 +80,7 @@ pub struct StructDef {
     packed: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StructTemplate {
     pub name: String,
     pub type_params: Vec<(String, ast::Type)>,
@@ -89,7 +88,7 @@ pub struct StructTemplate {
     pub packed: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FunctionTemplate {
     pub name: String,
     pub type_params: Vec<String>,
@@ -98,7 +97,7 @@ pub struct FunctionTemplate {
     pub return_type: ast::Type,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeDef {
     Array(ArrayDef),
     Bool,

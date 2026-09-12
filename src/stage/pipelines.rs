@@ -1,6 +1,7 @@
 use crate::error::Result;
 use crate::stage::{Stage, StageContext, StageOutput};
 use crate::stage::{
+    define_type::DefineTypeStage,
     ir_builder::IRBuilderStage,
     module_loader::{FlattenModulesStage, LoadedModuleStage},
     monomorphize::MonomorphizerStage,
@@ -10,6 +11,7 @@ use bitbox::ir::Module;
 
 pub fn common_tail() -> Vec<Box<dyn Stage>> {
     vec![
+        Box::new(DefineTypeStage),
         Box::new(MonomorphizerStage),
         Box::new(SymbolTableBuilderStage),
         Box::new(TypeCheckerStage),

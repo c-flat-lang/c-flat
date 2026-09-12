@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod error;
 pub mod stage;
+pub mod type_interner;
 pub use bitbox;
 pub use bitbox::{Target, backend::CompilerResult, passes::DebugPass};
 pub use cli::{Cli, DebugMode};

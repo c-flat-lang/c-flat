@@ -156,6 +156,7 @@ pub enum DebugMode {
     StructuringIr,
     SymbolTable,
     TypeChecker,
+    TypeCollection,
     VirtRegRewrite,
 }
 
