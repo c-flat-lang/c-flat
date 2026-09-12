@@ -439,11 +439,12 @@ impl<'st> TypeChecker<'st> {
         // TODO: Make this a user error
         if expr.args.len() != expected_arg_count {
             panic!(
-                "function: {} @ index {} expected {} args but found {}",
+                "function: {} @ index {} expected {} args but found {} in {}",
                 symbol.name,
                 expr.span().start,
                 expected_arg_count,
-                expr.args.len()
+                expr.args.len(),
+                expr.span().filename,
             );
         }
 
@@ -601,10 +602,7 @@ impl<'st> TypeChecker<'st> {
             TypeKind::Pointer(inner) => match &inner.kind {
                 TypeKind::Slice(elem_ty) => *elem_ty.clone(),
                 TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
-                _ => {
-                    eprintln!("walk_expr_array_index {:#?}", inner);
-                    (**inner).clone()
-                }
+                _ => (**inner).clone(),
             },
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
