@@ -15,7 +15,7 @@ pub fn main() void {
     p.data[0] = 13;
     p.data[1] = 29;
     let sum: s32 = p.data[0] + p.data[1]; // 42
-    memory::free<(Pair)>(p);
+    memory::destroy<(Pair)>(p);
     io_write_str(&"-----\n");
     io_write_s32(sum);
     io_write_str(&"\n-----\n");
