@@ -1,8 +1,8 @@
-use modules::math;
-use modules::io::io_write_str;
+use std::math;
+use std::linux::io;
 
 pub fn main() s32 {
-    let x = 123;
+    let x: s32 = 123;
     let y: s32 = 205;
     io_write_str(&"min: ");
     let min_result: s32 = math::min<(s32)>(x, y);

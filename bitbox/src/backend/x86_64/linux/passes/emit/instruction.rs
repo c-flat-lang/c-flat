@@ -545,7 +545,50 @@ impl Lower<X86_64LinuxLowerContext<'_>> for IRem {
                     b => panic!("Unsupported signed int width: {b}"),
                 }
             }
-            Type::Float(bits) => todo!("@rem f{bits}"),
+            Type::Float(bits) => {
+                match bits {
+                    32 => {
+                        // rem = lhs - trunc(lhs / rhs) * rhs
+                        let quotient = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.movss(quotient, lhs.clone());
+                        target.assembler.divss(quotient, rhs.clone());
+
+                        let trunc_int = target.assembler.alloc.vreg::<Reg32>();
+                        target.assembler.cvttss2si(trunc_int, quotient);
+
+                        let trunc_float = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.cvtsi2ss(trunc_float, trunc_int);
+
+                        target.assembler.mulss(trunc_float, rhs);
+
+                        let result = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.movss(result, lhs);
+                        target.assembler.subss(result, trunc_float);
+
+                        target.assembler.alloc.store_variable(&self.des, result);
+                    }
+                    64 => {
+                        let quotient = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.movsd(quotient, lhs.clone());
+                        target.assembler.divsd(quotient, rhs.clone());
+
+                        let trunc_int = target.assembler.alloc.vreg::<Reg64>();
+                        target.assembler.cvttsd2si(trunc_int, quotient);
+
+                        let trunc_float = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.cvtsi2sd(trunc_float, trunc_int);
+
+                        target.assembler.mulsd(trunc_float, rhs);
+
+                        let result = target.assembler.alloc.vreg::<XmmReg>();
+                        target.assembler.movsd(result, lhs);
+                        target.assembler.subsd(result, trunc_float);
+
+                        target.assembler.alloc.store_variable(&self.des, result);
+                    }
+                    b => panic!("Unsupported float width: {b}"),
+                }
+            }
             ty => panic!("Remainder not supported for type {:?}", ty),
         }
 

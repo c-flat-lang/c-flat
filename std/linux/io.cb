@@ -7,7 +7,7 @@ pub type Stdio enum {// (usize) {
 }
 
 pub fn io_write_str(string: *[u8]) void {
-    syscall4(
+    syscall3(
         Syscall::write,
         Stdio::stdout,
         string.data,
