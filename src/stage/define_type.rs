@@ -2,7 +2,6 @@ use crate::DebugMode;
 use crate::stage::parser::ast;
 use crate::stage::{Stage, StageContext, StageOutput};
 use crate::type_interner::TypeInterner;
-use std::fmt::Write;
 
 #[derive(Debug)]
 pub struct DefineTypeStage;
@@ -31,11 +30,7 @@ impl DefineTypeStage {
     }
 
     fn define_struct_template(&self, interner: &mut TypeInterner, struct_def: &ast::Struct) {
-        // register_struct_template doesn't fail on its own the way
-        // declare_struct does (no TypeId reserved in `defs`), so no
-        // Result to handle here — duplicate template names would need
-        // their own check if that's a real concern.
-        interner.register_struct_template(struct_def);
+        let _ = interner.register_struct_template(struct_def);
     }
 
     fn define_enum(&self, interner: &mut TypeInterner, enum_def: &ast::Enum) -> report::Result<()> {
@@ -68,14 +63,12 @@ impl Stage for DefineTypeStage {
     }
 
     fn debug(&self, _ctx: &mut StageContext) -> StageOutput {
-        let mut output = String::new();
-
-        writeln!(&mut output, "").expect("DefiningTypeStage failed to write debug output");
-
-        StageOutput::Output(output)
+        StageOutput::Output(String::new())
     }
 
     fn run(&mut self, ctx: &mut StageContext) -> report::Result<()> {
+        ctx.interner = TypeInterner::new(ctx.target);
+
         for item in ctx.items.iter() {
             match item {
                 ast::Item::Function(_) => {}
@@ -103,42 +96,87 @@ impl Stage for DefineTypeStage {
     }
 }
 
-#[test]
-fn define_type_stage_test() {
-    use crate::error::Result;
+#[cfg(all(test, not(feature = "wasm")))]
+mod tests {
+    use super::*;
     use crate::stage::module_loader::{FlattenModulesStage, LoadedModuleStage};
-    use bitbox::ir::Module;
+    use crate::stage::monomorphize::MonomorphizerStage;
 
-    pub fn drive(ctx: &mut StageContext) -> Result<Module> {
-        let pipeline: Vec<Box<dyn Stage>> = vec![
-            Box::new(LoadedModuleStage) as _,
-            Box::new(FlattenModulesStage) as _,
-            Box::new(DefineTypeStage) as _,
-            // Box::new(MonomorphizerStage) as _,
-            // Box::new(SymbolTableBuilderStage) as _,
-            // Box::new(TypeCheckerStage) as _,
-            // Box::new(IRBuilderStage) as _,
-        ];
+    fn run_pipeline(entry: &str, mut pipeline: Vec<Box<dyn Stage>>) -> StageContext {
+        let mut ctx = StageContext {
+            entry: std::path::PathBuf::from(entry),
+            ..Default::default()
+        };
 
-        for mut pass in pipeline {
-            if let StageOutput::Output(s) = pass.execute(ctx)? {
-                eprintln!("{:#?}", ctx);
-                eprintln!("{}", s);
-            }
+        for pass in pipeline.iter_mut() {
+            let name = pass.name();
+            pass.execute(&mut ctx)
+                .unwrap_or_else(|err| panic!("stage `{name}` failed: {err:?}"));
         }
 
-        Ok(ctx.module.clone())
+        ctx
     }
 
-    let mut ctx = StageContext {
-        debug_mode: None, // Some(DebugMode::TypeCollection),
-        entry: std::path::PathBuf::from("./examples/test.cb"),
-        ..Default::default()
-    };
+    fn define_types_for(entry: &str) -> StageContext {
+        run_pipeline(
+            entry,
+            vec![
+                Box::new(LoadedModuleStage),
+                Box::new(FlattenModulesStage),
+                Box::new(DefineTypeStage),
+            ],
+        )
+    }
 
-    drive(&mut ctx).expect("Drive failed in type_coolection_stage test");
+    fn define_types_after_monomorphization(entry: &str) -> StageContext {
+        run_pipeline(
+            entry,
+            vec![
+                Box::new(LoadedModuleStage),
+                Box::new(FlattenModulesStage),
+                Box::new(MonomorphizerStage),
+                Box::new(DefineTypeStage),
+            ],
+        )
+    }
 
-    eprintln!("{:#?}", ctx.interner);
+    #[test]
+    fn declares_nominal_types_and_leaves_them_unfilled() {
+        let ctx = define_types_for("./testing/test/structs.cb");
 
-    assert!(false);
+        assert_eq!(
+            ctx.interner.unfilled().count(),
+            1,
+            "expected `List` to be declared but not yet filled"
+        );
+    }
+
+    #[test]
+    fn file_without_type_definitions_declares_nothing() {
+        let ctx = define_types_for("./examples/test.cb");
+
+        assert_eq!(ctx.interner.unfilled().count(), 0);
+    }
+
+    #[test]
+    fn sees_generics_as_templates_when_run_before_monomorphization() {
+        let ctx = define_types_for("./testing/test/generics.cb");
+
+        assert_eq!(
+            ctx.interner.unfilled().count(),
+            0,
+            "a generic struct should register as a template, not a declaration"
+        );
+    }
+
+    #[test]
+    fn monomorphization_turns_templates_into_concrete_declarations() {
+        let ctx = define_types_after_monomorphization("./testing/test/generics.cb");
+
+        assert_eq!(
+            ctx.interner.unfilled().count(),
+            1,
+            "expected the specialized `Pair__s32` to be declared and awaiting a fill"
+        );
+    }
 }

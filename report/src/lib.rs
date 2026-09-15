@@ -3,6 +3,9 @@ use std::fmt::Write;
 pub trait Report: std::fmt::Debug {
     fn report(&self, src: &str) -> String;
     fn filename(&self) -> &str;
+    fn source(&self) -> Option<&str> {
+        None
+    }
 }
 
 pub trait SpanSite: std::fmt::Debug {

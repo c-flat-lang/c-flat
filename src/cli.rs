@@ -119,6 +119,7 @@ fn print_help() {
     eprintln!("  -m                 Print After Monomorphizer");
     eprintln!("  --check            Type check code");
     eprintln!("  -s                 Print symbol table");
+    eprintln!("  -ti                Print interned types");
     eprintln!("  -ir                Print IR");
     eprintln!("  -v --verbose       Print all the compiler stages");
     eprintln!("  --link [options]   Link with additional libraries (e.g. --link=\"-lm\")");
@@ -179,6 +180,7 @@ impl DebugMode {
             "-a" => Self::Parser,
             "-m" => Self::Monomorphizer,
             "-s" => Self::SymbolTable,
+            "-ti" => Self::TypeCollection,
             "--check" => Self::TypeChecker,
             "-ir" => Self::Ir,
             _ => return None,

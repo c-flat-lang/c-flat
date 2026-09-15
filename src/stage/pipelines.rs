@@ -11,8 +11,8 @@ use bitbox::ir::Module;
 
 pub fn common_tail() -> Vec<Box<dyn Stage>> {
     vec![
-        Box::new(DefineTypeStage),
         Box::new(MonomorphizerStage),
+        Box::new(DefineTypeStage),
         Box::new(SymbolTableBuilderStage),
         Box::new(TypeCheckerStage),
         Box::new(IRBuilderStage),

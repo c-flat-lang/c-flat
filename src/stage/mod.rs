@@ -10,11 +10,13 @@ pub mod semantic_analyzer;
 use std::path::PathBuf;
 
 use crate::{
-    error::ErrorMessage, stage::semantic_analyzer::symbol_table::SymbolTable,
+    error::{ErrorMessage, Report, ScopedReport},
+    stage::semantic_analyzer::symbol_table::SymbolTable,
     type_interner::TypeInterner,
 };
 use bitbox::ir::Module;
 use report::Result;
+use std::collections::HashMap;
 
 use crate::{
     DebugMode,
@@ -71,6 +73,7 @@ pub struct StageContext {
     pub symbol_table: Option<SymbolTable>,
     pub module: Module,
     pub interner: TypeInterner,
+    pub sources: HashMap<String, String>,
 }
 
 impl StageContext {
@@ -90,12 +93,24 @@ impl StageContext {
         })
     }
 
-    pub fn symbol_table(&mut self) -> report::Result<SymbolTable> {
+    pub fn symbol_table(&self) -> report::Result<SymbolTable> {
         self.symbol_table.clone().ok_or_else(|| {
             Box::new(ErrorMessage(
                 "Failed to get symbol table out of context".to_string(),
             )) as _
         })
+    }
+
+    pub fn add_source(&mut self, filename: impl Into<String>, source: impl Into<String>) {
+        self.sources.insert(filename.into(), source.into());
+    }
+
+    pub fn scope_error(&self, err: Box<dyn Report>) -> Box<dyn Report> {
+        let filename = err.filename().to_string();
+        match self.sources.get(&filename) {
+            Some(source) => Box::new(ScopedReport::new(filename, source.clone(), err)),
+            None => err,
+        }
     }
 }
 

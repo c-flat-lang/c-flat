@@ -61,6 +61,7 @@ impl Stage for ParserStage {
             ))
         })?;
 
+        ctx.add_source(filename.to_string(), source.clone());
         ctx.items = items;
         Ok(())
     }
@@ -77,6 +78,9 @@ impl Stage for ParserStage {
                 Box::new(ScopedReport::new(ctx.entry.as_str(), &ctx.source, err))
             })?;
 
+        let entry = ctx.entry.clone();
+        let source = ctx.source.clone();
+        ctx.add_source(entry, source);
         ctx.items = items;
         Ok(())
     }

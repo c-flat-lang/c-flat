@@ -106,6 +106,23 @@ impl Stage for LoadedModuleStage {
             }
             self.eprintln(path);
         })?;
+
+        let sources: Vec<(String, String)> = ctx
+            .program
+            .modules
+            .iter()
+            .map(|module| {
+                (
+                    module.path.to_str().unwrap_or_default().to_string(),
+                    module.source.clone(),
+                )
+            })
+            .collect();
+
+        for (filename, source) in sources {
+            ctx.add_source(filename, source);
+        }
+
         Ok(())
     }
 }

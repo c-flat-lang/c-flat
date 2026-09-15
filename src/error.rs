@@ -622,6 +622,11 @@ impl Report for Errors {
     fn report(&self, _src: &str) -> String {
         let mut final_report = String::new();
         for error in self.errors.iter() {
+            if let Some(src) = error.source() {
+                final_report.push_str(&error.report(src));
+                final_report.push('\n');
+                continue;
+            }
             let filename = error.filename();
             if filename == "ErrorMessage" {
                 final_report.push_str(&error.report(""));
@@ -682,6 +687,10 @@ impl ScopedReport {
 impl Report for ScopedReport {
     fn filename(&self) -> &str {
         &self.filename
+    }
+
+    fn source(&self) -> Option<&str> {
+        Some(&self.source)
     }
 
     fn report(&self, _src: &str) -> String {
