@@ -559,6 +559,10 @@ fn mangle_name(base: &str, args: &[Type]) -> String {
 fn mangle_type(kind: &TypeKind) -> String {
     match kind {
         TypeKind::Bool => "bool".into(),
+        TypeKind::Resolved(id) => unreachable!(
+            "mangle_type(Resolved({})) should use TypeInterner::mangled_name_of",
+            id.index()
+        ),
         TypeKind::Void => "void".into(),
         TypeKind::Type => "type".into(),
         TypeKind::Enum(e) => e.name.clone(),

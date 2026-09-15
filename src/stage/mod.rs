@@ -5,6 +5,7 @@ pub mod module_loader;
 pub mod monomorphize;
 pub mod parser;
 pub mod pipelines;
+pub mod resolve_type;
 pub mod semantic_analyzer;
 
 use std::path::PathBuf;

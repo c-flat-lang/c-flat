@@ -5,6 +5,7 @@ use crate::stage::{
     lexer::token::{Span, Token},
     semantic_analyzer::symbol_table::ScopePath,
 };
+use crate::type_interner::TypeId;
 
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Debug, Default, Clone, Eq, Hash)]
@@ -69,6 +70,7 @@ pub enum TypeKind {
     /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
     Pointer(Box<Type>),
+    Resolved(TypeId),
     SignedNumber(u8),
     /// isize
     SignedTargetPointerNumber,
@@ -107,6 +109,10 @@ impl TypeKind {
             Self::Pointer(inner) => {
                 bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
             }
+            Self::Resolved(id) => unreachable!(
+                "Type::Resolved({}).as_bitbox_type() requires the interner",
+                id.index()
+            ),
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
             Self::Slice(inner) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: format!("slice_{}", inner),
@@ -166,6 +172,12 @@ This means we may need to generate more then one X Type depending on how many Ge
                 )
             }
             Self::Pointer(_) => 64,
+            Self::Resolved(id) => {
+                unreachable!(
+                    "Type::Resolved({}).size() requires the interner",
+                    id.index()
+                )
+            }
             Self::SignedTargetPointerNumber => unreachable!(
                 "ssize or SignedTargetPointerNumber should be handled in type_resolver"
             ),
@@ -218,6 +230,11 @@ This means we may need to generate more then one X Type depending on how many Ge
             },
 
             TypeKind::Bool => matches!(other, TypeKind::Bool),
+
+            TypeKind::Resolved(id) => unreachable!(
+                "Type::Resolved({}).compair() should use TypeInterner::same_type",
+                id.index()
+            ),
 
             TypeKind::Enum(_) => self.compair_enum(other),
 
@@ -289,6 +306,7 @@ impl std::fmt::Display for TypeKind {
             Self::Enum(symbol) => write!(f, "{}", symbol.name),
             Self::Float(n) => write!(f, "f{}", n),
             Self::Name(name) => write!(f, "{}", name.lexeme),
+            Self::Resolved(id) => write!(f, "<type#{}>", id.index()),
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
             Self::Pointer(ty) => write!(f, "*{ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),

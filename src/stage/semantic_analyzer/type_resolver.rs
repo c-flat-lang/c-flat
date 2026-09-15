@@ -259,6 +259,10 @@ impl<'st> TypeResolver<'st> {
     fn walk_type(&mut self, ty: &mut Type) {
         let found = ty.clone();
         match &mut ty.kind {
+            TypeKind::Resolved(id) => unreachable!(
+                "type_resolver met Resolved({}); the interner resolve pass already ran",
+                id.index()
+            ),
             TypeKind::Bool
             | TypeKind::Float(_)
             | TypeKind::SignedNumber(_)

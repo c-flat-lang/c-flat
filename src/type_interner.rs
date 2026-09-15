@@ -744,6 +744,36 @@ impl TypeInterner {
         offenders
     }
 
+    pub fn try_size_of(&self, id: TypeId) -> Option<usize> {
+        if !self.in_progress.borrow_mut().insert(id) {
+            return Some(0);
+        }
+        let size = self.compute_try_size_of(id);
+        self.in_progress.borrow_mut().remove(&id);
+        size
+    }
+
+    fn compute_try_size_of(&self, id: TypeId) -> Option<usize> {
+        let ptr = self.target.target_pointer_size() as usize;
+        match self.def(id) {
+            TypeInfo::Array(def) => Some(def.length as usize * self.try_size_of(def.type_id)?),
+            TypeInfo::Bool => Some(1),
+            TypeInfo::Enum(_) => Some(4),
+            TypeInfo::Float(bits)
+            | TypeInfo::SignedNumber(bits)
+            | TypeInfo::UnsignedNumber(bits) => Some((*bits as usize) / 8),
+            TypeInfo::Pointer(_) => Some(64),
+            TypeInfo::Slice(_) => Some(ptr / 8 + ptr / 8),
+            TypeInfo::Struct(def) => def
+                .fields
+                .iter()
+                .map(|field| self.try_size_of(field.ty))
+                .sum::<Option<usize>>(),
+            TypeInfo::Void => Some(0),
+            TypeInfo::Usize | TypeInfo::Ssize | TypeInfo::Type | TypeInfo::Function(_) => None,
+        }
+    }
+
     fn compute_size_of(&self, id: TypeId) -> usize {
         let ptr = self.target.target_pointer_size() as usize;
         match self.def(id) {
@@ -1353,6 +1383,26 @@ mod tests {
             interner.binary_op_result(TypeId::USIZE, &TokenKind::Plus, TypeId::USIZE),
             Some(TypeId::USIZE)
         );
+    }
+
+    #[test]
+    fn try_size_of_reports_unsized_types_instead_of_panicking() {
+        let mut interner = TypeInterner::new(Target::X86_64Linux);
+        let with_usize = struct_with_fields(
+            &mut interner,
+            "ArrayList",
+            vec![("capacity", TypeId::USIZE), ("length", TypeId::USIZE)],
+        );
+        let plain = struct_with_fields(
+            &mut interner,
+            "Point",
+            vec![("x", TypeId::S32), ("y", TypeId::S32)],
+        );
+
+        assert_eq!(interner.try_size_of(TypeId::USIZE), None);
+        assert_eq!(interner.try_size_of(with_usize), None);
+        assert_eq!(interner.try_size_of(plain), Some(8));
+        assert_eq!(interner.try_size_of(TypeId::BOOL), Some(1));
     }
 
     #[test]

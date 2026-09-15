@@ -5,6 +5,7 @@ use crate::stage::{
     ir_builder::IRBuilderStage,
     module_loader::{FlattenModulesStage, LoadedModuleStage},
     monomorphize::MonomorphizerStage,
+    resolve_type::ResolveTypeStage,
     semantic_analyzer::{SymbolTableBuilderStage, TypeCheckerStage},
 };
 use bitbox::ir::Module;
@@ -13,6 +14,7 @@ pub fn common_tail() -> Vec<Box<dyn Stage>> {
     vec![
         Box::new(MonomorphizerStage),
         Box::new(DefineTypeStage),
+        // Box::new(ResolveTypeStage),
         Box::new(SymbolTableBuilderStage),
         Box::new(TypeCheckerStage),
         Box::new(IRBuilderStage),

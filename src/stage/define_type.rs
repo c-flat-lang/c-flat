@@ -59,11 +59,11 @@ impl Stage for DefineTypeStage {
     }
 
     fn debug_mode(&self) -> &'static [DebugMode] {
-        &[DebugMode::TypeCollection]
+        &[]
     }
 
     fn debug(&self, _ctx: &mut StageContext) -> StageOutput {
-        StageOutput::Output(String::new())
+        StageOutput::Nothing
     }
 
     fn run(&mut self, ctx: &mut StageContext) -> report::Result<()> {
