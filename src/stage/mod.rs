@@ -11,21 +11,19 @@ pub mod semantic_analyzer;
 use std::path::PathBuf;
 
 use crate::{
-    error::{ErrorMessage, Report, ScopedReport},
-    stage::semantic_analyzer::symbol_table::SymbolTable,
-    type_interner::TypeInterner,
-};
-use bitbox::ir::Module;
-use report::Result;
-use std::collections::HashMap;
-
-use crate::{
     DebugMode,
+    error::{ErrorMessage, Report, ScopedReport},
     stage::{
         module_loader::{LoadedModule, LoadedProgram},
         parser::ast::Item,
+        semantic_analyzer::symbol_table::SymbolTable,
     },
+    type_interner::TypeInterner,
 };
+
+use bitbox::ir::Module;
+use report::Result;
+use std::collections::HashMap;
 
 pub trait Stage {
     fn name(&self) -> &'static str;
@@ -94,7 +92,7 @@ impl StageContext {
         })
     }
 
-    pub fn symbol_table(&self) -> report::Result<SymbolTable> {
+    pub fn symbol_table(&mut self) -> report::Result<SymbolTable> {
         self.symbol_table.clone().ok_or_else(|| {
             Box::new(ErrorMessage(
                 "Failed to get symbol table out of context".to_string(),

@@ -62,6 +62,7 @@ impl Stage for ParserStage {
         })?;
 
         ctx.add_source(filename.to_string(), source.clone());
+
         ctx.items = items;
         Ok(())
     }

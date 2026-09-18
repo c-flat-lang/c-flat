@@ -4,7 +4,31 @@ pub mod symbol_table;
 pub mod type_check;
 mod type_resolver;
 
-use crate::error::Result;
+use crate::error::{Report, Result, ScopedReport};
+use crate::stage::module_loader::LoadedModule;
+use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
+
+pub struct SymbolTableBuilderStage;
+
+impl Stage for SymbolTableBuilderStage {
+    fn name(&self) -> &'static str {
+        "Building Symbol Table"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        &[DebugMode::SymbolTable]
+    }
+
+    fn debug(&self, ctx: &mut StageContext) -> StageOutput {
+        let output = format!("{:#?}", ctx.symbol_table);
+        StageOutput::Output(output)
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let builder = symbol_table::SymbolTableBuilder::default();
+        ctx.symbol_table = Some(builder.build(&ctx.items)?);
+        Ok(())
+    }
+}
 
 pub struct SymbolTableBuilderStage;
 
@@ -44,9 +68,11 @@ impl Stage for TypeCheckerStage {
 
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
         let mut items = ctx.take_items();
+
         let interner = ctx.interner.clone();
         let symbol_table = ctx.symbol_table_mut()?;
         type_check::TypeChecker::new(symbol_table, interner).check(&mut items)?;
+
         ctx.items = items;
         Ok(())
     }
