@@ -855,3 +855,45 @@ impl Report for ErrorImportCycle {
         report.build()
     }
 }
+
+#[derive(Debug)]
+pub struct ErrorDuplicateType {
+    name: String,
+    new_span: Span,
+    _exsisting_span: Span,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorDuplicateType {
+    pub fn new(
+        name: impl Into<String>,
+        new_span: Span,
+        exsisting_span: Span,
+        #[cfg(feature = "debug")] compiler_line: String,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            new_span,
+            _exsisting_span: exsisting_span,
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+}
+
+impl Report for ErrorDuplicateType {
+    fn filename(&self) -> &str {
+        &self.new_span.filename
+    }
+
+    fn report(&self, src: &str) -> String {
+        let span = &self.new_span;
+        let mut report = ReportBuilder::new(span, src);
+        report.message(format!("duplicate type {}", self.name));
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
+    }
+}

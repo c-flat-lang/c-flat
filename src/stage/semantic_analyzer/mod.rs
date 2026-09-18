@@ -44,8 +44,9 @@ impl Stage for TypeCheckerStage {
 
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
         let mut items = ctx.take_items();
+        let interner = ctx.interner.clone();
         let symbol_table = ctx.symbol_table_mut()?;
-        type_check::TypeChecker::new(symbol_table).check(&mut items)?;
+        type_check::TypeChecker::new(symbol_table, interner).check(&mut items)?;
         ctx.items = items;
         Ok(())
     }

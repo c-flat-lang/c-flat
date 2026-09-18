@@ -1,7 +1,8 @@
 use crate::DebugMode;
+use crate::error::ErrorDuplicateType;
 use crate::stage::parser::ast;
 use crate::stage::{Stage, StageContext, StageOutput};
-use crate::type_interner::TypeInterner;
+use crate::type_interner::{TypeId, TypeInterner};
 
 #[derive(Debug)]
 pub struct DefineTypeStage;
@@ -33,23 +34,12 @@ impl DefineTypeStage {
         let _ = interner.register_struct_template(struct_def);
     }
 
-    fn define_enum(&self, interner: &mut TypeInterner, enum_def: &ast::Enum) -> report::Result<()> {
-        match interner.declare_enum(&enum_def.name.lexeme, enum_def.name.span.clone()) {
-            Ok(_id) => Ok(()),
-            Err(_existing_id) => {
-                panic!("duplicate enum declaration");
-                // let existing_span = ctx
-                //     .interner
-                //     .decl_span(existing_id)
-                //     .expect("declared id must have a span")
-                //     .clone();
-                // ctx.scope_error(ErrorDuplicateType {
-                //     name: enum_def.name.lexeme.clone(),
-                //     new_span: enum_def.name.span.clone(),
-                //     existing_span,
-                // })
-            }
-        }
+    fn define_enum(
+        &self,
+        interner: &mut TypeInterner,
+        enum_def: &ast::Enum,
+    ) -> std::result::Result<TypeId, TypeId> {
+        interner.declare_enum(&enum_def.name.lexeme, enum_def.name.span.clone())
     }
 }
 
@@ -80,12 +70,26 @@ impl Stage for DefineTypeStage {
                         self.define_struct_template(&mut ctx.interner, struct_def);
                     }
                     ast::TypeDef::Enum(enum_def) if enum_def.type_params.is_some() => {
-                        // doc: "generic enums are not supported yet"
+                        // NOTE: "generic enums are not supported yet"
                         // ctx.scope_error(/* ErrorUnsupportedGenericEnum { span: enum_def.name.span.clone() } */)?;
                         panic!("ErrorUnsupportedGenericEnum")
                     }
                     ast::TypeDef::Enum(enum_def) => {
-                        self.define_enum(&mut ctx.interner, enum_def)?;
+                        let Err(existing_id) = self.define_enum(&mut ctx.interner, enum_def) else {
+                            return Ok(());
+                        };
+                        let existing_span = ctx
+                            .interner
+                            .decl_span(existing_id)
+                            .expect("declared id must have a span")
+                            .clone();
+                        return Err(ctx.scope_error(Box::new(ErrorDuplicateType::new(
+                            enum_def.name.lexeme.clone(),
+                            enum_def.name.span.clone(),
+                            existing_span,
+                            #[cfg(feature = "debug")]
+                            format!("{} {}:{}", file!(), line!(), column!()),
+                        ))));
                     }
                 },
                 ast::Item::Use(_) => {}

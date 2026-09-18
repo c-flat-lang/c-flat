@@ -131,7 +131,7 @@ impl<'a> TypeResolver<'a> {
         self.interner.fill_enum(id, members, TypeId::U32);
     }
 
-    pub fn resolve_item(&mut self, item: &ast::Item) {
+    pub fn resolve_item(&mut self, item: &mut ast::Item) {
         match item {
             ast::Item::Function(function) => self.resolve_function(function),
             ast::Item::ExternFunction(extern_function) => {
@@ -144,105 +144,116 @@ impl<'a> TypeResolver<'a> {
         }
     }
 
-    fn resolve_function(&mut self, function: &ast::Function) {
-        for param in function.params.iter() {
-            self.resolve_type_id(&param.ty);
+    fn resolve_function(&mut self, function: &mut ast::Function) {
+        for param in function.params.iter_mut() {
+            let id = self.resolve_type_id(&param.ty);
+            param.ty.kind = TypeKind::Resolved(id);
         }
-        self.resolve_type_id(&function.return_type);
-        self.resolve_block(&function.body);
+        let id = self.resolve_type_id(&function.return_type);
+        function.return_type.kind = TypeKind::Resolved(id);
+        self.resolve_block(&mut function.body);
     }
 
-    pub fn resolve_block(&mut self, block: &ast::ExprBlock) {
-        for statement in block.statements.iter() {
-            self.resolve_expr(&statement.expr);
+    pub fn resolve_block(&mut self, block: &mut ast::ExprBlock) {
+        for statement in block.statements.iter_mut() {
+            self.resolve_expr(&mut statement.expr);
         }
     }
 
-    fn resolve_type_args(&mut self, type_args: &Option<Vec<Type>>) {
+    fn resolve_type_args(&mut self, type_args: &mut Option<Vec<Type>>) {
         let Some(args) = type_args else {
             return;
         };
-        for arg in args.iter() {
-            self.resolve_type_id(arg);
+        for arg in args.iter_mut() {
+            let id = self.resolve_type_id(arg);
+            arg.kind = TypeKind::Resolved(id);
         }
     }
 
-    pub fn resolve_expr(&mut self, expr: &Expr) {
+    pub fn resolve_expr(&mut self, expr: &mut Expr) {
         match expr {
             Expr::Identifier(_) | Expr::Path(_) => {}
             Expr::Litral(ast::Litral::Integer(integer)) => {
-                self.resolve_type_id(&integer.ty);
+                let id = self.resolve_type_id(&integer.ty);
+                integer.ty.kind = TypeKind::Resolved(id);
             }
             Expr::Litral(_) => {}
             Expr::Return(expr_return) => {
-                if let Some(inner) = &expr_return.expr {
+                if let Some(inner) = &mut expr_return.expr {
                     self.resolve_expr(inner);
                 }
             }
             Expr::Struct(expr_struct) => {
-                self.resolve_type_args(&expr_struct.type_args);
-                for field in expr_struct.init_fields.iter() {
-                    self.resolve_expr(&field.expr);
+                self.resolve_type_args(&mut expr_struct.type_args);
+                for field in expr_struct.init_fields.iter_mut() {
+                    self.resolve_expr(&mut field.expr);
                 }
             }
             Expr::Declare(expr_decl) => {
-                self.resolve_expr(&expr_decl.expr);
-                if let Some(ty) = &expr_decl.ty {
-                    self.resolve_type_id(ty);
+                self.resolve_expr(&mut expr_decl.expr);
+                if let Some(ty) = &mut expr_decl.ty {
+                    let id = self.resolve_type_id(ty);
+                    ty.kind = TypeKind::Resolved(id);
                 }
             }
             Expr::Assignment(assignment) => {
-                self.resolve_expr(&assignment.left);
-                self.resolve_expr(&assignment.right);
+                self.resolve_expr(&mut assignment.left);
+                self.resolve_expr(&mut assignment.right);
             }
             Expr::Builtin(call) | Expr::Call(call) => {
-                self.resolve_type_args(&call.type_args);
-                self.resolve_expr(&call.caller);
-                for arg in call.args.iter() {
+                self.resolve_type_args(&mut call.type_args);
+                self.resolve_expr(&mut call.caller);
+                for arg in call.args.iter_mut() {
                     self.resolve_expr(arg);
                 }
             }
             Expr::Binary(binary) => {
-                self.resolve_expr(&binary.left);
-                self.resolve_expr(&binary.right);
+                self.resolve_expr(&mut binary.left);
+                self.resolve_expr(&mut binary.right);
             }
             Expr::While(expr_while) => {
-                self.resolve_expr(&expr_while.condition);
-                self.resolve_block(&expr_while.body);
+                self.resolve_expr(&mut expr_while.condition);
+                self.resolve_block(&mut expr_while.body);
             }
             Expr::IfElse(if_else) => {
-                self.resolve_expr(&if_else.condition);
-                self.resolve_block(&if_else.then_branch);
-                if let Some(else_branch) = &if_else.else_branch {
+                self.resolve_expr(&mut if_else.condition);
+                self.resolve_block(&mut if_else.then_branch);
+                if let Some(else_branch) = &mut if_else.else_branch {
                     self.resolve_expr(else_branch);
                 }
-                self.resolve_type_id(&if_else.ty);
+                let id = self.resolve_type_id(&if_else.ty);
+                if_else.ty.kind = TypeKind::Resolved(id);
             }
-            Expr::MemberAccess(member_access) => self.resolve_expr(&member_access.base),
+            Expr::MemberAccess(member_access) => self.resolve_expr(&mut member_access.base),
             Expr::Array(array) => {
-                self.resolve_type_id(&array.ty);
-                for element in array.elements.iter() {
+                let id = self.resolve_type_id(&array.ty);
+                array.ty.kind = TypeKind::Resolved(id);
+
+                for element in array.elements.iter_mut() {
                     self.resolve_expr(element);
                 }
             }
             Expr::ArrayIndex(index) => {
-                self.resolve_expr(&index.expr);
-                self.resolve_expr(&index.index);
-                self.resolve_type_id(&index.ty);
+                self.resolve_expr(&mut index.expr);
+                self.resolve_expr(&mut index.index);
+                let id = self.resolve_type_id(&index.ty);
+                index.ty.kind = TypeKind::Resolved(id);
             }
             Expr::ArrayRepeat(repeat) => {
-                self.resolve_expr(&repeat.count);
-                self.resolve_expr(&repeat.value);
-                self.resolve_type_id(&repeat.ty);
+                self.resolve_expr(&mut repeat.count);
+                self.resolve_expr(&mut repeat.value);
+                let id = self.resolve_type_id(&repeat.ty);
+                repeat.ty.kind = TypeKind::Resolved(id);
             }
             Expr::Block(block) => self.resolve_block(block),
-            Expr::AddressOf(address_of) => self.resolve_expr(&address_of.expr),
-            Expr::Deref(deref) => self.resolve_expr(&deref.base),
-            Expr::Not(not) => self.resolve_expr(&not.expr),
-            Expr::Grouping(grouping) => self.resolve_expr(&grouping.expr),
+            Expr::AddressOf(address_of) => self.resolve_expr(&mut address_of.expr),
+            Expr::Deref(deref) => self.resolve_expr(&mut deref.base),
+            Expr::Not(not) => self.resolve_expr(&mut not.expr),
+            Expr::Grouping(grouping) => self.resolve_expr(&mut grouping.expr),
             Expr::TypeCast(cast) => {
-                self.resolve_expr(&cast.expr);
-                self.resolve_type_id(&cast.target_type);
+                self.resolve_expr(&mut cast.expr);
+                let id = self.resolve_type_id(&cast.target_type);
+                cast.target_type.kind = TypeKind::Resolved(id);
             }
         }
     }
@@ -278,7 +289,7 @@ impl Stage for ResolveTypeStage {
     }
 
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
-        let items = ctx.take_items();
+        let mut items = ctx.take_items();
         let mut resolver = TypeResolver::new(&mut ctx.interner);
 
         for item in items.iter() {
@@ -300,8 +311,8 @@ impl Stage for ResolveTypeStage {
             }
         }
 
-        for item in items.iter() {
-            resolver.resolve_item(item);
+        for mut item in items.iter_mut() {
+            resolver.resolve_item(&mut item);
         }
 
         let mut errors = resolver.take_errors();

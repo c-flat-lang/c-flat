@@ -155,7 +155,9 @@ enum StructuralKey {
     Float(u8),
 }
 
-#[derive(Debug)]
+/// TODO: Remove Clone once we can pass the interner to the `TypeChecker` as a borrower value.
+/// Check if `SymbolTable` should be passed as mutable to `TypeChecker`.
+#[derive(Debug, Clone)]
 pub struct TypeInterner {
     target: bitbox::Target,
     defs: Vec<TypeInfo>,

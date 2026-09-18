@@ -231,10 +231,9 @@ This means we may need to generate more then one X Type depending on how many Ge
 
             TypeKind::Bool => matches!(other, TypeKind::Bool),
 
-            TypeKind::Resolved(id) => unreachable!(
-                "Type::Resolved({}).compair() should use TypeInterner::same_type",
-                id.index()
-            ),
+            TypeKind::Resolved(id) => {
+                matches!(other, TypeKind::Resolved(other_id) if id == other_id)
+            }
 
             TypeKind::Enum(_) => self.compair_enum(other),
 
