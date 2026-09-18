@@ -3,7 +3,7 @@ use std::linux::memory;
 pub type ArrayList<(T: type)> struct {
     items:    *T,
     capacity: usize,
-    length:   usize,
+    length:   usize = 0,
 }
 
 pub fn ArrayList_new<(T: type)>() ArrayList<(T)> {
@@ -12,7 +12,6 @@ pub fn ArrayList_new<(T: type)>() ArrayList<(T)> {
     return ArrayList<(T)> {
         .items    = items,
         .capacity = initial_cap,
-        .length   = 0,
     };
 }
 
