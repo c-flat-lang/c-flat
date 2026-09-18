@@ -29,6 +29,9 @@ pub struct EmitWasm32Pass {
 }
 
 impl Pass for EmitWasm32Pass {
+    fn name(&self) -> &'static str {
+        "Emitting wasm32"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::Emit
     }

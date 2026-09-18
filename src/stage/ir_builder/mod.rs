@@ -1,10 +1,11 @@
-use super::Stage;
+use crate::DebugMode;
 use crate::stage::lexer::token::{Keyword, TokenKind};
 use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
+use crate::stage::{Stage, StageContext, StageOutput};
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
 use bitbox::Target;
 use bitbox::ir::builder::{AssemblerBuilder, FunctionBuilder, ModuleBuilder};
-use bitbox::ir::{self, ConstantInt, Module, Operand, StructType, Type, Variable, Visibility};
+use bitbox::ir::{self, ConstantInt, Operand, StructType, Type, Variable, Visibility};
 use std::str::FromStr;
 
 use crate::stage::parser::ast::{
@@ -12,6 +13,61 @@ use crate::stage::parser::ast::{
     ExprBlock, ExprCall, ExprDecl, ExprDeref, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot,
     ExprPath, ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
 };
+
+#[derive(Debug)]
+pub struct IRBuilderStage;
+
+impl Stage for IRBuilderStage {
+    fn name(&self) -> &'static str {
+        "IR Generation"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        &[DebugMode::Ir]
+    }
+
+    fn debug(&self, ctx: &mut StageContext) -> StageOutput {
+        StageOutput::Output(format!("{}", ctx.module))
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let mut ir_builder = IRBuilder {
+            symbol_table: ctx.symbol_table()?,
+            target: ctx.target,
+        };
+
+        let mut mb = ModuleBuilder::default();
+
+        for item in ctx.items.iter() {
+            match item {
+                Item::Function(function) => ir_builder.build_function(function, &mut mb),
+                Item::Type(_) => {}
+                Item::Use(_) => {}
+                Item::ExternFunction(extern_function) => {
+                    let ast::ExternFunction {
+                        binding_name,
+                        params,
+                        return_type,
+                        ..
+                    } = extern_function;
+
+                    let declaration = ir::ExternDecl {
+                        name: binding_name.lexeme.clone(),
+                        params: params
+                            .iter()
+                            .map(|ty| ty.as_bitbox_type(&ctx.target))
+                            .collect(),
+                        return_type: return_type.as_bitbox_type(&ctx.target),
+                    };
+
+                    mb.extern_decl(declaration);
+                }
+            }
+        }
+
+        ctx.module = mb.build();
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 pub struct IRBuilder {
@@ -27,7 +83,7 @@ impl IRBuilder {
         }
     }
 
-    fn build_function(&mut self, function: ast::Function, mb: &mut ModuleBuilder) {
+    fn build_function(&mut self, function: &ast::Function, mb: &mut ModuleBuilder) {
         let ast::Function {
             visibility,
             fn_token: _,
@@ -71,41 +127,6 @@ impl IRBuilder {
 
         self.symbol_table.exit_scope();
         mb.function(function_builder.build());
-    }
-}
-
-impl Stage<(SymbolTable, Vec<Item>), Result<Module>> for IRBuilder {
-    fn run(&mut self, (symbol_table, ast): (SymbolTable, Vec<Item>)) -> Result<Module> {
-        eprintln!("{: >30}", "IR Code Generation");
-        self.symbol_table = symbol_table;
-        let mut mb = ModuleBuilder::default();
-        for item in ast {
-            match item {
-                Item::Function(function) => self.build_function(function, &mut mb),
-                Item::Type(_) => {}
-                Item::Use(_) => {}
-                Item::ExternFunction(extern_function) => {
-                    let ast::ExternFunction {
-                        binding_name,
-                        params,
-                        return_type,
-                        ..
-                    } = extern_function;
-
-                    let declaration = ir::ExternDecl {
-                        name: binding_name.lexeme.clone(),
-                        params: params
-                            .iter()
-                            .map(|ty| ty.as_bitbox_type(&self.target))
-                            .collect(),
-                        return_type: return_type.as_bitbox_type(&self.target),
-                    };
-
-                    mb.extern_decl(declaration);
-                }
-            }
-        }
-        Ok(mb.build())
     }
 }
 

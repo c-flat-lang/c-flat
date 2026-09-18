@@ -899,7 +899,6 @@ impl FromStr for SmallestCharInt {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stage::Stage;
 
     #[test]
     fn test_type_check() {
@@ -909,10 +908,8 @@ mod tests {
         }
         "#;
 
-        let tokens = crate::stage::lexer::Lexer.run(("test_type_check", src));
-        let mut ast = crate::stage::parser::Parser::default()
-            .run(("test_type_check", tokens))
-            .unwrap();
+        let tokens = crate::stage::lexer::lex("test_type_check", src);
+        let mut ast = crate::stage::parser::parse("test_type_check", tokens).unwrap();
         let mut symbol_table =
             crate::stage::semantic_analyzer::symbol_table::SymbolTableBuilder::default()
                 .build(&mut ast)

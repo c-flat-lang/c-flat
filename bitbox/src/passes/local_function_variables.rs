@@ -61,6 +61,9 @@ impl LocalFunctionVariables {
 pub struct LocalFunctionVariablesPass;
 
 impl Pass for LocalFunctionVariablesPass {
+    fn name(&self) -> &'static str {
+        "Collecting function variables"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::LocalFunctionVariables
     }

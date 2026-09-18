@@ -1,13 +1,5 @@
-                    Tokenizing testing/test/not.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-        LocalFunctionVariables
-              ControlFlowGraph
-                 StructuringIr
-              LivenessAnalysis
-                          Emit
+                     Compiling testing/test/not.cb
+                      Finished
                        Running bin/not.wasm
 
 2

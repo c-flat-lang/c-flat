@@ -1,5 +1,4 @@
-                    Tokenizing testing/test/generics.cb
-                        Parser
+                     Compiling testing/test/generics.cb
 === testing/test/generics.cb ===
 [
     ExternFunction(

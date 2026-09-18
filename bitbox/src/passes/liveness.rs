@@ -543,6 +543,9 @@ pub struct LivenessAnalysisPass;
 use std::collections::{HashMap, HashSet};
 
 impl Pass for LivenessAnalysisPass {
+    fn name(&self) -> &'static str {
+        "Analysis Liveness of Variables"
+    }
     fn debug_pass(&self) -> DebugPass {
         DebugPass::LivenessAnalysis
     }

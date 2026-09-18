@@ -25,6 +25,7 @@ pub enum PassOutput {
 }
 
 pub trait Pass {
+    fn name(&self) -> &'static str;
     fn debug_pass(&self) -> DebugPass;
     fn run(
         &mut self,
@@ -40,7 +41,9 @@ pub trait Pass {
         ctx: &mut crate::backend::Context,
         debug_mode: Option<DebugPass>,
     ) -> Result<PassOutput, crate::error::Error> {
-        eprintln!("{: >30}", format!("{:?}", self.debug_pass()));
+        if ctx.verbose {
+            eprintln!("{: >30}", self.name());
+        }
 
         self.run(module, ctx)?;
 

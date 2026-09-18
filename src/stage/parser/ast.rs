@@ -6,7 +6,8 @@ use crate::stage::{
     semantic_analyzer::symbol_table::ScopePath,
 };
 
-#[derive(Debug, Default, Clone, Eq)]
+#[allow(clippy::derived_hash_with_manual_eq)]
+#[derive(Debug, Default, Clone, Eq, Hash)]
 pub struct Type {
     pub mut_token: Option<Token>,
     pub kind: TypeKind,
@@ -57,7 +58,7 @@ impl Type {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     Array(usize, Box<Type>),
     Bool,
@@ -301,7 +302,7 @@ impl std::fmt::Display for TypeKind {
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EnumType {
     pub name: String,
     pub type_params: Option<Vec<(Token, Type)>>,
@@ -310,7 +311,7 @@ pub struct EnumType {
     pub number_kind: Box<TypeKind>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TypeParams {
     pub params: Vec<Type>,
 }
@@ -340,7 +341,7 @@ impl std::fmt::Display for TypeParams {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub name: String,
     pub type_params: Option<Vec<(Token, Type)>>,

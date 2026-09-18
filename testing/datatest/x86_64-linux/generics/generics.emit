@@ -1,14 +1,5 @@
-                    Tokenizing testing/test/generics.cb
-                        Parser
-              SemanticAnalyzer
-                   TypeChecker
-            IR Code Generation
-                     LoweredIr
-        LocalFunctionVariables
-              ControlFlowGraph
-              LivenessAnalysis
-            PhiNodeElimination
-                          Emit
+                     Compiling testing/test/generics.cb
+                      Finished
 .intel_syntax noprefix
 .globl main
   # Defining Function main
