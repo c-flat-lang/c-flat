@@ -1,11 +1,14 @@
 use bitbox::Target;
 use std::fmt::Write;
 
-use crate::stage::{
-    lexer::token::{Span, Token},
-    semantic_analyzer::symbol_table::ScopePath,
-};
 use crate::type_interner::TypeId;
+use crate::{
+    stage::{
+        lexer::token::{Span, Token},
+        semantic_analyzer::symbol_table::ScopePath,
+    },
+    type_interner::TypeInterner,
+};
 
 #[allow(clippy::derived_hash_with_manual_eq)]
 #[derive(Debug, Default, Clone, Eq, Hash)]
@@ -29,6 +32,13 @@ impl PartialEq<Type> for Type {
 }
 
 impl Type {
+    pub fn name(&self, interner: &TypeInterner) -> String {
+        match self.kind {
+            TypeKind::Resolved(id) => interner.name_of(id),
+            _ => format!("{}", self.kind),
+        }
+    }
+
     pub fn map_kind<F>(&self, f: F) -> Self
     where
         F: FnOnce(&TypeKind) -> TypeKind,
@@ -40,8 +50,8 @@ impl Type {
         }
     }
 
-    pub fn as_bitbox_type(&self, target: &Target) -> bitbox::ir::Type {
-        self.kind.as_bitbox_type(target.target_pointer_size())
+    pub fn as_bitbox_type(&self, interner: &TypeInterner) -> bitbox::ir::Type {
+        self.kind.as_bitbox_type(interner)
     }
 
     pub fn size(&self, target: &Target) -> usize {
@@ -85,12 +95,12 @@ pub enum TypeKind {
 }
 
 impl TypeKind {
-    fn as_bitbox_type(&self, target_pointer_size: u8) -> bitbox::ir::Type {
+    fn as_bitbox_type(&self, interner: &TypeInterner) -> bitbox::ir::Type {
+        let target_pointer_size: u8 = interner.target().target_pointer_size();
         match self {
-            Self::Array(size, ty) => bitbox::ir::Type::Array(
-                *size,
-                Box::new(ty.kind.as_bitbox_type(target_pointer_size)),
-            ),
+            Self::Array(size, ty) => {
+                bitbox::ir::Type::Array(*size, Box::new(ty.kind.as_bitbox_type(interner)))
+            }
             Self::Bool => bitbox::ir::Type::Unsigned(32),
             Self::Enum(..) => bitbox::ir::Type::Unsigned(32),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
@@ -107,12 +117,9 @@ impl TypeKind {
                 )
             }
             Self::Pointer(inner) => {
-                bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
+                bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(interner)))
             }
-            Self::Resolved(id) => unreachable!(
-                "Type::Resolved({}).as_bitbox_type() requires the interner",
-                id.index()
-            ),
+            Self::Resolved(id) => interner.as_bitbox_type(*id),
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
             Self::Slice(inner) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: format!("slice_{}", inner),
@@ -120,9 +127,7 @@ impl TypeKind {
                 fields: vec![
                     (
                         "data".into(),
-                        bitbox::ir::Type::Pointer(Box::new(
-                            inner.kind.as_bitbox_type(target_pointer_size),
-                        )),
+                        bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(interner))),
                     ),
                     (
                         "len".into(),
@@ -136,7 +141,7 @@ impl TypeKind {
                 fields: struct_type
                     .fields
                     .iter()
-                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type(target_pointer_size)))
+                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type(interner)))
                     .collect(),
                 packed: struct_type.packed,
             }),

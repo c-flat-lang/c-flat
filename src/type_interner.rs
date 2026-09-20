@@ -38,8 +38,8 @@ impl TypeId {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArrayDef {
-    length: u64,
-    type_id: TypeId,
+    pub length: u64,
+    pub type_id: TypeId,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -993,7 +993,7 @@ mod tests {
             pairs.extend(composite_pairs(&mut interner));
 
             for (kind, id) in pairs {
-                let from_ast = ty(kind.clone()).as_bitbox_type(&target);
+                let from_ast = ty(kind.clone()).as_bitbox_type(&interner);
                 let from_interner = interner.as_bitbox_type(id);
                 assert_eq!(
                     from_ast, from_interner,
@@ -1358,7 +1358,7 @@ mod tests {
             for (rhs_kind, rhs_id) in &operands {
                 for op in binary_ops() {
                     let from_ast = ty(lhs_kind.clone())
-                        .supports_binary_op(&op, &ty(rhs_kind.clone()), Span::default())
+                        .supports_binary_op(&op, &ty(rhs_kind.clone()), Span::default(), &interner)
                         .map(|result| result.kind.to_string());
                     let from_interner = interner
                         .binary_op_result(*lhs_id, &op, *rhs_id)
@@ -1431,4 +1431,7 @@ mod tests {
 
         assert_eq!(interner.nominal_ids(), vec![a, b, c]);
     }
+
+    #[test]
+    fn get_type_name() {}
 }

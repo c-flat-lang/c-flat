@@ -1,6 +1,5 @@
 use std::str::FromStr;
 
-use super::type_resolver::TypeResolver;
 use crate::error::{
     ErrorMemberAccess, ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp,
     Errors, Report, Result,
@@ -8,7 +7,7 @@ use crate::error::{
 use crate::stage::lexer::token::{Keyword as Kw, Span, Token, TokenKind};
 use crate::stage::parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind};
 use crate::stage::semantic_analyzer::symbol_table::{ScopePath, SymbolTable};
-use crate::type_interner::TypeInterner;
+use crate::type_interner::{TypeId, TypeInterner};
 
 fn unsigned_kind_of(t: &TypeKind) -> Option<&TypeKind> {
     match t {
@@ -22,7 +21,13 @@ fn unsigned_kind_of(t: &TypeKind) -> Option<&TypeKind> {
 }
 
 impl Type {
-    pub fn supports_binary_op(&self, op: &TokenKind, other: &Type, span: Span) -> Option<Type> {
+    pub fn supports_binary_op(
+        &self,
+        op: &TokenKind,
+        other: &Type,
+        span: Span,
+        interner: &TypeInterner,
+    ) -> Option<Type> {
         use TokenKind::*;
         match (&self.kind, op, &other.kind) {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
@@ -89,6 +94,12 @@ impl Type {
             // (AND | OR) only work on bools and return bools
             (TypeKind::Bool, EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or), TypeKind::Bool) => {
                 Some(self.map_kind(|_| TypeKind::Bool))
+            }
+            (TypeKind::Resolved(lhs_id), op, TypeKind::Resolved(rhs_id))
+                if interner.binary_op_result(*lhs_id, op, *rhs_id).is_some() =>
+            {
+                let id = interner.binary_op_result(*lhs_id, op, *rhs_id).unwrap();
+                Some(self.map_kind(|_| TypeKind::Resolved(id)))
             }
             _ => None,
         }
@@ -161,17 +172,19 @@ impl<'st> TypeChecker<'st> {
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
-        if !calulated_return_type
-            .kind
-            .compair(&function.return_type.kind)
+        if let (TypeKind::Resolved(crt_id), TypeKind::Resolved(rt_id)) =
+            (&calulated_return_type.kind, &function.return_type.kind)
+            && !self.interner.same_type(*crt_id, *rt_id)
         {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                calulated_return_type,
-                function.return_type.kind.clone(),
+                calulated_return_type.name(&self.interner),
+                function.return_type.name(&self.interner),
+                function.return_type.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
         }
+
         function.return_type.clone()
     }
 
@@ -311,8 +324,9 @@ impl<'st> TypeChecker<'st> {
         if lhs != rhs {
             self.errors.push(Box::new({
                 ErrorMissMatchedType::new(
-                    rhs,
-                    lhs.kind.clone(),
+                    rhs.name(&self.interner),
+                    lhs.name(&self.interner),
+                    rhs.span,
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )
@@ -336,8 +350,9 @@ impl<'st> TypeChecker<'st> {
             && ty != &value_type
         {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                value_type.clone(),
-                ty.kind.clone(),
+                value_type.name(&self.interner),
+                ty.name(&self.interner),
+                ty.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -459,12 +474,14 @@ impl<'st> TypeChecker<'st> {
         self.maybe_numeric_hint(&left_ty);
         let right_ty = self.walk_expr(&mut expr.right);
         self.numeric_hint = None;
-        let result_ty = left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span());
+        let result_ty =
+            left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span(), &self.interner);
         let Some(result_ty) = result_ty else {
             self.errors.push(Box::new(ErrorUnsupportedBinaryOp::new(
-                expr.op.clone(),
-                left_ty.clone(),
-                right_ty.clone(),
+                &expr.op.lexeme,
+                left_ty.name(&self.interner),
+                right_ty.name(&self.interner),
+                left_ty.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -526,8 +543,9 @@ impl<'st> TypeChecker<'st> {
         let condition = self.walk_expr(&mut expr.condition);
         if !matches!(condition.kind, TypeKind::Bool) {
             let error = ErrorMissMatchedType::new(
-                condition,
-                TypeKind::Bool,
+                condition.name(&self.interner),
+                self.interner.name_of(TypeId::BOOL),
+                condition.span,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )
@@ -539,8 +557,9 @@ impl<'st> TypeChecker<'st> {
             let else_branch_type = self.walk_expr(else_branch);
             if then_branch_type != else_branch_type {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    then_branch_type.clone(),
-                    else_branch_type.kind.clone(),
+                    then_branch_type.name(&self.interner),
+                    else_branch_type.name(&self.interner),
+                    then_branch_type.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -562,8 +581,9 @@ impl<'st> TypeChecker<'st> {
             let other = self.walk_expr(element);
             if ty != other {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    ty.clone(),
-                    other.kind,
+                    ty.name(&self.interner),
+                    other.name(&self.interner),
+                    ty.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -587,8 +607,9 @@ impl<'st> TypeChecker<'st> {
         let index_type = self.walk_expr(&mut expr.index);
         if index_type.kind != TypeKind::UnsignedTargetPointerNumber {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                index_type.clone(),
-                TypeKind::UnsignedTargetPointerNumber,
+                index_type.name(&self.interner),
+                self.interner.name_of(TypeId::USIZE),
+                index_type.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -609,8 +630,10 @@ impl<'st> TypeChecker<'st> {
             },
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    array_type.clone(),
-                    TypeKind::Array(0, Box::new(array_type.clone())),
+                    array_type.name(&self.interner),
+                    // HACK: Seems like there should be a better way to express this.
+                    format!("Array<{}>", array_type.name(&self.interner)),
+                    array_type.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -633,9 +656,17 @@ impl<'st> TypeChecker<'st> {
         match base_type.kind {
             TypeKind::Pointer(inner) => *inner,
             _ => {
+                let Some(base_type_name) =
+                    self.interner.lookup_name(&base_type.name(&self.interner))
+                else {
+                    panic!("Can ");
+                };
+                let expected_ptr = self.interner.pointer_to(base_type_name);
+                let expected_type = self.interner.name_of(expected_ptr);
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    base_type.clone(),
-                    TypeKind::Pointer(Box::new(base_type.clone())),
+                    base_type.name(&self.interner),
+                    expected_type,
+                    base_type.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
@@ -659,8 +690,9 @@ impl<'st> TypeChecker<'st> {
         let count_type = self.walk_expr(count);
         let Expr::Litral(ast::Litral::Integer(count_token)) = &**count else {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                count_type.clone(),
-                TypeKind::SignedNumber(32),
+                count_type.name(&self.interner),
+                self.interner.name_of(TypeId::S32),
+                count_type.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -684,8 +716,9 @@ impl<'st> TypeChecker<'st> {
         let condition = self.walk_expr(&mut expr.condition);
         if !matches!(condition.kind, TypeKind::Bool) {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                condition,
-                TypeKind::Bool,
+                condition.name(&self.interner),
+                self.interner.name_of(TypeId::BOOL),
+                condition.span,
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
@@ -698,12 +731,26 @@ impl<'st> TypeChecker<'st> {
             panic!("Expected ExprArray");
         };
         let base_type = self.walk_expr(&mut member_access.base);
-        // TODO: we need to check the types with the new type ids.
-        match &base_type.kind {
-            TypeKind::Array(size, _) if member_access.member.lexeme == "len" => {
+
+        let TypeKind::Resolved(base_type_id) = base_type.kind else {
+            self.errors.push(Box::new(ErrorMemberAccess::new(
+                expr.span(),
+                #[cfg(feature = "debug")]
+                format!("{} {}:{}", file!(), line!(), column!()),
+            )));
+            return Type {
+                span: expr.span(),
+                ..Default::default()
+            };
+        };
+
+        match self.interner.def(base_type_id) {
+            crate::type_interner::TypeInfo::Array(array_def)
+                if member_access.member.lexeme == "len" =>
+            {
                 let token = Token {
                     kind: TokenKind::Number,
-                    lexeme: size.to_string(),
+                    lexeme: array_def.length.to_string(),
                     span: expr.span(),
                 };
                 let integer_litral = ast::IntegerLitral {
@@ -721,33 +768,107 @@ impl<'st> TypeChecker<'st> {
                     mut_token: None,
                 }
             }
-            TypeKind::Struct(struct_def) => {
-                self.lookup_struct_member(struct_def, &member_access.member)
+            crate::type_interner::TypeInfo::Struct(..) => {
+                let member = member_access.member;
+
+                let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme) else {
+                    self.errors.push(Box::new(ErrorMemberAccess::new(
+                        member.span.clone(),
+                        #[cfg(feature = "debug")]
+                        format!("{} {}:{}", file!(), line!(), column!()),
+                    )));
+                    return Type {
+                        span: member.span.clone(),
+                        ..Default::default()
+                    };
+                };
+
+                return Type {
+                    span: member.span.clone(),
+                    kind: TypeKind::Resolved(field.ty.clone()),
+                    ..Default::default()
+                };
             }
-            TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
-                kind: TypeKind::UnsignedTargetPointerNumber,
-                span: expr.span(),
-                mut_token: None,
-            },
-            TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
-                kind: TypeKind::Pointer(inner_ty.clone()),
-                span: expr.span(),
-                mut_token: None,
-            },
-            TypeKind::Pointer(inner) => match &inner.kind {
-                TypeKind::Struct(struct_def) => {
-                    self.lookup_struct_member(struct_def, &member_access.member)
-                }
-                TypeKind::Slice(inner_ty) if member_access.member.lexeme == "data" => Type {
-                    kind: TypeKind::Pointer(inner_ty.clone()),
-                    span: expr.span(),
-                    mut_token: None,
-                },
-                TypeKind::Slice(_) if member_access.member.lexeme == "len" => Type {
+            crate::type_interner::TypeInfo::Slice(type_id)
+                if member_access.member.lexeme == "len" =>
+            {
+                Type {
                     kind: TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),
                     mut_token: None,
-                },
+                }
+            }
+            crate::type_interner::TypeInfo::Slice(type_id)
+                if member_access.member.lexeme == "data" =>
+            {
+                let Some(ty) = self.interner.element_of(base_type_id) else {
+                    self.errors.push(Box::new(ErrorMemberAccess::new(
+                        expr.span(),
+                        #[cfg(feature = "debug")]
+                        format!("{} {}:{}", file!(), line!(), column!()),
+                    )));
+                    return Type {
+                        span: expr.span(),
+                        ..Default::default()
+                    };
+                };
+                Type {
+                    kind: TypeKind::Resolved(ty),
+                    span: expr.span(),
+                    mut_token: None,
+                }
+            }
+            crate::type_interner::TypeInfo::Pointer(type_id) => match self.interner.def(*type_id) {
+                crate::type_interner::TypeInfo::Struct(..) => {
+                    let member = member_access.member;
+
+                    let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme) else {
+                        self.errors.push(Box::new(ErrorMemberAccess::new(
+                            member.span.clone(),
+                            #[cfg(feature = "debug")]
+                            format!("{} {}:{}", file!(), line!(), column!()),
+                        )));
+                        return Type {
+                            span: member.span.clone(),
+                            ..Default::default()
+                        };
+                    };
+
+                    return Type {
+                        span: member.span.clone(),
+                        kind: TypeKind::Resolved(field.ty.clone()),
+                        ..Default::default()
+                    };
+                }
+                crate::type_interner::TypeInfo::Slice(type_id)
+                    if member_access.member.lexeme == "len" =>
+                {
+                    Type {
+                        kind: TypeKind::UnsignedTargetPointerNumber,
+                        span: expr.span(),
+                        mut_token: None,
+                    }
+                }
+                crate::type_interner::TypeInfo::Slice(type_id)
+                    if member_access.member.lexeme == "data" =>
+                {
+                    let Some(ty) = self.interner.element_of(base_type_id) else {
+                        self.errors.push(Box::new(ErrorMemberAccess::new(
+                            expr.span(),
+                            #[cfg(feature = "debug")]
+                            format!("{} {}:{}", file!(), line!(), column!()),
+                        )));
+                        return Type {
+                            span: expr.span(),
+                            ..Default::default()
+                        };
+                    };
+                    Type {
+                        kind: TypeKind::Resolved(ty),
+                        span: expr.span(),
+                        mut_token: None,
+                    }
+                }
                 _ => {
                     self.errors.push(Box::new(ErrorMemberAccess::new(
                         expr.span(),

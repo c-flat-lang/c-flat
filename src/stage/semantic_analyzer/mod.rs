@@ -2,33 +2,9 @@ use crate::DebugMode;
 use crate::stage::{Stage, StageContext, StageOutput};
 pub mod symbol_table;
 pub mod type_check;
-mod type_resolver;
+// mod type_resolver;
 
-use crate::error::{Report, Result, ScopedReport};
-use crate::stage::module_loader::LoadedModule;
-use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
-
-pub struct SymbolTableBuilderStage;
-
-impl Stage for SymbolTableBuilderStage {
-    fn name(&self) -> &'static str {
-        "Building Symbol Table"
-    }
-    fn debug_mode(&self) -> &'static [DebugMode] {
-        &[DebugMode::SymbolTable]
-    }
-
-    fn debug(&self, ctx: &mut StageContext) -> StageOutput {
-        let output = format!("{:#?}", ctx.symbol_table);
-        StageOutput::Output(output)
-    }
-
-    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
-        let builder = symbol_table::SymbolTableBuilder::default();
-        ctx.symbol_table = Some(builder.build(&ctx.items)?);
-        Ok(())
-    }
-}
+use crate::error::Result;
 
 pub struct SymbolTableBuilderStage;
 

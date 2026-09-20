@@ -1,5 +1,5 @@
 use crate::stage::lexer::token::{Keyword, Span, Token, TokenKind};
-use crate::stage::parser::ast::{Expr, Type, TypeKind};
+use crate::stage::parser::ast::{Expr, Type};
 use report::ReportBuilder;
 pub use report::{Report, Result};
 use std::fmt::Write;
@@ -142,23 +142,26 @@ impl Report for ErrorUnexpectedExpression {
 
 #[derive(Debug)]
 pub struct ErrorMissMatchedType {
+    found: String,
+    expected: String,
+    span: Span,
     alt_span: Option<Span>,
-    found: Type,
-    expected: TypeKind,
     #[cfg(feature = "debug")]
     compiler_line: String,
 }
 
 impl ErrorMissMatchedType {
     pub fn new(
-        found: Type,
-        expected: TypeKind,
+        found: impl Into<String>,
+        expected: impl Into<String>,
+        span: Span,
         #[cfg(feature = "debug")] compiler_line: String,
     ) -> Self {
         Self {
+            found: found.into(),
+            expected: expected.into(),
+            span,
             alt_span: None,
-            found,
-            expected,
             #[cfg(feature = "debug")]
             compiler_line,
         }
@@ -175,11 +178,11 @@ impl Report for ErrorMissMatchedType {
         self.alt_span
             .as_ref()
             .map(|span| span.filename.as_str())
-            .unwrap_or(self.found.span.filename.as_str())
+            .unwrap_or(self.span.filename.as_str())
     }
 
     fn report(&self, src: &str) -> String {
-        let span = self.alt_span.as_ref().unwrap_or(&self.found.span);
+        let span = self.alt_span.as_ref().unwrap_or(&self.span);
         let mut report = ReportBuilder::new(span, src);
         report.message("mismatched type");
 
@@ -204,24 +207,27 @@ impl Report for ErrorMissMatchedType {
 
 #[derive(Debug)]
 pub struct ErrorUnsupportedBinaryOp {
-    lhs: Type,
-    rhs: Type,
-    op: Token,
+    lhs: String,
+    rhs: String,
+    op: String,
+    span: Span,
     #[cfg(feature = "debug")]
     compiler_line: String,
 }
 
 impl ErrorUnsupportedBinaryOp {
     pub fn new(
-        op: Token,
-        lhs: Type,
-        rhs: Type,
+        op: impl Into<String>,
+        lhs: impl Into<String>,
+        rhs: impl Into<String>,
+        span: Span,
         #[cfg(feature = "debug")] compiler_line: impl Into<String>,
     ) -> Self {
         Self {
-            lhs,
-            rhs,
-            op,
+            lhs: lhs.into(),
+            rhs: rhs.into(),
+            op: op.into(),
+            span,
             #[cfg(feature = "debug")]
             compiler_line: compiler_line.into(),
         }
@@ -230,19 +236,14 @@ impl ErrorUnsupportedBinaryOp {
 
 impl Report for ErrorUnsupportedBinaryOp {
     fn filename(&self) -> &str {
-        &self.op.span.filename
+        &self.span.filename
     }
 
     fn report(&self, src: &str) -> String {
-        let span = Span {
-            start: self.op.span.start,
-            end: self.op.span.end,
-            filename: self.rhs.span.filename.clone(),
-        };
-        let mut report = ReportBuilder::new(&span, src);
+        let mut report = ReportBuilder::new(&self.span, src);
         report.message(format!(
             "unsupported binary operator with {} {} {}",
-            self.lhs.kind, self.op.lexeme, self.rhs.kind,
+            self.lhs, self.op, self.rhs,
         ));
         #[cfg(feature = "debug")]
         {
