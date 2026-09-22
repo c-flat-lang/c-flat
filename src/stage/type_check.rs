@@ -162,9 +162,6 @@ impl<'st> TypeChecker<'st> {
     }
 
     pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
-        // let resolver = TypeResolver::new(self.symbol_table);
-        // resolver.walk_items(ast)?;
-
         for item in ast.iter_mut() {
             self.walk_item(item);
         }
