@@ -5,7 +5,7 @@ use crate::type_interner::TypeId;
 use crate::{
     stage::{
         lexer::token::{Span, Token},
-        semantic_analyzer::symbol_table::ScopePath,
+        symbol_table::ScopePath,
     },
     type_interner::TypeInterner,
 };

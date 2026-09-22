@@ -6,7 +6,8 @@ pub mod monomorphize;
 pub mod parser;
 pub mod pipelines;
 pub mod resolve_type;
-pub mod semantic_analyzer;
+pub mod symbol_table;
+pub mod type_check;
 
 use std::path::PathBuf;
 
@@ -16,7 +17,7 @@ use crate::{
     stage::{
         module_loader::{LoadedModule, LoadedProgram},
         parser::ast::Item,
-        semantic_analyzer::symbol_table::SymbolTable,
+        symbol_table::SymbolTable,
     },
     type_interner::TypeInterner,
 };

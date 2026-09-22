@@ -6,7 +6,8 @@ use crate::stage::{
     module_loader::{FlattenModulesStage, LoadedModuleStage},
     monomorphize::MonomorphizerStage,
     resolve_type::ResolveTypeStage,
-    semantic_analyzer::{SymbolTableBuilderStage, TypeCheckerStage},
+    symbol_table::SymbolTableBuilderStage,
+    type_check::TypeCheckerStage,
 };
 use bitbox::ir::Module;
 

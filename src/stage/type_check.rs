@@ -1,13 +1,45 @@
 use std::str::FromStr;
 
-use crate::error::{
-    ErrorMemberAccess, ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp,
-    Errors, Report, Result,
+use crate::{
+    DebugMode,
+    error::{
+        ErrorMemberAccess, ErrorMissMatchedType, ErrorUndefinedSymbol, ErrorUnsupportedBinaryOp,
+        Errors, Report, Result,
+    },
+    stage::{
+        Stage, StageContext, StageOutput,
+        lexer::token::{Keyword as Kw, Span, Token, TokenKind},
+        parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind},
+        symbol_table::{ScopePath, SymbolTable},
+    },
+    type_interner::{TypeId, TypeInterner},
 };
-use crate::stage::lexer::token::{Keyword as Kw, Span, Token, TokenKind};
-use crate::stage::parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind};
-use crate::stage::semantic_analyzer::symbol_table::{ScopePath, SymbolTable};
-use crate::type_interner::{TypeId, TypeInterner};
+
+pub struct TypeCheckerStage;
+
+impl Stage for TypeCheckerStage {
+    fn name(&self) -> &'static str {
+        "Type Checking"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        &[DebugMode::TypeChecker]
+    }
+
+    fn debug(&self, _ctx: &mut StageContext) -> StageOutput {
+        StageOutput::Nothing
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let mut items = ctx.take_items();
+
+        let interner = ctx.interner.clone();
+        let symbol_table = ctx.symbol_table_mut()?;
+        TypeChecker::new(symbol_table, interner).check(&mut items)?;
+
+        ctx.items = items;
+        Ok(())
+    }
+}
 
 fn unsigned_kind_of(t: &TypeKind) -> Option<&TypeKind> {
     match t {

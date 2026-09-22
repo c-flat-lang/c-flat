@@ -1,6 +1,6 @@
 use crate::DebugMode;
 use crate::stage::lexer::token::{Keyword, TokenKind};
-use crate::stage::semantic_analyzer::symbol_table::SymbolTable;
+use crate::stage::symbol_table::SymbolTable;
 use crate::stage::{Stage, StageContext, StageOutput};
 use crate::type_interner::TypeInterner;
 use crate::{error::Result, stage::parser::ast, stage::parser::ast::Item};
@@ -289,10 +289,10 @@ impl Lowerable for ExprPath {
             panic!("Undefind symbol {:?} or {:?}", self.head(), leaf);
         };
         match &symbol.kind {
-            super::semantic_analyzer::symbol_table::SymbolKind::Struct => {
+            super::symbol_table::SymbolKind::Struct => {
                 todo!("Path Struct")
             }
-            super::semantic_analyzer::symbol_table::SymbolKind::Enum => {
+            super::symbol_table::SymbolKind::Enum => {
                 let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
                     panic!("incorrect SymbolKind matched with a Symbol");
                 };
@@ -680,15 +680,14 @@ impl Lowerable for Litral {
                 Some(var)
             }
             ast::Litral::Char(token) => {
-                let Ok(c) = crate::stage::semantic_analyzer::type_check::SmallestCharInt::from_str(
-                    &token.lexeme,
-                ) else {
+                let Ok(c) = crate::stage::type_check::SmallestCharInt::from_str(&token.lexeme)
+                else {
                     panic!("failed to get the SmallestCharInt for {}", token.lexeme)
                 };
                 let bytes = match c {
-                    super::semantic_analyzer::type_check::SmallestCharInt::U8(_) => 8,
-                    super::semantic_analyzer::type_check::SmallestCharInt::U16(_) => 16,
-                    super::semantic_analyzer::type_check::SmallestCharInt::U32(_) => 32,
+                    super::type_check::SmallestCharInt::U8(_) => 8,
+                    super::type_check::SmallestCharInt::U16(_) => 16,
+                    super::type_check::SmallestCharInt::U32(_) => 32,
                 };
                 let ty = Type::Unsigned(bytes);
                 let var = assembler.var(ty);
@@ -851,7 +850,7 @@ impl Lowerable for ExprCall {
                         assembler.ref_of(data_ptr.clone(), var.clone());
 
                         // HACK: Probably should check the calling convention and only do this for extern functions, but for now we just check if the symbol is an extern function
-                        if symbol.kind == crate::stage::semantic_analyzer::symbol_table::SymbolKind::ExternFunction {
+                        if symbol.kind == crate::stage::symbol_table::SymbolKind::ExternFunction {
                             return Some(data_ptr.into());
                         }
 
@@ -869,7 +868,10 @@ impl Lowerable for ExprCall {
                             packed: false,
                             fields: vec![
                                 ("data".into(), Type::Pointer(elem.clone())),
-                                ("len".into(), Type::Signed(ctx.interner().target().target_pointer_size())),
+                                (
+                                    "len".into(),
+                                    Type::Signed(ctx.interner().target().target_pointer_size()),
+                                ),
                             ],
                         });
 
@@ -879,7 +881,10 @@ impl Lowerable for ExprCall {
                         assembler.alloc(
                             slice_struct_ty.clone(),
                             slice_val.clone(),
-                            Operand::const_signed(slice_struct_ty.size(&target).to_string(), target.target_pointer_size()),
+                            Operand::const_signed(
+                                slice_struct_ty.size(&target).to_string(),
+                                target.target_pointer_size(),
+                            ),
                         );
 
                         assembler.elemset(

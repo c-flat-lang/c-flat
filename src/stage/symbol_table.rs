@@ -1,8 +1,35 @@
-use crate::error::{ErrorUndefinedSymbol, Errors, Report, Result};
-use crate::stage::lexer::token::{Span, Token};
+use crate::{
+    DebugMode,
+    error::{ErrorUndefinedSymbol, Errors, Report, Result},
+    stage::{
+        Stage, StageContext, StageOutput,
+        lexer::token::{Span, Token},
+        parser::ast,
+    },
+};
 
-use crate::stage::parser::ast;
 use std::collections::HashMap;
+pub struct SymbolTableBuilderStage;
+
+impl Stage for SymbolTableBuilderStage {
+    fn name(&self) -> &'static str {
+        "Building Symbol Table"
+    }
+    fn debug_mode(&self) -> &'static [DebugMode] {
+        &[DebugMode::SymbolTable]
+    }
+
+    fn debug(&self, ctx: &mut StageContext) -> StageOutput {
+        let output = format!("{:#?}", ctx.symbol_table);
+        StageOutput::Output(output)
+    }
+
+    fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
+        let builder = SymbolTableBuilder::default();
+        ctx.symbol_table = Some(builder.build(&ctx.items)?);
+        Ok(())
+    }
+}
 
 fn ty(kind: ast::TypeKind) -> ast::Type {
     ast::Type {
