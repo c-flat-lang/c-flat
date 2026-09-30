@@ -34,6 +34,91 @@ use crate::stage::lexer::token::Span;
 use crate::stage::parser::ast::{self, Item, Visibility};
 use crate::stage::{Stage, StageContext, StageOutput};
 
+#[cfg(feature = "wasm")]
+pub mod embedded_std;
+
+pub trait SourceProvider {
+    fn read(&self, path: &Path) -> std::io::Result<String>;
+    fn is_file(&self, path: &Path) -> bool;
+    fn canonicalize(&self, path: &Path) -> PathBuf;
+    fn std_root(&self) -> Option<PathBuf>;
+}
+
+pub struct DiskSource;
+
+impl SourceProvider for DiskSource {
+    fn read(&self, path: &Path) -> std::io::Result<String> {
+        std::fs::read_to_string(path)
+    }
+
+    fn is_file(&self, path: &Path) -> bool {
+        path.is_file()
+    }
+
+    fn canonicalize(&self, path: &Path) -> PathBuf {
+        std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    }
+
+    fn std_root(&self) -> Option<PathBuf> {
+        cflat_std_root()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MemorySource {
+    files: HashMap<PathBuf, String>,
+    std_root: Option<PathBuf>,
+}
+
+impl MemorySource {
+    pub fn new(std_root: Option<PathBuf>) -> Self {
+        Self {
+            files: HashMap::new(),
+            std_root,
+        }
+    }
+
+    pub fn insert(&mut self, path: impl AsRef<Path>, source: impl Into<String>) {
+        let key = normalize(path.as_ref());
+        self.files.insert(key, source.into());
+    }
+}
+
+impl SourceProvider for MemorySource {
+    fn read(&self, path: &Path) -> std::io::Result<String> {
+        self.files.get(&normalize(path)).cloned().ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::NotFound, "no such file")
+        })
+    }
+
+    fn is_file(&self, path: &Path) -> bool {
+        self.files.contains_key(&normalize(path))
+    }
+
+    fn canonicalize(&self, path: &Path) -> PathBuf {
+        normalize(path)
+    }
+
+    fn std_root(&self) -> Option<PathBuf> {
+        self.std_root.clone()
+    }
+}
+
+fn normalize(path: &Path) -> PathBuf {
+    use std::path::Component;
+    let mut out = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                out.pop();
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
+}
+
 pub struct FlattenModulesStage;
 
 impl Stage for FlattenModulesStage {
@@ -99,7 +184,12 @@ impl Stage for LoadedModuleStage {
 
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
         let entry = Path::new(&ctx.entry);
-        let loader = crate::stage::module_loader::ModuleLoader::new(ctx.unix_newlines);
+        #[cfg(not(feature = "wasm"))]
+        let loader = ModuleLoader::new(ctx.unix_newlines);
+        #[cfg(feature = "wasm")]
+        let memory = embedded_std::memory_source(&ctx.entry, &ctx.source);
+        #[cfg(feature = "wasm")]
+        let loader = ModuleLoader::with_source(ctx.unix_newlines, &memory);
         ctx.program = loader.load(entry, |path| {
             if !ctx.verbose {
                 return;
@@ -134,13 +224,26 @@ pub struct LoadedProgram {
     pub modules: Vec<LoadedModule>,
 }
 
-pub struct ModuleLoader {
+pub struct ModuleLoader<'a> {
     unix_newlines: bool,
+    source: &'a dyn SourceProvider,
 }
 
-impl ModuleLoader {
+impl ModuleLoader<'static> {
     pub fn new(unix_newlines: bool) -> Self {
-        Self { unix_newlines }
+        Self {
+            unix_newlines,
+            source: &DiskSource,
+        }
+    }
+}
+
+impl<'a> ModuleLoader<'a> {
+    pub fn with_source(unix_newlines: bool, source: &'a dyn SourceProvider) -> Self {
+        Self {
+            unix_newlines,
+            source,
+        }
     }
 
     pub fn load<F>(&self, entry: &Path, debug_output: F) -> Result<LoadedProgram>
@@ -158,7 +261,7 @@ impl ModuleLoader {
         queue.push_back(entry.to_path_buf());
 
         while let Some(path) = queue.pop_front() {
-            let canonical = canonicalize_or(&path);
+            let canonical = self.source.canonicalize(&path);
             if index_of.contains_key(&canonical) {
                 continue;
             }
@@ -193,9 +296,9 @@ impl ModuleLoader {
                 let span = use_span(use_item);
                 let pretty = segments.join("::");
 
-                match resolve_use_path(&base_dir, &segments) {
+                match resolve_use_path(self.source, &base_dir, &segments) {
                     Some((dep_path, selectors)) if selectors.len() <= 1 => {
-                        let dep_canonical = canonicalize_or(&dep_path);
+                        let dep_canonical = self.source.canonicalize(&dep_path);
                         raw_edges.push((idx, dep_canonical.clone(), span.clone()));
                         pending_vis.push(PendingVis {
                             importer_name: module.display(),
@@ -328,7 +431,7 @@ impl ModuleLoader {
     }
 
     fn parse_module(&self, path: &Path) -> Result<LoadedModule> {
-        let raw = std::fs::read_to_string(path).map_err(|err| -> Box<dyn Report> {
+        let raw = self.source.read(path).map_err(|err| -> Box<dyn Report> {
             Box::new(ErrorMessage(format!(
                 "could not read `{}`: {}",
                 path.display(),
@@ -393,10 +496,14 @@ fn cflat_std_root() -> Option<PathBuf> {
 
 /// Resolve a `use` path to a file using "longest file prefix wins". Returns the
 /// resolved file and any trailing in-file selectors.
-fn resolve_use_path(base_dir: &Path, segments: &[String]) -> Option<(PathBuf, Vec<String>)> {
+fn resolve_use_path(
+    source: &dyn SourceProvider,
+    base_dir: &Path,
+    segments: &[String],
+) -> Option<(PathBuf, Vec<String>)> {
     let is_std = segments.first().map(|s| s == "std").unwrap_or(false);
     let std_root = if is_std {
-        Some(cflat_std_root()?)
+        Some(source.std_root()?)
     } else {
         None
     };
@@ -418,7 +525,7 @@ fn resolve_use_path(base_dir: &Path, segments: &[String]) -> Option<(PathBuf, Ve
         }
         candidate.set_extension("cb");
 
-        if candidate.is_file() {
+        if source.is_file(&candidate) {
             let selectors = segments[len..].to_vec();
             return Some((candidate, selectors));
         }
@@ -454,9 +561,6 @@ fn use_span(use_item: &ast::Use) -> Span {
     }
 }
 
-fn canonicalize_or(path: &Path) -> PathBuf {
-    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
-}
 
 #[cfg(test)]
 mod tests {

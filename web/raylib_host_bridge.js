@@ -19,10 +19,72 @@ export function makeRaylibHost(getCflatExports, canvasOrOpts = {}) {
     canvasOrOpts instanceof HTMLCanvasElement
       ? { canvas: canvasOrOpts }
       : canvasOrOpts;
-  const { canvas, shouldClose, locateFile } = opts;
+  const { canvas, shouldClose, locateFile, keyboardFocusOnly } = opts;
   const log =
     opts.log ?? ((s) => (globalThis.__cflat_log ?? console.log)(s));
   let module = null;
+
+  const KEY_EVENTS = new Set(["keydown", "keyup", "keypress"]);
+  const keyWrappers = new Map();
+  const heldKeys = new Set();
+  let keyupListener = null;
+
+  const gateKeyListener = (type, listener) => (event) => {
+    if (document.activeElement !== canvas) return;
+    if (type === "keydown") heldKeys.add(event.keyCode);
+    if (type === "keyup") heldKeys.delete(event.keyCode);
+    listener(event);
+  };
+
+  const releaseHeldKeys = () => {
+    if (!keyupListener) return;
+    for (const keyCode of heldKeys) {
+      keyupListener({ keyCode, key: "", preventDefault() {} });
+    }
+    heldKeys.clear();
+  };
+
+  if (keyboardFocusOnly && canvas) {
+    canvas.addEventListener("blur", releaseHeldKeys);
+  }
+
+  const withKeyGate = (fn) => {
+    if (!keyboardFocusOnly) return fn();
+    const hadOwnAdd = Object.hasOwn(window, "addEventListener");
+    const hadOwnRemove = Object.hasOwn(window, "removeEventListener");
+    const add = window.addEventListener;
+    const remove = window.removeEventListener;
+    window.addEventListener = function (type, listener, options) {
+      if (
+        this === window &&
+        KEY_EVENTS.has(type) &&
+        typeof listener === "function"
+      ) {
+        const wrapped = gateKeyListener(type, listener);
+        keyWrappers.set(listener, wrapped);
+        if (type === "keyup") keyupListener = listener;
+        return add.call(this, type, wrapped, options);
+      }
+      return add.call(this, type, listener, options);
+    };
+    window.removeEventListener = function (type, listener, options) {
+      const wrapped = keyWrappers.get(listener);
+      if (this === window && wrapped) {
+        keyWrappers.delete(listener);
+        if (listener === keyupListener) keyupListener = null;
+        return remove.call(this, type, wrapped, options);
+      }
+      return remove.call(this, type, listener, options);
+    };
+    try {
+      return fn();
+    } finally {
+      if (hadOwnAdd) window.addEventListener = add;
+      else delete window.addEventListener;
+      if (hadOwnRemove) window.removeEventListener = remove;
+      else delete window.removeEventListener;
+    }
+  };
 
   // Hand emscripten our canvas so raylib's WebGL renders into it.
   const ready = createRaylibHost({
@@ -116,8 +178,14 @@ export function makeRaylibHost(getCflatExports, canvasOrOpts = {}) {
   const core = {
     // Window / lifecycle
     InitWindow: (w, h, titlePtr) =>
-      withHostStr(readCStr(titlePtr), (p) => module._cf_init_window(w, h, p)),
-    CloseWindow: () => module._CloseWindow(),
+      withKeyGate(() =>
+        withHostStr(readCStr(titlePtr), (p) => module._cf_init_window(w, h, p)),
+      ),
+    CloseWindow: () =>
+      withKeyGate(() => {
+        releaseHeldKeys();
+        module._CloseWindow();
+      }),
     // Force target FPS 0: otherwise raylib's WaitTime() calls emscripten_sleep(),
     // which fights the c-flat module's Asyncify unwind. rAF paces the frames.
     SetTargetFPS: (_fps) => module._SetTargetFPS(0),

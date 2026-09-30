@@ -16,6 +16,7 @@ export async function loadRaylibProgram(
     log,
     shouldClose,
     locateFile,
+    keyboardFocusOnly,
     extraImports = {},
     stackSize = 0x8000,
   } = {},
@@ -30,8 +31,29 @@ export async function loadRaylibProgram(
     log,
     shouldClose,
     locateFile,
+    keyboardFocusOnly,
   });
   const { core } = host;
+
+  let windowOpen = false;
+  const realInitWindow = core.InitWindow;
+  core.InitWindow = (...args) => {
+    realInitWindow(...args);
+    windowOpen = true;
+  };
+  const realCloseWindow = core.CloseWindow;
+  core.CloseWindow = () => {
+    windowOpen = false;
+    realCloseWindow();
+  };
+  const closeWindowIfOpen = () => {
+    if (!windowOpen) return;
+    try {
+      core.CloseWindow();
+    } catch {
+      windowOpen = false;
+    }
+  };
 
   const realEndDrawing = core.EndDrawing;
   core.EndDrawing = () => {
@@ -87,28 +109,38 @@ export async function loadRaylibProgram(
     }
   }
 
-  function runUntilExit() {
+  function runUntilExit({ signal } = {}) {
     return new Promise((resolve, reject) => {
+      const finish = () => {
+        closeWindowIfOpen();
+        resolve();
+      };
+      const fail = (e) => {
+        closeWindowIfOpen();
+        reject(e);
+      };
       const step = () => {
         try {
           exports.main();
           if (exports.asyncify_get_state() === 1) {
             exports.asyncify_stop_unwind();
             requestAnimationFrame(() => {
+              if (signal?.aborted) return finish();
               try {
                 exports.asyncify_start_rewind(dataAddr);
               } catch (e) {
-                return reject(e);
+                return fail(e);
               }
               step();
             });
           } else {
-            resolve();
+            finish();
           }
         } catch (e) {
-          reject(e);
+          fail(e);
         }
       };
+      if (signal?.aborted) return finish();
       step();
     });
   }

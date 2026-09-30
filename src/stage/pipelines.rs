@@ -17,20 +17,11 @@ pub fn common_tail() -> Vec<Box<dyn Stage>> {
     ]
 }
 
-#[cfg(not(feature = "wasm"))]
-pub fn native_pipeline() -> Vec<Box<dyn Stage>> {
+pub fn pipeline() -> Vec<Box<dyn Stage>> {
     let mut stages = vec![
         Box::new(LoadedModuleStage) as _,
         Box::new(FlattenModulesStage) as _,
     ];
-    stages.extend(common_tail());
-    stages
-}
-
-#[cfg(feature = "wasm")]
-pub fn wasm_pipeline() -> Vec<Box<dyn Stage>> {
-    use crate::stage::parser::ParserStage;
-    let mut stages = vec![Box::new(ParserStage) as _];
     stages.extend(common_tail());
     stages
 }
@@ -48,12 +39,7 @@ fn emit_dump_and_exit(msg: impl Into<String>) {
 }
 
 pub fn drive(mut ctx: StageContext) -> Result<Module> {
-    #[cfg(not(feature = "wasm"))]
-    let pipeline = native_pipeline();
-    #[cfg(feature = "wasm")]
-    let pipeline = wasm_pipeline();
-
-    for mut pass in pipeline {
+    for mut pass in pipeline() {
         if let StageOutput::Output(s) = pass.execute(&mut ctx)? {
             emit_dump_and_exit(s);
         }

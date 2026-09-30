@@ -5,6 +5,7 @@ export interface RaylibHostOptions {
   log?: (s: string) => void;
   shouldClose?: () => boolean;
   locateFile?: (path: string, prefix: string) => string;
+  keyboardFocusOnly?: boolean;
 }
 
 export interface RaylibHost {
@@ -28,7 +29,7 @@ export interface RaylibProgram {
   host: RaylibHost;
   instance: WebAssembly.Instance;
   run(): void;
-  runUntilExit(): Promise<void>;
+  runUntilExit(options?: { signal?: AbortSignal }): Promise<void>;
 }
 
 export function loadRaylibProgram(

@@ -619,7 +619,7 @@ impl Report for Errors {
         "Errors dont have a single filename"
     }
 
-    fn report(&self, src: &str) -> String {
+    fn report(&self, _src: &str) -> String {
         let mut final_report = String::new();
         for error in self.errors.iter() {
             let filename = error.filename();
@@ -628,24 +628,28 @@ impl Report for Errors {
                 final_report.push('\n');
                 continue;
             }
-            if cfg!(feature = "wasm") {
-                final_report.push_str(&error.report(src));
-                final_report.push('\n');
-                continue;
-            }
-            let maybe_src = std::fs::read_to_string(filename).map_err(|err| -> Box<dyn Report> {
-                Box::new(ErrorMessage(format!(
-                    "could not read `{}`: {}",
-                    filename, err,
-                )))
-            });
+            #[cfg(feature = "wasm")]
+            let src = crate::stage::module_loader::embedded_std::lookup(filename)
+                .unwrap_or(_src)
+                .to_string();
 
-            let src = match maybe_src {
-                Ok(src) => src,
-                Err(err) => {
-                    let errors = err.report("");
-                    eprintln!("{}", errors);
-                    std::process::exit(1);
+            #[cfg(not(feature = "wasm"))]
+            let src = {
+                let maybe_src =
+                    std::fs::read_to_string(filename).map_err(|err| -> Box<dyn Report> {
+                        Box::new(ErrorMessage(format!(
+                            "could not read `{}`: {}",
+                            filename, err,
+                        )))
+                    });
+
+                match maybe_src {
+                    Ok(src) => src,
+                    Err(err) => {
+                        let errors = err.report("");
+                        eprintln!("{}", errors);
+                        std::process::exit(1);
+                    }
                 }
             };
 
