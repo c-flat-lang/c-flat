@@ -1,0 +1,22 @@
+{
+  "name": "@c-flat/raylib-web",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "runtime.js",
+    "raylib_host_bridge.js",
+    "raylib_host.js",
+    "raylib_host.wasm"
+  ],
+  "sideEffects": false
+}

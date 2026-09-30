@@ -619,12 +619,17 @@ impl Report for Errors {
         "Errors dont have a single filename"
     }
 
-    fn report(&self, _src: &str) -> String {
+    fn report(&self, src: &str) -> String {
         let mut final_report = String::new();
         for error in self.errors.iter() {
             let filename = error.filename();
             if filename == "ErrorMessage" {
                 final_report.push_str(&error.report(""));
+                final_report.push('\n');
+                continue;
+            }
+            if cfg!(feature = "wasm") {
+                final_report.push_str(&error.report(src));
                 final_report.push('\n');
                 continue;
             }

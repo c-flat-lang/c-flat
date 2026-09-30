@@ -17,6 +17,7 @@ pub fn compile_source(
     filename: &str,
 ) -> std::result::Result<js_sys::Uint8Array, JsValue> {
     let ctx = StageContext {
+        entry: filename.to_string(),
         source: source.to_string(),
         ..Default::default()
     };

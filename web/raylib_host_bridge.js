@@ -13,11 +13,22 @@
 //             to interleave the real GL flush with its frame-yield)
 import createRaylibHost from "./raylib_host.js";
 
-export function makeRaylibHost(getCflatExports, canvas) {
+export function makeRaylibHost(getCflatExports, canvasOrOpts = {}) {
+  const opts =
+    typeof HTMLCanvasElement !== "undefined" &&
+    canvasOrOpts instanceof HTMLCanvasElement
+      ? { canvas: canvasOrOpts }
+      : canvasOrOpts;
+  const { canvas, shouldClose, locateFile } = opts;
+  const log =
+    opts.log ?? ((s) => (globalThis.__cflat_log ?? console.log)(s));
   let module = null;
 
   // Hand emscripten our canvas so raylib's WebGL renders into it.
-  const ready = createRaylibHost({ canvas }).then((m) => {
+  const ready = createRaylibHost({
+    canvas,
+    ...(locateFile && { locateFile }),
+  }).then((m) => {
     module = m;
     return m;
   });
@@ -113,7 +124,7 @@ export function makeRaylibHost(getCflatExports, canvas) {
     // Do NOT forward to raylib — its web WindowShouldClose() also calls
     // emscripten_sleep(), corrupting the Asyncify stack between frames. The loop
     // runs until the browser tab is closed.
-    WindowShouldClose: () => 0,
+    WindowShouldClose: () => (shouldClose?.() ? 1 : 0),
 
     // Drawing
     BeginDrawing: () => module._BeginDrawing(),
@@ -387,16 +398,16 @@ export function makeRaylibHost(getCflatExports, canvas) {
     SetRandomSeed: (seed) => module._SetRandomSeed(seed),
     GetRandomValue: (min, max) => module._GetRandomValue(min, max),
 
-    write_bool: (n) => globalThis.__cflat_log(n ? "true" : "false"),
-    write_u8: (n) => globalThis.__cflat_log(String(n)),
-    write_char: (c) => globalThis.__cflat_log(String.fromCharCode(c)),
-    write_s32: (n) => globalThis.__cflat_log(String(n)),
-    write_u32: (n) => globalThis.__cflat_log(String(n)),
-    write_f32: (n) => globalThis.__cflat_log(String(n)),
-    write_f64: (n) => globalThis.__cflat_log(String(n)),
+    write_bool: (n) => log(n ? "true" : "false"),
+    write_u8: (n) => log(String(n)),
+    write_char: (c) => log(String.fromCharCode(c)),
+    write_s32: (n) => log(String(n)),
+    write_u32: (n) => log(String(n)),
+    write_f32: (n) => log(String(n)),
+    write_f64: (n) => log(String(n)),
     write: (ptr, len) => {
       const s = new TextDecoder().decode(cfU8().subarray(ptr, ptr + len));
-      globalThis.__cflat_log(s);
+      log(s);
       return 0;
     },
   };
