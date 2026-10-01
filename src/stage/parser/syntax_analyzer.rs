@@ -417,6 +417,7 @@ impl Parser {
                     mut_token,
                     kind: ast::TypeKind::NameWithParams(tok, TypeParams { params }),
                     span,
+                    ..Default::default()
                 })
             }
             TokenKind::Identifier => token_as_type(mut_token, &tok),
@@ -428,6 +429,7 @@ impl Parser {
                     mut_token,
                     kind: ast::TypeKind::Pointer(Box::new(ty)),
                     span,
+                    ..Default::default()
                 })
             }
             TokenKind::LeftBracket => {
@@ -445,6 +447,7 @@ impl Parser {
                         mut_token,
                         kind: ast::TypeKind::Array(count.lexeme.parse().unwrap(), Box::new(ty)),
                         span,
+                        ..Default::default()
                     })
                 } else {
                     // Slice: [T] — T can be identifier, keyword type, pointer, etc.
@@ -456,6 +459,7 @@ impl Parser {
                         mut_token,
                         kind: ast::TypeKind::Slice(Box::new(ty)),
                         span,
+                        ..Default::default()
                     })
                 }
             }
@@ -463,6 +467,7 @@ impl Parser {
                 kind: ast::TypeKind::Type,
                 span: tok.span,
                 mut_token,
+                ..Default::default()
             }),
 
             _ => Err(Box::new(ErrorExpectedType::new(
@@ -886,6 +891,7 @@ impl Parser {
                         mut_token: None,
                         kind: ast::TypeKind::SignedNumber(32),
                         span,
+                        ..Default::default()
                     },
                 };
                 Ok(ast::Expr::Litral(ast::Litral::Integer(Box::new(
@@ -1112,6 +1118,7 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 span: token.span.clone(),
                 // Maybe this should be an error?
                 mut_token,
+                ..Default::default()
             });
         }
         "bool" => {
@@ -1119,6 +1126,7 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 kind: ast::TypeKind::Bool,
                 span: token.span.clone(),
                 mut_token,
+                ..Default::default()
             });
         }
         "usize" => {
@@ -1126,6 +1134,7 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 kind: ast::TypeKind::UnsignedTargetPointerNumber,
                 span: token.span.clone(),
                 mut_token,
+                ..Default::default()
             });
         }
         "ssize" => {
@@ -1133,6 +1142,7 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
                 kind: ast::TypeKind::SignedTargetPointerNumber,
                 span: token.span.clone(),
                 mut_token,
+                ..Default::default()
             });
         }
         _ => (),
@@ -1156,16 +1166,19 @@ fn token_as_type<'a>(mut_token: Option<Token>, token: &'a Token) -> Result<ast::
             kind: ast::TypeKind::UnsignedNumber(number.parse().unwrap()),
             span: token.span.clone(),
             mut_token,
+            ..Default::default()
         }),
         "s" => Ok(ast::Type {
             kind: ast::TypeKind::SignedNumber(number.parse().unwrap()),
             span: token.span.clone(),
             mut_token,
+            ..Default::default()
         }),
         "f" => Ok(ast::Type {
             kind: ast::TypeKind::Float(number.parse().unwrap()),
             span: token.span.clone(),
             mut_token,
+            ..Default::default()
         }),
         _ => Err(Box::new(ErrorExpectedType::new(
             token.clone(),

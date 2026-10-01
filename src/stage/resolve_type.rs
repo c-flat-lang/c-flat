@@ -67,7 +67,6 @@ impl<'a> TypeResolver<'a> {
             TypeKind::Float(bits) => self.interner.float(*bits),
             TypeKind::UnsignedTargetPointerNumber => TypeId::USIZE,
             TypeKind::SignedTargetPointerNumber => TypeId::SSIZE,
-            TypeKind::Resolved(id) => *id,
             TypeKind::Pointer(inner) => {
                 let inner = self.resolve_type_id(inner);
                 self.interner.pointer_to(inner)
@@ -147,10 +146,10 @@ impl<'a> TypeResolver<'a> {
     fn resolve_function(&mut self, function: &mut ast::Function) {
         for param in function.params.iter_mut() {
             let id = self.resolve_type_id(&param.ty);
-            param.ty.kind = TypeKind::Resolved(id);
+            param.ty.id = Some(id);
         }
         let id = self.resolve_type_id(&function.return_type);
-        function.return_type.kind = TypeKind::Resolved(id);
+        function.return_type.id = Some(id);
         self.resolve_block(&mut function.body);
     }
 
@@ -166,7 +165,7 @@ impl<'a> TypeResolver<'a> {
         };
         for arg in args.iter_mut() {
             let id = self.resolve_type_id(arg);
-            arg.kind = TypeKind::Resolved(id);
+            arg.id = Some(id);
         }
     }
 
@@ -175,7 +174,7 @@ impl<'a> TypeResolver<'a> {
             Expr::Identifier(_) | Expr::Path(_) => {}
             Expr::Litral(ast::Litral::Integer(integer)) => {
                 let id = self.resolve_type_id(&integer.ty);
-                integer.ty.kind = TypeKind::Resolved(id);
+                integer.ty.id = Some(id);
             }
             Expr::Litral(_) => {}
             Expr::Return(expr_return) => {
@@ -193,7 +192,7 @@ impl<'a> TypeResolver<'a> {
                 self.resolve_expr(&mut expr_decl.expr);
                 if let Some(ty) = &mut expr_decl.ty {
                     let id = self.resolve_type_id(ty);
-                    ty.kind = TypeKind::Resolved(id);
+                    ty.id = Some(id);
                 }
             }
             Expr::Assignment(assignment) => {
@@ -222,12 +221,12 @@ impl<'a> TypeResolver<'a> {
                     self.resolve_expr(else_branch);
                 }
                 let id = self.resolve_type_id(&if_else.ty);
-                if_else.ty.kind = TypeKind::Resolved(id);
+                if_else.ty.id = Some(id);
             }
             Expr::MemberAccess(member_access) => self.resolve_expr(&mut member_access.base),
             Expr::Array(array) => {
                 let id = self.resolve_type_id(&array.ty);
-                array.ty.kind = TypeKind::Resolved(id);
+                array.ty.id = Some(id);
 
                 for element in array.elements.iter_mut() {
                     self.resolve_expr(element);
@@ -237,13 +236,13 @@ impl<'a> TypeResolver<'a> {
                 self.resolve_expr(&mut index.expr);
                 self.resolve_expr(&mut index.index);
                 let id = self.resolve_type_id(&index.ty);
-                index.ty.kind = TypeKind::Resolved(id);
+                index.ty.id = Some(id);
             }
             Expr::ArrayRepeat(repeat) => {
                 self.resolve_expr(&mut repeat.count);
                 self.resolve_expr(&mut repeat.value);
                 let id = self.resolve_type_id(&repeat.ty);
-                repeat.ty.kind = TypeKind::Resolved(id);
+                repeat.ty.id = Some(id);
             }
             Expr::Block(block) => self.resolve_block(block),
             Expr::AddressOf(address_of) => self.resolve_expr(&mut address_of.expr),
@@ -253,7 +252,7 @@ impl<'a> TypeResolver<'a> {
             Expr::TypeCast(cast) => {
                 self.resolve_expr(&mut cast.expr);
                 let id = self.resolve_type_id(&cast.target_type);
-                cast.target_type.kind = TypeKind::Resolved(id);
+                cast.target_type.id = Some(id);
             }
         }
     }

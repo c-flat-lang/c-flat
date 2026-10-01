@@ -61,6 +61,17 @@ impl Type {
         interner: &TypeInterner,
     ) -> Option<Type> {
         use TokenKind::*;
+
+        if let (Some(lhs_id), op, Some(rhs_id)) = (&self.id, op, &other.id)
+            && interner.binary_op_result(*lhs_id, op, *rhs_id).is_some()
+        {
+            let id = interner.binary_op_result(*lhs_id, op, *rhs_id).unwrap();
+            let mut new_ty = self.clone();
+            new_ty.id = Some(id);
+            new_ty.span = span;
+            return Some(new_ty);
+        }
+
         match (&self.kind, op, &other.kind) {
             // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
             (
@@ -127,12 +138,6 @@ impl Type {
             (TypeKind::Bool, EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or), TypeKind::Bool) => {
                 Some(self.map_kind(|_| TypeKind::Bool))
             }
-            (TypeKind::Resolved(lhs_id), op, TypeKind::Resolved(rhs_id))
-                if interner.binary_op_result(*lhs_id, op, *rhs_id).is_some() =>
-            {
-                let id = interner.binary_op_result(*lhs_id, op, *rhs_id).unwrap();
-                Some(self.map_kind(|_| TypeKind::Resolved(id)))
-            }
             _ => None,
         }
         .map(|mut t| {
@@ -194,6 +199,7 @@ impl<'st> TypeChecker<'st> {
             kind: TypeKind::Void,
             span: item.span(),
             mut_token: None,
+            id: Some(TypeId::VOID),
         }
     }
 
@@ -201,8 +207,7 @@ impl<'st> TypeChecker<'st> {
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
-        if let (TypeKind::Resolved(crt_id), TypeKind::Resolved(rt_id)) =
-            (&calulated_return_type.kind, &function.return_type.kind)
+        if let (Some(crt_id), Some(rt_id)) = (&calulated_return_type.id, &function.return_type.id)
             && !self.interner.same_type(*crt_id, *rt_id)
         {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
@@ -228,17 +233,8 @@ impl<'st> TypeChecker<'st> {
         Type {
             mut_token: None,
             span: enum_def.span(),
-            kind: TypeKind::Enum(EnumType {
-                name: enum_def.name.lexeme.clone(),
-                type_params: enum_def.type_params.clone(),
-                variants: enum_def
-                    .variants
-                    .iter()
-                    .enumerate()
-                    .map(|(i, variant)| (variant.name.clone(), i.to_string()))
-                    .collect(),
-                number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
-            }),
+            kind: TypeKind::Void,
+            id: self.interner.lookup_name(&enum_def.name.lexeme),
         }
     }
 
@@ -246,16 +242,8 @@ impl<'st> TypeChecker<'st> {
         Type {
             mut_token: None,
             span: struct_def.span(),
-            kind: TypeKind::Struct(StructType {
-                name: struct_def.name.lexeme.clone(),
-                type_params: struct_def.type_params.clone(),
-                fields: struct_def
-                    .fields
-                    .iter()
-                    .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
-                    .collect(),
-                packed: false,
-            }),
+            kind: TypeKind::Void,
+            id: self.interner.lookup_name(&struct_def.name.lexeme),
         }
     }
 
@@ -271,6 +259,7 @@ impl<'st> TypeChecker<'st> {
             kind: TypeKind::Void,
             span: span.clone(),
             mut_token: None,
+            id: Some(TypeId::VOID),
         };
 
         for (i, statement) in block.statements.iter_mut().enumerate() {
@@ -288,6 +277,7 @@ impl<'st> TypeChecker<'st> {
                     mut_token: None,
                     kind: TypeKind::Void,
                     span: span.clone(),
+                    id: Some(TypeId::VOID),
                 };
             } else {
                 last_type = ty;
@@ -330,6 +320,7 @@ impl<'st> TypeChecker<'st> {
                 kind: TypeKind::Void,
                 span: expr.span(),
                 mut_token: None,
+                id: Some(TypeId::VOID),
             };
         };
         self.walk_expr(expr)
@@ -376,8 +367,10 @@ impl<'st> TypeChecker<'st> {
         self.numeric_hint = None;
 
         if let Some(ty) = &expr.ty
-            && ty != &value_type
+            && !ty.kind.compair(&value_type.kind)
         {
+            eprintln!("{:?}", ty);
+            eprintln!("{:?}", value_type);
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 value_type.name(&self.interner),
                 ty.name(&self.interner),
@@ -387,7 +380,10 @@ impl<'st> TypeChecker<'st> {
             )));
         }
         self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
-            if s.ty.kind == TypeKind::Void && s.ty != value_type {
+            if let (Some(lhs), Some(rhs)) = (s.ty.id, value_type.id)
+                && self.interner.same_type(lhs, TypeId::VOID)
+                && !self.interner.same_type(lhs, rhs)
+            {
                 s.ty = value_type.clone()
             }
         });
@@ -395,6 +391,7 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_litral(&mut self, expr: &mut ast::Litral) -> ast::Type {
+        let span = expr.span();
         match expr {
             ast::Litral::Integer(integer_litral) => {
                 let ty = self
@@ -408,6 +405,7 @@ impl<'st> TypeChecker<'st> {
                 kind: TypeKind::Float(32),
                 span: expr.span(),
                 mut_token: None,
+                id: Some(TypeId::F32),
             }),
             ast::Litral::Char(token) => {
                 let bytes = match SmallestCharInt::from_str(&token.lexeme) {
@@ -419,26 +417,22 @@ impl<'st> TypeChecker<'st> {
 
                 Type {
                     kind: TypeKind::UnsignedNumber(bytes),
-                    span: expr.span(),
+                    span,
                     mut_token: None,
+                    id: Some(self.interner.unsigned(bytes)),
                 }
             }
             ast::Litral::String(s) => Type {
-                kind: TypeKind::Array(
-                    s.lexeme.len(),
-                    Box::new(Type {
-                        kind: TypeKind::UnsignedNumber(8),
-                        span: expr.span(),
-                        mut_token: None,
-                    }),
-                ),
-                span: expr.span(),
+                kind: TypeKind::Void,
+                span,
                 mut_token: None,
+                id: Some(self.interner.array_of(s.lexeme.len() as u64, TypeId::U8)),
             },
             ast::Litral::BoolTrue(_) | ast::Litral::BoolFalse(_) => Type {
                 kind: TypeKind::Bool,
-                span: expr.span(),
+                span,
                 mut_token: None,
+                id: Some(TypeId::BOOL),
             },
         }
     }
@@ -519,6 +513,7 @@ impl<'st> TypeChecker<'st> {
                 kind: TypeKind::Void,
                 span: left_ty.span,
                 mut_token: None,
+                id: Some(TypeId::VOID),
             };
         };
         result_ty
@@ -537,6 +532,7 @@ impl<'st> TypeChecker<'st> {
                 kind: TypeKind::Void,
                 span: expr.span.clone(),
                 mut_token: None,
+                id: Some(TypeId::VOID),
             };
         };
 
@@ -562,6 +558,7 @@ impl<'st> TypeChecker<'st> {
                 kind: TypeKind::Void,
                 span: leaf.span.clone(),
                 mut_token: None,
+                id: Some(TypeId::VOID),
             };
         };
 
@@ -570,7 +567,12 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
         let condition = self.walk_expr(&mut expr.condition);
-        if !matches!(condition.kind, TypeKind::Bool) {
+
+        if !condition
+            .id
+            .map(|id| self.interner.same_type(id, TypeId::BOOL))
+            .unwrap_or_default()
+        {
             let error = ErrorMissMatchedType::new(
                 condition.name(&self.interner),
                 self.interner.name_of(TypeId::BOOL),
@@ -600,6 +602,7 @@ impl<'st> TypeChecker<'st> {
             kind: TypeKind::Void,
             span: expr.span(),
             mut_token: None,
+            id: Some(TypeId::VOID),
         }
     }
 
@@ -620,9 +623,13 @@ impl<'st> TypeChecker<'st> {
         }
         expr.ty = ty.clone();
         Type {
-            kind: TypeKind::Array(size, Box::new(ty)),
+            kind: TypeKind::Array(size, Box::new(ty.clone())),
             span: expr.span(),
             mut_token: None,
+            id: Some(
+                self.interner
+                    .array_of(size as u64, ty.id.expect("Should already have a type id")),
+            ),
         }
     }
 
@@ -632,9 +639,14 @@ impl<'st> TypeChecker<'st> {
             mut_token: None,
             kind: ast::TypeKind::UnsignedTargetPointerNumber,
             span: expr.index.span(),
+            id: Some(TypeId::USIZE),
         });
         let index_type = self.walk_expr(&mut expr.index);
-        if index_type.kind != TypeKind::UnsignedTargetPointerNumber {
+        if !index_type
+            .id
+            .map(|id| self.interner.same_type(id, TypeId::USIZE))
+            .unwrap_or_default()
+        {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 index_type.name(&self.interner),
                 self.interner.name_of(TypeId::USIZE),
@@ -674,9 +686,10 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
         let inner_type = self.walk_expr(&mut expr.expr);
         Type {
-            kind: TypeKind::Pointer(Box::new(inner_type)),
+            kind: TypeKind::Pointer(Box::new(inner_type.clone())),
             span: expr.span(),
             mut_token: None,
+            id: inner_type.id.map(|id| self.interner.pointer_to(id)),
         }
     }
 
@@ -710,6 +723,7 @@ impl<'st> TypeChecker<'st> {
             kind: TypeKind::Bool,
             span: expr.span(),
             mut_token: None,
+            id: Some(TypeId::BOOL),
         }
     }
 
@@ -729,6 +743,7 @@ impl<'st> TypeChecker<'st> {
         };
 
         // TODO: handle type here? Do we ignore here?
+        let length = count_token.token.lexeme.parse::<u64>().unwrap();
         expr.ty = Type {
             kind: TypeKind::Array(
                 count_token.token.lexeme.parse::<usize>().unwrap(),
@@ -736,6 +751,7 @@ impl<'st> TypeChecker<'st> {
             ),
             span: expr.span(),
             mut_token: None,
+            id: value_type.id.map(|id| self.interner.array_of(length, id)),
         };
 
         expr.ty.clone()
@@ -761,7 +777,7 @@ impl<'st> TypeChecker<'st> {
         };
         let base_type = self.walk_expr(&mut member_access.base);
 
-        let TypeKind::Resolved(base_type_id) = base_type.kind else {
+        let Some(base_type_id) = base_type.id else {
             self.errors.push(Box::new(ErrorMemberAccess::new(
                 expr.span(),
                 #[cfg(feature = "debug")]
@@ -786,15 +802,17 @@ impl<'st> TypeChecker<'st> {
                     token,
                     ty: Type {
                         mut_token: None,
-                        kind: TypeKind::UnsignedTargetPointerNumber,
+                        kind: ast::TypeKind::UnsignedTargetPointerNumber,
                         span: expr.span(),
+                        id: Some(TypeId::USIZE),
                     },
                 };
                 *expr = ast::Expr::Litral(ast::Litral::Integer(Box::new(integer_litral)));
                 Type {
-                    kind: TypeKind::UnsignedTargetPointerNumber,
+                    kind: ast::TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),
                     mut_token: None,
+                    id: Some(TypeId::USIZE),
                 }
             }
             crate::type_interner::TypeInfo::Struct(..) => {
@@ -814,7 +832,8 @@ impl<'st> TypeChecker<'st> {
 
                 return Type {
                     span: member.span.clone(),
-                    kind: TypeKind::Resolved(field.ty.clone()),
+                    kind: TypeKind::Void,
+                    id: Some(field.ty),
                     ..Default::default()
                 };
             }
@@ -822,9 +841,10 @@ impl<'st> TypeChecker<'st> {
                 if member_access.member.lexeme == "len" =>
             {
                 Type {
-                    kind: TypeKind::UnsignedTargetPointerNumber,
+                    kind: ast::TypeKind::UnsignedTargetPointerNumber,
                     span: expr.span(),
                     mut_token: None,
+                    id: Some(TypeId::USIZE),
                 }
             }
             crate::type_interner::TypeInfo::Slice(type_id)
@@ -842,9 +862,10 @@ impl<'st> TypeChecker<'st> {
                     };
                 };
                 Type {
-                    kind: TypeKind::Resolved(ty),
+                    kind: TypeKind::Void,
                     span: expr.span(),
                     mut_token: None,
+                    id: Some(ty),
                 }
             }
             crate::type_interner::TypeInfo::Pointer(type_id) => match self.interner.def(*type_id) {
@@ -865,7 +886,8 @@ impl<'st> TypeChecker<'st> {
 
                     return Type {
                         span: member.span.clone(),
-                        kind: TypeKind::Resolved(field.ty.clone()),
+                        kind: TypeKind::Void,
+                        id: Some(field.ty),
                         ..Default::default()
                     };
                 }
@@ -873,9 +895,10 @@ impl<'st> TypeChecker<'st> {
                     if member_access.member.lexeme == "len" =>
                 {
                     Type {
-                        kind: TypeKind::UnsignedTargetPointerNumber,
+                        kind: ast::TypeKind::UnsignedTargetPointerNumber,
                         span: expr.span(),
                         mut_token: None,
+                        id: Some(TypeId::USIZE),
                     }
                 }
                 crate::type_interner::TypeInfo::Slice(type_id)
@@ -893,9 +916,10 @@ impl<'st> TypeChecker<'st> {
                         };
                     };
                     Type {
-                        kind: TypeKind::Resolved(ty),
+                        kind: TypeKind::Void,
                         span: expr.span(),
                         mut_token: None,
+                        id: Some(ty),
                     }
                 }
                 _ => {
@@ -932,25 +956,28 @@ impl<'st> TypeChecker<'st> {
             TypeKind::Array(_, elem_ty) | TypeKind::Slice(elem_ty) => {
                 self.maybe_numeric_hint(elem_ty)
             }
-            ty @ TypeKind::SignedNumber(_) => {
+            ty @ TypeKind::SignedNumber(bits) => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
                     mut_token: None,
+                    id: Some(self.interner.signed(*bits)),
                 })
             }
-            ty @ TypeKind::UnsignedNumber(_) => {
+            ty @ TypeKind::UnsignedNumber(bits) => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
                     mut_token: None,
+                    id: Some(self.interner.unsigned(*bits)),
                 })
             }
-            ty @ TypeKind::Float(_) => {
+            ty @ TypeKind::Float(bits) => {
                 self.numeric_hint = Some(Type {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
                     mut_token: None,
+                    id: Some(self.interner.float(*bits)),
                 })
             }
             ty @ TypeKind::SignedTargetPointerNumber => {
@@ -958,6 +985,7 @@ impl<'st> TypeChecker<'st> {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
                     mut_token: None,
+                    id: Some(TypeId::SSIZE),
                 })
             }
             ty @ TypeKind::UnsignedTargetPointerNumber => {
@@ -965,6 +993,7 @@ impl<'st> TypeChecker<'st> {
                     kind: ty.clone(),
                     span: maybe.span.clone(),
                     mut_token: None,
+                    id: Some(TypeId::USIZE),
                 })
             }
             _ => {}

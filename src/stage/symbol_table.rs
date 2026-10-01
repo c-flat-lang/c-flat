@@ -6,6 +6,7 @@ use crate::{
         lexer::token::{Span, Token},
         parser::ast,
     },
+    type_interner::{TypeId, TypeInterner},
 };
 
 use std::collections::HashMap;
@@ -25,21 +26,23 @@ impl Stage for SymbolTableBuilderStage {
     }
 
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
-        let builder = SymbolTableBuilder::default();
+        // HACK: Idealy we would pass a borrowed interner "see NOTE on TypeInterner"
+        let builder = SymbolTableBuilder::new(ctx.interner.clone());
         ctx.symbol_table = Some(builder.build(&ctx.items)?);
         Ok(())
     }
 }
 
-fn ty(kind: ast::TypeKind) -> ast::Type {
+fn ty(id: TypeId) -> ast::Type {
     ast::Type {
         mut_token: None,
-        kind,
+        kind: ast::TypeKind::Void,
         span: Span::new("builtin"),
+        id: Some(id),
     }
 }
 
-fn create_symbol(name: &str, return_type: ast::TypeKind, args: Vec<ast::TypeKind>) -> Symbol {
+fn create_symbol(name: &str, return_type: TypeId, args: Vec<TypeId>) -> Symbol {
     Symbol {
         name: name.to_string(),
         ty: ty(return_type),
@@ -54,25 +57,26 @@ fn create_symbol(name: &str, return_type: ast::TypeKind, args: Vec<ast::TypeKind
 
 #[derive(Debug)]
 pub struct SymbolTableBuilder {
+    interner: TypeInterner,
     pub table: SymbolTable,
     errors: Vec<Box<dyn Report>>,
     current_source: Option<(String, String)>,
 }
 
-impl Default for SymbolTableBuilder {
-    fn default() -> Self {
+impl SymbolTableBuilder {
+    fn new(interner: TypeInterner) -> Self {
         let mut table = SymbolTable::default();
 
         table.enter_scope("global");
 
-        fn usize_ty() -> ast::TypeKind {
-            ast::TypeKind::UnsignedTargetPointerNumber
+        fn usize_ty() -> TypeId {
+            TypeId::USIZE
         }
 
         for argc in 1..=6 {
             table.push(create_symbol(
                 &format!("syscall{}", argc),
-                ast::TypeKind::UnsignedTargetPointerNumber,
+                TypeId::USIZE,
                 std::iter::repeat_with(usize_ty).take(argc + 1).collect(),
             ));
         }
@@ -82,14 +86,13 @@ impl Default for SymbolTableBuilder {
         table.exit_scope();
 
         Self {
+            interner,
             table,
             errors: Vec::new(),
             current_source: None,
         }
     }
-}
 
-impl SymbolTableBuilder {
     pub fn build(mut self, items: &[ast::Item]) -> Result<SymbolTable> {
         self.collect_signatures(items);
         self.collect_bodies(items);
@@ -192,55 +195,41 @@ impl SymbolTableBuilder {
     }
 
     fn walk_enum_def(&mut self, enum_def: &ast::Enum) {
+        let Some(id) = self.interner.lookup_name(&enum_def.name.lexeme) else {
+            panic!(
+                "Bug in Resolve Type: {}\n{:#?}",
+                &enum_def.name.lexeme,
+                &enum_def.span()
+            )
+        };
+
         self.table.push(Symbol {
             visibility: enum_def.visibility,
             name: enum_def.name.lexeme.clone(),
             kind: SymbolKind::Enum,
             ty: ast::Type {
                 mut_token: None,
-                kind: ast::TypeKind::Enum(ast::EnumType {
-                    name: enum_def.name.lexeme.clone(),
-                    type_params: enum_def.type_params.clone(),
-                    variants: enum_def
-                        .variants
-                        .iter()
-                        .enumerate()
-                        .map(|(i, variant)| {
-                            (
-                                variant.name.clone(),
-                                variant
-                                    .value
-                                    .as_ref()
-                                    .map(|v| v.lexeme.clone())
-                                    .unwrap_or(i.to_string()),
-                            )
-                        })
-                        .collect(),
-                    number_kind: Box::new(ast::TypeKind::UnsignedNumber(32)),
-                }),
+                kind: ast::TypeKind::Void,
                 span: enum_def.span(),
+                id: Some(id),
             },
             ..Default::default()
         });
     }
 
     fn walk_struct_def(&mut self, struct_def: &ast::Struct) {
+        let Some(id) = self.interner.lookup_name(&struct_def.name.lexeme) else {
+            panic!("Bug in Resolve Type")
+        };
+
         self.table.push(Symbol {
             name: struct_def.name.lexeme.clone(),
             kind: SymbolKind::Struct,
             ty: ast::Type {
                 mut_token: None,
-                kind: ast::TypeKind::Struct(ast::StructType {
-                    name: struct_def.name.lexeme.clone(),
-                    type_params: struct_def.type_params.clone(),
-                    fields: struct_def
-                        .fields
-                        .iter()
-                        .map(|field| (field.name.lexeme.clone(), field.ty.clone()))
-                        .collect(),
-                    packed: false,
-                }),
+                kind: ast::TypeKind::Void,
                 span: struct_def.span(),
+                id: Some(id),
             },
             is_mutable: false,
             visibility: struct_def.visibility,
@@ -666,6 +655,7 @@ mod tests {
                 "mut",
                 create_span(0..0),
             )),
+            id: None,
         }
     }
 
@@ -785,7 +775,7 @@ mod tests {
 
         let tokens = crate::stage::lexer::lex("test_build_symbol_table", src);
         let ast = crate::stage::parser::parse("test_build_symbol_table", tokens).unwrap();
-        let symbol_table = match SymbolTableBuilder::default().build(&ast) {
+        let symbol_table = match SymbolTableBuilder::new(TypeInterner::default()).build(&ast) {
             Ok(table) => table,
             Err(errors) => {
                 eprintln!("{}", errors.report(src));

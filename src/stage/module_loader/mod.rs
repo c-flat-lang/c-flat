@@ -54,7 +54,15 @@ impl Stage for FlattenModulesStage {
             .into_iter()
             .flat_map(|module| module.items)
             .collect();
+        // TODO: remove
+        eprintln!("item count: {}", items.len());
         ctx.items = items;
+        // TODO: remove
+        for i in ctx.items.iter() {
+            if let Item::Type(ast::TypeDef::Enum(enum_type)) = i {
+                eprintln!("ENUM: {}", enum_type.name.lexeme);
+            }
+        }
         Ok(())
     }
 }

@@ -15,12 +15,18 @@ use crate::{
 pub struct Type {
     pub mut_token: Option<Token>,
     pub kind: TypeKind,
+    pub id: Option<TypeId>,
     pub span: Span,
 }
 
 impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mutable = if self.mut_token.is_some() { "mut " } else { "" };
+
+        if let Some(id) = self.id {
+            return write!(f, "{mutable}<type#{}>", id.index());
+        }
+
         write!(f, "{mutable}{}", self.kind)
     }
 }
@@ -33,10 +39,10 @@ impl PartialEq<Type> for Type {
 
 impl Type {
     pub fn name(&self, interner: &TypeInterner) -> String {
-        match self.kind {
-            TypeKind::Resolved(id) => interner.name_of(id),
-            _ => format!("{}", self.kind),
-        }
+        let Some(id) = self.id else {
+            return format!("{}", self.kind);
+        };
+        interner.name_of(id)
     }
 
     pub fn map_kind<F>(&self, f: F) -> Self
@@ -47,11 +53,13 @@ impl Type {
             mut_token: self.mut_token.clone(),
             kind: f(&self.kind),
             span: self.span.clone(),
+            ..Default::default()
         }
     }
 
     pub fn as_bitbox_type(&self, interner: &TypeInterner) -> bitbox::ir::Type {
-        self.kind.as_bitbox_type(interner)
+        self.kind
+            .as_bitbox_type(interner.target().target_pointer_size())
     }
 
     pub fn size(&self, target: &Target) -> usize {
@@ -80,7 +88,6 @@ pub enum TypeKind {
     /// Any Custom `Type` that excepts `TypeArgs`
     NameWithParams(Token, TypeParams),
     Pointer(Box<Type>),
-    Resolved(TypeId),
     SignedNumber(u8),
     /// isize
     SignedTargetPointerNumber,
@@ -95,12 +102,12 @@ pub enum TypeKind {
 }
 
 impl TypeKind {
-    fn as_bitbox_type(&self, interner: &TypeInterner) -> bitbox::ir::Type {
-        let target_pointer_size: u8 = interner.target().target_pointer_size();
+    fn as_bitbox_type(&self, target_pointer_size: u8) -> bitbox::ir::Type {
         match self {
-            Self::Array(size, ty) => {
-                bitbox::ir::Type::Array(*size, Box::new(ty.kind.as_bitbox_type(interner)))
-            }
+            Self::Array(size, ty) => bitbox::ir::Type::Array(
+                *size,
+                Box::new(ty.kind.as_bitbox_type(target_pointer_size)),
+            ),
             Self::Bool => bitbox::ir::Type::Unsigned(32),
             Self::Enum(..) => bitbox::ir::Type::Unsigned(32),
             Self::Float(bytes) => bitbox::ir::Type::Float(*bytes),
@@ -117,9 +124,8 @@ impl TypeKind {
                 )
             }
             Self::Pointer(inner) => {
-                bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(interner)))
+                bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(target_pointer_size)))
             }
-            Self::Resolved(id) => interner.as_bitbox_type(*id),
             Self::SignedNumber(bytes) => bitbox::ir::Type::Signed(*bytes),
             Self::Slice(inner) => bitbox::ir::Type::Struct(bitbox::ir::StructType {
                 name: format!("slice_{}", inner),
@@ -127,7 +133,9 @@ impl TypeKind {
                 fields: vec![
                     (
                         "data".into(),
-                        bitbox::ir::Type::Pointer(Box::new(inner.kind.as_bitbox_type(interner))),
+                        bitbox::ir::Type::Pointer(Box::new(
+                            inner.kind.as_bitbox_type(target_pointer_size),
+                        )),
                     ),
                     (
                         "len".into(),
@@ -141,7 +149,7 @@ impl TypeKind {
                 fields: struct_type
                     .fields
                     .iter()
-                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type(interner)))
+                    .map(|(name, ty)| (name.clone(), ty.kind.as_bitbox_type(target_pointer_size)))
                     .collect(),
                 packed: struct_type.packed,
             }),
@@ -177,12 +185,6 @@ This means we may need to generate more then one X Type depending on how many Ge
                 )
             }
             Self::Pointer(_) => 64,
-            Self::Resolved(id) => {
-                unreachable!(
-                    "Type::Resolved({}).size() requires the interner",
-                    id.index()
-                )
-            }
             Self::SignedTargetPointerNumber => unreachable!(
                 "ssize or SignedTargetPointerNumber should be handled in type_resolver"
             ),
@@ -235,10 +237,6 @@ This means we may need to generate more then one X Type depending on how many Ge
             },
 
             TypeKind::Bool => matches!(other, TypeKind::Bool),
-
-            TypeKind::Resolved(id) => {
-                matches!(other, TypeKind::Resolved(other_id) if id == other_id)
-            }
 
             TypeKind::Enum(_) => self.compair_enum(other),
 
@@ -310,7 +308,6 @@ impl std::fmt::Display for TypeKind {
             Self::Enum(symbol) => write!(f, "{}", symbol.name),
             Self::Float(n) => write!(f, "f{}", n),
             Self::Name(name) => write!(f, "{}", name.lexeme),
-            Self::Resolved(id) => write!(f, "<type#{}>", id.index()),
             Self::NameWithParams(name, params) => write!(f, "{}({params})", name.lexeme),
             Self::Pointer(ty) => write!(f, "*{ty}"),
             Self::SignedNumber(n) => write!(f, "s{}", n),
@@ -407,7 +404,7 @@ pub enum Visibility {
     Private,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Item {
     Function(Function),
     Type(TypeDef),
@@ -415,7 +412,7 @@ pub enum Item {
     ExternFunction(ExternFunction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ExternFunction {
     pub visibility: Visibility,
     pub extern_token: Token,

@@ -163,13 +163,14 @@ pub enum DebugMode {
 
 impl DebugMode {
     const DUMP_AFTER_PASSES: &'static [&'static str] = &[
-        "lowering-ir",
-        "emit",
         "control-flow-graph",
-        "liveness-analysis",
         "detect-loops",
-        "phi-node-elimination",
+        "emit",
+        "flatten-module",
+        "liveness-analysis",
         "local-function-variables",
+        "lowering-ir",
+        "phi-node-elimination",
         "structuring-ir",
         "virt-reg-rewrite",
     ];
@@ -191,6 +192,7 @@ impl DebugMode {
         match value {
             "lowering-ir" => Self::LoweredIr,
             "emit" => Self::Emit,
+            "flatten-module" => Self::FlattenModules,
             "control-flow-graph" => Self::ControlFlowGraph,
             "liveness-analysis" => Self::LivenessAnalysis,
             "detect-loops" => Self::DetectLoops,

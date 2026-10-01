@@ -36,6 +36,12 @@ impl TypeId {
     }
 }
 
+impl Default for TypeId {
+    fn default() -> Self {
+        Self::UNRESOLVED
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArrayDef {
     pub length: u64,
@@ -836,6 +842,7 @@ mod tests {
             mut_token: None,
             kind,
             span: Span::default(),
+            ..Default::default()
         }
     }
 

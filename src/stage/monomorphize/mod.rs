@@ -48,7 +48,47 @@ impl Stage for MonomorphizerStage {
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
         let monomorphize = crate::stage::monomorphize::Monomorphizer::default();
         let items = ctx.take_items();
-        ctx.items = monomorphize.run(items)?;
+        ctx.items = monomorphize.run(items.clone())?;
+        // TODO: remove
+        for i in items.iter() {
+            for ci in ctx.items.iter() {
+                match (&i, &ci) {
+                    (ast::Item::Function(f1), ast::Item::Function(f2))
+                        if f1.name.lexeme == f2.name.lexeme =>
+                    {
+                        continue;
+                    }
+                    (
+                        ast::Item::Type(ast::TypeDef::Struct(s1)),
+                        ast::Item::Type(ast::TypeDef::Struct(s2)),
+                    ) if s1.name.lexeme == s2.name.lexeme => continue,
+                    (
+                        ast::Item::Type(ast::TypeDef::Enum(e1)),
+                        ast::Item::Type(ast::TypeDef::Enum(e2)),
+                    ) if e1.name.lexeme == e2.name.lexeme => continue,
+                    (ast::Item::Use(u1), ast::Item::Use(u2))
+                        if u1
+                            .path
+                            .iter()
+                            .fold(String::new(), |acc, item| format!("{acc}::{}", item.lexeme))
+                            == u2.path.iter().fold(String::new(), |acc, item| {
+                                format!("{acc}::{}", item.lexeme)
+                            }) =>
+                    {
+                        continue;
+                    }
+                    (ast::Item::ExternFunction(e1), ast::Item::ExternFunction(e2))
+                        if e1.name() == e2.name() =>
+                    {
+                        continue;
+                    }
+                    _ => {}
+                }
+                continue;
+            }
+            // TODO: remove
+            eprintln!("{:?}", i);
+        }
         Ok(())
     }
 }
@@ -375,6 +415,7 @@ fn ty(kind: TypeKind, span: Span) -> Type {
         mut_token: None,
         kind,
         span,
+        ..Default::default()
     }
 }
 
@@ -559,10 +600,6 @@ fn mangle_name(base: &str, args: &[Type]) -> String {
 fn mangle_type(kind: &TypeKind) -> String {
     match kind {
         TypeKind::Bool => "bool".into(),
-        TypeKind::Resolved(id) => unreachable!(
-            "mangle_type(Resolved({})) should use TypeInterner::mangled_name_of",
-            id.index()
-        ),
         TypeKind::Void => "void".into(),
         TypeKind::Type => "type".into(),
         TypeKind::Enum(e) => e.name.clone(),
