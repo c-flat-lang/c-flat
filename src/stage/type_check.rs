@@ -367,10 +367,11 @@ impl<'st> TypeChecker<'st> {
         self.numeric_hint = None;
 
         if let Some(ty) = &expr.ty
-            && !ty.kind.compair(&value_type.kind)
+            && ty
+                .id
+                .map(|id| self.interner.same_type(id, value_type.id.unwrap()))
+                .unwrap_or_default()
         {
-            eprintln!("{:?}", ty);
-            eprintln!("{:?}", value_type);
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 value_type.name(&self.interner),
                 ty.name(&self.interner),

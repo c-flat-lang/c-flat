@@ -59,8 +59,6 @@ impl Stage for DefineTypeStage {
     fn run(&mut self, ctx: &mut StageContext) -> report::Result<()> {
         ctx.interner = TypeInterner::new(ctx.target);
 
-        // TODO: remove
-        eprintln!("-- item count: {}", ctx.items.len());
         for item in ctx.items.iter() {
             match item {
                 ast::Item::Function(_) => {}
@@ -78,12 +76,8 @@ impl Stage for DefineTypeStage {
                     }
                     ast::TypeDef::Enum(enum_def) => {
                         let Err(existing_id) = self.define_enum(&mut ctx.interner, enum_def) else {
-                            // TODO: remove
-                            eprintln!("new: {:?}", &enum_def.name.lexeme);
-                            return Ok(());
+                            continue;
                         };
-                        // TODO: remove
-                        eprintln!("{:?}: {:?}", existing_id, &enum_def.name.lexeme);
                         let existing_span = ctx
                             .interner
                             .decl_span(existing_id)
