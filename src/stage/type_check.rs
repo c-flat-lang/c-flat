@@ -12,7 +12,7 @@ use crate::{
         parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind},
         symbol_table::{ScopePath, SymbolTable},
     },
-    type_interner::{TypeId, TypeInterner},
+    type_interner::{TypeId, TypeInfo, TypeInterner},
 };
 
 pub struct TypeCheckerStage;
@@ -367,7 +367,7 @@ impl<'st> TypeChecker<'st> {
         self.numeric_hint = None;
 
         if let Some(ty) = &expr.ty
-            && ty
+            && !ty
                 .id
                 .map(|id| self.interner.same_type(id, value_type.id.unwrap()))
                 .unwrap_or_default()
@@ -545,6 +545,7 @@ impl<'st> TypeChecker<'st> {
         //     },
         //     _ => symbol.ty.clone(),
         // }
+        eprintln!("symbol: {:?}", symbol);
         symbol.ty.clone()
     }
 
@@ -635,7 +636,9 @@ impl<'st> TypeChecker<'st> {
     }
 
     fn walk_expr_array_index(&mut self, expr: &mut ast::ExprArrayIndex) -> Type {
-        let array_type = self.walk_expr(&mut expr.expr);
+        eprintln!("{:#?}", expr);
+        let mut array_type = self.walk_expr(&mut expr.expr);
+        eprintln!("{:?}", array_type);
         self.maybe_numeric_hint(&ast::Type {
             mut_token: None,
             kind: ast::TypeKind::UnsignedTargetPointerNumber,
@@ -662,14 +665,21 @@ impl<'st> TypeChecker<'st> {
         // Index one layer at a time so `*[T]` yields the slice element `T`
         // while a raw `*T` yields the pointee `T`. `de_ref` would strip every
         // pointer layer and break raw-pointer indexing.
-        match &array_type.kind {
-            TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
-            TypeKind::Slice(elem_ty) => *elem_ty.clone(),
-            TypeKind::Pointer(inner) => match &inner.kind {
-                TypeKind::Slice(elem_ty) => *elem_ty.clone(),
-                TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
-                _ => (**inner).clone(),
-            },
+        // match &array_type.kind {
+        // HACK: remove unwrap
+        let id = match &self.interner.def(array_type.id.unwrap()) {
+            TypeInfo::Array(array) => Some(array.type_id),
+            TypeInfo::Slice(slice) => Some(*slice),
+            TypeInfo::Pointer(ptr) if self.interner.is_indexable(self.interner.de_ref(*ptr)) => {
+                Some(ptr.clone())
+            }
+            // TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
+            // TypeKind::Slice(elem_ty) => *elem_ty.clone(),
+            // TypeKind::Pointer(inner) => match &inner.kind {
+            //     TypeKind::Slice(elem_ty) => *elem_ty.clone(),
+            //     TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
+            //     _ => (**inner).clone(),
+            // },
             _ => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
                     array_type.name(&self.interner),
@@ -679,9 +689,11 @@ impl<'st> TypeChecker<'st> {
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
-                array_type
+                array_type.id.clone()
             }
-        }
+        };
+        array_type.id = id;
+        array_type
     }
 
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
@@ -790,10 +802,9 @@ impl<'st> TypeChecker<'st> {
             };
         };
 
+        eprintln!("{:#?}", self.interner.def(base_type_id));
         match self.interner.def(base_type_id) {
-            crate::type_interner::TypeInfo::Array(array_def)
-                if member_access.member.lexeme == "len" =>
-            {
+            TypeInfo::Array(array_def) if member_access.member.lexeme == "len" => {
                 let token = Token {
                     kind: TokenKind::Number,
                     lexeme: array_def.length.to_string(),
@@ -816,7 +827,7 @@ impl<'st> TypeChecker<'st> {
                     id: Some(TypeId::USIZE),
                 }
             }
-            crate::type_interner::TypeInfo::Struct(..) => {
+            TypeInfo::Struct(..) => {
                 let member = member_access.member;
 
                 let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme) else {
@@ -838,19 +849,13 @@ impl<'st> TypeChecker<'st> {
                     ..Default::default()
                 };
             }
-            crate::type_interner::TypeInfo::Slice(type_id)
-                if member_access.member.lexeme == "len" =>
-            {
-                Type {
-                    kind: ast::TypeKind::UnsignedTargetPointerNumber,
-                    span: expr.span(),
-                    mut_token: None,
-                    id: Some(TypeId::USIZE),
-                }
-            }
-            crate::type_interner::TypeInfo::Slice(type_id)
-                if member_access.member.lexeme == "data" =>
-            {
+            TypeInfo::Slice(type_id) if member_access.member.lexeme == "len" => Type {
+                kind: ast::TypeKind::UnsignedTargetPointerNumber,
+                span: expr.span(),
+                mut_token: None,
+                id: Some(TypeId::USIZE),
+            },
+            TypeInfo::Slice(type_id) if member_access.member.lexeme == "data" => {
                 let Some(ty) = self.interner.element_of(base_type_id) else {
                     self.errors.push(Box::new(ErrorMemberAccess::new(
                         expr.span(),
@@ -869,72 +874,73 @@ impl<'st> TypeChecker<'st> {
                     id: Some(ty),
                 }
             }
-            crate::type_interner::TypeInfo::Pointer(type_id) => match self.interner.def(*type_id) {
-                crate::type_interner::TypeInfo::Struct(..) => {
-                    let member = member_access.member;
+            TypeInfo::Pointer(ptr_type_id) => {
+                eprintln!("pointer: {:#?}", self.interner.def(*ptr_type_id));
+                eprintln!("member : {:#?}", member_access.member.lexeme);
+                match self.interner.def(*ptr_type_id) {
+                    TypeInfo::Struct(..) => {
+                        let member = member_access.member;
 
-                    let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme) else {
-                        self.errors.push(Box::new(ErrorMemberAccess::new(
-                            member.span.clone(),
-                            #[cfg(feature = "debug")]
-                            format!("{} {}:{}", file!(), line!(), column!()),
-                        )));
+                        let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme)
+                        else {
+                            self.errors.push(Box::new(ErrorMemberAccess::new(
+                                member.span.clone(),
+                                #[cfg(feature = "debug")]
+                                format!("{} {}:{}", file!(), line!(), column!()),
+                            )));
+                            return Type {
+                                span: member.span.clone(),
+                                ..Default::default()
+                            };
+                        };
+
                         return Type {
                             span: member.span.clone(),
+                            kind: TypeKind::Void,
+                            id: Some(field.ty),
                             ..Default::default()
                         };
-                    };
-
-                    return Type {
-                        span: member.span.clone(),
-                        kind: TypeKind::Void,
-                        id: Some(field.ty),
-                        ..Default::default()
-                    };
-                }
-                crate::type_interner::TypeInfo::Slice(type_id)
-                    if member_access.member.lexeme == "len" =>
-                {
-                    Type {
+                    }
+                    TypeInfo::Slice(type_id) if member_access.member.lexeme == "len" => Type {
                         kind: ast::TypeKind::UnsignedTargetPointerNumber,
                         span: expr.span(),
                         mut_token: None,
                         id: Some(TypeId::USIZE),
+                    },
+                    TypeInfo::Slice(type_id) if member_access.member.lexeme == "data" => {
+                        // eprintln!("slice of: {:#?}", self.interner.def(ty));
+                        // let Some(ty) = self.interner.element_of(base_type_id) else {
+                        //     self.errors.push(Box::new(ErrorMemberAccess::new(
+                        //         expr.span(),
+                        //         #[cfg(feature = "debug")]
+                        //         format!("{} {}:{}", file!(), line!(), column!()),
+                        //     )));
+                        //     return Type {
+                        //         span: expr.span(),
+                        //         ..Default::default()
+                        //     };
+                        // };
+                        // eprintln!("slice of: {:#?}", self.interner.def(ty));
+                        Type {
+                            kind: TypeKind::Void,
+                            span: expr.span(),
+                            mut_token: None,
+                            id: Some(*type_id),
+                        }
                     }
-                }
-                crate::type_interner::TypeInfo::Slice(type_id)
-                    if member_access.member.lexeme == "data" =>
-                {
-                    let Some(ty) = self.interner.element_of(base_type_id) else {
+                    _ => {
                         self.errors.push(Box::new(ErrorMemberAccess::new(
                             expr.span(),
                             #[cfg(feature = "debug")]
                             format!("{} {}:{}", file!(), line!(), column!()),
                         )));
-                        return Type {
+                        Type {
                             span: expr.span(),
                             ..Default::default()
-                        };
-                    };
-                    Type {
-                        kind: TypeKind::Void,
-                        span: expr.span(),
-                        mut_token: None,
-                        id: Some(ty),
+                        }
                     }
                 }
-                _ => {
-                    self.errors.push(Box::new(ErrorMemberAccess::new(
-                        expr.span(),
-                        #[cfg(feature = "debug")]
-                        format!("{} {}:{}", file!(), line!(), column!()),
-                    )));
-                    Type {
-                        span: expr.span(),
-                        ..Default::default()
-                    }
-                }
-            },
+            }
             _ => {
                 self.errors.push(Box::new(ErrorMemberAccess::new(
                     expr.span(),
