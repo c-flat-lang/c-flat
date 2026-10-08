@@ -139,8 +139,10 @@ impl<'st> TypeChecker<'st> {
         self.symbol_table.enter_scope(function.name.lexeme.as_str());
         let calulated_return_type = self.walk_block(&mut function.body);
         self.symbol_table.exit_scope();
-        if let (Some(crt_id), Some(rt_id)) = (&calulated_return_type.id, &function.return_type.id)
-            && !self.interner.same_type(*crt_id, *rt_id)
+        if let (Some(crt_id), Some(rt_id)) = (
+            calulated_return_type.resolved_id(),
+            function.return_type.resolved_id(),
+        ) && !self.interner.same_type(crt_id, rt_id)
         {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
                 calulated_return_type.name(self.interner),
@@ -604,7 +606,9 @@ impl<'st> TypeChecker<'st> {
             kind: TypeKind::Pointer(Box::new(inner_type.clone())),
             span: expr.span(),
             mut_token: None,
-            id: inner_type.id.map(|id| self.interner.pointer_to(id)),
+            id: inner_type
+                .resolved_id()
+                .map(|id| self.interner.pointer_to(id)),
         }
     }
 
@@ -659,7 +663,9 @@ impl<'st> TypeChecker<'st> {
             ),
             span: expr.span(),
             mut_token: None,
-            id: value_type.id.map(|id| self.interner.array_of(length, id)),
+            id: value_type
+                .resolved_id()
+                .map(|id| self.interner.array_of(length, id)),
         };
 
         expr.ty.clone()

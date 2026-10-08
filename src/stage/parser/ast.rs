@@ -23,7 +23,7 @@ impl std::fmt::Display for Type {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mutable = if self.mut_token.is_some() { "mut " } else { "" };
 
-        if let Some(id) = self.id {
+        if let Some(id) = self.resolved_id() {
             return write!(f, "{mutable}<type#{}>", id.index());
         }
 
@@ -39,7 +39,7 @@ impl PartialEq<Type> for Type {
 
 impl Type {
     pub fn name(&self, interner: &TypeInterner) -> String {
-        let Some(id) = self.id else {
+        let Some(id) = self.resolved_id() else {
             return format!("{}", self.kind);
         };
         interner.name_of(id)
