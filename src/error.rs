@@ -898,3 +898,51 @@ impl Report for ErrorDuplicateType {
         report.build()
     }
 }
+
+#[derive(Debug)]
+pub struct ErrorGenericArity {
+    name: String,
+    expected: usize,
+    found: usize,
+    span: Span,
+    #[cfg(feature = "debug")]
+    compiler_line: String,
+}
+
+impl ErrorGenericArity {
+    pub fn new(
+        name: impl Into<String>,
+        expected: usize,
+        found: usize,
+        span: Span,
+        #[cfg(feature = "debug")] compiler_line: String,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            expected,
+            found,
+            span,
+            #[cfg(feature = "debug")]
+            compiler_line,
+        }
+    }
+}
+
+impl Report for ErrorGenericArity {
+    fn filename(&self) -> &str {
+        &self.span.filename
+    }
+
+    fn report(&self, src: &str) -> String {
+        let span = &self.span;
+        let mut report = ReportBuilder::new(span, src);
+        report.message(format!(
+            "`{}` expects {} type argument(s) but {} were given",
+            self.name, self.expected, self.found
+        ));
+        report.lines_above(3);
+        #[cfg(feature = "debug")]
+        report.note(&self.compiler_line);
+        report.build()
+    }
+}

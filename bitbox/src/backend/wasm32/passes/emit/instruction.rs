@@ -1514,19 +1514,22 @@ impl Lower<Wasm32LowerContext<'_>> for ICast {
             // BitCast: reinterpret the raw bits as a different type.
             // Only meaningful across the int/float boundary in Wasm.
             crate::ir::CastKind::BitCast => {
-                match (src_bytes, dst_bytes) {
-                    (4, 4) if  /* f32→i32 */ true => {
-                        // Distinguish by checking src type kind if you have it;
-                        // here we cover both directions:
-                        target.assembler.i32_reinterpret_f32(); // f32 bits → i32
-                        // If src is i32 and dst is f32, use:
-                        // target.assembler.f32_reinterpret_i32();
+                let src_is_float = matches!(self.src.ty, crate::ir::Type::Float(_));
+                let dst_is_float = matches!(self.des.ty, crate::ir::Type::Float(_));
+                match (src_is_float, dst_is_float, src_bytes, dst_bytes) {
+                    (true, false, 4, 4) => {
+                        target.assembler.i32_reinterpret_f32();
                     }
-                    (8, 8) => {
-                        target.assembler.i64_reinterpret_f64(); // f64 bits → i64
-                        // target.assembler.f64_reinterpret_i64();
+                    (false, true, 4, 4) => {
+                        target.assembler.f32_reinterpret_i32();
                     }
-                    _ => {} // int<->int or float↔float same size: no-op
+                    (true, false, 8, 8) => {
+                        target.assembler.i64_reinterpret_f64();
+                    }
+                    (false, true, 8, 8) => {
+                        target.assembler.f64_reinterpret_i64();
+                    }
+                    _ => {}
                 }
             }
 

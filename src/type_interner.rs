@@ -452,8 +452,11 @@ impl TypeInterner {
             return bitbox::ir::Type::Void;
         }
         let lowered = self.compute_bitbox_type(id);
-        self.in_progress.borrow_mut().remove(&id);
-        self.bitbox_cache.borrow_mut().insert(id, lowered.clone());
+        let mut in_progress = self.in_progress.borrow_mut();
+        in_progress.remove(&id);
+        if in_progress.is_empty() {
+            self.bitbox_cache.borrow_mut().insert(id, lowered.clone());
+        }
         lowered
     }
 

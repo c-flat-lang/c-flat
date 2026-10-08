@@ -380,10 +380,12 @@ impl Lowerable for ExprMemberAccess {
         let Some(ptr) = self.base.lower(assembler, ctx) else {
             panic!("Failed to return variable from expr lowering in MemberAccess");
         };
-        let fields = match &ptr.ty {
-            ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+        let (struct_name, fields) = match &ptr.ty {
+            ir::Type::Struct(ir::StructType { name, fields, .. }) => (name.clone(), fields.clone()),
             ir::Type::Pointer(inner) => match inner.as_ref() {
-                ir::Type::Struct(ir::StructType { fields, .. }) => fields.clone(),
+                ir::Type::Struct(ir::StructType { name, fields, .. }) => {
+                    (name.clone(), fields.clone())
+                }
                 _ => panic!("Expected pointer to struct type in MemberAccess"),
             },
             ir::Type::Array(size, _) => {
@@ -404,7 +406,14 @@ impl Lowerable for ExprMemberAccess {
             panic!("Field not found {}", self.member.lexeme);
         };
 
-        let des = assembler.var(field_ty.clone());
+        let interner = ctx.interner();
+        let field_ty = interner
+            .lookup_name(&struct_name)
+            .and_then(|id| interner.field(id, &self.member.lexeme))
+            .map(|(_, field)| interner.as_bitbox_type(field.ty))
+            .unwrap_or_else(|| field_ty.clone());
+
+        let des = assembler.var(field_ty);
         let index = Operand::ConstantInt(ConstantInt::new(idx.to_string(), Type::Signed(32)));
 
         assembler.elemget(des.clone(), ptr, index);

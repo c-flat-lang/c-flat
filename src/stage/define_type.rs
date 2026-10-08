@@ -12,22 +12,8 @@ impl DefineTypeStage {
         &self,
         interner: &mut TypeInterner,
         struct_def: &ast::Struct,
-    ) -> report::Result<()> {
-        match interner.declare_struct(&struct_def.name.lexeme, struct_def.name.span.clone()) {
-            Ok(_id) => Ok(()),
-            Err(_existing_id) => {
-                panic!("duplicate struct declaration");
-                // let existing_span = interner
-                //     .decl_span(existing_id)
-                //     .expect("declared id must have a span")
-                //     .clone();
-                // ctx.scope_error(ErrorDuplicateType {
-                //     name: struct_def.name.lexeme.clone(),
-                //     new_span: struct_def.name.span.clone(),
-                //     existing_span,
-                // })
-            }
-        }
+    ) -> std::result::Result<TypeId, TypeId> {
+        interner.declare_struct(&struct_def.name.lexeme, struct_def.name.span.clone())
     }
 
     fn define_struct_template(&self, interner: &mut TypeInterner, struct_def: &ast::Struct) {
@@ -64,7 +50,22 @@ impl Stage for DefineTypeStage {
                 ast::Item::Function(_) => {}
                 ast::Item::Type(type_def) => match type_def {
                     ast::TypeDef::Struct(struct_def) if struct_def.type_params.is_none() => {
-                        self.define_struct(&mut ctx.interner, struct_def)?;
+                        let Err(existing_id) = self.define_struct(&mut ctx.interner, struct_def)
+                        else {
+                            continue;
+                        };
+                        let existing_span = ctx
+                            .interner
+                            .decl_span(existing_id)
+                            .expect("declared id must have a span")
+                            .clone();
+                        return Err(ctx.scope_error(Box::new(ErrorDuplicateType::new(
+                            struct_def.name.lexeme.clone(),
+                            struct_def.name.span.clone(),
+                            existing_span,
+                            #[cfg(feature = "debug")]
+                            format!("{} {}:{}", file!(), line!(), column!()),
+                        ))));
                     }
                     ast::TypeDef::Struct(struct_def) => {
                         self.define_struct_template(&mut ctx.interner, struct_def);

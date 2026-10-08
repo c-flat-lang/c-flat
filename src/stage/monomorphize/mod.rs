@@ -22,7 +22,7 @@ use crate::DebugMode;
 use crate::stage::{Stage, StageContext, StageOutput};
 use std::collections::{HashMap, HashSet};
 
-use crate::error::{ErrorMessage, Errors, Report, Result};
+use crate::error::{ErrorGenericArity, ErrorMessage, Errors, Report, Result};
 use crate::stage::lexer::token::{Span, Token};
 use crate::stage::parser::ast::{
     self, Expr, ExprBlock, ExprCall, ExprStruct, Litral, Type, TypeKind,
@@ -177,7 +177,9 @@ impl Monomorphizer {
                 for param in params.params.iter_mut() {
                     self.rewrite_type(param);
                 }
-                if self.struct_templates.contains_key(&name.lexeme) {
+                if self.struct_templates.contains_key(&name.lexeme)
+                    && self.check_arity(name, params.params.len(), true)
+                {
                     let args = params.params.clone();
                     let mangled = mangle_name(&name.lexeme, &args);
                     self.enqueue(name.lexeme.clone(), args, mangled.clone(), true);
@@ -282,6 +284,9 @@ impl Monomorphizer {
         }
 
         let args = if let Some(targs) = &call.type_args {
+            if !self.check_arity(&caller_tok, targs.len(), false) {
+                return;
+            }
             targs.clone()
         } else {
             match self.infer_fn_args(&caller_tok.lexeme, call) {
@@ -326,10 +331,43 @@ impl Monomorphizer {
             return;
         };
 
+        if !self.check_arity(&s.name, args.len(), true) {
+            return;
+        }
+
         let mangled = mangle_name(&s.name.lexeme, &args);
         self.enqueue(s.name.lexeme.clone(), args, mangled.clone(), true);
         s.name.lexeme = mangled;
         s.type_args = None;
+    }
+
+    fn check_arity(&mut self, name: &Token, found: usize, is_struct: bool) -> bool {
+        let expected = if is_struct {
+            self.struct_templates
+                .get(&name.lexeme)
+                .and_then(|s| s.type_params.as_ref())
+                .map(|p| p.len())
+        } else {
+            self.fn_templates
+                .get(&name.lexeme)
+                .and_then(|f| f.type_args.as_ref())
+                .map(|p| p.len())
+        };
+        let Some(expected) = expected else {
+            return true;
+        };
+        if expected == found {
+            return true;
+        }
+        self.errors.push(Box::new(ErrorGenericArity::new(
+            name.lexeme.clone(),
+            expected,
+            found,
+            name.span.clone(),
+            #[cfg(feature = "debug")]
+            format!("{} {}:{}", file!(), line!(), column!()),
+        )));
+        false
     }
 
     fn enqueue(&mut self, base: String, args: Vec<Type>, mangled: String, is_struct: bool) {
