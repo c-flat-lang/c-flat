@@ -51,6 +51,7 @@
                     kind: UnsignedNumber(
                         8,
                     ),
+                    id: None,
                     span: Span {
                         start: 23,
                         end: 25,
@@ -61,6 +62,7 @@
             return_type: Type {
                 mut_token: None,
                 kind: Void,
+                id: None,
                 span: Span {
                     start: 27,
                     end: 31,
@@ -119,6 +121,7 @@
                     kind: SignedNumber(
                         32,
                     ),
+                    id: None,
                     span: Span {
                         start: 55,
                         end: 58,
@@ -129,6 +132,7 @@
             return_type: Type {
                 mut_token: None,
                 kind: Void,
+                id: None,
                 span: Span {
                     start: 60,
                     end: 64,
@@ -176,6 +180,7 @@
                             Type {
                                 mut_token: None,
                                 kind: Type,
+                                id: None,
                                 span: Span {
                                     start: 81,
                                     end: 85,
@@ -230,6 +235,7 @@
                                     },
                                 },
                             ),
+                            id: None,
                             span: Span {
                                 start: 108,
                                 end: 109,
@@ -271,6 +277,7 @@
                                     },
                                 },
                             ),
+                            id: None,
                             span: Span {
                                 start: 123,
                                 end: 124,
@@ -339,6 +346,7 @@
                         Type {
                             mut_token: None,
                             kind: Type,
+                            id: None,
                             span: Span {
                                 start: 146,
                                 end: 150,
@@ -372,6 +380,7 @@
                                 },
                             },
                         ),
+                        id: None,
                         span: Span {
                             start: 156,
                             end: 157,
@@ -402,6 +411,7 @@
                                 },
                             },
                         ),
+                        id: None,
                         span: Span {
                             start: 162,
                             end: 163,
@@ -437,6 +447,7 @@
                                         },
                                     },
                                 ),
+                                id: None,
                                 span: Span {
                                     start: 171,
                                     end: 172,
@@ -446,6 +457,7 @@
                         ],
                     },
                 ),
+                id: None,
                 span: Span {
                     start: 165,
                     end: 174,
@@ -504,6 +516,7 @@
                                                                 },
                                                             },
                                                         ),
+                                                        id: None,
                                                         span: Span {
                                                             start: 194,
                                                             end: 195,
@@ -680,6 +693,7 @@
                         Type {
                             mut_token: None,
                             kind: Type,
+                            id: None,
                             span: Span {
                                 start: 262,
                                 end: 266,
@@ -713,6 +727,7 @@
                                 },
                             },
                         ),
+                        id: None,
                         span: Span {
                             start: 272,
                             end: 273,
@@ -743,6 +758,7 @@
                                 },
                             },
                         ),
+                        id: None,
                         span: Span {
                             start: 278,
                             end: 279,
@@ -764,6 +780,7 @@
                         },
                     },
                 ),
+                id: None,
                 span: Span {
                     start: 281,
                     end: 282,
@@ -889,6 +906,7 @@
                 kind: SignedNumber(
                     32,
                 ),
+                id: None,
                 span: Span {
                     start: 320,
                     end: 323,
@@ -941,6 +959,7 @@
                                                         kind: SignedNumber(
                                                             32,
                                                         ),
+                                                        id: None,
                                                         span: Span {
                                                             start: 343,
                                                             end: 346,
@@ -950,6 +969,7 @@
                                                 ],
                                             },
                                         ),
+                                        id: None,
                                         span: Span {
                                             start: 337,
                                             end: 348,
@@ -986,6 +1006,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 362,
                                                         end: 365,
@@ -1021,6 +1042,7 @@
                                                             kind: SignedNumber(
                                                                 32,
                                                             ),
+                                                            id: None,
                                                             span: Span {
                                                                 start: 368,
                                                                 end: 370,
@@ -1047,6 +1069,7 @@
                                                             kind: SignedNumber(
                                                                 32,
                                                             ),
+                                                            id: None,
                                                             span: Span {
                                                                 start: 372,
                                                                 end: 374,
@@ -1206,6 +1229,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 416,
                                                         end: 418,
@@ -1363,6 +1387,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 461,
                                                         end: 463,
@@ -1441,6 +1466,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 487,
                                                         end: 490,
@@ -1476,6 +1502,7 @@
                                                             kind: SignedNumber(
                                                                 32,
                                                             ),
+                                                            id: None,
                                                             span: Span {
                                                                 start: 493,
                                                                 end: 496,
@@ -1502,6 +1529,7 @@
                                                             kind: SignedNumber(
                                                                 32,
                                                             ),
+                                                            id: None,
                                                             span: Span {
                                                                 start: 498,
                                                                 end: 501,
@@ -1639,6 +1667,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 540,
                                                         end: 542,
@@ -1738,6 +1767,7 @@
                                                             kind: SignedNumber(
                                                                 32,
                                                             ),
+                                                            id: None,
                                                             span: Span {
                                                                 start: 565,
                                                                 end: 568,
@@ -1764,6 +1794,7 @@
                                                             kind: SignedNumber(
                                                                 32,
                                                             ),
+                                                            id: None,
                                                             span: Span {
                                                                 start: 570,
                                                                 end: 572,
@@ -1901,6 +1932,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 611,
                                                         end: 613,
@@ -1966,6 +1998,7 @@
                                                     kind: SignedNumber(
                                                         32,
                                                     ),
+                                                    id: None,
                                                     span: Span {
                                                         start: 628,
                                                         end: 629,

@@ -134,10 +134,12 @@ impl<'a> TypeResolver<'a> {
         match item {
             ast::Item::Function(function) => self.resolve_function(function),
             ast::Item::ExternFunction(extern_function) => {
-                for param in extern_function.params.iter() {
-                    self.resolve_type_id(param);
+                for param in extern_function.params.iter_mut() {
+                    let id = self.resolve_type_id(param);
+                    param.id = Some(id);
                 }
-                self.resolve_type_id(&extern_function.return_type);
+                let id = self.resolve_type_id(&extern_function.return_type);
+                extern_function.return_type.id = Some(id);
             }
             ast::Item::Type(_) | ast::Item::Use(_) => {}
         }
@@ -310,8 +312,8 @@ impl Stage for ResolveTypeStage {
             }
         }
 
-        for mut item in items.iter_mut() {
-            resolver.resolve_item(&mut item);
+        for item in items.iter_mut() {
+            resolver.resolve_item(item);
         }
 
         let mut errors = resolver.take_errors();

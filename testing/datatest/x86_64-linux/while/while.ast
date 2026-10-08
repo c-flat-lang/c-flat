@@ -51,6 +51,7 @@
                     kind: SignedNumber(
                         32,
                     ),
+                    id: None,
                     span: Span {
                         start: 22,
                         end: 25,
@@ -61,6 +62,7 @@
             return_type: Type {
                 mut_token: None,
                 kind: Void,
+                id: None,
                 span: Span {
                     start: 27,
                     end: 31,
@@ -119,6 +121,7 @@
                     kind: UnsignedNumber(
                         8,
                     ),
+                    id: None,
                     span: Span {
                         start: 56,
                         end: 58,
@@ -129,6 +132,7 @@
             return_type: Type {
                 mut_token: None,
                 kind: Void,
+                id: None,
                 span: Span {
                     start: 60,
                     end: 64,
@@ -167,6 +171,7 @@
                 kind: SignedNumber(
                     32,
                 ),
+                id: None,
                 span: Span {
                     start: 81,
                     end: 84,
@@ -209,6 +214,7 @@
                                                 kind: SignedNumber(
                                                     32,
                                                 ),
+                                                id: None,
                                                 span: Span {
                                                     start: 110,
                                                     end: 113,
@@ -216,6 +222,7 @@
                                                 },
                                             },
                                         ),
+                                        id: None,
                                         span: Span {
                                             start: 106,
                                             end: 114,
@@ -260,6 +267,7 @@
                                                         kind: SignedNumber(
                                                             32,
                                                         ),
+                                                        id: None,
                                                         span: Span {
                                                             start: 122,
                                                             end: 123,
@@ -295,6 +303,7 @@
                                                         kind: SignedNumber(
                                                             32,
                                                         ),
+                                                        id: None,
                                                         span: Span {
                                                             start: 119,
                                                             end: 120,
@@ -316,6 +325,7 @@
                                         ty: Type {
                                             mut_token: None,
                                             kind: Void,
+                                            id: None,
                                             span: Span {
                                                 start: 0,
                                                 end: 0,
@@ -357,6 +367,7 @@
                                     Type {
                                         mut_token: None,
                                         kind: UnsignedTargetPointerNumber,
+                                        id: None,
                                         span: Span {
                                             start: 142,
                                             end: 147,
@@ -390,6 +401,7 @@
                                                 kind: SignedNumber(
                                                     32,
                                                 ),
+                                                id: None,
                                                 span: Span {
                                                     start: 150,
                                                     end: 151,
@@ -565,6 +577,7 @@
                                                             ty: Type {
                                                                 mut_token: None,
                                                                 kind: Void,
+                                                                id: None,
                                                                 span: Span {
                                                                     start: 0,
                                                                     end: 0,
@@ -689,6 +702,7 @@
                                                                         kind: SignedNumber(
                                                                             32,
                                                                         ),
+                                                                        id: None,
                                                                         span: Span {
                                                                             start: 254,
                                                                             end: 256,
@@ -824,6 +838,7 @@
                                                                         kind: SignedNumber(
                                                                             32,
                                                                         ),
+                                                                        id: None,
                                                                         span: Span {
                                                                             start: 300,
                                                                             end: 302,
@@ -919,6 +934,7 @@
                                                                             kind: SignedNumber(
                                                                                 32,
                                                                             ),
+                                                                            id: None,
                                                                             span: Span {
                                                                                 start: 321,
                                                                                 end: 322,
@@ -1003,6 +1019,7 @@
                                                 kind: SignedNumber(
                                                     32,
                                                 ),
+                                                id: None,
                                                 span: Span {
                                                     start: 346,
                                                     end: 349,

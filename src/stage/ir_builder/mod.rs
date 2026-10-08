@@ -11,7 +11,7 @@ use std::str::FromStr;
 use crate::stage::parser::ast::{
     Expr, ExprAddressOf, ExprArray, ExprArrayIndex, ExprArrayRepeat, ExprAssignment, ExprBinary,
     ExprBlock, ExprCall, ExprDecl, ExprDeref, ExprGrouping, ExprIfElse, ExprMemberAccess, ExprNot,
-    ExprPath, ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral, TypeKind,
+    ExprPath, ExprReturn, ExprStruct, ExprTypeCast, ExprWhile, Litral,
 };
 
 #[derive(Debug)]
@@ -293,11 +293,10 @@ impl Lowerable for ExprPath {
                 todo!("Path Struct")
             }
             super::symbol_table::SymbolKind::Enum => {
-                let ast::TypeKind::Enum(ty) = &symbol.ty.kind else {
+                let Some(id) = symbol.ty.resolved_id() else {
                     panic!("incorrect SymbolKind matched with a Symbol");
                 };
-                let Some((_, value)) = ty.variants.iter().find(|v| v.0.lexeme == leaf.lexeme)
-                else {
+                let Some(value) = ctx.interner().enum_variant_value(id, &leaf.lexeme) else {
                     panic!("Unknown variant on {}", head.lexeme);
                 };
                 let tmp = assembler.var(Type::Unsigned(32));
@@ -505,7 +504,7 @@ impl Lowerable for ExprIfElse {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let result_var = if self.ty.kind == ast::TypeKind::Void {
+        let result_var = if self.ty.is_void() {
             None
         } else {
             Some(assembler.var(self.ty.as_bitbox_type(ctx.interner())))
@@ -806,16 +805,7 @@ impl Lowerable for ExprCall {
                         let number_bytes = ctx.interner().target().target_pointer_size();
                         let var = assembler.var(Type::Unsigned(number_bytes));
                         let ty = &self.type_args.as_ref().unwrap()[0];
-                        let size_of_type = match &ty.kind {
-                            TypeKind::Name(name) => {
-                                let Some(symbol) = ctx.symbol_table.get(&name.lexeme) else {
-                                    panic!("unknown symbol {}", name.lexeme);
-                                };
-
-                                symbol.ty.size(&ctx.interner().target())
-                            }
-                            _ => ty.size(&ctx.interner().target()),
-                        };
+                        let size_of_type = ty.size(ctx.interner());
 
                         assembler.assign(
                             var.clone(),
@@ -843,8 +833,11 @@ impl Lowerable for ExprCall {
             .filter_map(|(arg, param_ty)| {
                 let var = arg.lower(assembler, ctx)?;
 
-                match (&var.ty.de_ref(), &param_ty.de_ref().kind) {
-                    (Type::Array(len, elem), ast::TypeKind::Slice(_)) => {
+                let param_is_slice = param_ty
+                    .resolved_id()
+                    .is_some_and(|id| ctx.interner().is_slice(ctx.interner().de_ref(id)));
+                match &var.ty.de_ref() {
+                    Type::Array(len, elem) if param_is_slice => {
                         // Pass pointer to the first element and length for array-to-slice coercion
                         let data_ptr = assembler.var(Type::Pointer(elem.clone()));
                         assembler.ref_of(data_ptr.clone(), var.clone());
@@ -1015,9 +1008,9 @@ impl Addressable for ExprArrayIndex {
         };
 
         // Assignable containers: fixed arrays, slices, and raw pointers (`*T`).
-        match &self.ty.kind {
-            ast::TypeKind::Array(_, _) | ast::TypeKind::Slice(_) | ast::TypeKind::Pointer(_) => {}
-            other => panic!("Expected indexable type but got {other:?}"),
+        match self.ty.resolved_id() {
+            Some(id) if ctx.interner().is_indexable(id) => {}
+            _ => panic!("Expected indexable type but got {}", self.ty),
         };
         let address = Address {
             variable,
@@ -1034,13 +1027,17 @@ impl Lowerable for ExprArrayRepeat {
         assembler: &mut AssemblerBuilder,
         ctx: &mut LoweringContext,
     ) -> Option<Variable> {
-        let ast::TypeKind::Array(count, _) = &self.ty.kind else {
+        let Some(count) = self
+            .ty
+            .resolved_id()
+            .and_then(|id| ctx.interner().array_len(id))
+        else {
             panic!("Expected array type but got {}", self.ty);
         };
-        let count = *count;
+        let count = count as usize;
         // Allocate the full array type inline (count=1 under the `count * ty.size()`
         // alloc contract); each iteration copies a freshly-lowered element in.
-        let full_ty = self.ty.as_bitbox_type(&ctx.interner());
+        let full_ty = self.ty.as_bitbox_type(ctx.interner());
         let ptr = assembler.var(full_ty.clone());
         assembler.alloc(
             full_ty.clone(),
@@ -1177,7 +1174,7 @@ impl Lowerable for ExprTypeCast {
     ) -> Option<Variable> {
         use std::cmp::Ordering;
         let src_var = self.expr.lower(assembler, ctx)?;
-        let des_ty = self.target_type.as_bitbox_type(&ctx.interner());
+        let des_ty = self.target_type.as_bitbox_type(ctx.interner());
         let src_ty = src_var.ty.clone();
         let des = assembler.var(des_ty.clone());
         let cast_kind = match (des_ty, src_ty) {

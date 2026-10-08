@@ -57,13 +57,31 @@ impl Type {
         }
     }
 
-    pub fn as_bitbox_type(&self, interner: &TypeInterner) -> bitbox::ir::Type {
-        self.kind
-            .as_bitbox_type(interner.target().target_pointer_size())
+    pub fn resolved_id(&self) -> Option<TypeId> {
+        self.id.filter(|id| *id != TypeId::UNRESOLVED)
     }
 
-    pub fn size(&self, target: &Target) -> usize {
-        self.kind.size(target.target_pointer_size())
+    pub fn is_void(&self) -> bool {
+        match self.resolved_id() {
+            Some(id) => id == TypeId::VOID,
+            None => self.kind == TypeKind::Void,
+        }
+    }
+
+    pub fn as_bitbox_type(&self, interner: &TypeInterner) -> bitbox::ir::Type {
+        match self.resolved_id() {
+            Some(id) => interner.as_bitbox_type(id),
+            None => self
+                .kind
+                .as_bitbox_type(interner.target().target_pointer_size()),
+        }
+    }
+
+    pub fn size(&self, interner: &TypeInterner) -> usize {
+        match self.resolved_id() {
+            Some(id) => interner.size_of(id),
+            None => self.kind.size(interner.target().target_pointer_size()),
+        }
     }
 
     pub fn de_ref(&self) -> &Type {
@@ -385,7 +403,7 @@ impl StructType {
         // padding is needed cause of the order
         let mut size = 0;
         for (_, ty) in &self.fields {
-            size += ty.size(target);
+            size += ty.kind.size(target.target_pointer_size());
         }
         size
     }

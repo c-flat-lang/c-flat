@@ -833,7 +833,7 @@ impl Default for TypeInterner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stage::lexer::token::{Keyword as Kw, Span, TokenKind};
+    use crate::stage::lexer::token::{Span, TokenKind};
     use crate::stage::parser::ast::TypeKind;
     use bitbox::Target;
 
@@ -1026,7 +1026,7 @@ mod tests {
             pairs.extend(composite_pairs(&mut interner));
 
             for (kind, id) in pairs {
-                let from_ast = ty(kind.clone()).size(&target);
+                let from_ast = ty(kind.clone()).size(&interner);
                 let from_interner = interner.size_of(id);
                 assert_eq!(
                     from_ast, from_interner,
@@ -1324,60 +1324,6 @@ mod tests {
         );
         assert_eq!(interner.struct_fields(point).map(|f| f.len()), Some(2));
         assert_eq!(interner.struct_fields(TypeId::S32), None);
-    }
-
-    fn binary_ops() -> Vec<TokenKind> {
-        vec![
-            TokenKind::Plus,
-            TokenKind::Minus,
-            TokenKind::Star,
-            TokenKind::Slash,
-            TokenKind::Percent,
-            TokenKind::BitShiftRight,
-            TokenKind::Ampersand,
-            TokenKind::EqualEqual,
-            TokenKind::Greater,
-            TokenKind::GreaterEqual,
-            TokenKind::Less,
-            TokenKind::LessEqual,
-            TokenKind::Keyword(Kw::And),
-            TokenKind::Keyword(Kw::Or),
-        ]
-    }
-
-    #[test]
-    fn binary_op_result_matches_supports_binary_op() {
-        let mut interner = TypeInterner::new(Target::Wasm32);
-
-        let enum_id = interner.declare_enum("E", Span::default()).unwrap();
-        interner.fill_enum(enum_id, vec![("a".to_string(), None)], TypeId::U32);
-        let enum_kind = TypeKind::Enum(ast::EnumType {
-            name: "E".to_string(),
-            type_params: None,
-            variants: vec![],
-            number_kind: Box::new(TypeKind::UnsignedNumber(32)),
-        });
-
-        let mut operands = scalar_pairs(&mut interner);
-        operands.push((enum_kind, enum_id));
-
-        for (lhs_kind, lhs_id) in &operands {
-            for (rhs_kind, rhs_id) in &operands {
-                for op in binary_ops() {
-                    let from_ast = ty(lhs_kind.clone())
-                        .supports_binary_op(&op, &ty(rhs_kind.clone()), Span::default(), &interner)
-                        .map(|result| result.kind.to_string());
-                    let from_interner = interner
-                        .binary_op_result(*lhs_id, &op, *rhs_id)
-                        .map(|id| interner.name_of(id));
-
-                    assert_eq!(
-                        from_ast, from_interner,
-                        "`{lhs_kind}` {op:?} `{rhs_kind}` disagreed"
-                    );
-                }
-            }
-        }
     }
 
     #[test]

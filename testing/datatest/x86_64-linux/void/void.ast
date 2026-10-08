@@ -29,6 +29,7 @@
             return_type: Type {
                 mut_token: None,
                 kind: Void,
+                id: None,
                 span: Span {
                     start: 14,
                     end: 18,

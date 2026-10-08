@@ -8,8 +8,8 @@ use crate::{
     },
     stage::{
         Stage, StageContext, StageOutput,
-        lexer::token::{Keyword as Kw, Span, Token, TokenKind},
-        parser::ast::{self, EnumType, Expr, StructType, Type, TypeKind},
+        lexer::token::{Span, Token, TokenKind},
+        parser::ast::{self, Expr, Type, TypeKind},
         symbol_table::{ScopePath, SymbolTable},
     },
     type_interner::{TypeId, TypeInfo, TypeInterner},
@@ -32,23 +32,25 @@ impl Stage for TypeCheckerStage {
     fn run(&mut self, ctx: &mut StageContext) -> Result<()> {
         let mut items = ctx.take_items();
 
-        let interner = ctx.interner.clone();
-        let symbol_table = ctx.symbol_table_mut()?;
-        TypeChecker::new(symbol_table, interner).check(&mut items)?;
+        let mut interner = std::mem::take(&mut ctx.interner);
+        let result = match ctx.symbol_table_mut() {
+            Ok(symbol_table) => TypeChecker::new(symbol_table, &mut interner).check(&mut items),
+            Err(err) => Err(err),
+        };
+        ctx.interner = interner;
+        result?;
 
         ctx.items = items;
         Ok(())
     }
 }
 
-fn unsigned_kind_of(t: &TypeKind) -> Option<&TypeKind> {
-    match t {
-        TypeKind::UnsignedNumber(_) => Some(t),
-        TypeKind::Enum(EnumType { number_kind, .. }) => match &**number_kind {
-            TypeKind::UnsignedNumber(_) => Some(&**number_kind),
-            _ => None,
-        },
-        _ => None,
+fn typed(id: TypeId, span: Span) -> Type {
+    Type {
+        mut_token: None,
+        kind: TypeKind::Void,
+        span,
+        id: Some(id),
     }
 }
 
@@ -60,95 +62,13 @@ impl Type {
         span: Span,
         interner: &TypeInterner,
     ) -> Option<Type> {
-        use TokenKind::*;
-
-        if let (Some(lhs_id), op, Some(rhs_id)) = (&self.id, op, &other.id)
-            && interner.binary_op_result(*lhs_id, op, *rhs_id).is_some()
-        {
-            let id = interner.binary_op_result(*lhs_id, op, *rhs_id).unwrap();
-            let mut new_ty = self.clone();
-            new_ty.id = Some(id);
-            new_ty.span = span;
-            return Some(new_ty);
-        }
-
-        match (&self.kind, op, &other.kind) {
-            // (Plus | Minus | Star | Slash | Percent) only work on numbers and return the same type
-            (
-                TypeKind::SignedTargetPointerNumber,
-                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
-                TypeKind::SignedTargetPointerNumber,
-            ) => Some(self.clone()),
-            (
-                TypeKind::UnsignedTargetPointerNumber,
-                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
-                TypeKind::UnsignedTargetPointerNumber,
-            ) => Some(self.clone()),
-            (
-                TypeKind::UnsignedNumber(lhs),
-                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
-                TypeKind::UnsignedNumber(rhs),
-            ) if lhs == rhs => Some(self.clone()),
-            (
-                TypeKind::SignedNumber(lhs),
-                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
-                TypeKind::SignedNumber(rhs),
-            ) if lhs == rhs => Some(self.clone()),
-            (
-                TypeKind::Float(lhs),
-                Plus | Minus | Star | Slash | Percent | BitShiftRight | Ampersand,
-                TypeKind::Float(rhs),
-            ) if lhs == rhs => Some(self.clone()),
-
-            // (EqualEqual | Greater | GreaterEqual | Less | LessEqual) Comparison ops work on numbers and return bools
-            (
-                TypeKind::UnsignedTargetPointerNumber,
-                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
-                TypeKind::UnsignedTargetPointerNumber,
-            ) => Some(self.map_kind(|_| TypeKind::Bool)),
-            (
-                TypeKind::SignedTargetPointerNumber,
-                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
-                TypeKind::SignedTargetPointerNumber,
-            ) => Some(self.map_kind(|_| TypeKind::Bool)),
-            (
-                lhs_ty @ (TypeKind::Enum(_) | TypeKind::UnsignedNumber(_)),
-                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
-                rhs_ty @ (TypeKind::Enum(_) | TypeKind::UnsignedNumber(_)),
-            ) => match (unsigned_kind_of(lhs_ty), unsigned_kind_of(rhs_ty)) {
-                (Some(TypeKind::UnsignedNumber(lhs)), Some(TypeKind::UnsignedNumber(rhs)))
-                    if lhs == rhs =>
-                {
-                    Some(self.map_kind(|_| TypeKind::Bool))
-                }
-                _ => None,
-            },
-            (
-                TypeKind::SignedNumber(lhs),
-                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
-                TypeKind::SignedNumber(rhs),
-            ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
-            (
-                TypeKind::Float(lhs),
-                EqualEqual | Greater | GreaterEqual | Less | LessEqual,
-                TypeKind::Float(rhs),
-            ) if lhs == rhs => Some(self.map_kind(|_| TypeKind::Bool)),
-
-            // (AND | OR) only work on bools and return bools
-            (TypeKind::Bool, EqualEqual | Keyword(Kw::And) | Keyword(Kw::Or), TypeKind::Bool) => {
-                Some(self.map_kind(|_| TypeKind::Bool))
-            }
-            _ => None,
-        }
-        .map(|mut t| {
-            t.span = span;
-            t
-        })
+        let id = interner.binary_op_result(self.resolved_id()?, op, other.resolved_id()?)?;
+        Some(typed(id, span))
     }
 }
 
 pub struct TypeChecker<'st> {
-    interner: TypeInterner,
+    interner: &'st mut TypeInterner,
     symbol_table: &'st mut SymbolTable,
     errors: Vec<Box<dyn Report>>,
     /// When set, integer literals inside an array literal are typed as this
@@ -157,13 +77,25 @@ pub struct TypeChecker<'st> {
 }
 
 impl<'st> TypeChecker<'st> {
-    pub fn new(symbol_table: &'st mut SymbolTable, interner: TypeInterner) -> Self {
+    pub fn new(symbol_table: &'st mut SymbolTable, interner: &'st mut TypeInterner) -> Self {
         Self {
             interner,
             symbol_table,
             errors: Vec::new(),
             numeric_hint: None,
         }
+    }
+
+    fn same(&self, lhs: &Type, rhs: &Type) -> bool {
+        matches!(
+            (lhs.resolved_id(), rhs.resolved_id()),
+            (Some(lhs), Some(rhs)) if self.interner.same_type(lhs, rhs)
+        )
+    }
+
+    fn is(&self, ty: &Type, id: TypeId) -> bool {
+        ty.resolved_id()
+            .is_some_and(|ty| self.interner.same_type(ty, id))
     }
 
     pub fn check(mut self, ast: &mut [ast::Item]) -> Result<()> {
@@ -211,8 +143,8 @@ impl<'st> TypeChecker<'st> {
             && !self.interner.same_type(*crt_id, *rt_id)
         {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                calulated_return_type.name(&self.interner),
-                function.return_type.name(&self.interner),
+                calulated_return_type.name(self.interner),
+                function.return_type.name(self.interner),
                 function.return_type.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
@@ -341,11 +273,11 @@ impl<'st> TypeChecker<'st> {
         self.maybe_numeric_hint(&lhs);
         let rhs = self.walk_expr(&mut expr.right);
         self.numeric_hint = None;
-        if lhs != rhs {
+        if !self.same(&lhs, &rhs) {
             self.errors.push(Box::new({
                 ErrorMissMatchedType::new(
-                    rhs.name(&self.interner),
-                    lhs.name(&self.interner),
+                    rhs.name(self.interner),
+                    lhs.name(self.interner),
                     rhs.span,
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
@@ -367,24 +299,18 @@ impl<'st> TypeChecker<'st> {
         self.numeric_hint = None;
 
         if let Some(ty) = &expr.ty
-            && !ty
-                .id
-                .map(|id| self.interner.same_type(id, value_type.id.unwrap()))
-                .unwrap_or_default()
+            && !self.same(ty, &value_type)
         {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                value_type.name(&self.interner),
-                ty.name(&self.interner),
+                value_type.name(self.interner),
+                ty.name(self.interner),
                 ty.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
         }
         self.symbol_table.get_mut(&expr.ident.lexeme, |s| {
-            if let (Some(lhs), Some(rhs)) = (s.ty.id, value_type.id)
-                && self.interner.same_type(lhs, TypeId::VOID)
-                && !self.interner.same_type(lhs, rhs)
-            {
+            if s.ty.is_void() {
                 s.ty = value_type.clone()
             }
         });
@@ -499,12 +425,12 @@ impl<'st> TypeChecker<'st> {
         let right_ty = self.walk_expr(&mut expr.right);
         self.numeric_hint = None;
         let result_ty =
-            left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span(), &self.interner);
+            left_ty.supports_binary_op(&expr.op.kind, &right_ty, expr.span(), self.interner);
         let Some(result_ty) = result_ty else {
             self.errors.push(Box::new(ErrorUnsupportedBinaryOp::new(
                 &expr.op.lexeme,
-                left_ty.name(&self.interner),
-                right_ty.name(&self.interner),
+                left_ty.name(self.interner),
+                right_ty.name(self.interner),
                 left_ty.span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
@@ -545,7 +471,6 @@ impl<'st> TypeChecker<'st> {
         //     },
         //     _ => symbol.ty.clone(),
         // }
-        eprintln!("symbol: {:?}", symbol);
         symbol.ty.clone()
     }
 
@@ -570,13 +495,9 @@ impl<'st> TypeChecker<'st> {
     fn walk_expr_if_else(&mut self, expr: &mut ast::ExprIfElse) -> ast::Type {
         let condition = self.walk_expr(&mut expr.condition);
 
-        if !condition
-            .id
-            .map(|id| self.interner.same_type(id, TypeId::BOOL))
-            .unwrap_or_default()
-        {
+        if !self.is(&condition, TypeId::BOOL) {
             let error = ErrorMissMatchedType::new(
-                condition.name(&self.interner),
+                condition.name(self.interner),
                 self.interner.name_of(TypeId::BOOL),
                 condition.span,
                 #[cfg(feature = "debug")]
@@ -588,10 +509,10 @@ impl<'st> TypeChecker<'st> {
         let then_branch_type = self.walk_block(&mut expr.then_branch);
         if let Some(else_branch) = expr.else_branch.as_mut() {
             let else_branch_type = self.walk_expr(else_branch);
-            if then_branch_type != else_branch_type {
+            if !self.same(&then_branch_type, &else_branch_type) {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    then_branch_type.name(&self.interner),
-                    else_branch_type.name(&self.interner),
+                    then_branch_type.name(self.interner),
+                    else_branch_type.name(self.interner),
                     then_branch_type.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
@@ -613,10 +534,10 @@ impl<'st> TypeChecker<'st> {
         let ty = self.walk_expr(&mut expr.elements[0]);
         for element in expr.elements.iter_mut().skip(1) {
             let other = self.walk_expr(element);
-            if ty != other {
+            if !self.same(&ty, &other) {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    ty.name(&self.interner),
-                    other.name(&self.interner),
+                    ty.name(self.interner),
+                    other.name(self.interner),
                     ty.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
@@ -630,29 +551,18 @@ impl<'st> TypeChecker<'st> {
             mut_token: None,
             id: Some(
                 self.interner
-                    .array_of(size as u64, ty.id.expect("Should already have a type id")),
+                    .array_of(size as u64, ty.resolved_id().unwrap_or(TypeId::VOID)),
             ),
         }
     }
 
     fn walk_expr_array_index(&mut self, expr: &mut ast::ExprArrayIndex) -> Type {
-        eprintln!("{:#?}", expr);
-        let mut array_type = self.walk_expr(&mut expr.expr);
-        eprintln!("{:?}", array_type);
-        self.maybe_numeric_hint(&ast::Type {
-            mut_token: None,
-            kind: ast::TypeKind::UnsignedTargetPointerNumber,
-            span: expr.index.span(),
-            id: Some(TypeId::USIZE),
-        });
+        let array_type = self.walk_expr(&mut expr.expr);
+        self.maybe_numeric_hint(&typed(TypeId::USIZE, expr.index.span()));
         let index_type = self.walk_expr(&mut expr.index);
-        if !index_type
-            .id
-            .map(|id| self.interner.same_type(id, TypeId::USIZE))
-            .unwrap_or_default()
-        {
+        if !self.is(&index_type, TypeId::USIZE) {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                index_type.name(&self.interner),
+                index_type.name(self.interner),
                 self.interner.name_of(TypeId::USIZE),
                 index_type.span.clone(),
                 #[cfg(feature = "debug")]
@@ -665,35 +575,27 @@ impl<'st> TypeChecker<'st> {
         // Index one layer at a time so `*[T]` yields the slice element `T`
         // while a raw `*T` yields the pointee `T`. `de_ref` would strip every
         // pointer layer and break raw-pointer indexing.
-        // match &array_type.kind {
-        // HACK: remove unwrap
-        let id = match &self.interner.def(array_type.id.unwrap()) {
-            TypeInfo::Array(array) => Some(array.type_id),
-            TypeInfo::Slice(slice) => Some(*slice),
-            TypeInfo::Pointer(ptr) if self.interner.is_indexable(self.interner.de_ref(*ptr)) => {
-                Some(ptr.clone())
-            }
-            // TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
-            // TypeKind::Slice(elem_ty) => *elem_ty.clone(),
-            // TypeKind::Pointer(inner) => match &inner.kind {
-            //     TypeKind::Slice(elem_ty) => *elem_ty.clone(),
-            //     TypeKind::Array(_, elem_ty) => *elem_ty.clone(),
-            //     _ => (**inner).clone(),
-            // },
-            _ => {
+        let element = array_type
+            .resolved_id()
+            .and_then(|id| match self.interner.def(id) {
+                TypeInfo::Array(_) | TypeInfo::Slice(_) => self.interner.element_of(id),
+                TypeInfo::Pointer(inner) => self.interner.element_of(*inner).or(Some(*inner)),
+                _ => None,
+            });
+        match element {
+            Some(id) => typed(id, array_type.span),
+            None => {
                 self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    array_type.name(&self.interner),
+                    array_type.name(self.interner),
                     // HACK: Seems like there should be a better way to express this.
-                    format!("Array<{}>", array_type.name(&self.interner)),
+                    format!("Array<{}>", array_type.name(self.interner)),
                     array_type.span.clone(),
                     #[cfg(feature = "debug")]
                     format!("{} {}:{}", file!(), line!(), column!()),
                 )));
-                array_type.id.clone()
+                array_type
             }
-        };
-        array_type.id = id;
-        array_type
+        }
     }
 
     fn walk_expr_address_of(&mut self, expr: &mut ast::ExprAddressOf) -> Type {
@@ -708,26 +610,19 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_deref(&mut self, expr: &mut ast::ExprDeref) -> Type {
         let base_type = self.walk_expr(&mut expr.base);
-        match base_type.kind {
-            TypeKind::Pointer(inner) => *inner,
-            _ => {
-                let Some(base_type_name) =
-                    self.interner.lookup_name(&base_type.name(&self.interner))
-                else {
-                    panic!("Can ");
-                };
-                let expected_ptr = self.interner.pointer_to(base_type_name);
-                let expected_type = self.interner.name_of(expected_ptr);
-                self.errors.push(Box::new(ErrorMissMatchedType::new(
-                    base_type.name(&self.interner),
-                    expected_type,
-                    base_type.span.clone(),
-                    #[cfg(feature = "debug")]
-                    format!("{} {}:{}", file!(), line!(), column!()),
-                )));
-                base_type
-            }
+        let base_id = base_type.resolved_id().unwrap_or(TypeId::VOID);
+        if let Some(inner) = self.interner.pointee(base_id) {
+            return typed(inner, base_type.span);
         }
+        let expected_ptr = self.interner.pointer_to(base_id);
+        self.errors.push(Box::new(ErrorMissMatchedType::new(
+            base_type.name(self.interner),
+            self.interner.name_of(expected_ptr),
+            base_type.span.clone(),
+            #[cfg(feature = "debug")]
+            format!("{} {}:{}", file!(), line!(), column!()),
+        )));
+        base_type
     }
 
     fn walk_expr_not(&mut self, expr: &mut ast::ExprNot) -> Type {
@@ -746,7 +641,7 @@ impl<'st> TypeChecker<'st> {
         let count_type = self.walk_expr(count);
         let Expr::Litral(ast::Litral::Integer(count_token)) = &**count else {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                count_type.name(&self.interner),
+                count_type.name(self.interner),
                 self.interner.name_of(TypeId::S32),
                 count_type.span.clone(),
                 #[cfg(feature = "debug")]
@@ -772,9 +667,9 @@ impl<'st> TypeChecker<'st> {
 
     fn walk_expr_while(&mut self, expr: &mut ast::ExprWhile) -> Type {
         let condition = self.walk_expr(&mut expr.condition);
-        if !matches!(condition.kind, TypeKind::Bool) {
+        if !self.is(&condition, TypeId::BOOL) {
             self.errors.push(Box::new(ErrorMissMatchedType::new(
-                condition.name(&self.interner),
+                condition.name(self.interner),
                 self.interner.name_of(TypeId::BOOL),
                 condition.span,
                 #[cfg(feature = "debug")]
@@ -789,249 +684,72 @@ impl<'st> TypeChecker<'st> {
             panic!("Expected ExprArray");
         };
         let base_type = self.walk_expr(&mut member_access.base);
+        let member = &member_access.member;
+        let base_id = base_type.resolved_id().unwrap_or(TypeId::VOID);
 
-        let Some(base_type_id) = base_type.id else {
+        if let Some(length) = self.interner.array_len(base_id)
+            && member.lexeme == "len"
+        {
+            let token = Token {
+                kind: TokenKind::Number,
+                lexeme: length.to_string(),
+                span: expr.span(),
+            };
+            let integer_litral = ast::IntegerLitral {
+                token,
+                ty: Type {
+                    mut_token: None,
+                    kind: TypeKind::UnsignedTargetPointerNumber,
+                    span: expr.span(),
+                    id: Some(TypeId::USIZE),
+                },
+            };
+            *expr = ast::Expr::Litral(ast::Litral::Integer(Box::new(integer_litral)));
+            return typed(TypeId::USIZE, expr.span());
+        }
+
+        let target = match self.interner.def(base_id) {
+            TypeInfo::Pointer(inner) => *inner,
+            _ => base_id,
+        };
+
+        let found = match self.interner.def(target) {
+            TypeInfo::Struct(..) => self
+                .interner
+                .field(target, &member.lexeme)
+                .map(|(_, field)| typed(field.ty, member.span.clone())),
+            TypeInfo::Slice(_) if member.lexeme == "len" => Some(typed(TypeId::USIZE, expr.span())),
+            TypeInfo::Slice(inner) if member.lexeme == "data" => {
+                let inner = *inner;
+                Some(typed(self.interner.pointer_to(inner), expr.span()))
+            }
+            _ => None,
+        };
+
+        found.unwrap_or_else(|| {
+            let span = match self.interner.def(target) {
+                TypeInfo::Struct(..) => member.span.clone(),
+                _ => expr.span(),
+            };
             self.errors.push(Box::new(ErrorMemberAccess::new(
-                expr.span(),
+                span.clone(),
                 #[cfg(feature = "debug")]
                 format!("{} {}:{}", file!(), line!(), column!()),
             )));
-            return Type {
-                span: expr.span(),
-                ..Default::default()
-            };
-        };
-
-        eprintln!("{:#?}", self.interner.def(base_type_id));
-        match self.interner.def(base_type_id) {
-            TypeInfo::Array(array_def) if member_access.member.lexeme == "len" => {
-                let token = Token {
-                    kind: TokenKind::Number,
-                    lexeme: array_def.length.to_string(),
-                    span: expr.span(),
-                };
-                let integer_litral = ast::IntegerLitral {
-                    token,
-                    ty: Type {
-                        mut_token: None,
-                        kind: ast::TypeKind::UnsignedTargetPointerNumber,
-                        span: expr.span(),
-                        id: Some(TypeId::USIZE),
-                    },
-                };
-                *expr = ast::Expr::Litral(ast::Litral::Integer(Box::new(integer_litral)));
-                Type {
-                    kind: ast::TypeKind::UnsignedTargetPointerNumber,
-                    span: expr.span(),
-                    mut_token: None,
-                    id: Some(TypeId::USIZE),
-                }
-            }
-            TypeInfo::Struct(..) => {
-                let member = member_access.member;
-
-                let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme) else {
-                    self.errors.push(Box::new(ErrorMemberAccess::new(
-                        member.span.clone(),
-                        #[cfg(feature = "debug")]
-                        format!("{} {}:{}", file!(), line!(), column!()),
-                    )));
-                    return Type {
-                        span: member.span.clone(),
-                        ..Default::default()
-                    };
-                };
-
-                return Type {
-                    span: member.span.clone(),
-                    kind: TypeKind::Void,
-                    id: Some(field.ty),
-                    ..Default::default()
-                };
-            }
-            TypeInfo::Slice(type_id) if member_access.member.lexeme == "len" => Type {
-                kind: ast::TypeKind::UnsignedTargetPointerNumber,
-                span: expr.span(),
-                mut_token: None,
-                id: Some(TypeId::USIZE),
-            },
-            TypeInfo::Slice(type_id) if member_access.member.lexeme == "data" => {
-                let Some(ty) = self.interner.element_of(base_type_id) else {
-                    self.errors.push(Box::new(ErrorMemberAccess::new(
-                        expr.span(),
-                        #[cfg(feature = "debug")]
-                        format!("{} {}:{}", file!(), line!(), column!()),
-                    )));
-                    return Type {
-                        span: expr.span(),
-                        ..Default::default()
-                    };
-                };
-                Type {
-                    kind: TypeKind::Void,
-                    span: expr.span(),
-                    mut_token: None,
-                    id: Some(ty),
-                }
-            }
-            TypeInfo::Pointer(ptr_type_id) => {
-                eprintln!("pointer: {:#?}", self.interner.def(*ptr_type_id));
-                eprintln!("member : {:#?}", member_access.member.lexeme);
-                match self.interner.def(*ptr_type_id) {
-                    TypeInfo::Struct(..) => {
-                        let member = member_access.member;
-
-                        let Some((_, field)) = self.interner.field(base_type_id, &member.lexeme)
-                        else {
-                            self.errors.push(Box::new(ErrorMemberAccess::new(
-                                member.span.clone(),
-                                #[cfg(feature = "debug")]
-                                format!("{} {}:{}", file!(), line!(), column!()),
-                            )));
-                            return Type {
-                                span: member.span.clone(),
-                                ..Default::default()
-                            };
-                        };
-
-                        return Type {
-                            span: member.span.clone(),
-                            kind: TypeKind::Void,
-                            id: Some(field.ty),
-                            ..Default::default()
-                        };
-                    }
-                    TypeInfo::Slice(type_id) if member_access.member.lexeme == "len" => Type {
-                        kind: ast::TypeKind::UnsignedTargetPointerNumber,
-                        span: expr.span(),
-                        mut_token: None,
-                        id: Some(TypeId::USIZE),
-                    },
-                    TypeInfo::Slice(type_id) if member_access.member.lexeme == "data" => {
-                        // eprintln!("slice of: {:#?}", self.interner.def(ty));
-                        // let Some(ty) = self.interner.element_of(base_type_id) else {
-                        //     self.errors.push(Box::new(ErrorMemberAccess::new(
-                        //         expr.span(),
-                        //         #[cfg(feature = "debug")]
-                        //         format!("{} {}:{}", file!(), line!(), column!()),
-                        //     )));
-                        //     return Type {
-                        //         span: expr.span(),
-                        //         ..Default::default()
-                        //     };
-                        // };
-                        // eprintln!("slice of: {:#?}", self.interner.def(ty));
-                        Type {
-                            kind: TypeKind::Void,
-                            span: expr.span(),
-                            mut_token: None,
-                            id: Some(*type_id),
-                        }
-                    }
-                    _ => {
-                        self.errors.push(Box::new(ErrorMemberAccess::new(
-                            expr.span(),
-                            #[cfg(feature = "debug")]
-                            format!("{} {}:{}", file!(), line!(), column!()),
-                        )));
-                        Type {
-                            span: expr.span(),
-                            ..Default::default()
-                        }
-                    }
-                }
-            }
-            _ => {
-                self.errors.push(Box::new(ErrorMemberAccess::new(
-                    expr.span(),
-                    #[cfg(feature = "debug")]
-                    format!("{} {}:{}", file!(), line!(), column!()),
-                )));
-                Type {
-                    span: expr.span(),
-                    ..Default::default()
-                }
-            }
-        }
+            typed(TypeId::VOID, span)
+        })
     }
 
     fn maybe_numeric_hint(&mut self, maybe: &Type) {
-        match &maybe.kind {
-            // Recurse to the innermost scalar so a nested array annotation like
-            // `[2; [2; s32]]` hints `s32` (not `[2; s32]`). Hinting an array-typed
-            // value to an integer literal would inflate its type by an array level.
-            TypeKind::Array(_, elem_ty) | TypeKind::Slice(elem_ty) => {
-                self.maybe_numeric_hint(elem_ty)
-            }
-            ty @ TypeKind::SignedNumber(bits) => {
-                self.numeric_hint = Some(Type {
-                    kind: ty.clone(),
-                    span: maybe.span.clone(),
-                    mut_token: None,
-                    id: Some(self.interner.signed(*bits)),
-                })
-            }
-            ty @ TypeKind::UnsignedNumber(bits) => {
-                self.numeric_hint = Some(Type {
-                    kind: ty.clone(),
-                    span: maybe.span.clone(),
-                    mut_token: None,
-                    id: Some(self.interner.unsigned(*bits)),
-                })
-            }
-            ty @ TypeKind::Float(bits) => {
-                self.numeric_hint = Some(Type {
-                    kind: ty.clone(),
-                    span: maybe.span.clone(),
-                    mut_token: None,
-                    id: Some(self.interner.float(*bits)),
-                })
-            }
-            ty @ TypeKind::SignedTargetPointerNumber => {
-                self.numeric_hint = Some(Type {
-                    kind: ty.clone(),
-                    span: maybe.span.clone(),
-                    mut_token: None,
-                    id: Some(TypeId::SSIZE),
-                })
-            }
-            ty @ TypeKind::UnsignedTargetPointerNumber => {
-                self.numeric_hint = Some(Type {
-                    kind: ty.clone(),
-                    span: maybe.span.clone(),
-                    mut_token: None,
-                    id: Some(TypeId::USIZE),
-                })
-            }
-            _ => {}
+        // Recurse to the innermost scalar so a nested array annotation like
+        // `[2; [2; s32]]` hints `s32` (not `[2; s32]`). Hinting an array-typed
+        // value to an integer literal would inflate its type by an array level.
+        if let Some(id) = maybe
+            .resolved_id()
+            .and_then(|id| self.interner.numeric_hint(id))
+        {
+            self.numeric_hint = Some(typed(id, maybe.span.clone()));
         }
-    }
-
-    fn lookup_struct_member(&mut self, struct_def: &StructType, member: &Token) -> Type {
-        let Some(symbol) = self.symbol_table.get(struct_def.name.as_str()) else {
-            panic!(
-                "Could not find struct `{}` in symbol table",
-                struct_def.name
-            );
-        };
-        let Some(members) = &symbol.fields else {
-            panic!(
-                "Could not find fields for struct `{}` in symbol table",
-                struct_def.name
-            );
-        };
-        let Some(field) = members.iter().find(|f| f.name == member.lexeme) else {
-            self.errors.push(Box::new(ErrorMemberAccess::new(
-                member.span.clone(),
-                #[cfg(feature = "debug")]
-                format!("{} {}:{}", file!(), line!(), column!()),
-            )));
-            return Type {
-                span: member.span.clone(),
-                ..Default::default()
-            };
-        };
-        field.ty.clone()
     }
 }
 
