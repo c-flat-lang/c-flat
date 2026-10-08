@@ -1,0 +1,223 @@
+                     Compiling testing/test/err_infinite_type.cb
+=== testing/test/err_infinite_type.cb ===
+[
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 0,
+                        end: 4,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Bad",
+                    span: Span {
+                        start: 5,
+                        end: 8,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 9,
+                        end: 15,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "me",
+                            span: Span {
+                                start: 22,
+                                end: 24,
+                                filename: "testing/test/err_infinite_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 24,
+                                end: 25,
+                                filename: "testing/test/err_infinite_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "Bad",
+                                    span: Span {
+                                        start: 26,
+                                        end: 29,
+                                        filename: "testing/test/err_infinite_type.cb",
+                                    },
+                                },
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 26,
+                                end: 29,
+                                filename: "testing/test/err_infinite_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 16,
+                        end: 17,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 31,
+                        end: 32,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 38,
+                    end: 40,
+                    filename: "testing/test/err_infinite_type.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 41,
+                    end: 45,
+                    filename: "testing/test/err_infinite_type.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 48,
+                    end: 51,
+                    filename: "testing/test/err_infinite_type.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 52,
+                        end: 53,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 58,
+                                        end: 64,
+                                        filename: "testing/test/err_infinite_type.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 65,
+                                                        end: 66,
+                                                        filename: "testing/test/err_infinite_type.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 65,
+                                                        end: 66,
+                                                        filename: "testing/test/err_infinite_type.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 66,
+                                    end: 67,
+                                    filename: "testing/test/err_infinite_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 68,
+                        end: 69,
+                        filename: "testing/test/err_infinite_type.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

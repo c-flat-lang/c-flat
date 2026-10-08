@@ -1,0 +1,6 @@
+                     Compiling testing/test/err_mutual_infinite_type.cb
+error: recursive type `Ping` has infinite size: Ping -> Pong -> Ping
+help: insert an indirection, such as `*Ping`
+
+error: recursive type `Pong` has infinite size: Pong -> Ping -> Pong
+help: insert an indirection, such as `*Pong`

@@ -1,0 +1,18 @@
+                     Compiling testing/test/err_generic_arity.cb
+6:11:testing/test/err_generic_arity.cb
+ --> `Pair` expects 1 type argument(s) but 2 were given
+3  | }
+4  | 
+5  | pub fn main() s32 {
+6  |     let p: Pair<(s32, s32)> = Pair<(s32, s32)> { .first = 1, .second = 2 };
+   |            ^^^^
+   | = note: src/stage/monomorphize/mod.rs 368:51
+
+6:30:testing/test/err_generic_arity.cb
+ --> `Pair` expects 1 type argument(s) but 2 were given
+3  | }
+4  | 
+5  | pub fn main() s32 {
+6  |     let p: Pair<(s32, s32)> = Pair<(s32, s32)> { .first = 1, .second = 2 };
+   |                               ^^^^
+   | = note: src/stage/monomorphize/mod.rs 368:51

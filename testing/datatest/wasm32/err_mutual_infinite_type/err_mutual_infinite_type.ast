@@ -1,0 +1,324 @@
+                     Compiling testing/test/err_mutual_infinite_type.cb
+=== testing/test/err_mutual_infinite_type.cb ===
+[
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 0,
+                        end: 4,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Ping",
+                    span: Span {
+                        start: 5,
+                        end: 9,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 10,
+                        end: 16,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "pong",
+                            span: Span {
+                                start: 23,
+                                end: 27,
+                                filename: "testing/test/err_mutual_infinite_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 27,
+                                end: 28,
+                                filename: "testing/test/err_mutual_infinite_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "Pong",
+                                    span: Span {
+                                        start: 29,
+                                        end: 33,
+                                        filename: "testing/test/err_mutual_infinite_type.cb",
+                                    },
+                                },
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 29,
+                                end: 33,
+                                filename: "testing/test/err_mutual_infinite_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 17,
+                        end: 18,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 35,
+                        end: 36,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 38,
+                        end: 42,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Pong",
+                    span: Span {
+                        start: 43,
+                        end: 47,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 48,
+                        end: 54,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "ping",
+                            span: Span {
+                                start: 61,
+                                end: 65,
+                                filename: "testing/test/err_mutual_infinite_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 65,
+                                end: 66,
+                                filename: "testing/test/err_mutual_infinite_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "Ping",
+                                    span: Span {
+                                        start: 67,
+                                        end: 71,
+                                        filename: "testing/test/err_mutual_infinite_type.cb",
+                                    },
+                                },
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 67,
+                                end: 71,
+                                filename: "testing/test/err_mutual_infinite_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 55,
+                        end: 56,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 73,
+                        end: 74,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 80,
+                    end: 82,
+                    filename: "testing/test/err_mutual_infinite_type.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 83,
+                    end: 87,
+                    filename: "testing/test/err_mutual_infinite_type.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 90,
+                    end: 93,
+                    filename: "testing/test/err_mutual_infinite_type.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 94,
+                        end: 95,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 100,
+                                        end: 106,
+                                        filename: "testing/test/err_mutual_infinite_type.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 107,
+                                                        end: 108,
+                                                        filename: "testing/test/err_mutual_infinite_type.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 107,
+                                                        end: 108,
+                                                        filename: "testing/test/err_mutual_infinite_type.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 108,
+                                    end: 109,
+                                    filename: "testing/test/err_mutual_infinite_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 110,
+                        end: 111,
+                        filename: "testing/test/err_mutual_infinite_type.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

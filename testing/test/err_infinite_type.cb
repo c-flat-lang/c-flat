@@ -1,0 +1,7 @@
+type Bad struct {
+    me: Bad,
+}
+
+pub fn main() s32 {
+    return 0;
+}

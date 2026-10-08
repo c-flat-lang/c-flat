@@ -1,0 +1,5 @@
+                     Compiling testing/test/err_undefined_type.cb
+1:11:testing/test/err_undefined_type.cb
+ --> undefined symbol `Missing`
+1  |     let x: Missing = 1;
+   |            ^^^^^^^

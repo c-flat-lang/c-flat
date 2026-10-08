@@ -1,0 +1,7 @@
+fn add<(T: type)>(x: T, y: T) T {
+    return x + y;
+}
+
+pub fn main() s32 {
+    return add<(s32, s32)>(1, 2);
+}

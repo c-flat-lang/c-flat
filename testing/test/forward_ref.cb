@@ -1,0 +1,15 @@
+extern C fn write_s32(s32) void;
+
+type Outer struct {
+    inner: Inner,
+}
+
+type Inner struct {
+    value: s32,
+}
+
+pub fn main() s32 {
+    let outer = Outer { .inner = Inner { .value = 42 } };
+    write_s32(outer.inner.value);
+    return 0;
+}

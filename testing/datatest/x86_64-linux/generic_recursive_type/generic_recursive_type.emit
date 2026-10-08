@@ -1,0 +1,145 @@
+                     Compiling testing/test/generic_recursive_type.cb
+                      Finished
+.intel_syntax noprefix
+.globl main
+  # Defining Function main
+main:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 48
+  # -- args --
+main_entry:
+  # @alloc List__s32 : tmp.0_v0, 1
+  # lowering alloc
+  # @assign s32 : tmp.1_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(2 : Reg64), 0
+  mov vreg(1 : Reg64), vreg(2 : Reg64)
+  # @cast *List__s32 : tmp.2_v0, tmp.1_v0, bitcast
+  # lowering cast
+  # lowering operand
+  mov vreg(4 : Reg64), vreg(1 : Reg64)
+  # @elemset List__s32 : tmp.0_v0, 0, tmp.2_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(6 : Reg64), 0
+  # lowering operand
+  lea vreg(7 : Reg64), qword ptr [rbp-12]
+  mov vreg(8 : Reg64), 0
+  mov [vreg(7 : Reg64) + vreg(8 : Reg64) * 1], vreg(4 : Reg64)
+  # @assign s32 : tmp.3_v0, 20
+  # lowering assign
+  # lowering operand
+  mov vreg(10 : Reg64), 20
+  mov vreg(9 : Reg64), vreg(10 : Reg64)
+  # @elemset List__s32 : tmp.0_v0, 1, tmp.3_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(12 : Reg64), 1
+  # lowering operand
+  lea vreg(13 : Reg64), qword ptr [rbp-12]
+  mov vreg(14 : Reg64), 8
+  mov [vreg(13 : Reg64) + vreg(14 : Reg64) * 1], vreg(9 : Reg32)
+  # @assign List__s32 : tail_v0, tmp.0_v0
+  # lowering assign
+  # @alloc List__s32 : tmp.4_v0, 1
+  # lowering alloc
+  # @ref *List__s32 : tmp.5_v0, tail_v0
+  # lowering ref (address-of)
+  lea vreg(16 : Reg64), qword ptr [rbp-12]
+  # @elemset List__s32 : tmp.4_v0, 0, tmp.5_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(18 : Reg64), 0
+  # lowering operand
+  lea vreg(19 : Reg64), qword ptr [rbp-24]
+  mov vreg(20 : Reg64), 0
+  mov [vreg(19 : Reg64) + vreg(20 : Reg64) * 1], vreg(16 : Reg64)
+  # @assign s32 : tmp.6_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(22 : Reg64), 10
+  mov vreg(21 : Reg64), vreg(22 : Reg64)
+  # @elemset List__s32 : tmp.4_v0, 1, tmp.6_v0
+  # lowering elemset
+  # lowering operand
+  mov vreg(24 : Reg64), 1
+  # lowering operand
+  lea vreg(25 : Reg64), qword ptr [rbp-24]
+  mov vreg(26 : Reg64), 8
+  mov [vreg(25 : Reg64) + vreg(26 : Reg64) * 1], vreg(21 : Reg32)
+  # @assign List__s32 : head_v0, tmp.4_v0
+  # lowering assign
+  # @elemget s32 : tmp.7_v0, head_v0, 1
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(27 : Reg64), 1
+  lea vreg(28 : Reg64), qword ptr [rbp-24]
+  mov vreg(29 : Reg64), 8
+  mov vreg(30 : Reg32), [vreg(28 : Reg64) + vreg(29 : Reg64) * 1]
+  # @call write_s32(tmp.7_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-28], vreg(30 : Reg32)
+  mov edi, dword ptr [rbp-28]
+  call write_s32
+  # @assign u8 : tmp.8_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(33 : Reg64), 10
+  mov vreg(32 : Reg64), vreg(33 : Reg64)
+  # @call write_char(tmp.8_v0)
+  # lowering call
+  # lowering operand
+  mov byte ptr [rbp-29], vreg(32 : Reg8)
+  mov dil, byte ptr [rbp-29]
+  call write_char
+  # @elemget *List__s32 : tmp.9_v0, head_v0, 0
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(35 : Reg64), 0
+  lea vreg(36 : Reg64), qword ptr [rbp-24]
+  mov vreg(37 : Reg64), 0
+  mov vreg(38 : Reg64), [vreg(36 : Reg64) + vreg(37 : Reg64) * 1]
+  # @elemget s32 : tmp.10_v0, tmp.9_v0, 1
+  # lowering elemget
+  # lowering operand
+  # lowering operand
+  mov vreg(40 : Reg64), 1
+  mov vreg(41 : Reg64), 8
+  mov vreg(42 : Reg32), [vreg(38 : Reg64) + vreg(41 : Reg64) * 1]
+  # @call write_s32(tmp.10_v0)
+  # lowering call
+  # lowering operand
+  mov dword ptr [rbp-33], vreg(42 : Reg32)
+  mov edi, dword ptr [rbp-33]
+  call write_s32
+  # @assign u8 : tmp.11_v0, 10
+  # lowering assign
+  # lowering operand
+  mov vreg(45 : Reg64), 10
+  mov vreg(44 : Reg64), vreg(45 : Reg64)
+  # @call write_char(tmp.11_v0)
+  # lowering call
+  # lowering operand
+  mov byte ptr [rbp-34], vreg(44 : Reg8)
+  mov dil, byte ptr [rbp-34]
+  call write_char
+  # @assign s32 : tmp.12_v0, 0
+  # lowering assign
+  # lowering operand
+  mov vreg(48 : Reg64), 0
+  mov vreg(47 : Reg64), vreg(48 : Reg64)
+  # @ret s32 : tmp.12_v0
+  # lowering return
+  mov eax, vreg(47 : Reg32)
+  jmp exit_main
+exit_main:
+  add rsp, 48
+  mov rsp, rbp
+  pop rbp
+  ret
+  # --- End of Function main ---

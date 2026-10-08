@@ -1,0 +1,266 @@
+                     Compiling testing/test/err_dup_enum.cb
+=== testing/test/err_dup_enum.cb ===
+[
+    Type(
+        Enum(
+            Enum {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 0,
+                        end: 4,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Color",
+                    span: Span {
+                        start: 5,
+                        end: 10,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                type_params: None,
+                enum_token: Token {
+                    kind: Keyword(
+                        Enum,
+                    ),
+                    lexeme: "enum",
+                    span: Span {
+                        start: 11,
+                        end: 15,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                variants: [
+                    Variant {
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "red",
+                            span: Span {
+                                start: 22,
+                                end: 25,
+                                filename: "testing/test/err_dup_enum.cb",
+                            },
+                        },
+                        equals: None,
+                        value: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 16,
+                        end: 17,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 27,
+                        end: 28,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Type(
+        Enum(
+            Enum {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 30,
+                        end: 34,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Color",
+                    span: Span {
+                        start: 35,
+                        end: 40,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                type_params: None,
+                enum_token: Token {
+                    kind: Keyword(
+                        Enum,
+                    ),
+                    lexeme: "enum",
+                    span: Span {
+                        start: 41,
+                        end: 45,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                variants: [
+                    Variant {
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "blue",
+                            span: Span {
+                                start: 52,
+                                end: 56,
+                                filename: "testing/test/err_dup_enum.cb",
+                            },
+                        },
+                        equals: None,
+                        value: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 46,
+                        end: 47,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 58,
+                        end: 59,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 65,
+                    end: 67,
+                    filename: "testing/test/err_dup_enum.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 68,
+                    end: 72,
+                    filename: "testing/test/err_dup_enum.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 75,
+                    end: 78,
+                    filename: "testing/test/err_dup_enum.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 79,
+                        end: 80,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 85,
+                                        end: 91,
+                                        filename: "testing/test/err_dup_enum.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 92,
+                                                        end: 93,
+                                                        filename: "testing/test/err_dup_enum.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 92,
+                                                        end: 93,
+                                                        filename: "testing/test/err_dup_enum.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 93,
+                                    end: 94,
+                                    filename: "testing/test/err_dup_enum.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 95,
+                        end: 96,
+                        filename: "testing/test/err_dup_enum.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

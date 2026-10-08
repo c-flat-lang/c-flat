@@ -1,0 +1,7 @@
+                     Compiling testing/test/err_dup_type.cb
+4:5:testing/test/err_dup_type.cb
+ --> duplicate type Point
+1  |     x: s32,
+4  | type Point struct {
+   |      ^^^^^
+   | = note: src/stage/define_type.rs 67:67

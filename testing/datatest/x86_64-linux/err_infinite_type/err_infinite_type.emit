@@ -1,0 +1,3 @@
+                     Compiling testing/test/err_infinite_type.cb
+error: recursive type `Bad` has infinite size: Bad -> Bad
+help: insert an indirection, such as `*Bad`

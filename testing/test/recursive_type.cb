@@ -1,0 +1,20 @@
+extern C fn write_char(u8) void;
+extern C fn write_s32(s32) void;
+
+type Node struct {
+    next: *Node,
+    value: s32,
+}
+
+pub fn main() s32 {
+    let tail = Node { .next = 0 as *Node, .value = 3 };
+    let middle = Node { .next = &tail, .value = 2 };
+    let head = Node { .next = &middle, .value = 1 };
+    write_s32(head.value);
+    write_char(10);
+    write_s32(head.next.value);
+    write_char(10);
+    write_s32(head.next.next.value);
+    write_char(10);
+    return 0;
+}

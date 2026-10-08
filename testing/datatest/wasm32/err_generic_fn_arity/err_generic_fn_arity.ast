@@ -1,0 +1,433 @@
+                     Compiling testing/test/err_generic_fn_arity.cb
+=== testing/test/err_generic_fn_arity.cb ===
+[
+    Function(
+        Function {
+            visibility: Private,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 0,
+                    end: 2,
+                    filename: "testing/test/err_generic_fn_arity.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "add",
+                span: Span {
+                    start: 3,
+                    end: 6,
+                    filename: "testing/test/err_generic_fn_arity.cb",
+                },
+            },
+            type_args: Some(
+                [
+                    (
+                        Token {
+                            kind: Identifier,
+                            lexeme: "T",
+                            span: Span {
+                                start: 8,
+                                end: 9,
+                                filename: "testing/test/err_generic_fn_arity.cb",
+                            },
+                        },
+                        Type {
+                            mut_token: None,
+                            kind: Type,
+                            id: None,
+                            span: Span {
+                                start: 11,
+                                end: 15,
+                                filename: "testing/test/err_generic_fn_arity.cb",
+                            },
+                        },
+                    ),
+                ],
+            ),
+            params: [
+                Param {
+                    name: Token {
+                        kind: Identifier,
+                        lexeme: "x",
+                        span: Span {
+                            start: 18,
+                            end: 19,
+                            filename: "testing/test/err_generic_fn_arity.cb",
+                        },
+                    },
+                    ty: Type {
+                        mut_token: None,
+                        kind: Name(
+                            Token {
+                                kind: Identifier,
+                                lexeme: "T",
+                                span: Span {
+                                    start: 21,
+                                    end: 22,
+                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                },
+                            },
+                        ),
+                        id: None,
+                        span: Span {
+                            start: 21,
+                            end: 22,
+                            filename: "testing/test/err_generic_fn_arity.cb",
+                        },
+                    },
+                },
+                Param {
+                    name: Token {
+                        kind: Identifier,
+                        lexeme: "y",
+                        span: Span {
+                            start: 24,
+                            end: 25,
+                            filename: "testing/test/err_generic_fn_arity.cb",
+                        },
+                    },
+                    ty: Type {
+                        mut_token: None,
+                        kind: Name(
+                            Token {
+                                kind: Identifier,
+                                lexeme: "T",
+                                span: Span {
+                                    start: 27,
+                                    end: 28,
+                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                },
+                            },
+                        ),
+                        id: None,
+                        span: Span {
+                            start: 27,
+                            end: 28,
+                            filename: "testing/test/err_generic_fn_arity.cb",
+                        },
+                    },
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: Name(
+                    Token {
+                        kind: Identifier,
+                        lexeme: "T",
+                        span: Span {
+                            start: 30,
+                            end: 31,
+                            filename: "testing/test/err_generic_fn_arity.cb",
+                        },
+                    },
+                ),
+                id: None,
+                span: Span {
+                    start: 30,
+                    end: 31,
+                    filename: "testing/test/err_generic_fn_arity.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 32,
+                        end: 33,
+                        filename: "testing/test/err_generic_fn_arity.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 38,
+                                        end: 44,
+                                        filename: "testing/test/err_generic_fn_arity.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Binary(
+                                        ExprBinary {
+                                            left: Identifier(
+                                                Token {
+                                                    kind: Identifier,
+                                                    lexeme: "x",
+                                                    span: Span {
+                                                        start: 45,
+                                                        end: 46,
+                                                        filename: "testing/test/err_generic_fn_arity.cb",
+                                                    },
+                                                },
+                                            ),
+                                            op: Token {
+                                                kind: Plus,
+                                                lexeme: "+",
+                                                span: Span {
+                                                    start: 47,
+                                                    end: 48,
+                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                },
+                                            },
+                                            right: Identifier(
+                                                Token {
+                                                    kind: Identifier,
+                                                    lexeme: "y",
+                                                    span: Span {
+                                                        start: 49,
+                                                        end: 50,
+                                                        filename: "testing/test/err_generic_fn_arity.cb",
+                                                    },
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 50,
+                                    end: 51,
+                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 52,
+                        end: 53,
+                        filename: "testing/test/err_generic_fn_arity.cb",
+                    },
+                },
+            },
+        },
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 59,
+                    end: 61,
+                    filename: "testing/test/err_generic_fn_arity.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 62,
+                    end: 66,
+                    filename: "testing/test/err_generic_fn_arity.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 69,
+                    end: 72,
+                    filename: "testing/test/err_generic_fn_arity.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 73,
+                        end: 74,
+                        filename: "testing/test/err_generic_fn_arity.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 79,
+                                        end: 85,
+                                        filename: "testing/test/err_generic_fn_arity.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Call(
+                                        ExprCall {
+                                            caller: Identifier(
+                                                Token {
+                                                    kind: Identifier,
+                                                    lexeme: "add",
+                                                    span: Span {
+                                                        start: 86,
+                                                        end: 89,
+                                                        filename: "testing/test/err_generic_fn_arity.cb",
+                                                    },
+                                                },
+                                            ),
+                                            type_args: Some(
+                                                [
+                                                    Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        id: None,
+                                                        span: Span {
+                                                            start: 91,
+                                                            end: 94,
+                                                            filename: "testing/test/err_generic_fn_arity.cb",
+                                                        },
+                                                    },
+                                                    Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        id: None,
+                                                        span: Span {
+                                                            start: 96,
+                                                            end: 99,
+                                                            filename: "testing/test/err_generic_fn_arity.cb",
+                                                        },
+                                                    },
+                                                ],
+                                            ),
+                                            left_paren: Token {
+                                                kind: LeftParen,
+                                                lexeme: "(",
+                                                span: Span {
+                                                    start: 101,
+                                                    end: 102,
+                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                },
+                                            },
+                                            args: [
+                                                Litral(
+                                                    Integer(
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "1",
+                                                                span: Span {
+                                                                    start: 102,
+                                                                    end: 103,
+                                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                id: None,
+                                                                span: Span {
+                                                                    start: 102,
+                                                                    end: 103,
+                                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                                },
+                                                            },
+                                                        },
+                                                    ),
+                                                ),
+                                                Litral(
+                                                    Integer(
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "2",
+                                                                span: Span {
+                                                                    start: 105,
+                                                                    end: 106,
+                                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                id: None,
+                                                                span: Span {
+                                                                    start: 105,
+                                                                    end: 106,
+                                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                                },
+                                                            },
+                                                        },
+                                                    ),
+                                                ),
+                                            ],
+                                            right_paren: Token {
+                                                kind: RightParen,
+                                                lexeme: ")",
+                                                span: Span {
+                                                    start: 106,
+                                                    end: 107,
+                                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                                },
+                                            },
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 107,
+                                    end: 108,
+                                    filename: "testing/test/err_generic_fn_arity.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 109,
+                        end: 110,
+                        filename: "testing/test/err_generic_fn_arity.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

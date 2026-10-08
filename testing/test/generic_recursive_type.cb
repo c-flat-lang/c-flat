@@ -1,0 +1,17 @@
+extern C fn write_char(u8) void;
+extern C fn write_s32(s32) void;
+
+type List<(T: type)> struct {
+    next: *List<(T)>,
+    value: T,
+}
+
+pub fn main() s32 {
+    let tail: List<(s32)> = List<(s32)> { .next = 0 as *List<(s32)>, .value = 20 };
+    let head: List<(s32)> = List<(s32)> { .next = &tail, .value = 10 };
+    write_s32(head.value);
+    write_char(10);
+    write_s32(head.next.value);
+    write_char(10);
+    return 0;
+}

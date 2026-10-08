@@ -1,0 +1,7 @@
+                     Compiling testing/test/err_dup_enum.cb
+4:5:testing/test/err_dup_enum.cb
+ --> duplicate type Color
+1  |     red,
+4  | type Color enum {
+   |      ^^^^^
+   | = note: src/stage/define_type.rs 92:67

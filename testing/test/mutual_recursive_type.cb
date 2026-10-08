@@ -1,0 +1,18 @@
+extern C fn write_s32(s32) void;
+
+type Parent struct {
+    child: *Child,
+    id: s32,
+}
+
+type Child struct {
+    parent: *Parent,
+    id: s32,
+}
+
+pub fn main() s32 {
+    let child = Child { .parent = 0 as *Parent, .id = 7 };
+    let parent = Parent { .child = &child, .id = 3 };
+    write_s32(parent.child.id);
+    return 0;
+}

@@ -1,0 +1,4 @@
+pub fn main() s32 {
+    let x: Missing = 1;
+    return 0;
+}

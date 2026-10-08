@@ -1,0 +1,8 @@
+                     Compiling testing/test/err_generic_fn_arity.cb
+5:11:testing/test/err_generic_fn_arity.cb
+ --> `add` expects 1 type argument(s) but 2 were given
+2  | }
+3  | 
+5  |     return add<(s32, s32)>(1, 2);
+   |            ^^^
+   | = note: src/stage/monomorphize/mod.rs 368:51

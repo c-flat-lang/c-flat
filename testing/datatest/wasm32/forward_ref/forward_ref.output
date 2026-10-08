@@ -1,0 +1,4 @@
+                     Compiling testing/test/forward_ref.cb
+                      Finished
+                       Running bin/forward_ref.wasm
+42

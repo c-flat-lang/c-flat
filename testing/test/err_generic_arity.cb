@@ -1,0 +1,9 @@
+type Pair<(T: type)> struct {
+    first: T,
+    second: T,
+}
+
+pub fn main() s32 {
+    let p: Pair<(s32, s32)> = Pair<(s32, s32)> { .first = 1, .second = 2 };
+    return p.first;
+}

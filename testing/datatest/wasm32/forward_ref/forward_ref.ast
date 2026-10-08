@@ -1,0 +1,682 @@
+                     Compiling testing/test/forward_ref.cb
+=== testing/test/forward_ref.cb ===
+[
+    ExternFunction(
+        ExternFunction {
+            visibility: Private,
+            extern_token: Token {
+                kind: Keyword(
+                    Extern,
+                ),
+                lexeme: "extern",
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            calling_convention: Token {
+                kind: Identifier,
+                lexeme: "C",
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            binding_name: Token {
+                kind: Identifier,
+                lexeme: "write_s32",
+                span: Span {
+                    start: 12,
+                    end: 21,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            local_name: None,
+            params: [
+                Type {
+                    mut_token: None,
+                    kind: SignedNumber(
+                        32,
+                    ),
+                    id: None,
+                    span: Span {
+                        start: 22,
+                        end: 25,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: Void,
+                id: None,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+        },
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 34,
+                        end: 38,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Outer",
+                    span: Span {
+                        start: 39,
+                        end: 44,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 45,
+                        end: 51,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "inner",
+                            span: Span {
+                                start: 58,
+                                end: 63,
+                                filename: "testing/test/forward_ref.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 63,
+                                end: 64,
+                                filename: "testing/test/forward_ref.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "Inner",
+                                    span: Span {
+                                        start: 65,
+                                        end: 70,
+                                        filename: "testing/test/forward_ref.cb",
+                                    },
+                                },
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 65,
+                                end: 70,
+                                filename: "testing/test/forward_ref.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 52,
+                        end: 53,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 72,
+                        end: 73,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 75,
+                        end: 79,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Inner",
+                    span: Span {
+                        start: 80,
+                        end: 85,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 86,
+                        end: 92,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "value",
+                            span: Span {
+                                start: 99,
+                                end: 104,
+                                filename: "testing/test/forward_ref.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 104,
+                                end: 105,
+                                filename: "testing/test/forward_ref.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: SignedNumber(
+                                32,
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 106,
+                                end: 109,
+                                filename: "testing/test/forward_ref.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 93,
+                        end: 94,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 111,
+                        end: 112,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 118,
+                    end: 120,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 121,
+                    end: 125,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 128,
+                    end: 131,
+                    filename: "testing/test/forward_ref.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 132,
+                        end: 133,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Declare(
+                            ExprDecl {
+                                let_token: Token {
+                                    kind: Keyword(
+                                        Let,
+                                    ),
+                                    lexeme: "let",
+                                    span: Span {
+                                        start: 138,
+                                        end: 141,
+                                        filename: "testing/test/forward_ref.cb",
+                                    },
+                                },
+                                mutable: false,
+                                ty: None,
+                                ident: Token {
+                                    kind: Identifier,
+                                    lexeme: "outer",
+                                    span: Span {
+                                        start: 142,
+                                        end: 147,
+                                        filename: "testing/test/forward_ref.cb",
+                                    },
+                                },
+                                expr: Struct(
+                                    ExprStruct {
+                                        name: Token {
+                                            kind: Identifier,
+                                            lexeme: "Outer",
+                                            span: Span {
+                                                start: 150,
+                                                end: 155,
+                                                filename: "testing/test/forward_ref.cb",
+                                            },
+                                        },
+                                        type_args: None,
+                                        open_brace: Token {
+                                            kind: LeftBrace,
+                                            lexeme: "{",
+                                            span: Span {
+                                                start: 156,
+                                                end: 157,
+                                                filename: "testing/test/forward_ref.cb",
+                                            },
+                                        },
+                                        init_fields: [
+                                            InitField {
+                                                dot: Token {
+                                                    kind: Dot,
+                                                    lexeme: ".",
+                                                    span: Span {
+                                                        start: 158,
+                                                        end: 159,
+                                                        filename: "testing/test/forward_ref.cb",
+                                                    },
+                                                },
+                                                name: Token {
+                                                    kind: Identifier,
+                                                    lexeme: "inner",
+                                                    span: Span {
+                                                        start: 159,
+                                                        end: 164,
+                                                        filename: "testing/test/forward_ref.cb",
+                                                    },
+                                                },
+                                                equal: Token {
+                                                    kind: Equal,
+                                                    lexeme: "=",
+                                                    span: Span {
+                                                        start: 165,
+                                                        end: 166,
+                                                        filename: "testing/test/forward_ref.cb",
+                                                    },
+                                                },
+                                                expr: Struct(
+                                                    ExprStruct {
+                                                        name: Token {
+                                                            kind: Identifier,
+                                                            lexeme: "Inner",
+                                                            span: Span {
+                                                                start: 167,
+                                                                end: 172,
+                                                                filename: "testing/test/forward_ref.cb",
+                                                            },
+                                                        },
+                                                        type_args: None,
+                                                        open_brace: Token {
+                                                            kind: LeftBrace,
+                                                            lexeme: "{",
+                                                            span: Span {
+                                                                start: 173,
+                                                                end: 174,
+                                                                filename: "testing/test/forward_ref.cb",
+                                                            },
+                                                        },
+                                                        init_fields: [
+                                                            InitField {
+                                                                dot: Token {
+                                                                    kind: Dot,
+                                                                    lexeme: ".",
+                                                                    span: Span {
+                                                                        start: 175,
+                                                                        end: 176,
+                                                                        filename: "testing/test/forward_ref.cb",
+                                                                    },
+                                                                },
+                                                                name: Token {
+                                                                    kind: Identifier,
+                                                                    lexeme: "value",
+                                                                    span: Span {
+                                                                        start: 176,
+                                                                        end: 181,
+                                                                        filename: "testing/test/forward_ref.cb",
+                                                                    },
+                                                                },
+                                                                equal: Token {
+                                                                    kind: Equal,
+                                                                    lexeme: "=",
+                                                                    span: Span {
+                                                                        start: 182,
+                                                                        end: 183,
+                                                                        filename: "testing/test/forward_ref.cb",
+                                                                    },
+                                                                },
+                                                                expr: Litral(
+                                                                    Integer(
+                                                                        IntegerLitral {
+                                                                            token: Token {
+                                                                                kind: Number,
+                                                                                lexeme: "42",
+                                                                                span: Span {
+                                                                                    start: 184,
+                                                                                    end: 186,
+                                                                                    filename: "testing/test/forward_ref.cb",
+                                                                                },
+                                                                            },
+                                                                            ty: Type {
+                                                                                mut_token: None,
+                                                                                kind: SignedNumber(
+                                                                                    32,
+                                                                                ),
+                                                                                id: None,
+                                                                                span: Span {
+                                                                                    start: 184,
+                                                                                    end: 186,
+                                                                                    filename: "testing/test/forward_ref.cb",
+                                                                                },
+                                                                            },
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                            },
+                                                        ],
+                                                        close_brace: Token {
+                                                            kind: RightBrace,
+                                                            lexeme: "}",
+                                                            span: Span {
+                                                                start: 187,
+                                                                end: 188,
+                                                                filename: "testing/test/forward_ref.cb",
+                                                            },
+                                                        },
+                                                    },
+                                                ),
+                                            },
+                                        ],
+                                        close_brace: Token {
+                                            kind: RightBrace,
+                                            lexeme: "}",
+                                            span: Span {
+                                                start: 189,
+                                                end: 190,
+                                                filename: "testing/test/forward_ref.cb",
+                                            },
+                                        },
+                                    },
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 190,
+                                    end: 191,
+                                    filename: "testing/test/forward_ref.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_s32",
+                                        span: Span {
+                                            start: 196,
+                                            end: 205,
+                                            filename: "testing/test/forward_ref.cb",
+                                        },
+                                    },
+                                ),
+                                type_args: None,
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: Span {
+                                        start: 205,
+                                        end: 206,
+                                        filename: "testing/test/forward_ref.cb",
+                                    },
+                                },
+                                args: [
+                                    MemberAccess(
+                                        ExprMemberAccess {
+                                            base: MemberAccess(
+                                                ExprMemberAccess {
+                                                    base: Identifier(
+                                                        Token {
+                                                            kind: Identifier,
+                                                            lexeme: "outer",
+                                                            span: Span {
+                                                                start: 206,
+                                                                end: 211,
+                                                                filename: "testing/test/forward_ref.cb",
+                                                            },
+                                                        },
+                                                    ),
+                                                    dot: Token {
+                                                        kind: Dot,
+                                                        lexeme: ".",
+                                                        span: Span {
+                                                            start: 211,
+                                                            end: 212,
+                                                            filename: "testing/test/forward_ref.cb",
+                                                        },
+                                                    },
+                                                    member: Token {
+                                                        kind: Identifier,
+                                                        lexeme: "inner",
+                                                        span: Span {
+                                                            start: 212,
+                                                            end: 217,
+                                                            filename: "testing/test/forward_ref.cb",
+                                                        },
+                                                    },
+                                                },
+                                            ),
+                                            dot: Token {
+                                                kind: Dot,
+                                                lexeme: ".",
+                                                span: Span {
+                                                    start: 217,
+                                                    end: 218,
+                                                    filename: "testing/test/forward_ref.cb",
+                                                },
+                                            },
+                                            member: Token {
+                                                kind: Identifier,
+                                                lexeme: "value",
+                                                span: Span {
+                                                    start: 218,
+                                                    end: 223,
+                                                    filename: "testing/test/forward_ref.cb",
+                                                },
+                                            },
+                                        },
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: Span {
+                                        start: 223,
+                                        end: 224,
+                                        filename: "testing/test/forward_ref.cb",
+                                    },
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 224,
+                                    end: 225,
+                                    filename: "testing/test/forward_ref.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 230,
+                                        end: 236,
+                                        filename: "testing/test/forward_ref.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 237,
+                                                        end: 238,
+                                                        filename: "testing/test/forward_ref.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 237,
+                                                        end: 238,
+                                                        filename: "testing/test/forward_ref.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 238,
+                                    end: 239,
+                                    filename: "testing/test/forward_ref.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 240,
+                        end: 241,
+                        filename: "testing/test/forward_ref.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

@@ -1,0 +1,16 @@
+                     Compiling testing/test/forward_ref.cb
+extern write_s32 (s32) -> void
+[31mpublic[0m [31mfunction[0m [35mmain[0m() s32{
+  %[33mentry[0m: [2;38;2;128;128;128m// 0[0m
+    [34m@alloc[0m [33mOuter[0m : [1;36mtmp.0_v0[0m, [33m1[0m
+    [34m@alloc[0m [33mInner[0m : [1;36mtmp.1_v0[0m, [33m1[0m
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.2_v0[0m, [33m42[0m
+    [34m@elemset[0m [33mInner[0m : [1;36mtmp.1_v0[0m, [33m0[0m, [1;36mtmp.2_v0[0m
+    [34m@elemset[0m [33mOuter[0m : [1;36mtmp.0_v0[0m, [33m0[0m, [1;36mtmp.1_v0[0m
+    [34m@assign[0m [33mOuter[0m : [1;36mouter_v0[0m, [1;36mtmp.0_v0[0m
+    [34m@elemget[0m [33mInner[0m : [1;36mtmp.3_v0[0m, [1;36mouter_v0[0m, [33m0[0m
+    [34m@elemget[0m [33ms32[0m : [1;36mtmp.4_v0[0m, [1;36mtmp.3_v0[0m, [33m0[0m
+    [34m@call[0m [35mwrite_s32[0m([1;36mtmp.4_v0[0m)
+    [34m@assign[0m [33ms32[0m : [1;36mtmp.5_v0[0m, [33m0[0m
+    [34m@ret[0m [33ms32[0m : [1;36mtmp.5_v0[0m
+}

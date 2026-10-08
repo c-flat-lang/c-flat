@@ -1,0 +1,11 @@
+type Color enum {
+    red,
+}
+
+type Color enum {
+    blue,
+}
+
+pub fn main() s32 {
+    return 0;
+}

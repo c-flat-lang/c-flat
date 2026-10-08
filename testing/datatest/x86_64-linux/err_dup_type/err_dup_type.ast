@@ -1,0 +1,308 @@
+                     Compiling testing/test/err_dup_type.cb
+=== testing/test/err_dup_type.cb ===
+[
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 0,
+                        end: 4,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Point",
+                    span: Span {
+                        start: 5,
+                        end: 10,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 11,
+                        end: 17,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "x",
+                            span: Span {
+                                start: 24,
+                                end: 25,
+                                filename: "testing/test/err_dup_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 25,
+                                end: 26,
+                                filename: "testing/test/err_dup_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: SignedNumber(
+                                32,
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 27,
+                                end: 30,
+                                filename: "testing/test/err_dup_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 18,
+                        end: 19,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 32,
+                        end: 33,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 35,
+                        end: 39,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "Point",
+                    span: Span {
+                        start: 40,
+                        end: 45,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                type_params: None,
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 46,
+                        end: 52,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "y",
+                            span: Span {
+                                start: 59,
+                                end: 60,
+                                filename: "testing/test/err_dup_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 60,
+                                end: 61,
+                                filename: "testing/test/err_dup_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: SignedNumber(
+                                32,
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 62,
+                                end: 65,
+                                filename: "testing/test/err_dup_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 53,
+                        end: 54,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 67,
+                        end: 68,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 74,
+                    end: 76,
+                    filename: "testing/test/err_dup_type.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 77,
+                    end: 81,
+                    filename: "testing/test/err_dup_type.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 84,
+                    end: 87,
+                    filename: "testing/test/err_dup_type.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 88,
+                        end: 89,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 94,
+                                        end: 100,
+                                        filename: "testing/test/err_dup_type.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 101,
+                                                        end: 102,
+                                                        filename: "testing/test/err_dup_type.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 101,
+                                                        end: 102,
+                                                        filename: "testing/test/err_dup_type.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 102,
+                                    end: 103,
+                                    filename: "testing/test/err_dup_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 104,
+                        end: 105,
+                        filename: "testing/test/err_dup_type.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

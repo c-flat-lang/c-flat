@@ -1,0 +1,11 @@
+type Point struct {
+    x: s32,
+}
+
+type Point struct {
+    y: s32,
+}
+
+pub fn main() s32 {
+    return 0;
+}

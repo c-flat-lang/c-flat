@@ -1,0 +1,1335 @@
+                     Compiling testing/test/generic_recursive_type.cb
+=== testing/test/generic_recursive_type.cb ===
+[
+    ExternFunction(
+        ExternFunction {
+            visibility: Private,
+            extern_token: Token {
+                kind: Keyword(
+                    Extern,
+                ),
+                lexeme: "extern",
+                span: Span {
+                    start: 0,
+                    end: 6,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 9,
+                    end: 11,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            calling_convention: Token {
+                kind: Identifier,
+                lexeme: "C",
+                span: Span {
+                    start: 7,
+                    end: 8,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            binding_name: Token {
+                kind: Identifier,
+                lexeme: "write_char",
+                span: Span {
+                    start: 12,
+                    end: 22,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            local_name: None,
+            params: [
+                Type {
+                    mut_token: None,
+                    kind: UnsignedNumber(
+                        8,
+                    ),
+                    id: None,
+                    span: Span {
+                        start: 23,
+                        end: 25,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: Void,
+                id: None,
+                span: Span {
+                    start: 27,
+                    end: 31,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+        },
+    ),
+    ExternFunction(
+        ExternFunction {
+            visibility: Private,
+            extern_token: Token {
+                kind: Keyword(
+                    Extern,
+                ),
+                lexeme: "extern",
+                span: Span {
+                    start: 33,
+                    end: 39,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 42,
+                    end: 44,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            calling_convention: Token {
+                kind: Identifier,
+                lexeme: "C",
+                span: Span {
+                    start: 40,
+                    end: 41,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            binding_name: Token {
+                kind: Identifier,
+                lexeme: "write_s32",
+                span: Span {
+                    start: 45,
+                    end: 54,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            local_name: None,
+            params: [
+                Type {
+                    mut_token: None,
+                    kind: SignedNumber(
+                        32,
+                    ),
+                    id: None,
+                    span: Span {
+                        start: 55,
+                        end: 58,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+            ],
+            return_type: Type {
+                mut_token: None,
+                kind: Void,
+                id: None,
+                span: Span {
+                    start: 60,
+                    end: 64,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+        },
+    ),
+    Type(
+        Struct(
+            Struct {
+                visibility: Private,
+                type_token: Token {
+                    kind: Keyword(
+                        Type,
+                    ),
+                    lexeme: "type",
+                    span: Span {
+                        start: 67,
+                        end: 71,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+                name: Token {
+                    kind: Identifier,
+                    lexeme: "List",
+                    span: Span {
+                        start: 72,
+                        end: 76,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+                type_params: Some(
+                    [
+                        (
+                            Token {
+                                kind: Identifier,
+                                lexeme: "T",
+                                span: Span {
+                                    start: 78,
+                                    end: 79,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                            Type {
+                                mut_token: None,
+                                kind: Type,
+                                id: None,
+                                span: Span {
+                                    start: 81,
+                                    end: 85,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    ],
+                ),
+                struct_token: Token {
+                    kind: Keyword(
+                        Struct,
+                    ),
+                    lexeme: "struct",
+                    span: Span {
+                        start: 88,
+                        end: 94,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+                fields: [
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "next",
+                            span: Span {
+                                start: 101,
+                                end: 105,
+                                filename: "testing/test/generic_recursive_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 105,
+                                end: 106,
+                                filename: "testing/test/generic_recursive_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Pointer(
+                                Type {
+                                    mut_token: None,
+                                    kind: NameWithParams(
+                                        Token {
+                                            kind: Identifier,
+                                            lexeme: "List",
+                                            span: Span {
+                                                start: 108,
+                                                end: 112,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                        TypeParams {
+                                            params: [
+                                                Type {
+                                                    mut_token: None,
+                                                    kind: Name(
+                                                        Token {
+                                                            kind: Identifier,
+                                                            lexeme: "T",
+                                                            span: Span {
+                                                                start: 114,
+                                                                end: 115,
+                                                                filename: "testing/test/generic_recursive_type.cb",
+                                                            },
+                                                        },
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 114,
+                                                        end: 115,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ),
+                                    id: None,
+                                    span: Span {
+                                        start: 108,
+                                        end: 117,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 107,
+                                end: 117,
+                                filename: "testing/test/generic_recursive_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                    Field {
+                        visibility: Private,
+                        name: Token {
+                            kind: Identifier,
+                            lexeme: "value",
+                            span: Span {
+                                start: 123,
+                                end: 128,
+                                filename: "testing/test/generic_recursive_type.cb",
+                            },
+                        },
+                        colon: Token {
+                            kind: Colon,
+                            lexeme: ":",
+                            span: Span {
+                                start: 128,
+                                end: 129,
+                                filename: "testing/test/generic_recursive_type.cb",
+                            },
+                        },
+                        ty: Type {
+                            mut_token: None,
+                            kind: Name(
+                                Token {
+                                    kind: Identifier,
+                                    lexeme: "T",
+                                    span: Span {
+                                        start: 130,
+                                        end: 131,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                            ),
+                            id: None,
+                            span: Span {
+                                start: 130,
+                                end: 131,
+                                filename: "testing/test/generic_recursive_type.cb",
+                            },
+                        },
+                        default_expr: None,
+                    },
+                ],
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 95,
+                        end: 96,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 133,
+                        end: 134,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+            },
+        ),
+    ),
+    Function(
+        Function {
+            visibility: Public,
+            fn_token: Token {
+                kind: Keyword(
+                    Fn,
+                ),
+                lexeme: "fn",
+                span: Span {
+                    start: 140,
+                    end: 142,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            name: Token {
+                kind: Identifier,
+                lexeme: "main",
+                span: Span {
+                    start: 143,
+                    end: 147,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            type_args: None,
+            params: [],
+            return_type: Type {
+                mut_token: None,
+                kind: SignedNumber(
+                    32,
+                ),
+                id: None,
+                span: Span {
+                    start: 150,
+                    end: 153,
+                    filename: "testing/test/generic_recursive_type.cb",
+                },
+            },
+            body: ExprBlock {
+                open_brace: Token {
+                    kind: LeftBrace,
+                    lexeme: "{",
+                    span: Span {
+                        start: 154,
+                        end: 155,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+                statements: [
+                    Statement {
+                        expr: Declare(
+                            ExprDecl {
+                                let_token: Token {
+                                    kind: Keyword(
+                                        Let,
+                                    ),
+                                    lexeme: "let",
+                                    span: Span {
+                                        start: 160,
+                                        end: 163,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                mutable: false,
+                                ty: Some(
+                                    Type {
+                                        mut_token: None,
+                                        kind: NameWithParams(
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "List",
+                                                span: Span {
+                                                    start: 170,
+                                                    end: 174,
+                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                },
+                                            },
+                                            TypeParams {
+                                                params: [
+                                                    Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        id: None,
+                                                        span: Span {
+                                                            start: 176,
+                                                            end: 179,
+                                                            filename: "testing/test/generic_recursive_type.cb",
+                                                        },
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                        id: None,
+                                        span: Span {
+                                            start: 170,
+                                            end: 181,
+                                            filename: "testing/test/generic_recursive_type.cb",
+                                        },
+                                    },
+                                ),
+                                ident: Token {
+                                    kind: Identifier,
+                                    lexeme: "tail",
+                                    span: Span {
+                                        start: 164,
+                                        end: 168,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                expr: Struct(
+                                    ExprStruct {
+                                        name: Token {
+                                            kind: Identifier,
+                                            lexeme: "List",
+                                            span: Span {
+                                                start: 184,
+                                                end: 188,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                        type_args: Some(
+                                            [
+                                                Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 190,
+                                                        end: 193,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            ],
+                                        ),
+                                        open_brace: Token {
+                                            kind: LeftBrace,
+                                            lexeme: "{",
+                                            span: Span {
+                                                start: 196,
+                                                end: 197,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                        init_fields: [
+                                            InitField {
+                                                dot: Token {
+                                                    kind: Dot,
+                                                    lexeme: ".",
+                                                    span: Span {
+                                                        start: 198,
+                                                        end: 199,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                name: Token {
+                                                    kind: Identifier,
+                                                    lexeme: "next",
+                                                    span: Span {
+                                                        start: 199,
+                                                        end: 203,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                equal: Token {
+                                                    kind: Equal,
+                                                    lexeme: "=",
+                                                    span: Span {
+                                                        start: 204,
+                                                        end: 205,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                expr: TypeCast(
+                                                    ExprTypeCast {
+                                                        as_token: Token {
+                                                            kind: Keyword(
+                                                                As,
+                                                            ),
+                                                            lexeme: "as",
+                                                            span: Span {
+                                                                start: 208,
+                                                                end: 210,
+                                                                filename: "testing/test/generic_recursive_type.cb",
+                                                            },
+                                                        },
+                                                        expr: Litral(
+                                                            Integer(
+                                                                IntegerLitral {
+                                                                    token: Token {
+                                                                        kind: Number,
+                                                                        lexeme: "0",
+                                                                        span: Span {
+                                                                            start: 206,
+                                                                            end: 207,
+                                                                            filename: "testing/test/generic_recursive_type.cb",
+                                                                        },
+                                                                    },
+                                                                    ty: Type {
+                                                                        mut_token: None,
+                                                                        kind: SignedNumber(
+                                                                            32,
+                                                                        ),
+                                                                        id: None,
+                                                                        span: Span {
+                                                                            start: 206,
+                                                                            end: 207,
+                                                                            filename: "testing/test/generic_recursive_type.cb",
+                                                                        },
+                                                                    },
+                                                                },
+                                                            ),
+                                                        ),
+                                                        target_type: Type {
+                                                            mut_token: None,
+                                                            kind: Pointer(
+                                                                Type {
+                                                                    mut_token: None,
+                                                                    kind: NameWithParams(
+                                                                        Token {
+                                                                            kind: Identifier,
+                                                                            lexeme: "List",
+                                                                            span: Span {
+                                                                                start: 212,
+                                                                                end: 216,
+                                                                                filename: "testing/test/generic_recursive_type.cb",
+                                                                            },
+                                                                        },
+                                                                        TypeParams {
+                                                                            params: [
+                                                                                Type {
+                                                                                    mut_token: None,
+                                                                                    kind: SignedNumber(
+                                                                                        32,
+                                                                                    ),
+                                                                                    id: None,
+                                                                                    span: Span {
+                                                                                        start: 218,
+                                                                                        end: 221,
+                                                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                                                    },
+                                                                                },
+                                                                            ],
+                                                                        },
+                                                                    ),
+                                                                    id: None,
+                                                                    span: Span {
+                                                                        start: 212,
+                                                                        end: 223,
+                                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                                    },
+                                                                },
+                                                            ),
+                                                            id: None,
+                                                            span: Span {
+                                                                start: 211,
+                                                                end: 223,
+                                                                filename: "testing/test/generic_recursive_type.cb",
+                                                            },
+                                                        },
+                                                    },
+                                                ),
+                                            },
+                                            InitField {
+                                                dot: Token {
+                                                    kind: Dot,
+                                                    lexeme: ".",
+                                                    span: Span {
+                                                        start: 225,
+                                                        end: 226,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                name: Token {
+                                                    kind: Identifier,
+                                                    lexeme: "value",
+                                                    span: Span {
+                                                        start: 226,
+                                                        end: 231,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                equal: Token {
+                                                    kind: Equal,
+                                                    lexeme: "=",
+                                                    span: Span {
+                                                        start: 232,
+                                                        end: 233,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                expr: Litral(
+                                                    Integer(
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "20",
+                                                                span: Span {
+                                                                    start: 234,
+                                                                    end: 236,
+                                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                id: None,
+                                                                span: Span {
+                                                                    start: 234,
+                                                                    end: 236,
+                                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                                },
+                                                            },
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ],
+                                        close_brace: Token {
+                                            kind: RightBrace,
+                                            lexeme: "}",
+                                            span: Span {
+                                                start: 237,
+                                                end: 238,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                    },
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 238,
+                                    end: 239,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Declare(
+                            ExprDecl {
+                                let_token: Token {
+                                    kind: Keyword(
+                                        Let,
+                                    ),
+                                    lexeme: "let",
+                                    span: Span {
+                                        start: 244,
+                                        end: 247,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                mutable: false,
+                                ty: Some(
+                                    Type {
+                                        mut_token: None,
+                                        kind: NameWithParams(
+                                            Token {
+                                                kind: Identifier,
+                                                lexeme: "List",
+                                                span: Span {
+                                                    start: 254,
+                                                    end: 258,
+                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                },
+                                            },
+                                            TypeParams {
+                                                params: [
+                                                    Type {
+                                                        mut_token: None,
+                                                        kind: SignedNumber(
+                                                            32,
+                                                        ),
+                                                        id: None,
+                                                        span: Span {
+                                                            start: 260,
+                                                            end: 263,
+                                                            filename: "testing/test/generic_recursive_type.cb",
+                                                        },
+                                                    },
+                                                ],
+                                            },
+                                        ),
+                                        id: None,
+                                        span: Span {
+                                            start: 254,
+                                            end: 265,
+                                            filename: "testing/test/generic_recursive_type.cb",
+                                        },
+                                    },
+                                ),
+                                ident: Token {
+                                    kind: Identifier,
+                                    lexeme: "head",
+                                    span: Span {
+                                        start: 248,
+                                        end: 252,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                expr: Struct(
+                                    ExprStruct {
+                                        name: Token {
+                                            kind: Identifier,
+                                            lexeme: "List",
+                                            span: Span {
+                                                start: 268,
+                                                end: 272,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                        type_args: Some(
+                                            [
+                                                Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 274,
+                                                        end: 277,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            ],
+                                        ),
+                                        open_brace: Token {
+                                            kind: LeftBrace,
+                                            lexeme: "{",
+                                            span: Span {
+                                                start: 280,
+                                                end: 281,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                        init_fields: [
+                                            InitField {
+                                                dot: Token {
+                                                    kind: Dot,
+                                                    lexeme: ".",
+                                                    span: Span {
+                                                        start: 282,
+                                                        end: 283,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                name: Token {
+                                                    kind: Identifier,
+                                                    lexeme: "next",
+                                                    span: Span {
+                                                        start: 283,
+                                                        end: 287,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                equal: Token {
+                                                    kind: Equal,
+                                                    lexeme: "=",
+                                                    span: Span {
+                                                        start: 288,
+                                                        end: 289,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                expr: AddressOf(
+                                                    ExprAddressOf {
+                                                        ampersand: Token {
+                                                            kind: Ampersand,
+                                                            lexeme: "&",
+                                                            span: Span {
+                                                                start: 290,
+                                                                end: 291,
+                                                                filename: "testing/test/generic_recursive_type.cb",
+                                                            },
+                                                        },
+                                                        expr: Identifier(
+                                                            Token {
+                                                                kind: Identifier,
+                                                                lexeme: "tail",
+                                                                span: Span {
+                                                                    start: 291,
+                                                                    end: 295,
+                                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                                },
+                                                            },
+                                                        ),
+                                                    },
+                                                ),
+                                            },
+                                            InitField {
+                                                dot: Token {
+                                                    kind: Dot,
+                                                    lexeme: ".",
+                                                    span: Span {
+                                                        start: 297,
+                                                        end: 298,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                name: Token {
+                                                    kind: Identifier,
+                                                    lexeme: "value",
+                                                    span: Span {
+                                                        start: 298,
+                                                        end: 303,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                equal: Token {
+                                                    kind: Equal,
+                                                    lexeme: "=",
+                                                    span: Span {
+                                                        start: 304,
+                                                        end: 305,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                expr: Litral(
+                                                    Integer(
+                                                        IntegerLitral {
+                                                            token: Token {
+                                                                kind: Number,
+                                                                lexeme: "10",
+                                                                span: Span {
+                                                                    start: 306,
+                                                                    end: 308,
+                                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                                },
+                                                            },
+                                                            ty: Type {
+                                                                mut_token: None,
+                                                                kind: SignedNumber(
+                                                                    32,
+                                                                ),
+                                                                id: None,
+                                                                span: Span {
+                                                                    start: 306,
+                                                                    end: 308,
+                                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                                },
+                                                            },
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ],
+                                        close_brace: Token {
+                                            kind: RightBrace,
+                                            lexeme: "}",
+                                            span: Span {
+                                                start: 309,
+                                                end: 310,
+                                                filename: "testing/test/generic_recursive_type.cb",
+                                            },
+                                        },
+                                    },
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 310,
+                                    end: 311,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_s32",
+                                        span: Span {
+                                            start: 316,
+                                            end: 325,
+                                            filename: "testing/test/generic_recursive_type.cb",
+                                        },
+                                    },
+                                ),
+                                type_args: None,
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: Span {
+                                        start: 325,
+                                        end: 326,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                args: [
+                                    MemberAccess(
+                                        ExprMemberAccess {
+                                            base: Identifier(
+                                                Token {
+                                                    kind: Identifier,
+                                                    lexeme: "head",
+                                                    span: Span {
+                                                        start: 326,
+                                                        end: 330,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            ),
+                                            dot: Token {
+                                                kind: Dot,
+                                                lexeme: ".",
+                                                span: Span {
+                                                    start: 330,
+                                                    end: 331,
+                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                },
+                                            },
+                                            member: Token {
+                                                kind: Identifier,
+                                                lexeme: "value",
+                                                span: Span {
+                                                    start: 331,
+                                                    end: 336,
+                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                },
+                                            },
+                                        },
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: Span {
+                                        start: 336,
+                                        end: 337,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 337,
+                                    end: 338,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_char",
+                                        span: Span {
+                                            start: 343,
+                                            end: 353,
+                                            filename: "testing/test/generic_recursive_type.cb",
+                                        },
+                                    },
+                                ),
+                                type_args: None,
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: Span {
+                                        start: 353,
+                                        end: 354,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                args: [
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 354,
+                                                        end: 356,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 354,
+                                                        end: 356,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: Span {
+                                        start: 356,
+                                        end: 357,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 357,
+                                    end: 358,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_s32",
+                                        span: Span {
+                                            start: 363,
+                                            end: 372,
+                                            filename: "testing/test/generic_recursive_type.cb",
+                                        },
+                                    },
+                                ),
+                                type_args: None,
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: Span {
+                                        start: 372,
+                                        end: 373,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                args: [
+                                    MemberAccess(
+                                        ExprMemberAccess {
+                                            base: MemberAccess(
+                                                ExprMemberAccess {
+                                                    base: Identifier(
+                                                        Token {
+                                                            kind: Identifier,
+                                                            lexeme: "head",
+                                                            span: Span {
+                                                                start: 373,
+                                                                end: 377,
+                                                                filename: "testing/test/generic_recursive_type.cb",
+                                                            },
+                                                        },
+                                                    ),
+                                                    dot: Token {
+                                                        kind: Dot,
+                                                        lexeme: ".",
+                                                        span: Span {
+                                                            start: 377,
+                                                            end: 378,
+                                                            filename: "testing/test/generic_recursive_type.cb",
+                                                        },
+                                                    },
+                                                    member: Token {
+                                                        kind: Identifier,
+                                                        lexeme: "next",
+                                                        span: Span {
+                                                            start: 378,
+                                                            end: 382,
+                                                            filename: "testing/test/generic_recursive_type.cb",
+                                                        },
+                                                    },
+                                                },
+                                            ),
+                                            dot: Token {
+                                                kind: Dot,
+                                                lexeme: ".",
+                                                span: Span {
+                                                    start: 382,
+                                                    end: 383,
+                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                },
+                                            },
+                                            member: Token {
+                                                kind: Identifier,
+                                                lexeme: "value",
+                                                span: Span {
+                                                    start: 383,
+                                                    end: 388,
+                                                    filename: "testing/test/generic_recursive_type.cb",
+                                                },
+                                            },
+                                        },
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: Span {
+                                        start: 388,
+                                        end: 389,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 389,
+                                    end: 390,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Call(
+                            ExprCall {
+                                caller: Identifier(
+                                    Token {
+                                        kind: Identifier,
+                                        lexeme: "write_char",
+                                        span: Span {
+                                            start: 395,
+                                            end: 405,
+                                            filename: "testing/test/generic_recursive_type.cb",
+                                        },
+                                    },
+                                ),
+                                type_args: None,
+                                left_paren: Token {
+                                    kind: LeftParen,
+                                    lexeme: "(",
+                                    span: Span {
+                                        start: 405,
+                                        end: 406,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                args: [
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "10",
+                                                    span: Span {
+                                                        start: 406,
+                                                        end: 408,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 406,
+                                                        end: 408,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ],
+                                right_paren: Token {
+                                    kind: RightParen,
+                                    lexeme: ")",
+                                    span: Span {
+                                        start: 408,
+                                        end: 409,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 409,
+                                    end: 410,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                    Statement {
+                        expr: Return(
+                            ExprReturn {
+                                return_token: Token {
+                                    kind: Keyword(
+                                        Return,
+                                    ),
+                                    lexeme: "return",
+                                    span: Span {
+                                        start: 415,
+                                        end: 421,
+                                        filename: "testing/test/generic_recursive_type.cb",
+                                    },
+                                },
+                                expr: Some(
+                                    Litral(
+                                        Integer(
+                                            IntegerLitral {
+                                                token: Token {
+                                                    kind: Number,
+                                                    lexeme: "0",
+                                                    span: Span {
+                                                        start: 422,
+                                                        end: 423,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                                ty: Type {
+                                                    mut_token: None,
+                                                    kind: SignedNumber(
+                                                        32,
+                                                    ),
+                                                    id: None,
+                                                    span: Span {
+                                                        start: 422,
+                                                        end: 423,
+                                                        filename: "testing/test/generic_recursive_type.cb",
+                                                    },
+                                                },
+                                            },
+                                        ),
+                                    ),
+                                ),
+                            },
+                        ),
+                        delem: Some(
+                            Token {
+                                kind: Semicolon,
+                                lexeme: ";",
+                                span: Span {
+                                    start: 423,
+                                    end: 424,
+                                    filename: "testing/test/generic_recursive_type.cb",
+                                },
+                            },
+                        ),
+                    },
+                ],
+                close_brace: Token {
+                    kind: RightBrace,
+                    lexeme: "}",
+                    span: Span {
+                        start: 425,
+                        end: 426,
+                        filename: "testing/test/generic_recursive_type.cb",
+                    },
+                },
+            },
+        },
+    ),
+]

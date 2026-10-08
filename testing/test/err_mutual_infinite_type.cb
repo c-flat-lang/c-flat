@@ -1,0 +1,11 @@
+type Ping struct {
+    pong: Pong,
+}
+
+type Pong struct {
+    ping: Ping,
+}
+
+pub fn main() s32 {
+    return 0;
+}

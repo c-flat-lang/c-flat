@@ -1,0 +1,5 @@
+                     Compiling testing/test/generic_recursive_type.cb
+                      Finished
+                       Running bin/generic_recursive_type.wasm
+10
+20
